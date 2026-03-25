@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'login' => 'Login',
+    'register' => 'Register',
+    'forgot_password' => 'Forgot Password',
+    'reset_password' => 'Reset Password',
+    'email' => 'Email',
+    'password' => 'Password',
+    'password_confirmation' => 'Confirm Password',
+    'name' => 'Name',
+    'remember_me' => 'Remember me',
+    'forgot_password_link' => 'Forgot your password?',
+    'no_account' => "Don't have an account?",
+    'have_account' => 'Already have an account?',
+    'back_to_login' => 'Back to login',
+    'forgot_password_description' => 'Forgot your password? Enter your email address and we will send you a link to reset your password.',
+    'new_password' => 'New Password',
+    'confirm_new_password' => 'Confirm New Password',
+    'send_reset_link' => 'Send Reset Link',
+    'reset_password_button' => 'Reset Password',
+    'login_button' => 'Log in',
+    'register_button' => 'Register',
+    'language' => 'Language',
+];

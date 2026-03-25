@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'login' => 'Кіру',
+    'register' => 'Тіркелу',
+    'forgot_password' => 'Құпия сөзді қалпына келтіру',
+    'reset_password' => 'Құпия сөзді қалпына келтіру',
+    'email' => 'Email',
+    'password' => 'Құпия сөз',
+    'password_confirmation' => 'Құпия сөзді растаңыз',
+    'name' => 'Аты',
+    'remember_me' => 'Мені есте сақта',
+    'forgot_password_link' => 'Құпия сөзді ұмыттыңыз ба?',
+    'no_account' => 'Тіркелгі жоқ па?',
+    'have_account' => 'Тіркелгі бар ма?',
+    'back_to_login' => 'Кіруге оралу',
+    'forgot_password_description' => 'Құпия сөзді ұмыттыңыз ба? Электрондық пошта мекенжайыңызды енгізіңіз, біз сізге құпия сөзді қалпына келтіру сілтемесін жібереміз.',
+    'new_password' => 'Жаңа құпия сөз',
+    'confirm_new_password' => 'Жаңа құпия сөзді растаңыз',
+    'send_reset_link' => 'Қалпына келтіру сілтемесін жіберу',
+    'reset_password_button' => 'Құпия сөзді қалпына келтіру',
+    'login_button' => 'Кіру',
+    'register_button' => 'Тіркелу',
+    'language' => 'Тіл',
+];
