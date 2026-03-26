@@ -237,6 +237,9 @@
         </main>
     </div>
 
+    <!-- Project alerts container -->
+    <div id="project-alert-container" class="pointer-events-none fixed top-4 right-4 z-[9999] flex flex-col gap-3"></div>
+
     <script>
         // Переключение сайдбара
         function toggleSidebar() {
@@ -245,6 +248,254 @@
             sidebar.classList.toggle('-translate-x-full');
             overlay.classList.toggle('hidden');
         }
+
+        /**
+         * Красивые toasts вместо стандартного alert()
+         * @param {'success'|'error'|'info'} type
+         * @param {string} message
+         * @param {string} title
+         * @param {number} duration
+         */
+        function projectAlert(type, message, title = '', duration = 2800) {
+            const container = document.getElementById('project-alert-container');
+            if (!container) return;
+
+            const isDark = document.documentElement.classList.contains('dark');
+            const palette = {
+                success: isDark
+                    ? { bg: 'rgba(16,185,129,0.14)', border: 'rgba(16,185,129,0.45)', color: '#34d399' }
+                    : { bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.35)', color: '#059669' },
+                error: isDark
+                    ? { bg: 'rgba(239,68,68,0.14)', border: 'rgba(239,68,68,0.45)', color: '#f87171' }
+                    : { bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.35)', color: '#dc2626' },
+                info: isDark
+                    ? { bg: 'rgba(59,130,246,0.14)', border: 'rgba(59,130,246,0.45)', color: '#60a5fa' }
+                    : { bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.35)', color: '#2563eb' },
+            }[type] || (isDark
+                ? { bg: 'rgba(59,130,246,0.14)', border: 'rgba(59,130,246,0.45)', color: '#60a5fa' }
+                : { bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.35)', color: '#2563eb' });
+
+            const iconSvg = (() => {
+                if (type === 'success') {
+                    return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 6L9 17l-5-5"></path>
+                    </svg>`;
+                }
+                if (type === 'error') {
+                    return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6L6 18"></path>
+                        <path d="M6 6l12 12"></path>
+                    </svg>`;
+                }
+                return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
+                    <path d="M12 16v-4"></path>
+                    <path d="M12 8h.01"></path>
+                </svg>`;
+            })();
+
+            const el = document.createElement('div');
+            el.setAttribute('role', 'status');
+            el.className = 'pointer-events-auto flex items-start gap-3 rounded-xl border shadow-lg backdrop-blur-sm px-4 py-3 transition-all duration-200';
+            el.style.background = palette.bg;
+            el.style.borderColor = palette.border;
+            el.style.color = palette.color;
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(10px)';
+
+            const iconWrap = document.createElement('div');
+            iconWrap.className = 'mt-0.5 flex items-center';
+            iconWrap.innerHTML = iconSvg;
+
+            const textWrap = document.createElement('div');
+            textWrap.className = 'flex-1 min-w-0';
+
+            const titleEl = document.createElement('div');
+            titleEl.className = 'text-sm font-semibold leading-4 mb-1';
+            titleEl.textContent = title || '';
+            titleEl.style.display = title ? 'block' : 'none';
+
+            const msgEl = document.createElement('div');
+            msgEl.className = 'text-sm leading-snug';
+            msgEl.textContent = message || '';
+
+            const closeBtn = document.createElement('button');
+            closeBtn.type = 'button';
+            closeBtn.className = 'ml-2 -mr-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors';
+            closeBtn.style.color = palette.color;
+            closeBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6L6 18"></path>
+                <path d="M6 6l12 12"></path>
+            </svg>`;
+            closeBtn.addEventListener('click', () => removeToast());
+
+            textWrap.appendChild(titleEl);
+            textWrap.appendChild(msgEl);
+
+            el.appendChild(iconWrap);
+            el.appendChild(textWrap);
+            el.appendChild(closeBtn);
+
+            container.appendChild(el);
+
+            const removeToast = () => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(10px)';
+                setTimeout(() => {
+                    try {
+                        el.remove();
+                    } catch (_) {}
+                }, 200);
+            };
+
+            requestAnimationFrame(() => {
+                el.style.opacity = '1';
+                el.style.transform = 'translateY(0)';
+            });
+
+            setTimeout(removeToast, duration);
+        }
+
+        window.projectAlert = projectAlert;
+
+        /**
+         * Кастомные select’ы для всех страниц проекта.
+         * - Стиль как у "На странице"
+         * - Если options > 5 — добавляем поиск по пунктам
+         * - Скрытые/уже кастомные select’ы не трогаем
+         */
+        (function initCustomSelects() {
+            const locale = '{{ app()->getLocale() }}';
+            const searchPlaceholder = locale.startsWith('ru') ? 'Поиск...' : (locale.startsWith('kk') ? 'Іздеу...' : 'Search...');
+
+            const selects = Array.from(document.querySelectorAll('select'));
+            selects.forEach((select) => {
+                if (!select) return;
+                if (select.dataset.customSelect === 'true') return;
+                if (select.classList.contains('hidden') || select.hidden) return; // например, clients-per-page
+                if (select.closest('.custom-select-wrapper')) return;
+
+                const optionEls = Array.from(select.options || []);
+                const realOptions = optionEls.filter(o => !o.disabled);
+
+                if (!realOptions.length) return;
+
+                // Строка выбранного значения
+                const currentOption = select.selectedOptions && select.selectedOptions[0] ? select.selectedOptions[0] : realOptions[0];
+                const currentLabel = (currentOption && currentOption.textContent) ? currentOption.textContent.trim() : '';
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'custom-select-wrapper w-full relative';
+
+                // Спрячем исходный select (значение всё равно будет сабмититься, т.к. disabled=false)
+                select.style.display = 'none';
+
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className =
+                    'w-full flex items-center justify-between px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] ' +
+                    'bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]';
+                btn.innerHTML = `
+                    <span class="custom-select-label text-left">${currentLabel}</span>
+                    <svg class="w-4 h-4 text-[#64748b] dark:text-[#A1A09A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                `;
+
+                const menu = document.createElement('div');
+                menu.className =
+                    'hidden absolute left-0 right-0 mt-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] ' +
+                    'bg-white dark:bg-[#161615] shadow-lg overflow-hidden z-[60]';
+
+                const showSearch = realOptions.length > 5;
+                menu.dataset.showSearch = showSearch ? '1' : '0';
+
+                let searchHtml = '';
+                if (showSearch) {
+                    searchHtml = `
+                        <div class="p-2 border-b border-[#e2e8f0] dark:border-[#3E3E3A]">
+                            <input type="text" class="w-full px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]" placeholder="${searchPlaceholder}">
+                        </div>
+                    `;
+                }
+
+                const itemsHtml = realOptions
+                    .map((opt) => {
+                        const value = opt.value;
+                        const text = opt.textContent.trim();
+                        const active = select.value === value;
+                        return `
+                            <button type="button"
+                                class="w-full px-4 py-2 text-sm text-[#0f172a] dark:text-[#EDEDEC] hover:bg-[#f8fafc] dark:hover:bg-[#0a0a0a] transition-colors text-left custom-select-option ${active ? 'bg-[#fef3c7] dark:bg-[#1D0002] text-[#f59e0b] dark:text-[#f59e0b]' : ''}"
+                                data-value="${value}">
+                                ${text}
+                            </button>
+                        `;
+                    })
+                    .join('');
+
+                menu.innerHTML = `
+                    ${searchHtml}
+                    <div class="max-h-60 overflow-auto">
+                        ${itemsHtml}
+                    </div>
+                `;
+
+                wrapper.appendChild(btn);
+                wrapper.appendChild(menu);
+
+                // Вставляем wrapper вместо select
+                select.parentElement.insertBefore(wrapper, select);
+                wrapper.appendChild(select);
+
+                const closeMenu = () => menu.classList.add('hidden');
+                const openMenu = () => menu.classList.remove('hidden');
+
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (menu.classList.contains('hidden')) openMenu(); else closeMenu();
+                });
+
+                document.addEventListener('click', () => closeMenu());
+
+                menu.querySelectorAll('.custom-select-option').forEach((optBtn) => {
+                    optBtn.addEventListener('click', () => {
+                        const value = optBtn.dataset.value;
+                        select.value = value;
+                        const newLabel = optBtn.textContent.trim();
+                        const labelEl = btn.querySelector('.custom-select-label');
+                        if (labelEl) labelEl.textContent = newLabel;
+
+                        // Подсветка активного пункта
+                        menu.querySelectorAll('.custom-select-option').forEach((b) => {
+                            const isActive = b.dataset.value === value;
+                            b.classList.toggle('bg-[#fef3c7]', isActive);
+                            b.classList.toggle('dark:bg-[#1D0002]', isActive);
+                            b.classList.toggle('text-[#f59e0b]', isActive);
+                            b.classList.toggle('dark:text-[#f59e0b]', isActive);
+                        });
+
+                        select.dispatchEvent(new Event('change', { bubbles: true }));
+                        closeMenu();
+                    });
+                });
+
+                // Поиск внутри dropdown (только если options > 5)
+                if (showSearch) {
+                    const input = menu.querySelector('input[type="text"]');
+                    if (input) {
+                        input.addEventListener('input', () => {
+                            const q = input.value.trim().toLowerCase();
+                            menu.querySelectorAll('.custom-select-option').forEach((b) => {
+                                const t = (b.textContent || '').toLowerCase();
+                                b.style.display = (!q || t.includes(q)) ? '' : 'none';
+                            });
+                        });
+                    }
+                }
+            });
+        })();
 
         // Переключение темы
         (function() {
@@ -289,6 +540,9 @@
             });
         })();
     </script>
+
+    {{-- Page-specific scripts --}}
+    @yield('scripts')
 </body>
 
 </html>

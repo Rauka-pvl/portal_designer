@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ClientController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -7,6 +8,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\Rules\Password as PasswordRule;
 use App\Models\User;
+
+require __DIR__ . '/auth.php';
+
 
 Route::get('/', function () {
     return Auth::check() ? redirect()->route('dashboard') : view('welcome');
@@ -26,130 +30,70 @@ Route::get('/language/{locale}', function (string $locale, Request $request) {
     return redirect()->back();
 })->name('language.switch');
 
-/**
- * AUTH
- *
- * Делаем "match"-роуты с одинаковым именем (`login`/`register`),
- * чтобы ваши формы в Blade (action="{{ route('login') }}") работали и для GET, и для POST.
- */
-Route::match(['get', 'post'], '/login', function (Request $request) {
-    if (Auth::check()) {
-        return redirect()->route('dashboard');
-    }
-
-    if ($request->isMethod('get')) {
-        return view('auth.login');
-    }
-
-    $credentials = $request->validate([
-        'email' => ['required', 'email'],
-        'password' => ['required'],
-    ]);
-
-    $remember = $request->boolean('remember');
-
-    if (! Auth::attempt([
-        'email' => $credentials['email'],
-        'password' => $credentials['password'],
-    ], $remember)) {
-        return back()
-            ->withErrors(['email' => __('auth.failed')])
-            ->withInput($request->except('password'));
-    }
-
-    $request->session()->regenerate();
-
-    return redirect()->intended(route('dashboard'));
-})->name('login')->middleware('guest');
-
-Route::match(['get', 'post'], '/register', function (Request $request) {
-    if (Auth::check()) {
-        return redirect()->route('dashboard');
-    }
-
-    if ($request->isMethod('get')) {
-        return view('auth.register');
-    }
-
-    $data = $request->validate([
-        'name' => ['required', 'string', 'max:255'],
-        'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-        'password' => ['required', 'confirmed', PasswordRule::defaults()],
-    ]);
-
-    $user = User::create([
-        'name' => $data['name'],
-        'email' => $data['email'],
-        'password' => Hash::make($data['password']),
-    ]);
-
-    Auth::login($user);
-    $request->session()->regenerate();
-
-    return redirect()->route('dashboard');
-})->name('register')->middleware('guest');
-
-Route::post('/logout', function (Request $request) {
-    Auth::logout();
-    $request->session()->invalidate();
-    $request->session()->regenerateToken();
-
-    return redirect()->route('login');
-})->name('logout')->middleware('auth');
-
-Route::get('/forgot-password', function () {
-    return view('auth.forgot-password');
-})->name('password.request')->middleware('guest');
-
-Route::post('/password/email', function (Request $request) {
-    $request->validate(['email' => ['required', 'email']]);
-
-    $status = Password::sendResetLink($request->only('email'));
-
-    return $status === Password::RESET_LINK_SENT
-        ? back()->with('status', __($status))
-        : back()->withErrors(['email' => __($status)]);
-})->name('password.email')->middleware('guest');
-
-Route::get('/password/reset/{token}', function (string $token, Request $request) {
-    // Передаем весь $request, чтобы в reset-vieве работал $request->email
-    $request->merge(['token' => $token]);
-
-    return view('auth.reset-password', ['request' => $request]);
-})->name('password.reset')->middleware('guest');
-
-Route::post('/password/reset', function (Request $request) {
-    $request->validate([
-        'token' => ['required'],
-        'email' => ['required', 'email'],
-        'password' => ['required', 'confirmed', PasswordRule::defaults()],
-    ]);
-
-    $status = Password::reset(
-        $request->only('email', 'password', 'password_confirmation', 'token'),
-        function (User $user, string $password) {
-            $user->forceFill([
-                'password' => Hash::make($password),
-            ])->save();
-        }
-    );
-
-    return $status === Password::PASSWORD_RESET
-        ? redirect()->route('login')->with('status', __($status))
-        : back()->withErrors(['email' => __($status)])->withInput();
-})->name('password.store')->middleware('guest');
 
 /**
  * Страница дашборда (заглушка данных), чтобы авторизованный пользователь видел интерфейс.
  * Остальные разделы защищаем дальше по мере добавления роутов/контроллеров.
  */
-Route::get('/dashboard', function () {
-    return view('dashboard', [
-        'stats' => [
-            'clients' => 0,
-            'orders_in_work' => 0,
-            'tasks_today' => 0,
-            'accumulated_bonuses' => 0,
-        ],
-    ]);
-})->middleware('auth')->name('dashboard');
+
+
+Route::group(['middleware' => 'auth'], function () {
+    Route::get('/dashboard', function () {
+        return view('dashboard', [
+            'stats' => [
+                'clients' => 0,
+                'orders_in_work' => 0,
+                'tasks_today' => 0,
+                'accumulated_bonuses' => 0,
+            ],
+        ]);
+    })->name('dashboard');
+
+    Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
+
+    // JSON endpoints for AJAX CRUD
+    Route::get('/clients/search', [ClientController::class, 'search'])->name('clients.search');
+    Route::post('/clients/add', [ClientController::class, 'save'])->name('clients.add_client');
+    Route::delete('/clients/delete/{clientId}', [ClientController::class, 'destroy'])
+        ->whereNumber('clientId')
+        ->name('clients.delete_client');
+    Route::patch('/clients/{clientId}/status', [ClientController::class, 'updateStatus'])
+        ->whereNumber('clientId')
+        ->name('clients.update_status');
+
+    Route::delete('/clients/{clientId}/files/{fileIndex}', [ClientController::class, 'deleteFile'])
+        ->whereNumber('clientId')
+        ->whereNumber('fileIndex')
+        ->name('clients.delete_file');
+
+    Route::get('/clients/{clientId}', [ClientController::class, 'show'])
+        ->whereNumber('clientId')
+        ->name('clients.show');
+
+    // Passport objects (CRUD + JSON endpoints for AJAX)
+    Route::get('/objects', [\App\Http\Controllers\PassportObject::class, 'index'])
+        ->name('objects.index');
+
+    Route::get('/objects/search', [\App\Http\Controllers\PassportObject::class, 'search'])
+        ->name('objects.search');
+
+    Route::post('/objects/add', [\App\Http\Controllers\PassportObject::class, 'save'])
+        ->name('objects.add_object');
+
+    Route::delete('/objects/delete/{objectId}', [\App\Http\Controllers\PassportObject::class, 'destroy'])
+        ->whereNumber('objectId')
+        ->name('objects.delete_object');
+
+    Route::patch('/objects/{objectId}/status', [\App\Http\Controllers\PassportObject::class, 'updateStatus'])
+        ->whereNumber('objectId')
+        ->name('objects.update_status');
+
+    Route::delete('/objects/{objectId}/files/{fileIndex}', [\App\Http\Controllers\PassportObject::class, 'deleteFile'])
+        ->whereNumber('objectId')
+        ->whereNumber('fileIndex')
+        ->name('objects.delete_file');
+
+    Route::get('/objects/{objectId}', [\App\Http\Controllers\PassportObject::class, 'show'])
+        ->whereNumber('objectId')
+        ->name('objects.show');
+});
