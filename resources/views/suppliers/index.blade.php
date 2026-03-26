@@ -39,20 +39,42 @@
             color: #f59e0b;
         }
 
+        .sortable-header::before,
         .sortable-header::after {
-            content: '↕';
+            content: '';
             position: absolute;
             right: 0;
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            pointer-events: none;
             opacity: 0.5;
         }
 
-        .sortable-header.asc::after {
-            content: '↑';
+        .sortable-header::before {
+            top: calc(50% - 8px);
+            border-bottom: 6px solid currentColor;
+        }
+
+        .sortable-header::after {
+            top: calc(50% + 2px);
+            border-top: 6px solid currentColor;
+        }
+
+        .sortable-header.asc::before {
             opacity: 1;
         }
 
+        .sortable-header.asc::after {
+            opacity: 0;
+        }
+
+        .sortable-header.desc::before {
+            opacity: 0;
+        }
+
         .sortable-header.desc::after {
-            content: '↓';
             opacity: 1;
         }
 
@@ -354,14 +376,15 @@
     <!-- Поиск и фильтры -->
     <form method="GET" action="{{ route('suppliers.index') }}" id="search-form"
         class="mb-6 flex flex-col md:flex-row gap-4 flex-wrap">
+        <input type="hidden" name="sort_by" id="sort_by_input" value="{{ request('sort_by', '') }}">
+        <input type="hidden" name="sort_dir" id="sort_dir_input" value="{{ request('sort_dir', 'asc') }}">
         <div class="flex-1 min-w-[200px]">
             <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('suppliers.search') }}"
                 class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
         </div>
         <div class="w-full md:w-44">
             <select name="type_filter"
-                class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]"
-                onchange="this.form.submit()">
+                class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
                 <option value="all" {{ request('type_filter', 'all') === 'all' ? 'selected' : '' }}>
                     {{ __('suppliers.filter_all') }}</option>
                 <option value="recommended" {{ request('type_filter') === 'recommended' ? 'selected' : '' }}>
@@ -372,8 +395,7 @@
         </div>
         <div class="w-full md:w-48">
             <select name="city_filter"
-                class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]"
-                onchange="this.form.submit()">
+                class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
                 <option value="">{{ __('suppliers.all_cities') }}</option>
                 @foreach ($cities as $city)
                     <option value="{{ $city }}" {{ request('city_filter') == $city ? 'selected' : '' }}>
@@ -383,8 +405,7 @@
         </div>
         <div class="w-full md:w-48">
             <select name="sphere_filter"
-                class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]"
-                onchange="this.form.submit()">
+                class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
                 <option value="">{{ __('suppliers.all_spheres') }}</option>
                 @foreach ($spheres as $sphere)
                     <option value="{{ $sphere }}" {{ request('sphere_filter') == $sphere ? 'selected' : '' }}>
@@ -394,8 +415,7 @@
         </div>
         <div class="w-full md:w-48">
             <select name="brand_filter"
-                class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]"
-                onchange="this.form.submit()">
+                class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
                 <option value="">{{ __('suppliers.all_brands') }}</option>
                 @foreach ($brands as $brand)
                     <option value="{{ $brand }}" {{ request('brand_filter') == $brand ? 'selected' : '' }}>
@@ -413,20 +433,20 @@
                 <table class="w-full">
                     <thead class="bg-[#f8fafc] dark:bg-[#0a0a0a]">
                         <tr>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header"
+                            <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header {{ request('sort_by') === 'name' ? (request('sort_dir', 'asc') === 'asc' ? 'asc' : 'desc') : '' }}"
                                 data-sort="name">{{ __('suppliers.name') }}</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header"
+                            <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header {{ request('sort_by') === 'phone' ? (request('sort_dir', 'asc') === 'asc' ? 'asc' : 'desc') : '' }}"
                                 data-sort="phone">{{ __('suppliers.phone') }}</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header"
+                            <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header {{ request('sort_by') === 'website' ? (request('sort_dir', 'asc') === 'asc' ? 'asc' : 'desc') : '' }}"
                                 data-sort="website">{{ __('suppliers.website') }}</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header"
+                            <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header {{ request('sort_by') === 'city' ? (request('sort_dir', 'asc') === 'asc' ? 'asc' : 'desc') : '' }}"
                                 data-sort="city">{{ __('suppliers.city') }}</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header"
+                            <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header {{ request('sort_by') === 'sphere' ? (request('sort_dir', 'asc') === 'asc' ? 'asc' : 'desc') : '' }}"
                                 data-sort="sphere">{{ __('suppliers.sphere') }}</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header"
-                                data-sort="brand">{{ __('suppliers.brand') }}</th>
                             <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">
-                                {{ __('suppliers.view') }}</th>
+                                {{ __('suppliers.brand') }}</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">
+                                {{ __('suppliers.actions') }}</th>
                         </tr>
                     </thead>
                     <tbody id="suppliers-table-body" class="divide-y divide-[#e2e8f0] dark:divide-[#3E3E3A]">
@@ -511,9 +531,7 @@
                 </table>
             </div>
             <!-- Пагинация -->
-            <div class="pagination mt-4">
-                {{ $suppliers->withQueryString()->links() }}
-            </div>
+            <div class="pagination mt-4" id="suppliers-pagination-table"></div>
         </div>
     </div>
 
@@ -566,8 +584,45 @@
                 </div>
             @endforeach
         </div>
-        <div class="pagination mt-4">
-            {{ $suppliers->withQueryString()->links() }}
+        <div class="pagination mt-4" id="suppliers-pagination-list"></div>
+    </div>
+
+    <div class="mt-3 flex justify-end">
+        <div class="w-full md:w-56 shrink-0">
+            <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('objects.per_page') }}</div>
+            <div class="relative">
+                <button id="suppliers-per-page-button" type="button"
+                    class="w-full flex items-center justify-between px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+                    <span id="suppliers-per-page-label">10</span>
+                    <svg class="w-4 h-4 text-[#64748b] dark:text-[#A1A09A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+
+                <div id="suppliers-per-page-menu"
+                    class="hidden absolute left-0 right-0 mt-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] shadow-lg overflow-hidden z-[60]">
+                    @foreach ([10, 30, 50, 100] as $v)
+                        <button type="button"
+                            class="w-full px-4 py-2 text-sm text-[#0f172a] dark:text-[#EDEDEC] hover:bg-[#f8fafc] dark:hover:bg-[#0a0a0a] transition-colors text-left suppliers-per-page-option"
+                            data-value="{{ $v }}">
+                            <span class="suppliers-per-page-check hidden mr-2 items-center">
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 6L9 17l-5-5" />
+                                </svg>
+                            </span>
+                            {{ $v }}
+                        </button>
+                    @endforeach
+                </div>
+
+                <select id="suppliers-per-page" class="hidden">
+                    <option value="10" selected>10</option>
+                    <option value="30">30</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
         </div>
     </div>
 
@@ -745,9 +800,9 @@
                                     <label class="modal-label">{{ __('suppliers.sphere_activity') }}</label>
                                     <select name="sphere" class="modal-input">
                                         <option value="">{{ __('suppliers.sphere_placeholder') }}</option>
-                                        @foreach ($spheres as $sphere)
-                                            <option value="{{ $sphere->key }}">
-                                                {{ $sphere->name }}
+                                        @foreach ((array) ($sphereOptions ?? []) as $sphere)
+                                            <option value="{{ is_object($sphere) ? ($sphere->key ?? '') : (is_array($sphere) ? ($sphere['key'] ?? '') : '') }}">
+                                                {{ is_object($sphere) ? ($sphere->name ?? '') : (is_array($sphere) ? ($sphere['name'] ?? '') : '') }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -1086,6 +1141,295 @@
             });
         });
     </script>
+    <script>
+        window.allSuppliers = @json($suppliersData ?? []);
+        (function() {
+            const searchForm = document.getElementById('search-form');
+            const tableBody = document.getElementById('suppliers-table-body');
+            const listBody = document.getElementById('suppliers-list-body');
+            const tablePagination = document.getElementById('suppliers-pagination-table');
+            const listPagination = document.getElementById('suppliers-pagination-list');
+            const searchInput = searchForm?.querySelector('input[name="search"]');
+            const typeFilter = searchForm?.querySelector('select[name="type_filter"]');
+            const cityFilter = searchForm?.querySelector('select[name="city_filter"]');
+            const sphereFilter = searchForm?.querySelector('select[name="sphere_filter"]');
+            const brandFilter = searchForm?.querySelector('select[name="brand_filter"]');
+            const perPageSelect = document.getElementById('suppliers-per-page');
+            const perPageButton = document.getElementById('suppliers-per-page-button');
+            const perPageLabel = document.getElementById('suppliers-per-page-label');
+            const perPageMenu = document.getElementById('suppliers-per-page-menu');
+
+            let currentPage = 1;
+            let itemsPerPage = 10;
+            let sortColumn = null;
+            let sortDirection = 'asc';
+
+            if (perPageSelect) {
+                itemsPerPage = parseInt(perPageSelect.value, 10) || 10;
+            }
+            if (perPageLabel) {
+                perPageLabel.textContent = String(itemsPerPage);
+            }
+
+            const setActivePerPage = (value) => {
+                if (!perPageMenu) return;
+                perPageMenu.querySelectorAll('.suppliers-per-page-option').forEach(btn => {
+                    const isActive = parseInt(btn.dataset.value, 10) === value;
+                    btn.classList.toggle('bg-[#fef3c7]', isActive);
+                    btn.classList.toggle('dark:bg-[#1D0002]', isActive);
+                    btn.classList.toggle('text-[#f59e0b]', isActive);
+                    btn.classList.toggle('dark:text-[#f59e0b]', isActive);
+                    const check = btn.querySelector('.suppliers-per-page-check');
+                    if (check) {
+                        check.classList.toggle('hidden', !isActive);
+                        check.classList.toggle('inline-flex', isActive);
+                    }
+                });
+            };
+            setActivePerPage(itemsPerPage);
+
+            if (perPageButton && perPageMenu) {
+                perPageButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    perPageMenu.classList.toggle('hidden');
+                });
+                document.addEventListener('click', function() {
+                    if (!perPageMenu.classList.contains('hidden')) perPageMenu.classList.add('hidden');
+                });
+                perPageMenu.querySelectorAll('.suppliers-per-page-option').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const value = parseInt(this.dataset.value, 10);
+                        if (!value) return;
+                        itemsPerPage = value;
+                        currentPage = 1;
+                        if (perPageSelect) perPageSelect.value = String(value);
+                        if (perPageLabel) perPageLabel.textContent = String(value);
+                        setActivePerPage(value);
+                        perPageMenu.classList.add('hidden');
+                        renderActiveTab();
+                    });
+                });
+            }
+
+            function escapeHtml(value) {
+                if (value === null || value === undefined) return '';
+                return String(value).replace(/[&<>"']/g, (c) => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                }[c]));
+            }
+
+            function filteredSuppliers() {
+                const search = (searchInput?.value || '').trim().toLowerCase();
+                const tf = typeFilter?.value || 'all';
+                const cf = cityFilter?.value || '';
+                const sf = sphereFilter?.value || '';
+                const bf = brandFilter?.value || '';
+
+                let data = (window.allSuppliers || []).filter((s) => {
+                    const hay = [
+                        s.name, s.phone, s.email, s.website, s.city, s.sphere, s.address, s.comment, s.brand_display
+                    ].filter(Boolean).join(' ').toLowerCase();
+                    const bySearch = !search || hay.includes(search);
+                    const byType = tf === 'all' || (tf === 'recommended' && !!s.recommend) || (tf === 'favorites' && !!s.is_favorite);
+                    const byCity = !cf || (s.city || '') === cf;
+                    const bySphere = !sf || (s.sphere || '') === sf;
+                    const brands = Array.isArray(s.brands) ? s.brands : [];
+                    const byBrand = !bf || brands.includes(bf);
+                    return bySearch && byType && byCity && bySphere && byBrand;
+                });
+
+                if (sortColumn) {
+                    const dir = sortDirection === 'asc' ? 1 : -1;
+                    data = data.slice().sort((a, b) => {
+                        const av = String(a?.[sortColumn] ?? '').toLowerCase();
+                        const bv = String(b?.[sortColumn] ?? '').toLowerCase();
+                        if (av === bv) return 0;
+                        return av > bv ? dir : -dir;
+                    });
+                }
+
+                return data;
+            }
+
+            function renderPagination(container, total, onChange) {
+                if (!container) return;
+                if (total <= 1) {
+                    container.innerHTML = '';
+                    return;
+                }
+                let html = `<button type="button" data-page="${currentPage - 1}" ${currentPage <= 1 ? 'disabled' : ''}>{{ __('objects.prev') }}</button>`;
+                for (let i = 1; i <= total; i++) {
+                    html += `<button type="button" data-page="${i}" class="${i === currentPage ? 'active' : ''}" ${i === currentPage ? 'disabled' : ''}>${i}</button>`;
+                }
+                html += `<button type="button" data-page="${currentPage + 1}" ${currentPage >= total ? 'disabled' : ''}>{{ __('objects.next') }}</button>`;
+                container.innerHTML = html;
+                container.querySelectorAll('button[data-page]').forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        if (btn.disabled) return;
+                        const p = parseInt(btn.dataset.page, 10);
+                        if (!Number.isFinite(p)) return;
+                        currentPage = p;
+                        onChange();
+                    });
+                });
+            }
+
+            function renderTable() {
+                if (!tableBody) return;
+                const data = filteredSuppliers();
+                const totalPages = Math.max(1, Math.ceil(data.length / itemsPerPage));
+                if (currentPage > totalPages) currentPage = 1;
+                const paged = data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+                if (!paged.length) {
+                    tableBody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.no_suppliers') }}</td></tr>`;
+                } else {
+                    tableBody.innerHTML = paged.map((s) => `
+                        <tr class="hover:bg-[#f8fafc] dark:hover:bg-[#0a0a0a]" data-supplier-id="${s.id}">
+                            <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.name || '')}</td>
+                            <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.phone || '-')}</td>
+                            <td class="px-4 py-3 text-sm">${s.website ? `<a href="${escapeHtml(s.website)}" target="_blank" class="text-[#f59e0b] hover:underline">${escapeHtml(s.website)}</a>` : '-'}</td>
+                            <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.city || '-')}</td>
+                            <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.sphere || '-')}</td>
+                            <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.brand_display || '-')}</td>
+                            <td class="px-4 py-3 text-sm">
+                                <div class="flex items-center gap-2">
+                                    <button type="button" title="{{ __('suppliers.view') }}" onclick="viewSupplier(${s.id})"
+                                        class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </button>
+                                    <button type="button" title="{{ __('suppliers.edit') }}" onclick="editSupplier(${s.id})"
+                                        class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                    </button>
+                                    <button type="button" title="{{ __('suppliers.delete') }}" onclick="deleteSupplier(${s.id})"
+                                        class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-red-600 dark:hover:text-red-400 transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                    <button type="button" title="{{ __('suppliers.add_order') }}" onclick="addOrderFromSupplier(${s.id})"
+                                        class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 4v16m8-8H4" />
+                                        </svg>
+                                    </button>
+                                    <button type="button" title="${s.is_favorite ? '{{ __('suppliers.remove_favorite') }}' : '{{ __('suppliers.add_favorite') }}'}" onclick="toggleFavorite(${s.id}, this)"
+                                        class="p-1.5 rounded favorite-btn ${s.is_favorite ? 'active' : ''}">
+                                        <svg class="w-4 h-4" fill="${s.is_favorite ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+                renderPagination(tablePagination, totalPages, renderActiveTab);
+            }
+
+            function renderList() {
+                if (!listBody) return;
+                const data = filteredSuppliers();
+                const totalPages = Math.max(1, Math.ceil(data.length / itemsPerPage));
+                if (currentPage > totalPages) currentPage = 1;
+                const paged = data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+                if (!paged.length) {
+                    listBody.innerHTML = `<div class="text-center py-8 text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.no_suppliers') }}</div>`;
+                } else {
+                    listBody.innerHTML = paged.map((s) => `
+                        <div class="bg-white dark:bg-[#161615] border border-[#e2e8f0] dark:border-[#3E3E3A] rounded-lg p-6" data-supplier-id="${s.id}">
+                            <div class="flex items-start justify-between mb-4">
+                                <div>
+                                    <h3 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-2">${escapeHtml(s.name || '')}</h3>
+                                    <div class="space-y-1 text-sm text-[#64748b] dark:text-[#A1A09A]">
+                                        <p>${escapeHtml(s.phone || '-')}</p>
+                                        ${s.website ? `<p><a href="${escapeHtml(s.website)}" target="_blank" class="text-[#f59e0b] hover:underline">${escapeHtml(s.website)}</a></p>` : ''}
+                                        <p>${escapeHtml(s.city || '-')}</p>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="toggleFavorite(${s.id}, this)" class="p-2 rounded favorite-btn ${s.is_favorite ? 'active' : ''}">★</button>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 text-sm">
+                                <div><span class="text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.sphere') }}:</span> <span class="text-[#0f172a] dark:text-[#EDEDEC] font-medium ml-2">${escapeHtml(s.sphere || '-')}</span></div>
+                                <div><span class="text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.brand') }}:</span> <span class="text-[#0f172a] dark:text-[#EDEDEC] font-medium ml-2">${escapeHtml(s.brand_display || '-')}</span></div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="viewSupplier(${s.id})" class="filter-btn">{{ __('suppliers.view') }}</button>
+                                <button type="button" onclick="editSupplier(${s.id})" class="filter-btn">{{ __('suppliers.edit') }}</button>
+                                <button type="button" onclick="deleteSupplier(${s.id})" class="filter-btn text-red-500 hover:text-red-600">{{ __('suppliers.delete') }}</button>
+                                <button type="button" onclick="addOrderFromSupplier(${s.id})" class="filter-btn">{{ __('suppliers.add_order') }}</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                renderPagination(listPagination, totalPages, renderActiveTab);
+            }
+
+            function updateSortHeaders() {
+                document.querySelectorAll('.sortable-header').forEach((h) => {
+                    h.classList.remove('asc', 'desc');
+                    if (h.dataset.sort === sortColumn) h.classList.add(sortDirection);
+                });
+            }
+
+            function renderActiveTab() {
+                const currentTab = document.querySelector('[data-tab].active')?.dataset.tab || 'table';
+                if (currentTab === 'table') renderTable();
+                if (currentTab === 'list') renderList();
+            }
+            window.renderSuppliersActiveTab = renderActiveTab;
+
+            searchForm?.addEventListener('submit', (e) => {
+                e.preventDefault();
+                currentPage = 1;
+                renderActiveTab();
+            });
+            [searchInput, typeFilter, cityFilter, sphereFilter, brandFilter].forEach((el) => {
+                if (!el) return;
+                const evt = el === searchInput ? 'input' : 'change';
+                el.addEventListener(evt, () => {
+                    currentPage = 1;
+                    renderActiveTab();
+                });
+            });
+
+            document.querySelectorAll('.sortable-header[data-sort]').forEach((header) => {
+                header.addEventListener('click', function() {
+                    const col = this.dataset.sort;
+                    if (!col) return;
+                    if (sortColumn === col) {
+                        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        sortColumn = col;
+                        sortDirection = 'asc';
+                    }
+                    currentPage = 1;
+                    updateSortHeaders();
+                    renderActiveTab();
+                });
+            });
+
+            updateSortHeaders();
+            renderActiveTab();
+        })();
+    </script>
     <script src="https://unpkg.com/imask@7.6.1/dist/imask.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
     <script>
@@ -1347,15 +1691,28 @@
             }
         }
 
-        function deleteSupplier(id) {
+        async function deleteSupplier(id) {
             if (!confirm('{{ __('suppliers.delete') }}?')) return;
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '{{ url('suppliers') }}/' + id;
-            form.innerHTML = '<input type="hidden" name="_token" value="' + TOKEN +
-                '"><input type="hidden" name="_method" value="DELETE">';
-            document.body.appendChild(form);
-            form.submit();
+            try {
+                const r = await fetch('{{ url('suppliers') }}/' + id, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': TOKEN,
+                        'Accept': 'application/json'
+                    }
+                });
+                const data = await r.json().catch(() => ({}));
+                if (!r.ok || !data.success) {
+                    projectAlert('error', data.message || '{{ __('suppliers.delete') }}', '', 3000);
+                    return;
+                }
+                window.allSuppliers = (window.allSuppliers || []).filter((s) => parseInt(s.id, 10) !== parseInt(id, 10));
+                window.renderSuppliersActiveTab?.();
+                projectAlert('success', data.message || '{{ __('suppliers.deleted') }}', '', 2200);
+            } catch (e) {
+                console.error(e);
+                projectAlert('error', '{{ __('objects.error') }}', '', 3000);
+            }
         }
 
         async function toggleFavorite(id, btn) {
@@ -1370,11 +1727,14 @@
                     body: JSON.stringify({})
                 });
                 const d = await r.json();
+                const idx = (window.allSuppliers || []).findIndex((s) => parseInt(s.id, 10) === parseInt(id, 10));
+                if (idx >= 0) window.allSuppliers[idx].is_favorite = !!d.is_favorite;
                 if (btn) {
                     btn.classList.toggle('active', !!d.is_favorite);
                     const svg = btn.querySelector('svg');
                     if (svg) svg.setAttribute('fill', d.is_favorite ? 'currentColor' : 'none');
                 }
+                window.renderSuppliersActiveTab?.();
             } catch (e) {
                 console.error(e);
             }
@@ -1425,11 +1785,19 @@
                     },
                     body: fd
                 });
-                if (r.ok && r.redirected) window.location.href = r.url;
-                else if (r.ok) window.location.reload();
-                else {
-                    const err = await r.json();
-                    alert(err.message || 'Error');
+                const data = await r.json().catch(() => ({}));
+                if (r.ok && data?.supplier) {
+                    const s = data.supplier;
+                    const list = window.allSuppliers || [];
+                    const i = list.findIndex((x) => parseInt(x.id, 10) === parseInt(s.id, 10));
+                    if (i >= 0) list[i] = s;
+                    else list.unshift(s);
+                    window.allSuppliers = list;
+                    closeSupplierModal();
+                    window.renderSuppliersActiveTab?.();
+                    projectAlert('success', data.message || '{{ __('suppliers.updated') }}', '', 2400);
+                } else {
+                    alert(data.message || 'Error');
                 }
             } catch (err) {
                 alert('Error');

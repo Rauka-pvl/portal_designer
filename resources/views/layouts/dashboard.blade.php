@@ -387,8 +387,17 @@
                 const wrapper = document.createElement('div');
                 wrapper.className = 'custom-select-wrapper w-full relative';
 
-                // Спрячем исходный select (значение всё равно будет сабмититься, т.к. disabled=false)
-                select.style.display = 'none';
+                // Прячем нативный select визуально, но НЕ через display:none — иначе браузер
+                // не может сфокусировать контроль при проверке required ("not focusable").
+                select.style.position = 'absolute';
+                select.style.width = '1px';
+                select.style.height = '1px';
+                select.style.padding = '0';
+                select.style.margin = '-1px';
+                select.style.overflow = 'hidden';
+                select.style.clip = 'rect(0, 0, 0, 0)';
+                select.style.whiteSpace = 'nowrap';
+                select.style.border = '0';
 
                 const btn = document.createElement('button');
                 btn.type = 'button';

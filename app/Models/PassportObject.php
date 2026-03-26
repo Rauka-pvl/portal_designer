@@ -14,7 +14,9 @@ class PassportObject extends Model
     protected $fillable = [
         'user_id',
         'client_id',
+        'city',
         'address',
+        'apartment',
         'type',
         'status',
         'area',
@@ -25,11 +27,15 @@ class PassportObject extends Model
         'links',
         'file_paths',
         'comment',
+        'latitude',
+        'longitude',
     ];
 
     protected $casts = [
         'links' => 'array',
         'file_paths' => 'array',
+        'latitude' => 'float',
+        'longitude' => 'float',
     ];
 
     public function user()

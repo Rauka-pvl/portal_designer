@@ -80,6 +80,7 @@ return [
     'city' => 'City',
     'sphere' => 'Sphere',
     'brand' => 'Brand',
+    'actions' => 'Actions',
     'view' => 'View',
     'edit' => 'Edit',
     'delete' => 'Delete',

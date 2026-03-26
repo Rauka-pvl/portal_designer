@@ -5,11 +5,18 @@ namespace App\Http\Controllers;
 use App\Models\Client;
 use App\Models\PassportObject as PassportObjectModel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class PassportObject extends Controller
 {
+    private const KZ_CITIES = [
+        'Алматы', 'Астана', 'Шымкент', 'Караганда', 'Актобе', 'Тараз', 'Павлодар', 'Усть-Каменогорск',
+        'Семей', 'Атырау', 'Костанай', 'Кызылорда', 'Уральск', 'Петропавловск', 'Актау', 'Темиртау',
+        'Туркестан', 'Кокшетау', 'Талдыкорган', 'Экибастуз',
+    ];
+
     private function objectForUserOrFail(Request $request, int $objectId): PassportObjectModel
     {
         return PassportObjectModel::where('user_id', $request->user()->id)->findOrFail($objectId);
@@ -108,7 +115,9 @@ class PassportObject extends Controller
         $data = $request->validate([
             'object_id' => ['nullable', 'integer'],
             'client_id' => ['required', 'integer'],
+            'city' => ['required', 'string', Rule::in(self::KZ_CITIES)],
             'address' => ['required', 'string', 'max:255'],
+            'apartment' => ['nullable', 'string', 'max:50', 'required_if:type,apartment'],
             'type' => ['required', 'string', 'max:50'],
             'status' => ['required', Rule::in(['new', 'in_work', 'not_working'])],
             'area' => ['required', 'numeric', 'min:0'],
@@ -121,6 +130,8 @@ class PassportObject extends Controller
             'links.*' => ['nullable', 'string', 'max:2048'],
             'links_text' => ['nullable', 'string', 'max:10000'],
             'comment' => ['nullable', 'string'],
+            'latitude' => ['required', 'numeric', 'between:-90,90'],
+            'longitude' => ['required', 'numeric', 'between:-180,180'],
             'files' => ['nullable'], // хотим принять файлы через multipart
         ]);
 
@@ -140,6 +151,54 @@ class PassportObject extends Controller
         $allowedTypes = ['apartment', 'house', 'commercial', 'other'];
         if (!in_array($data['type'], $allowedTypes, true)) {
             $data['type'] = 'other';
+        }
+
+        $duplicateQuery = PassportObjectModel::query()
+            ->where('user_id', '!=', $userId)
+            ->whereRaw('LOWER(TRIM(city)) = ?', [mb_strtolower(trim((string) $data['city']))])
+            ->whereRaw('LOWER(TRIM(address)) = ?', [mb_strtolower(trim((string) $data['address']))]);
+
+        if ($objectId) {
+            $duplicateQuery->where('id', '!=', (int) $objectId);
+        }
+
+        if ($data['type'] === 'apartment') {
+            $duplicateQuery
+                ->where('type', 'apartment')
+                ->whereRaw('LOWER(TRIM(COALESCE(apartment, ""))) = ?', [mb_strtolower(trim((string) ($data['apartment'] ?? '')))]);
+        }
+
+        if ($duplicateQuery->exists()) {
+            $msg = __('objects.duplicate_other_designer');
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $msg,
+                ], 422);
+            }
+
+            return back()->withInput()->withErrors([
+                'address' => $msg,
+            ]);
+        }
+
+        $coordCheck = $this->verifySubmittedCoordinatesMatchAddress(
+            (float) $data['latitude'],
+            (float) $data['longitude'],
+            (string) $data['city'],
+            (string) $data['address']
+        );
+        if ($coordCheck !== null) {
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $coordCheck,
+                ], 422);
+            }
+
+            return back()->withInput()->withErrors([
+                'address' => $coordCheck,
+            ]);
         }
 
         // ссылки
@@ -180,7 +239,11 @@ class PassportObject extends Controller
         }
 
         $object->client_id = (int) $data['client_id'];
+        $object->city = $data['city'];
         $object->address = $data['address'];
+        $object->apartment = $data['type'] === 'apartment'
+            ? (trim((string) ($data['apartment'] ?? '')) ?: null)
+            : null;
         $object->type = $data['type'];
         $object->status = $data['status'];
         $object->area = $data['area'];
@@ -190,6 +253,8 @@ class PassportObject extends Controller
         $object->repair_budget_per_m2_actual = $data['repair_budget_per_m2_actual'] ?? null;
         $object->links = $links ?: null;
         $object->comment = $data['comment'] ?? null;
+        $object->latitude = $data['latitude'];
+        $object->longitude = $data['longitude'];
 
         $object->save();
 
@@ -271,6 +336,76 @@ class PassportObject extends Controller
         ]);
     }
 
+    /**
+     * Проверка: точка на карте соответствует текстовому адресу (геокодинг OSM Nominatim).
+     * Возвращает текст ошибки или null, если всё ок.
+     */
+    private function verifySubmittedCoordinatesMatchAddress(float $lat, float $lng, string $city, string $address): ?string
+    {
+        $query = trim($city . ', ' . $address . ', Kazakhstan');
+        if ($query === ', Kazakhstan') {
+            return __('objects.address_map_mismatch');
+        }
+
+        $geo = $this->forwardGeocodeFirstKz($query);
+        if ($geo === null) {
+            // Не блокируем сохранение, если внешний геокодер недоступен/ограничил запрос.
+            return null;
+        }
+
+        $meters = $this->haversineMeters($lat, $lng, $geo[0], $geo[1]);
+
+        // Допуск: здание / улица могут давать небольшой разброс относительно центроида геокодера.
+        if ($meters > 3000) {
+            return __('objects.address_map_mismatch');
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array{0: float, 1: float}|null [lat, lon]
+     */
+    private function forwardGeocodeFirstKz(string $query): ?array
+    {
+        try {
+            $response = Http::timeout(12)
+                ->withHeaders([
+                    'User-Agent' => 'PortalDiz/1.0 (passport-objects; contact@example.com)',
+                ])
+                ->get('https://nominatim.openstreetmap.org/search', [
+                    'format' => 'json',
+                    'limit' => 1,
+                    'countrycodes' => 'kz',
+                    'q' => $query,
+                ]);
+
+            if (! $response->successful()) {
+                return null;
+            }
+
+            $rows = $response->json();
+            if (! is_array($rows) || $rows === [] || ! isset($rows[0]['lat'], $rows[0]['lon'])) {
+                return null;
+            }
+
+            return [(float) $rows[0]['lat'], (float) $rows[0]['lon']];
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function haversineMeters(float $lat1, float $lon1, float $lat2, float $lon2): float
+    {
+        $earthRadius = 6371000.0;
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+        $a = sin($dLat / 2) ** 2 + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon / 2) ** 2;
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadius * $c;
+    }
+
     private function payload(PassportObjectModel $object): array
     {
         $clientName = $object->client?->full_name;
@@ -298,7 +433,9 @@ class PassportObject extends Controller
             'id' => $object->id,
             'client_id' => $object->client_id,
             'client_name' => $clientName,
+            'city' => $object->city,
             'address' => $object->address,
+            'apartment' => $object->apartment,
             'type' => $object->type,
             'status' => $object->status,
             'area' => $object->area,
@@ -310,6 +447,8 @@ class PassportObject extends Controller
             'links' => $links,
             'file_paths' => $filePaths,
             'comment' => $object->comment,
+            'latitude' => $object->latitude,
+            'longitude' => $object->longitude,
         ];
     }
 }

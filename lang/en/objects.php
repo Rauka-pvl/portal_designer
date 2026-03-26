@@ -67,6 +67,16 @@ return [
     'all_types' => 'All Types',
     'all_clients' => 'All Clients',
     'all_statuses' => 'All Statuses',
+    'city' => 'City',
+    'select_city' => 'Select city',
+    'apartment_number' => 'Apartment',
+    'apartment_placeholder' => 'E.g. 45',
+    'map_point' => 'Map point',
+    'map_hint' => 'Click on the map to place the object point',
+    'duplicate_other_designer' => 'A project with this address already exists for another designer.',
+    'map_point_required' => 'Place a point on the map or pick an address from suggestions — coordinates are required and must match the address.',
+    'address_map_mismatch' => 'The map point does not match the address. Pick a suggestion or click the map after entering the address.',
+    'address_geocode_failed' => 'Could not verify the address on the map. Refine the address or choose a suggestion.',
 
     // Modal helpers
     'new_object' => 'New Object',

@@ -3,6 +3,8 @@
 @section('title', __('objects.object_passport'))
 
 @push('styles')
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <style>
         .sortable-header {
             cursor: pointer;
@@ -171,6 +173,62 @@
             background: #0a0a0a;
             border-color: #f59e0b;
             color: #f59e0b;
+        }
+
+        .object-map {
+            height: 250px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+
+        .dark .object-map {
+            border-color: #3E3E3A;
+        }
+
+        .address-suggest {
+            position: relative;
+        }
+
+        .address-suggest-list {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            z-index: 80;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+            max-height: 220px;
+            overflow-y: auto;
+        }
+
+        .dark .address-suggest-list {
+            background: #161615;
+            border-color: #3E3E3A;
+        }
+
+        .address-suggest-item {
+            width: 100%;
+            text-align: left;
+            padding: 0.55rem 0.75rem;
+            font-size: 0.875rem;
+            color: #0f172a;
+            border: 0;
+            background: transparent;
+        }
+
+        .address-suggest-item:hover {
+            background: #f8fafc;
+        }
+
+        .dark .address-suggest-item {
+            color: #EDEDEC;
+        }
+
+        .dark .address-suggest-item:hover {
+            background: #0a0a0a;
         }
     </style>
 @endpush
@@ -368,12 +426,21 @@
                 </button>
             </div>
 
-            <form id="object-form" method="POST" action="{{ route('objects.add_object') }}" enctype="multipart/form-data" class="flex flex-col flex-1 min-h-0">
+            <form id="object-form" method="POST" action="{{ route('objects.add_object') }}" enctype="multipart/form-data" class="flex flex-col flex-1 min-h-0" autocomplete="off">
                 @csrf
                 <input type="hidden" name="object_id" id="object_id">
 
                 <div class="flex-1 overflow-y-auto px-6 py-5 space-y-5">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="modal-label modal-label-required">{{ __('objects.city') }}</label>
+                            <select name="city" required id="object_city" class="modal-input">
+                                <option value="">{{ __('objects.select_city') }}</option>
+                                @foreach (['Алматы', 'Астана', 'Шымкент', 'Караганда', 'Актобе', 'Тараз', 'Павлодар', 'Усть-Каменогорск', 'Семей', 'Атырау', 'Костанай', 'Кызылорда', 'Уральск', 'Петропавловск', 'Актау', 'Темиртау', 'Туркестан', 'Кокшетау', 'Талдыкорган', 'Экибастуз'] as $city)
+                                    <option value="{{ $city }}">{{ $city }}</option>
+                                @endforeach
+                            </select>
+                        </div>
                         <div>
                             <label class="modal-label modal-label-required">{{ __('objects.select_client') }}</label>
                             <select name="client_id" required id="object_client_id" class="modal-input">
@@ -394,9 +461,23 @@
                         </div>
                     </div>
 
-                    <div>
+                    <div class="address-suggest">
                         <label class="modal-label modal-label-required">{{ __('objects.address') }}</label>
-                        <input type="text" name="address" id="object_address" required placeholder="{{ __('objects.address_placeholder') }}" class="modal-input">
+                        <input type="text" name="address" id="object_address" required placeholder="{{ __('objects.address_placeholder') }}" class="modal-input" autocomplete="off" autocorrect="off" spellcheck="false">
+                        <div id="object-address-suggest-list" class="address-suggest-list hidden"></div>
+                    </div>
+
+                    <div id="object-apartment-wrap" class="hidden">
+                        <label class="modal-label modal-label-required">{{ __('objects.apartment_number') }}</label>
+                        <input type="text" name="apartment" id="object_apartment" placeholder="{{ __('objects.apartment_placeholder') }}" class="modal-input" autocomplete="off" autocorrect="off" spellcheck="false">
+                    </div>
+
+                    <div>
+                        <label class="modal-label">{{ __('objects.map_point') }}</label>
+                        <p class="modal-helper mb-2">{{ __('objects.map_hint') }}</p>
+                        <div id="object-map" class="object-map"></div>
+                        <input type="hidden" name="latitude" id="object_latitude">
+                        <input type="hidden" name="longitude" id="object_longitude">
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -474,6 +555,8 @@
 @endsection
 
 @section('scripts')
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             let currentPage = 1;
@@ -551,6 +634,165 @@
                 });
             }
 
+            const objectTypeEl = document.getElementById('object_type');
+            const objectApartmentWrapEl = document.getElementById('object-apartment-wrap');
+            const objectApartmentEl = document.getElementById('object_apartment');
+            const objectLatEl = document.getElementById('object_latitude');
+            const objectLngEl = document.getElementById('object_longitude');
+            const objectCityEl = document.getElementById('object_city');
+            const objectAddressEl = document.getElementById('object_address');
+            const objectSuggestListEl = document.getElementById('object-address-suggest-list');
+
+            function syncApartmentVisibility() {
+                const show = objectTypeEl?.value === 'apartment';
+                if (!objectApartmentWrapEl || !objectApartmentEl) return;
+                objectApartmentWrapEl.classList.toggle('hidden', !show);
+                objectApartmentEl.required = !!show;
+                if (!show) objectApartmentEl.value = '';
+            }
+
+            objectTypeEl?.addEventListener('change', syncApartmentVisibility);
+
+            let objectMap = null;
+            let objectMapMarker = null;
+            const defaultMapCenter = [48.0196, 66.9237]; // Kazakhstan center
+            const defaultMapZoom = 5;
+
+            function ensureObjectMap() {
+                if (objectMap || typeof L === 'undefined') return;
+                const mapEl = document.getElementById('object-map');
+                if (!mapEl) return;
+
+                objectMap = L.map(mapEl).setView(defaultMapCenter, defaultMapZoom);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap contributors',
+                    maxZoom: 19,
+                }).addTo(objectMap);
+
+                objectMap.on('click', function(e) {
+                    const lat = e.latlng.lat;
+                    const lng = e.latlng.lng;
+                    if (!objectMapMarker) {
+                        objectMapMarker = L.marker([lat, lng]).addTo(objectMap);
+                    } else {
+                        objectMapMarker.setLatLng([lat, lng]);
+                    }
+                    if (objectLatEl) objectLatEl.value = String(lat);
+                    if (objectLngEl) objectLngEl.value = String(lng);
+                    reverseGeocodeAndFillAddress(lat, lng).catch(() => {});
+                    hideAddressSuggestions();
+                });
+            }
+
+            function updateObjectMapMarker(lat, lng) {
+                if (!objectMap) return;
+                const hasPoint = Number.isFinite(lat) && Number.isFinite(lng);
+                if (hasPoint) {
+                    if (!objectMapMarker) {
+                        objectMapMarker = L.marker([lat, lng]).addTo(objectMap);
+                    } else {
+                        objectMapMarker.setLatLng([lat, lng]);
+                    }
+                    objectMap.setView([lat, lng], 15);
+                } else if (objectMapMarker) {
+                    objectMap.removeLayer(objectMapMarker);
+                    objectMapMarker = null;
+                    objectMap.setView(defaultMapCenter, defaultMapZoom);
+                }
+            }
+
+            function hideAddressSuggestions() {
+                if (!objectSuggestListEl) return;
+                objectSuggestListEl.classList.add('hidden');
+                objectSuggestListEl.innerHTML = '';
+            }
+
+            /** true пока адрес выставлен из карты/подсказки (не ручной ввод). */
+            let addressFieldInternalUpdate = false;
+
+            function setAddressValue(v) {
+                if (!objectAddressEl) return;
+                addressFieldInternalUpdate = true;
+                objectAddressEl.value = String(v || '').slice(0, 255);
+                queueMicrotask(() => {
+                    addressFieldInternalUpdate = false;
+                });
+            }
+
+            function clearMapCoords() {
+                if (objectLatEl) objectLatEl.value = '';
+                if (objectLngEl) objectLngEl.value = '';
+                updateObjectMapMarker(NaN, NaN);
+            }
+
+            function applyAddressPickFromGeocoder(lat, lon, displayName) {
+                ensureObjectMap();
+                setAddressValue(displayName);
+                if (objectLatEl) objectLatEl.value = Number.isFinite(lat) ? String(lat) : '';
+                if (objectLngEl) objectLngEl.value = Number.isFinite(lon) ? String(lon) : '';
+                hideAddressSuggestions();
+                setTimeout(() => {
+                    if (objectMap) objectMap.invalidateSize();
+                    updateObjectMapMarker(lat, lon);
+                }, 100);
+            }
+
+            let lastAddressSuggestionRows = [];
+            let addressSearchTimer = null;
+            let addressSearchAbort = null;
+            let reverseGeocodeAbort = null;
+
+            async function searchAddressSuggestions(query) {
+                if (!objectSuggestListEl) return;
+                if (addressSearchAbort) addressSearchAbort.abort();
+                addressSearchAbort = new AbortController();
+
+                const cityPart = objectCityEl?.value ? `, ${objectCityEl.value}` : '';
+                const q = `${query}${cityPart}, Kazakhstan`;
+                const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=6&countrycodes=kz&q=${encodeURIComponent(q)}`;
+                const r = await fetch(url, {
+                    signal: addressSearchAbort.signal,
+                    headers: { 'Accept': 'application/json' },
+                });
+                const rows = await r.json().catch(() => []);
+                if (!Array.isArray(rows) || !rows.length) {
+                    hideAddressSuggestions();
+                    return;
+                }
+
+                lastAddressSuggestionRows = rows;
+                objectSuggestListEl.innerHTML = rows.map((row, idx) => {
+                    const label = escapeHtml(String(row.display_name || row.name || '').slice(0, 255));
+                    return `<button type="button" class="address-suggest-item" data-idx="${idx}">${label}</button>`;
+                }).join('');
+                objectSuggestListEl.classList.remove('hidden');
+
+                objectSuggestListEl.querySelectorAll('.address-suggest-item').forEach(btn => {
+                    btn.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        const idx = parseInt(this.dataset.idx, 10);
+                        const row = lastAddressSuggestionRows[idx];
+                        if (!row) return;
+                        const lat = parseFloat(row.lat);
+                        const lon = parseFloat(row.lon);
+                        const titleRaw = String(row.display_name || row.name || '').slice(0, 255);
+                        applyAddressPickFromGeocoder(lat, lon, titleRaw);
+                    });
+                });
+            }
+
+            async function reverseGeocodeAndFillAddress(lat, lng) {
+                if (reverseGeocodeAbort) reverseGeocodeAbort.abort();
+                reverseGeocodeAbort = new AbortController();
+                const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${encodeURIComponent(String(lat))}&lon=${encodeURIComponent(String(lng))}&zoom=18&addressdetails=1`;
+                const r = await fetch(url, {
+                    signal: reverseGeocodeAbort.signal,
+                    headers: { 'Accept': 'application/json' },
+                });
+                const data = await r.json().catch(() => ({}));
+                if (data?.display_name) setAddressValue(data.display_name);
+            }
+
             function escapeHtml(value) {
                 if (value === null || value === undefined) return '';
                 return String(value).replace(/[&<>"']/g, (c) => ({
@@ -602,6 +844,10 @@
                 if (!modal) return;
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
+                ensureObjectMap();
+                setTimeout(() => {
+                    if (objectMap) objectMap.invalidateSize();
+                }, 60);
             }
 
             // Inline handlers in HTML need global functions
@@ -683,6 +929,17 @@
                 }).join('') : '';
 
                 content.innerHTML = `
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
+                            <label class="modal-helper block mb-1">{{ __('objects.city') }}</label>
+                            <p class="text-[#0f172a] dark:text-[#EDEDEC] font-medium">${escapeHtml(obj.city || '-')}</p>
+                        </div>
+                        <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
+                            <label class="modal-helper block mb-1">{{ __('objects.apartment_number') }}</label>
+                            <p class="text-[#0f172a] dark:text-[#EDEDEC] font-medium">${escapeHtml(obj.apartment || '-')}</p>
+                        </div>
+                    </div>
+
                     <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
                         <label class="modal-helper block mb-1">{{ __('objects.address') }}</label>
                         <p class="text-[#0f172a] dark:text-[#EDEDEC] font-medium">${escapeHtml(obj.address || '')}</p>
@@ -959,6 +1216,30 @@
                 searchTimer = setTimeout(() => window.refreshObjects?.(), 350);
             };
             searchEl?.addEventListener('input', onSearchInput);
+            objectAddressEl?.addEventListener('input', function() {
+                if (!addressFieldInternalUpdate) {
+                    clearMapCoords();
+                }
+                const q = this.value.trim();
+                clearTimeout(addressSearchTimer);
+                if (q.length < 3) {
+                    hideAddressSuggestions();
+                    return;
+                }
+                addressSearchTimer = setTimeout(() => {
+                    searchAddressSuggestions(q).catch(() => hideAddressSuggestions());
+                }, 300);
+            });
+            objectAddressEl?.addEventListener('blur', () => setTimeout(hideAddressSuggestions, 220));
+            objectCityEl?.addEventListener('change', () => {
+                hideAddressSuggestions();
+                clearMapCoords();
+            });
+            document.addEventListener('click', function(e) {
+                if (!objectSuggestListEl || !objectAddressEl) return;
+                if (e.target === objectAddressEl || objectSuggestListEl.contains(e.target)) return;
+                hideAddressSuggestions();
+            });
             typeFilterEl?.addEventListener('change', () => window.refreshObjects?.());
             clientFilterEl?.addEventListener('change', () => window.refreshObjects?.());
             statusFilterEl?.addEventListener('change', () => window.refreshObjects?.());
@@ -1220,6 +1501,12 @@
                 document.getElementById('object-modal-title').textContent = '{{ __('objects.new_object') }}';
                 document.getElementById('object_id').value = '';
                 document.getElementById('object-form').reset();
+                if (objectCityEl) objectCityEl.value = '';
+                if (objectLatEl) objectLatEl.value = '';
+                if (objectLngEl) objectLngEl.value = '';
+                syncApartmentVisibility();
+                updateObjectMapMarker(NaN, NaN);
+                hideAddressSuggestions();
                 openObjectModal();
             });
 
@@ -1237,7 +1524,9 @@
                 document.getElementById('object-modal-title').textContent = '{{ __('objects.edit_object') }}';
                 document.getElementById('object_id').value = obj.id;
                 document.getElementById('object_client_id').value = obj.client_id;
+                document.getElementById('object_city').value = obj.city || '';
                 document.getElementById('object_address').value = obj.address || '';
+                document.getElementById('object_apartment').value = obj.apartment || '';
                 document.getElementById('object_type').value = obj.type || 'other';
                 document.getElementById('object_status').value = obj.status || 'new';
                 document.getElementById('object_area').value = obj.area || '';
@@ -1249,7 +1538,12 @@
                 const links = Array.isArray(obj.links) ? obj.links : [];
                 document.getElementById('object_links_text').value = links.join('\n');
 
+                if (objectLatEl) objectLatEl.value = obj.latitude ?? '';
+                if (objectLngEl) objectLngEl.value = obj.longitude ?? '';
+                syncApartmentVisibility();
+                hideAddressSuggestions();
                 openObjectModal();
+                updateObjectMapMarker(Number(obj.latitude), Number(obj.longitude));
             };
 
             window.deleteObject = async function(id) {
@@ -1274,6 +1568,12 @@
                 const form = e.target;
                 const action = form.getAttribute('action');
                 const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
+                const lat = parseFloat(objectLatEl?.value || '');
+                const lng = parseFloat(objectLngEl?.value || '');
+                if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+                    projectAlert('error', '{{ __('objects.map_point_required') }}', '', 3500);
+                    return;
+                }
                 try {
                     const r = await fetch(action, {
                         method: 'POST',
@@ -1290,6 +1590,10 @@
                     closeObjectModal();
                     form.reset();
                     document.getElementById('object_id').value = '';
+                    if (objectLatEl) objectLatEl.value = '';
+                    if (objectLngEl) objectLngEl.value = '';
+                    syncApartmentVisibility();
+                    updateObjectMapMarker(NaN, NaN);
                     await window.refreshObjects?.();
                 } catch (err) {
                     console.error(err);
@@ -1298,6 +1602,7 @@
             });
 
             // Initial render
+            syncApartmentVisibility();
             window.renderActiveTab();
         });
     </script>

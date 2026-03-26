@@ -3,6 +3,8 @@
 @section('title', $object->address)
 
 @push('styles')
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <style>
         .panel {
             background: #ffffff;
@@ -68,6 +70,62 @@
             opacity: 0.85;
             cursor: not-allowed;
         }
+
+        .object-map {
+            height: 280px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+
+        .dark .object-map {
+            border-color: #3E3E3A;
+        }
+
+        .address-suggest {
+            position: relative;
+        }
+
+        .address-suggest-list {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            z-index: 60;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+            max-height: 220px;
+            overflow-y: auto;
+        }
+
+        .dark .address-suggest-list {
+            background: #161615;
+            border-color: #3E3E3A;
+        }
+
+        .address-suggest-item {
+            width: 100%;
+            text-align: left;
+            padding: 0.55rem 0.75rem;
+            font-size: 0.875rem;
+            color: #0f172a;
+            border: 0;
+            background: transparent;
+        }
+
+        .address-suggest-item:hover {
+            background: #f8fafc;
+        }
+
+        .dark .address-suggest-item {
+            color: #EDEDEC;
+        }
+
+        .dark .address-suggest-item:hover {
+            background: #0a0a0a;
+        }
     </style>
 @endpush
 
@@ -95,16 +153,33 @@
     </div>
 
     <div class="panel">
-        <form id="object-details-form" method="POST" action="{{ route('objects.add_object') }}" enctype="multipart/form-data">
+        <form id="object-details-form" method="POST" action="{{ route('objects.add_object') }}" enctype="multipart/form-data" autocomplete="off">
             @csrf
             <input type="hidden" name="object_id" value="{{ $object->id }}">
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div class="md:col-span-2">
+                <div>
+                    <div class="field-label mb-2">{{ __('objects.city') }}</div>
+                    <select id="object_city" name="city" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input" disabled required>
+                        @foreach (['Алматы', 'Астана', 'Шымкент', 'Караганда', 'Актобе', 'Тараз', 'Павлодар', 'Усть-Каменогорск', 'Семей', 'Атырау', 'Костанай', 'Кызылорда', 'Уральск', 'Петропавловск', 'Актау', 'Темиртау', 'Туркестан', 'Кокшетау', 'Талдыкорган', 'Экибастуз'] as $city)
+                            <option value="{{ $city }}" @selected($object->city === $city)>{{ $city }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="md:col-span-2 address-suggest">
                     <div class="field-label mb-2">{{ __('objects.address') }}</div>
                     <input id="object_address" name="address" type="text"
                         class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
-                        value="{{ $object->address }}" disabled required>
+                        value="{{ $object->address }}" disabled required autocomplete="off" autocorrect="off" spellcheck="false">
+                    <div id="object-address-suggest-list" class="address-suggest-list hidden"></div>
+                </div>
+
+                <div id="object_apartment_wrap" class="{{ $object->type === 'apartment' ? '' : 'hidden' }}">
+                    <div class="field-label mb-2">{{ __('objects.apartment_number') }}</div>
+                    <input id="object_apartment" name="apartment" type="text"
+                        class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
+                        value="{{ $object->apartment }}" disabled autocomplete="off" autocorrect="off" spellcheck="false">
                 </div>
 
                 <div>
@@ -159,6 +234,14 @@
                     <input id="repair_budget_per_m2_actual" name="repair_budget_per_m2_actual" type="number" step="0.01"
                         class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
                         value="{{ $object->repair_budget_per_m2_actual }}" disabled>
+                </div>
+
+                <div class="md:col-span-2">
+                    <div class="field-label mb-2">{{ __('objects.map_point') }}</div>
+                    <p class="text-xs mb-2 text-[#64748b] dark:text-[#A1A09A]">{{ __('objects.map_hint') }}</p>
+                    <div id="object-map" class="object-map"></div>
+                    <input type="hidden" name="latitude" id="object_latitude" value="{{ $object->latitude }}">
+                    <input type="hidden" name="longitude" id="object_longitude" value="{{ $object->longitude }}">
                 </div>
 
                 <div class="md:col-span-2">
@@ -243,6 +326,8 @@
 @endsection
 
 @section('scripts')
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
         (function() {
             const btnEdit = document.getElementById('btn-edit');
@@ -250,6 +335,158 @@
             const btnCancel = document.getElementById('btn-cancel');
             const form = document.getElementById('object-details-form');
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+            const typeSelect = document.getElementById('object_type');
+            const apartmentWrap = document.getElementById('object_apartment_wrap');
+            const apartmentInput = document.getElementById('object_apartment');
+            const latInput = document.getElementById('object_latitude');
+            const lngInput = document.getElementById('object_longitude');
+            const citySelect = document.getElementById('object_city');
+            const addressInput = document.getElementById('object_address');
+            const suggestList = document.getElementById('object-address-suggest-list');
+
+            const defaultMapCenter = [48.0196, 66.9237];
+            const defaultMapZoom = 5;
+            let map = null;
+            let marker = null;
+
+            function syncApartmentVisibility() {
+                const isApartment = typeSelect?.value === 'apartment';
+                if (!apartmentWrap || !apartmentInput) return;
+                apartmentWrap.classList.toggle('hidden', !isApartment);
+                apartmentInput.required = !!isApartment;
+                if (!isApartment) apartmentInput.value = '';
+            }
+
+            function updateMarker(lat, lng) {
+                if (!map) return;
+                const hasPoint = Number.isFinite(lat) && Number.isFinite(lng);
+                if (hasPoint) {
+                    if (!marker) {
+                        marker = L.marker([lat, lng]).addTo(map);
+                    } else {
+                        marker.setLatLng([lat, lng]);
+                    }
+                    map.setView([lat, lng], 15);
+                } else if (marker) {
+                    map.removeLayer(marker);
+                    marker = null;
+                    map.setView(defaultMapCenter, defaultMapZoom);
+                }
+            }
+
+            function initMap() {
+                if (typeof L === 'undefined') return;
+                map = L.map('object-map').setView(defaultMapCenter, defaultMapZoom);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap contributors',
+                    maxZoom: 19,
+                }).addTo(map);
+
+                updateMarker(Number(latInput?.value), Number(lngInput?.value));
+
+                map.on('click', function(e) {
+                    if (typeSelect?.disabled) return;
+                    const lat = e.latlng.lat;
+                    const lng = e.latlng.lng;
+                    if (latInput) latInput.value = String(lat);
+                    if (lngInput) lngInput.value = String(lng);
+                    updateMarker(lat, lng);
+                    reverseGeocodeAndFillAddress(lat, lng).catch(() => {});
+                    hideAddressSuggestions();
+                });
+            }
+
+            function hideAddressSuggestions() {
+                if (!suggestList) return;
+                suggestList.classList.add('hidden');
+                suggestList.innerHTML = '';
+            }
+
+            let addressFieldInternalUpdate = false;
+
+            function setAddressValue(v) {
+                if (!addressInput) return;
+                addressFieldInternalUpdate = true;
+                addressInput.value = String(v || '').slice(0, 255);
+                queueMicrotask(() => {
+                    addressFieldInternalUpdate = false;
+                });
+            }
+
+            function clearMapCoords() {
+                if (latInput) latInput.value = '';
+                if (lngInput) lngInput.value = '';
+                updateMarker(NaN, NaN);
+            }
+
+            function applyAddressPickFromGeocoder(lat, lon, displayName) {
+                setAddressValue(displayName);
+                if (latInput) latInput.value = Number.isFinite(lat) ? String(lat) : '';
+                if (lngInput) lngInput.value = Number.isFinite(lon) ? String(lon) : '';
+                hideAddressSuggestions();
+                setTimeout(() => {
+                    if (map) map.invalidateSize();
+                    updateMarker(lat, lon);
+                }, 80);
+            }
+
+            let lastAddressSuggestionRows = [];
+            let addressSearchTimer = null;
+            let addressSearchAbort = null;
+            let reverseGeocodeAbort = null;
+
+            async function searchAddressSuggestions(query) {
+                if (!suggestList) return;
+                if (addressSearchAbort) addressSearchAbort.abort();
+                addressSearchAbort = new AbortController();
+                const cityPart = citySelect?.value ? `, ${citySelect.value}` : '';
+                const q = `${query}${cityPart}, Kazakhstan`;
+                const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=6&countrycodes=kz&q=${encodeURIComponent(q)}`;
+                const r = await fetch(url, {
+                    signal: addressSearchAbort.signal,
+                    headers: { 'Accept': 'application/json' },
+                });
+                const rows = await r.json().catch(() => []);
+                if (!Array.isArray(rows) || !rows.length) {
+                    hideAddressSuggestions();
+                    return;
+                }
+
+                lastAddressSuggestionRows = rows;
+                suggestList.innerHTML = rows.map((row, idx) => {
+                    const titleRaw = String(row.display_name || row.name || '').slice(0, 255);
+                    const title = titleRaw.replace(/[&<>"']/g, (c) => ({
+                        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+                    }[c]));
+                    return `<button type="button" class="address-suggest-item" data-idx="${idx}">${title}</button>`;
+                }).join('');
+                suggestList.classList.remove('hidden');
+
+                suggestList.querySelectorAll('.address-suggest-item').forEach(btn => {
+                    btn.addEventListener('mousedown', function(e) {
+                        e.preventDefault();
+                        const idx = parseInt(this.dataset.idx, 10);
+                        const row = lastAddressSuggestionRows[idx];
+                        if (!row) return;
+                        const lat = parseFloat(row.lat);
+                        const lon = parseFloat(row.lon);
+                        const titleRaw = String(row.display_name || row.name || '').slice(0, 255);
+                        applyAddressPickFromGeocoder(lat, lon, titleRaw);
+                    });
+                });
+            }
+
+            async function reverseGeocodeAndFillAddress(lat, lng) {
+                if (reverseGeocodeAbort) reverseGeocodeAbort.abort();
+                reverseGeocodeAbort = new AbortController();
+                const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${encodeURIComponent(String(lat))}&lon=${encodeURIComponent(String(lng))}&zoom=18&addressdetails=1`;
+                const r = await fetch(url, {
+                    signal: reverseGeocodeAbort.signal,
+                    headers: { 'Accept': 'application/json' },
+                });
+                const data = await r.json().catch(() => ({}));
+                if (data?.display_name) setAddressValue(data.display_name);
+            }
 
             window.deleteObjectFileFromShow = async function(objectId, fileIndex) {
                 if (!confirm('{{ __('objects.delete_file_confirm') }}')) return;
@@ -280,6 +517,9 @@
                 if (btnSave) btnSave.classList.toggle('hidden', !enabled);
                 if (btnCancel) btnCancel.classList.toggle('hidden', !enabled);
                 if (btnEdit) btnEdit.classList.toggle('hidden', enabled);
+                if (map) {
+                    setTimeout(() => map.invalidateSize(), 80);
+                }
             };
 
             if (btnEdit) {
@@ -289,6 +529,44 @@
             if (btnCancel) {
                 btnCancel.addEventListener('click', () => location.reload());
             }
+
+            typeSelect?.addEventListener('change', syncApartmentVisibility);
+            addressInput?.addEventListener('input', function() {
+                if (addressInput.disabled) return;
+                if (!addressFieldInternalUpdate) {
+                    clearMapCoords();
+                }
+                const q = this.value.trim();
+                clearTimeout(addressSearchTimer);
+                if (q.length < 3) {
+                    hideAddressSuggestions();
+                    return;
+                }
+                addressSearchTimer = setTimeout(() => {
+                    searchAddressSuggestions(q).catch(() => hideAddressSuggestions());
+                }, 300);
+            });
+            addressInput?.addEventListener('blur', () => setTimeout(hideAddressSuggestions, 220));
+            citySelect?.addEventListener('change', () => {
+                hideAddressSuggestions();
+                clearMapCoords();
+            });
+
+            form?.addEventListener('submit', function(e) {
+                const lat = parseFloat(latInput?.value || '');
+                const lng = parseFloat(lngInput?.value || '');
+                if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+                    e.preventDefault();
+                    alert('{{ __('objects.map_point_required') }}');
+                }
+            });
+            document.addEventListener('click', function(e) {
+                if (!suggestList || !addressInput) return;
+                if (e.target === addressInput || suggestList.contains(e.target)) return;
+                hideAddressSuggestions();
+            });
+            syncApartmentVisibility();
+            initMap();
         })();
     </script>
 @endsection

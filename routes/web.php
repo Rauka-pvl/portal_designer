@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\SupplierController;
+use App\Models\Supplier;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -96,4 +98,35 @@ Route::group(['middleware' => 'auth'], function () {
     Route::get('/objects/{objectId}', [\App\Http\Controllers\PassportObject::class, 'show'])
         ->whereNumber('objectId')
         ->name('objects.show');
+
+    // Suppliers
+    Route::get('/suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
+    Route::post('/suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
+    Route::get('/suppliers/{supplierId}', [SupplierController::class, 'show'])
+        ->whereNumber('supplierId')
+        ->name('suppliers.show');
+    Route::put('/suppliers/{supplierId}', [SupplierController::class, 'update'])
+        ->whereNumber('supplierId')
+        ->name('suppliers.update');
+    Route::delete('/suppliers/{supplierId}', [SupplierController::class, 'destroy'])
+        ->whereNumber('supplierId')
+        ->name('suppliers.destroy');
+    Route::post('/suppliers/{supplierId}/toggle-favorite', [SupplierController::class, 'toggleFavorite'])
+        ->whereNumber('supplierId')
+        ->name('suppliers.toggle_favorite');
+
+    // Temporary supplier orders page route (for "Add Order" button).
+    Route::get('/supplier-orders', function (Request $request) {
+        $suppliers = Supplier::where('user_id', $request->user()->id)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return view('supplier-orders.index', [
+            'projects' => collect(),
+            'suppliers' => $suppliers,
+            'orders' => [],
+            'selectedProjectId' => $request->query('project_id'),
+            'selectedSupplierId' => $request->query('supplier_id'),
+        ]);
+    })->name('supplier-orders.index');
 });
