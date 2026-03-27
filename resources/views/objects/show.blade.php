@@ -175,7 +175,21 @@
                     <div id="object-address-suggest-list" class="address-suggest-list hidden"></div>
                 </div>
 
-                <div id="object_apartment_wrap" class="{{ $object->type === 'apartment' ? '' : 'hidden' }}">
+                <div id="object_floor_wrap" class="object-apartment-field {{ $object->type === 'apartment' ? '' : 'hidden' }}">
+                    <div class="field-label mb-2">{{ __('objects.apartment_floor') }}</div>
+                    <input id="object_apartment_floor" name="apartment_floor" type="text"
+                        class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
+                        value="{{ $object->apartment_floor }}" disabled autocomplete="off" autocorrect="off" spellcheck="false">
+                </div>
+
+                <div id="object_entrance_wrap" class="object-apartment-field {{ $object->type === 'apartment' ? '' : 'hidden' }}">
+                    <div class="field-label mb-2">{{ __('objects.apartment_entrance') }}</div>
+                    <input id="object_apartment_entrance" name="apartment_entrance" type="text"
+                        class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
+                        value="{{ $object->apartment_entrance }}" disabled autocomplete="off" autocorrect="off" spellcheck="false">
+                </div>
+
+                <div id="object_apartment_wrap" class="object-apartment-field {{ $object->type === 'apartment' ? '' : 'hidden' }}">
                     <div class="field-label mb-2">{{ __('objects.apartment_number') }}</div>
                     <input id="object_apartment" name="apartment" type="text"
                         class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
@@ -336,8 +350,10 @@
             const form = document.getElementById('object-details-form');
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
             const typeSelect = document.getElementById('object_type');
-            const apartmentWrap = document.getElementById('object_apartment_wrap');
+            const apartmentFields = document.querySelectorAll('.object-apartment-field');
             const apartmentInput = document.getElementById('object_apartment');
+            const floorInput = document.getElementById('object_apartment_floor');
+            const entranceInput = document.getElementById('object_apartment_entrance');
             const latInput = document.getElementById('object_latitude');
             const lngInput = document.getElementById('object_longitude');
             const citySelect = document.getElementById('object_city');
@@ -351,10 +367,19 @@
 
             function syncApartmentVisibility() {
                 const isApartment = typeSelect?.value === 'apartment';
-                if (!apartmentWrap || !apartmentInput) return;
-                apartmentWrap.classList.toggle('hidden', !isApartment);
-                apartmentInput.required = !!isApartment;
-                if (!isApartment) apartmentInput.value = '';
+                apartmentFields.forEach(el => el.classList.toggle('hidden', !isApartment));
+                if (apartmentInput) {
+                    apartmentInput.required = !!isApartment;
+                    if (!isApartment) apartmentInput.value = '';
+                }
+                if (floorInput) {
+                    floorInput.required = !!isApartment;
+                    if (!isApartment) floorInput.value = '';
+                }
+                if (entranceInput) {
+                    entranceInput.required = !!isApartment;
+                    if (!isApartment) entranceInput.value = '';
+                }
             }
 
             function updateMarker(lat, lng) {

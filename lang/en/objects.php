@@ -70,6 +70,11 @@ return [
     'city' => 'City',
     'select_city' => 'Select city',
     'apartment_number' => 'Apartment',
+    'apartment_floor' => 'Floor',
+    'apartment_entrance' => 'Entrance',
+    'short_apt' => 'apt.',
+    'short_entrance' => 'ent.',
+    'short_floor' => 'fl.',
     'apartment_placeholder' => 'E.g. 45',
     'map_point' => 'Map point',
     'map_hint' => 'Click on the map to place the object point',
@@ -104,4 +109,5 @@ return [
     'other' => 'Other',
     'modal_view_subtitle' => 'View real estate object data',
     'modal_project_subtitle' => 'Add a new project to the object',
+
 ];

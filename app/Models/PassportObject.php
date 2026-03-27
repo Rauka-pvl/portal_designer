@@ -17,6 +17,8 @@ class PassportObject extends Model
         'city',
         'address',
         'apartment',
+        'apartment_floor',
+        'apartment_entrance',
         'type',
         'status',
         'area',

@@ -118,6 +118,8 @@ class PassportObject extends Controller
             'city' => ['required', 'string', Rule::in(self::KZ_CITIES)],
             'address' => ['required', 'string', 'max:255'],
             'apartment' => ['nullable', 'string', 'max:50', 'required_if:type,apartment'],
+            'apartment_floor' => ['nullable', 'string', 'max:50', 'required_if:type,apartment'],
+            'apartment_entrance' => ['nullable', 'string', 'max:50', 'required_if:type,apartment'],
             'type' => ['required', 'string', 'max:50'],
             'status' => ['required', Rule::in(['new', 'in_work', 'not_working'])],
             'area' => ['required', 'numeric', 'min:0'],
@@ -259,8 +261,15 @@ class PassportObject extends Controller
         $object->client_id = (int) $data['client_id'];
         $object->city = $data['city'];
         $object->address = $data['address'];
-        $object->apartment = $data['type'] === 'apartment'
+        $isApartment = $data['type'] === 'apartment';
+        $object->apartment = $isApartment
             ? (trim((string) ($data['apartment'] ?? '')) ?: null)
+            : null;
+        $object->apartment_floor = $isApartment
+            ? (trim((string) ($data['apartment_floor'] ?? '')) ?: null)
+            : null;
+        $object->apartment_entrance = $isApartment
+            ? (trim((string) ($data['apartment_entrance'] ?? '')) ?: null)
             : null;
         $object->type = $data['type'];
         $object->status = $data['status'];
@@ -454,6 +463,8 @@ class PassportObject extends Controller
             'city' => $object->city,
             'address' => $object->address,
             'apartment' => $object->apartment,
+            'apartment_floor' => $object->apartment_floor,
+            'apartment_entrance' => $object->apartment_entrance,
             'type' => $object->type,
             'status' => $object->status,
             'area' => $object->area,

@@ -329,7 +329,8 @@
                     <button id="objects-per-page-button" type="button"
                         class="w-full flex items-center justify-between px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
                         <span id="objects-per-page-label">10</span>
-                        <svg class="w-4 h-4 text-[#64748b] dark:text-[#A1A09A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4 text-[#64748b] dark:text-[#A1A09A]" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                         </svg>
                     </button>
@@ -341,8 +342,8 @@
                                 class="w-full px-4 py-2 text-sm text-[#0f172a] dark:text-[#EDEDEC] hover:bg-[#f8fafc] dark:hover:bg-[#0a0a0a] transition-colors text-left objects-per-page-option"
                                 data-value="{{ $v }}">
                                 <span class="objects-per-page-check hidden mr-2 items-center">
-                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M20 6L9 17l-5-5" />
                                     </svg>
                                 </span>
@@ -378,7 +379,8 @@
                 <div id="funnel-in-work" class="funnel-cards"></div>
             </div>
             <div class="funnel-column" data-status="not_working" ondrop="drop(event)" ondragover="allowDrop(event)">
-                <h3 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-4">{{ __('objects.not_working') }}</h3>
+                <h3 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-4">{{ __('objects.not_working') }}
+                </h3>
                 <div id="funnel-not-working" class="funnel-cards"></div>
             </div>
         </div>
@@ -390,7 +392,8 @@
         <div class="absolute right-0 top-0 h-full w-full max-w-lg bg-white dark:bg-[#161615] border-l border-[#e2e8f0] dark:border-[#3E3E3A] shadow-2xl transform transition-transform duration-200 translate-x-full modal-content"
             onclick="event.stopPropagation()">
             <div class="flex flex-col h-full">
-                <div class="flex items-center justify-between px-6 py-5 border-b border-[#e2e8f0] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a]">
+                <div
+                    class="flex items-center justify-between px-6 py-5 border-b border-[#e2e8f0] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a]">
                     <div>
                         <h2 class="text-xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]">{{ __('objects.view') }}</h2>
                         <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-0.5">{{ __('objects.view') }}</p>
@@ -398,7 +401,8 @@
                     <button onclick="closeViewObjectModal()"
                         class="p-2 rounded-lg text-[#64748b] dark:text-[#A1A09A] hover:bg-[#e2e8f0] dark:hover:bg-[#3E3E3A] hover:text-[#0f172a] dark:hover:text-[#EDEDEC] transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
@@ -413,10 +417,13 @@
         onmousedown="if(event.target === this) closeObjectModal()">
         <div class="bg-white dark:bg-[#161615] rounded-xl max-w-2xl w-full mx-auto max-h-[90vh] overflow-hidden flex flex-col modal-content border border-[#e2e8f0] dark:border-[#3E3E3A]"
             onclick="event.stopPropagation()">
-            <div class="flex items-start justify-between px-6 pt-6 pb-4 border-b border-[#e2e8f0] dark:border-[#3E3E3A] shrink-0">
+            <div
+                class="flex items-start justify-between px-6 pt-6 pb-4 border-b border-[#e2e8f0] dark:border-[#3E3E3A] shrink-0">
                 <div>
-                    <h2 class="text-xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]" id="object-modal-title">{{ __('objects.new_object') }}</h2>
-                    <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-1">{{ __('objects.modal_object_subtitle') }}</p>
+                    <h2 class="text-xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]" id="object-modal-title">
+                        {{ __('objects.new_object') }}</h2>
+                    <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-1">{{ __('objects.modal_object_subtitle') }}
+                    </p>
                 </div>
                 <button type="button" onclick="closeObjectModal()"
                     class="p-2 rounded-lg text-[#64748b] dark:text-[#A1A09A] hover:bg-[#e2e8f0] dark:hover:bg-[#3E3E3A] hover:text-[#0f172a] dark:hover:text-[#EDEDEC] transition-colors">
@@ -426,7 +433,8 @@
                 </button>
             </div>
 
-            <form id="object-form" method="POST" action="{{ route('objects.add_object') }}" enctype="multipart/form-data" class="flex flex-col flex-1 min-h-0" autocomplete="off">
+            <form id="object-form" method="POST" action="{{ route('objects.add_object') }}"
+                enctype="multipart/form-data" class="flex flex-col flex-1 min-h-0" autocomplete="off">
                 @csrf
                 <input type="hidden" name="object_id" id="object_id">
 
@@ -463,13 +471,31 @@
 
                     <div class="address-suggest">
                         <label class="modal-label modal-label-required">{{ __('objects.address') }}</label>
-                        <input type="text" name="address" id="object_address" required placeholder="{{ __('objects.address_placeholder') }}" class="modal-input" autocomplete="off" autocorrect="off" spellcheck="false">
+                        <input type="text" name="address" id="object_address" required
+                            placeholder="{{ __('objects.address_placeholder') }}" class="modal-input" autocomplete="off"
+                            autocorrect="off" spellcheck="false">
                         <div id="object-address-suggest-list" class="address-suggest-list hidden"></div>
                     </div>
 
-                    <div id="object-apartment-wrap" class="hidden">
+                    <div id="object-floor-wrap" class="object-apartment-field hidden">
+                        <label class="modal-label modal-label-required">{{ __('objects.apartment_floor') }}</label>
+                        <input type="text" name="apartment_floor" id="object_apartment_floor"
+                            placeholder="{{ __('objects.apartment_floor') }}" class="modal-input" autocomplete="off"
+                            autocorrect="off" spellcheck="false">
+                    </div>
+
+                    <div id="object-entrance-wrap" class="object-apartment-field hidden">
+                        <label class="modal-label modal-label-required">{{ __('objects.apartment_entrance') }}</label>
+                        <input type="text" name="apartment_entrance" id="object_apartment_entrance"
+                            placeholder="{{ __('objects.apartment_entrance') }}" class="modal-input" autocomplete="off"
+                            autocorrect="off" spellcheck="false">
+                    </div>
+
+                    <div id="object-apartment-wrap" class="object-apartment-field hidden">
                         <label class="modal-label modal-label-required">{{ __('objects.apartment_number') }}</label>
-                        <input type="text" name="apartment" id="object_apartment" placeholder="{{ __('objects.apartment_placeholder') }}" class="modal-input" autocomplete="off" autocorrect="off" spellcheck="false">
+                        <input type="text" name="apartment" id="object_apartment"
+                            placeholder="{{ __('objects.apartment_placeholder') }}" class="modal-input"
+                            autocomplete="off" autocorrect="off" spellcheck="false">
                     </div>
 
                     <div>
@@ -490,8 +516,10 @@
                             </select>
                         </div>
                         <div>
-                            <label class="modal-label modal-label-required">{{ __('objects.area') }} ({{ __('objects.area_m2') }})</label>
-                            <input type="number" step="0.01" name="area" id="object_area" required placeholder="{{ __('objects.area_placeholder') }}" class="modal-input">
+                            <label class="modal-label modal-label-required">{{ __('objects.area') }}
+                                ({{ __('objects.area_m2') }})</label>
+                            <input type="number" step="0.01" name="area" id="object_area" required
+                                placeholder="{{ __('objects.area_placeholder') }}" class="modal-input">
                         </div>
                     </div>
 
@@ -499,10 +527,14 @@
                         <h3 class="modal-section-title">{{ __('objects.repair_budget') }}</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
                             <div>
-                                <input type="number" step="0.01" name="repair_budget_planned" id="repair_budget_planned" placeholder="{{ __('objects.planned') }}" class="modal-input">
+                                <input type="number" step="0.01" name="repair_budget_planned"
+                                    id="repair_budget_planned" placeholder="{{ __('objects.planned') }}"
+                                    class="modal-input">
                             </div>
                             <div>
-                                <input type="number" step="0.01" name="repair_budget_actual" id="repair_budget_actual" placeholder="{{ __('objects.actual') }}" class="modal-input">
+                                <input type="number" step="0.01" name="repair_budget_actual"
+                                    id="repair_budget_actual" placeholder="{{ __('objects.actual') }}"
+                                    class="modal-input">
                             </div>
                         </div>
                     </div>
@@ -511,12 +543,14 @@
                         <h3 class="modal-section-title">{{ __('objects.repair_budget_per_m2') }}</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
                             <div>
-                                <input type="number" step="0.01" name="repair_budget_per_m2_planned" id="repair_budget_per_m2_planned"
-                                    placeholder="{{ __('objects.planned') }}" class="modal-input">
+                                <input type="number" step="0.01" name="repair_budget_per_m2_planned"
+                                    id="repair_budget_per_m2_planned" placeholder="{{ __('objects.planned') }}"
+                                    class="modal-input">
                             </div>
                             <div>
-                                <input type="number" step="0.01" name="repair_budget_per_m2_actual" id="repair_budget_per_m2_actual"
-                                    placeholder="{{ __('objects.actual') }}" class="modal-input">
+                                <input type="number" step="0.01" name="repair_budget_per_m2_actual"
+                                    id="repair_budget_per_m2_actual" placeholder="{{ __('objects.actual') }}"
+                                    class="modal-input">
                             </div>
                         </div>
                     </div>
@@ -524,7 +558,8 @@
                     <div>
                         <label class="modal-label">{{ __('objects.links') }}</label>
                         <p class="modal-helper">{{ __('objects.links_subtitle') }}</p>
-                        <textarea name="links_text" id="object_links_text" rows="3" placeholder="{{ __('objects.paste_link') }}" class="modal-input resize-none"></textarea>
+                        <textarea name="links_text" id="object_links_text" rows="3" placeholder="{{ __('objects.paste_link') }}"
+                            class="modal-input resize-none"></textarea>
                     </div>
 
                     <div>
@@ -535,7 +570,8 @@
 
                     <div>
                         <label class="modal-label">{{ __('objects.comment') }}</label>
-                        <textarea name="comment" id="object_comment" rows="3" placeholder="{{ __('objects.comment') }}" class="modal-input resize-none"></textarea>
+                        <textarea name="comment" id="object_comment" rows="3" placeholder="{{ __('objects.comment') }}"
+                            class="modal-input resize-none"></textarea>
                     </div>
                 </div>
 
@@ -615,7 +651,8 @@
                     toggleMenu();
                 });
                 document.addEventListener('click', function() {
-                    if (perPageMenu && !perPageMenu.classList.contains('hidden')) perPageMenu.classList.add('hidden');
+                    if (perPageMenu && !perPageMenu.classList.contains('hidden')) perPageMenu.classList.add(
+                        'hidden');
                 });
 
                 perPageMenu.querySelectorAll('.objects-per-page-option').forEach(btn => {
@@ -635,8 +672,10 @@
             }
 
             const objectTypeEl = document.getElementById('object_type');
-            const objectApartmentWrapEl = document.getElementById('object-apartment-wrap');
+            const objectApartmentFields = document.querySelectorAll('.object-apartment-field');
             const objectApartmentEl = document.getElementById('object_apartment');
+            const objectFloorEl = document.getElementById('object_apartment_floor');
+            const objectEntranceEl = document.getElementById('object_apartment_entrance');
             const objectLatEl = document.getElementById('object_latitude');
             const objectLngEl = document.getElementById('object_longitude');
             const objectCityEl = document.getElementById('object_city');
@@ -645,10 +684,19 @@
 
             function syncApartmentVisibility() {
                 const show = objectTypeEl?.value === 'apartment';
-                if (!objectApartmentWrapEl || !objectApartmentEl) return;
-                objectApartmentWrapEl.classList.toggle('hidden', !show);
-                objectApartmentEl.required = !!show;
-                if (!show) objectApartmentEl.value = '';
+                objectApartmentFields.forEach(el => el.classList.toggle('hidden', !show));
+                if (objectApartmentEl) {
+                    objectApartmentEl.required = !!show;
+                    if (!show) objectApartmentEl.value = '';
+                }
+                if (objectFloorEl) {
+                    objectFloorEl.required = !!show;
+                    if (!show) objectFloorEl.value = '';
+                }
+                if (objectEntranceEl) {
+                    objectEntranceEl.required = !!show;
+                    if (!show) objectEntranceEl.value = '';
+                }
             }
 
             objectTypeEl?.addEventListener('change', syncApartmentVisibility);
@@ -749,10 +797,13 @@
 
                 const cityPart = objectCityEl?.value ? `, ${objectCityEl.value}` : '';
                 const q = `${query}${cityPart}, Kazakhstan`;
-                const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=6&countrycodes=kz&q=${encodeURIComponent(q)}`;
+                const url =
+                    `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=6&countrycodes=kz&q=${encodeURIComponent(q)}`;
                 const r = await fetch(url, {
                     signal: addressSearchAbort.signal,
-                    headers: { 'Accept': 'application/json' },
+                    headers: {
+                        'Accept': 'application/json'
+                    },
                 });
                 const rows = await r.json().catch(() => []);
                 if (!Array.isArray(rows) || !rows.length) {
@@ -775,7 +826,8 @@
                         if (!row) return;
                         const lat = parseFloat(row.lat);
                         const lon = parseFloat(row.lon);
-                        const titleRaw = String(row.display_name || row.name || '').slice(0, 255);
+                        const titleRaw = String(row.display_name || row.name || '').slice(0,
+                            255);
                         applyAddressPickFromGeocoder(lat, lon, titleRaw);
                     });
                 });
@@ -784,13 +836,29 @@
             async function reverseGeocodeAndFillAddress(lat, lng) {
                 if (reverseGeocodeAbort) reverseGeocodeAbort.abort();
                 reverseGeocodeAbort = new AbortController();
-                const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${encodeURIComponent(String(lat))}&lon=${encodeURIComponent(String(lng))}&zoom=18&addressdetails=1`;
+                const url =
+                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${encodeURIComponent(String(lat))}&lon=${encodeURIComponent(String(lng))}&zoom=18&addressdetails=1`;
                 const r = await fetch(url, {
                     signal: reverseGeocodeAbort.signal,
-                    headers: { 'Accept': 'application/json' },
+                    headers: {
+                        'Accept': 'application/json'
+                    },
                 });
                 const data = await r.json().catch(() => ({}));
                 if (data?.display_name) setAddressValue(data.display_name);
+            }
+
+            const _shortEntrance = '{{ __('objects.short_entrance') }}';
+            const _shortApt = '{{ __('objects.short_apt') }}';
+            const _shortFloor = '{{ __('objects.short_floor') }}';
+
+            function buildFullAddress(obj) {
+                let addr = obj.address || '';
+                if (obj.apartment_entrance) addr += `, ${_shortEntrance} ${obj.apartment_entrance}`;
+                if (obj.apartment) addr += `, ${_shortApt} ${obj.apartment}`;
+                if (obj.apartment_floor) addr += `, ${_shortFloor} ${obj.apartment_floor}`;
+                if (obj.city) addr += `, ${obj.city}`;
+                return addr;
             }
 
             function escapeHtml(value) {
@@ -801,7 +869,7 @@
                     '>': '&gt;',
                     '"': '&quot;',
                     "'": '&#39;'
-                }[c]));
+                } [c]));
             }
 
             function formatTenge(amount) {
@@ -887,8 +955,12 @@
 
                 const filesHtml = filePaths.length ? filePaths.map((p, idx) => {
                     const safeName = String(p.split('/').pop() || '').replace(/[&<>"']/g, (c) => ({
-                        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-                    }[c]));
+                        '&': '&amp;',
+                        '<': '&lt;',
+                        '>': '&gt;',
+                        '"': '&quot;',
+                        "'": '&#39;'
+                    } [c]));
                     const url = `/storage/${p}`;
                     return `
                         <div class="flex items-center justify-between gap-3 flex-wrap">
@@ -929,20 +1001,9 @@
                 }).join('') : '';
 
                 content.innerHTML = `
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
-                            <label class="modal-helper block mb-1">{{ __('objects.city') }}</label>
-                            <p class="text-[#0f172a] dark:text-[#EDEDEC] font-medium">${escapeHtml(obj.city || '-')}</p>
-                        </div>
-                        <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
-                            <label class="modal-helper block mb-1">{{ __('objects.apartment_number') }}</label>
-                            <p class="text-[#0f172a] dark:text-[#EDEDEC] font-medium">${escapeHtml(obj.apartment || '-')}</p>
-                        </div>
-                    </div>
-
                     <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
                         <label class="modal-helper block mb-1">{{ __('objects.address') }}</label>
-                        <p class="text-[#0f172a] dark:text-[#EDEDEC] font-medium">${escapeHtml(obj.address || '')}</p>
+                        <p class="text-[#0f172a] dark:text-[#EDEDEC] font-medium">${escapeHtml(buildFullAddress(obj))}</p>
                     </div>
 
                     <div class="grid grid-cols-2 gap-4">
@@ -998,27 +1059,27 @@
                     </div>
 
                     ${obj.links && obj.links.length ? `
-                        <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
-                            <label class="modal-helper block mb-2">{{ __('objects.links') }}</label>
-                            <div class="space-y-1">
-                                ${obj.links.map(l => `<a href="${escapeHtml(l)}" target="_blank" class="block text-[#f59e0b] hover:underline text-sm truncate">${escapeHtml(l)}</a>`).join('')}
-                            </div>
-                        </div>
-                    ` : ''}
+                                <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
+                                    <label class="modal-helper block mb-2">{{ __('objects.links') }}</label>
+                                    <div class="space-y-1">
+                                        ${obj.links.map(l => `<a href="${escapeHtml(l)}" target="_blank" class="block text-[#f59e0b] hover:underline text-sm truncate">${escapeHtml(l)}</a>`).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
 
                     ${obj.comment ? `
-                        <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
-                            <label class="modal-helper block mb-1">{{ __('objects.comment') }}</label>
-                            <p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(obj.comment)}</p>
-                        </div>
-                    ` : ''}
+                                <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
+                                    <label class="modal-helper block mb-1">{{ __('objects.comment') }}</label>
+                                    <p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(obj.comment)}</p>
+                                </div>
+                            ` : ''}
 
                     ${filesHtml ? `
-                        <div class="pt-2">
-                            <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-2">{{ __('objects.files') }}</label>
-                            <div class="space-y-2">${filesHtml}</div>
-                        </div>
-                    ` : ''}
+                                <div class="pt-2">
+                                    <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-2">{{ __('objects.files') }}</label>
+                                    <div class="space-y-2">${filesHtml}</div>
+                                </div>
+                            ` : ''}
 
                     <div class="pt-3">
                         <a href="/objects/${obj.id}"
@@ -1047,7 +1108,10 @@
                 try {
                     const r = await fetch(`/objects/${objectId}/files/${fileIndex}`, {
                         method: 'DELETE',
-                        headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' }
+                        headers: {
+                            'X-CSRF-TOKEN': token,
+                            'Accept': 'application/json'
+                        }
                     });
                     const data = await r.json().catch(() => ({}));
                     if (!r.ok || !data.success) {
@@ -1075,7 +1139,9 @@
                             'X-CSRF-TOKEN': token,
                             'Accept': 'application/json',
                         },
-                        body: JSON.stringify({ status: newStatus })
+                        body: JSON.stringify({
+                            status: newStatus
+                        })
                     });
                     const data = await r.json().catch(() => ({}));
                     if (r.ok && data.success) {
@@ -1199,9 +1265,11 @@
             // Tabs
             document.querySelectorAll('[data-tab]').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    document.querySelectorAll('[data-tab]').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('[data-tab]').forEach(b => b.classList.remove(
+                        'active'));
                     this.classList.add('active');
-                    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.add(
+                        'hidden'));
 
                     const tabView = document.getElementById(this.dataset.tab + '-view');
                     if (tabView) tabView.classList.remove('hidden');
@@ -1268,10 +1336,14 @@
                 const url = params.toString() ? `/objects/search?${params.toString()}` : `/objects/search`;
                 const r = await fetch(url, {
                     method: 'GET',
-                    headers: { 'Accept': 'application/json' }
+                    headers: {
+                        'Accept': 'application/json'
+                    }
                 });
 
-                const payload = await r.json().catch(() => ({ data: [] }));
+                const payload = await r.json().catch(() => ({
+                    data: []
+                }));
                 window.allObjects = payload.data || [];
                 allObjects = window.allObjects;
 
@@ -1281,7 +1353,8 @@
             window.renderTable = function() {
                 if (!tbody) return;
                 if (!allObjects.length) {
-                    tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-6 text-center text-[#64748b] dark:text-[#A1A09A]">{{ __('objects.no_objects') }}</td></tr>`;
+                    tbody.innerHTML =
+                        `<tr><td colspan="9" class="px-4 py-6 text-center text-[#64748b] dark:text-[#A1A09A]">{{ __('objects.no_objects') }}</td></tr>`;
                     document.getElementById('objects-pagination-table').innerHTML = '';
                     return;
                 }
@@ -1293,9 +1366,12 @@
 
                 tbody.innerHTML = paged.map(obj => {
                     const dataJson = objectToDataAttr(obj);
+                    const full_address = buildFullAddress(obj);
+
+
                     return `
                         <tr class="hover:bg-[#f8fafc] dark:hover:bg-[#0a0a0a]" data-object-id="${obj.id}" data-object='${dataJson}'>
-                            <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(obj.address || '')}</td>
+                            <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(full_address)}</td>
                             <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(typeLabel(obj.type || 'other'))}</td>
                             <td class="px-4 py-3 text-sm">${renderClientStatusBadge(obj)}</td>
                             <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(obj.client_name || '')}</td>
@@ -1336,7 +1412,8 @@
             window.renderList = function() {
                 if (!listBody) return;
                 if (!allObjects.length) {
-                    listBody.innerHTML = `<div class="text-center py-8 text-[#64748b] dark:text-[#A1A09A]">{{ __('objects.no_objects') }}</div>`;
+                    listBody.innerHTML =
+                        `<div class="text-center py-8 text-[#64748b] dark:text-[#A1A09A]">{{ __('objects.no_objects') }}</div>`;
                     document.getElementById('objects-pagination-list').innerHTML = '';
                     return;
                 }
@@ -1352,7 +1429,7 @@
                         <div class="bg-white dark:bg-[#161615] border border-[#e2e8f0] dark:border-[#3E3E3A] rounded-lg p-6" data-object-id="${obj.id}" data-object='${dataJson}'>
                             <div class="flex items-start justify-between mb-4">
                                 <div>
-                                    <h3 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-2">${escapeHtml(obj.address || '')}</h3>
+                                    <h3 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-2">${escapeHtml(buildFullAddress(obj))}</h3>
                                     <div class="space-y-1 text-sm text-[#64748b] dark:text-[#A1A09A]">
                                         <p>${escapeHtml(obj.client_name || '')}</p>
                                         <p>${escapeHtml(typeLabel(obj.type || 'other'))}</p>
@@ -1415,7 +1492,11 @@
                 funnelInWork.innerHTML = '';
                 funnelNotWorking.innerHTML = '';
 
-                const grouped = { new: [], in_work: [], not_working: [] };
+                const grouped = {
+                    new: [],
+                    in_work: [],
+                    not_working: []
+                };
                 allObjects.forEach(obj => {
                     if (grouped[obj.status]) grouped[obj.status].push(obj);
                 });
@@ -1429,7 +1510,7 @@
                         <div class="funnel-card" draggable="true"
                              ondragstart="if(event.target.closest('button')) { event.preventDefault(); return false; } drag(event)"
                              data-object-id="${obj.id}" data-object='${objectToDataAttr(obj)}'>
-                            <h4 class="font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-1">${escapeHtml(obj.address || '')}</h4>
+                            <h4 class="font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-1">${escapeHtml(buildFullAddress(obj))}</h4>
                             <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">${escapeHtml(obj.client_name || '')}</p>
                             <div class="flex items-center gap-2 mt-2" onclick="event.stopPropagation()">
                                 <button type="button" onclick="event.stopPropagation(); window.viewObject(${obj.id})"
@@ -1498,7 +1579,8 @@
 
             // Form handlers
             document.getElementById('add-object-btn').addEventListener('click', function() {
-                document.getElementById('object-modal-title').textContent = '{{ __('objects.new_object') }}';
+                document.getElementById('object-modal-title').textContent =
+                    '{{ __('objects.new_object') }}';
                 document.getElementById('object_id').value = '';
                 document.getElementById('object-form').reset();
                 if (objectCityEl) objectCityEl.value = '';
@@ -1527,13 +1609,17 @@
                 document.getElementById('object_city').value = obj.city || '';
                 document.getElementById('object_address').value = obj.address || '';
                 document.getElementById('object_apartment').value = obj.apartment || '';
+                document.getElementById('object_apartment_floor').value = obj.apartment_floor || '';
+                document.getElementById('object_apartment_entrance').value = obj.apartment_entrance || '';
                 document.getElementById('object_type').value = obj.type || 'other';
                 document.getElementById('object_status').value = obj.status || 'new';
                 document.getElementById('object_area').value = obj.area || '';
                 document.getElementById('repair_budget_planned').value = obj.repair_budget_planned ?? '';
                 document.getElementById('repair_budget_actual').value = obj.repair_budget_actual ?? '';
-                document.getElementById('repair_budget_per_m2_planned').value = obj.repair_budget_per_m2_planned ?? '';
-                document.getElementById('repair_budget_per_m2_actual').value = obj.repair_budget_per_m2_actual ?? '';
+                document.getElementById('repair_budget_per_m2_planned').value = obj
+                    .repair_budget_per_m2_planned ?? '';
+                document.getElementById('repair_budget_per_m2_actual').value = obj
+                    .repair_budget_per_m2_actual ?? '';
                 document.getElementById('object_comment').value = obj.comment || '';
                 const links = Array.isArray(obj.links) ? obj.links : [];
                 document.getElementById('object_links_text').value = links.join('\n');
@@ -1552,7 +1638,10 @@
                 try {
                     const r = await fetch(`/objects/delete/${id}`, {
                         method: 'DELETE',
-                        headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' }
+                        headers: {
+                            'X-CSRF-TOKEN': token,
+                            'Accept': 'application/json'
+                        }
                     });
                     if (!r.ok) throw new Error('Delete failed');
                     await window.refreshObjects?.();
@@ -1577,7 +1666,12 @@
                 try {
                     const r = await fetch(action, {
                         method: 'POST',
-                        headers: { 'Accept': 'application/json', ...(token ? { 'X-CSRF-TOKEN': token } : {}) },
+                        headers: {
+                            'Accept': 'application/json',
+                            ...(token ? {
+                                'X-CSRF-TOKEN': token
+                            } : {})
+                        },
                         body: new FormData(form)
                     });
                     const data = await r.json().catch(() => ({}));
@@ -1586,7 +1680,8 @@
                         return;
                     }
 
-                    projectAlert('success', data.message || '{{ __('objects.object_updated') }}', '', 2500);
+                    projectAlert('success', data.message || '{{ __('objects.object_updated') }}', '',
+                        2500);
                     closeObjectModal();
                     form.reset();
                     document.getElementById('object_id').value = '';
@@ -1607,4 +1702,3 @@
         });
     </script>
 @endsection
-
