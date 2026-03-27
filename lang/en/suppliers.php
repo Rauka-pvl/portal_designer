@@ -81,6 +81,7 @@ return [
     'sphere' => 'Sphere',
     'brand' => 'Brand',
     'actions' => 'Actions',
+    'details' => 'Details',
     'view' => 'View',
     'edit' => 'Edit',
     'delete' => 'Delete',

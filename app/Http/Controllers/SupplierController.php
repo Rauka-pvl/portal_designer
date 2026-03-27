@@ -241,6 +241,7 @@ class SupplierController extends Controller
             'view','edit','delete','save','cancel','close','no_suppliers','table','list','search','all_cities',
             'all_spheres','all_brands','filter_all','filter_recommended','filter_favorites','add_order',
             'favorite','remove_favorite','add_favorite','city_filter','sphere_filter','brand_filter',
+            'actions','details',
             'added','updated','deleted',
         ];
 
@@ -261,6 +262,13 @@ class SupplierController extends Controller
 
     private function payload(Supplier $supplier): array
     {
+        $sphere = $supplier->sphere;
+        $sphereDisplay = $sphere;
+        if (is_string($sphere) && trim($sphere) !== '') {
+            $translated = __('suppliers.' . $sphere);
+            $sphereDisplay = $translated !== 'suppliers.' . $sphere ? $translated : $sphere;
+        }
+
         return [
             'id' => $supplier->id,
             'name' => $supplier->name,
@@ -272,7 +280,8 @@ class SupplierController extends Controller
             'website' => $supplier->website,
             'city' => $supplier->city,
             'address' => $supplier->address,
-            'sphere' => $supplier->sphere,
+            'sphere' => $sphere,
+            'sphere_display' => $sphereDisplay,
             'work_terms_type' => $supplier->work_terms_type,
             'work_terms_value' => $supplier->work_terms_value,
             'brands' => is_array($supplier->brands) ? $supplier->brands : [],

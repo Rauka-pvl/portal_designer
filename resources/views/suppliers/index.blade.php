@@ -408,8 +408,15 @@
                 class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
                 <option value="">{{ __('suppliers.all_spheres') }}</option>
                 @foreach ($spheres as $sphere)
+                    @php
+                        $sphereTranslation = is_string($sphere) ? __('suppliers.' . $sphere) : '';
+                        $sphereLabel =
+                            is_string($sphere) && $sphereTranslation !== 'suppliers.' . $sphere
+                                ? $sphereTranslation
+                                : $sphere;
+                    @endphp
                     <option value="{{ $sphere }}" {{ request('sphere_filter') == $sphere ? 'selected' : '' }}>
-                        {{ $sphere }}</option>
+                        {{ $sphereLabel }}</option>
                 @endforeach
             </select>
         </div>
@@ -466,7 +473,10 @@
                                 <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">
                                     {{ $supplier->city ?? '-' }}</td>
                                 <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">
-                                    {{ $supplier->sphere ?? '-' }}</td>
+                                    @php
+                                        $supplierSphereTranslation = $supplier->sphere ? __('suppliers.' . $supplier->sphere) : null;
+                                    @endphp
+                                    {{ $supplier->sphere ? ($supplierSphereTranslation !== 'suppliers.' . $supplier->sphere ? $supplierSphereTranslation : $supplier->sphere) : '-' }}</td>
                                 <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">
                                     {{ $supplier->brand_display ?: '-' }}</td>
                                 <td class="px-4 py-3 text-sm">
@@ -479,15 +489,6 @@
                                                     d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                            </svg>
-                                        </button>
-                                        <button type="button" onclick="editSupplier({{ $supplier->id }})"
-                                            class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] transition-colors"
-                                            title="{{ __('suppliers.edit') }}">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                             </svg>
                                         </button>
                                         <button type="button" onclick="addOrderFromSupplier({{ $supplier->id }})"
@@ -538,6 +539,9 @@
     <div id="list-view" class="tab-content hidden">
         <div class="space-y-4" id="suppliers-list-body">
             @foreach ($suppliers as $supplier)
+                @php
+                    $supplierSphereTranslation = $supplier->sphere ? __('suppliers.' . $supplier->sphere) : null;
+                @endphp
                 <div class="bg-white dark:bg-[#161615] border border-[#e2e8f0] dark:border-[#3E3E3A] rounded-lg p-6"
                     data-supplier-id="{{ $supplier->id }}">
                     <div class="flex items-start justify-between mb-4">
@@ -565,7 +569,7 @@
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 text-sm">
                         <div><span class="text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.sphere') }}:</span> <span
-                                class="text-[#0f172a] dark:text-[#EDEDEC] font-medium ml-2">{{ $supplier->sphere ?? '-' }}</span>
+                                class="text-[#0f172a] dark:text-[#EDEDEC] font-medium ml-2">{{ $supplier->sphere ? ($supplierSphereTranslation !== 'suppliers.' . $supplier->sphere ? $supplierSphereTranslation : $supplier->sphere) : '-' }}</span>
                         </div>
                         <div><span class="text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.brand') }}:</span> <span
                                 class="text-[#0f172a] dark:text-[#EDEDEC] font-medium ml-2">{{ $supplier->brand_display ?: '-' }}</span>
@@ -1233,7 +1237,7 @@
 
                 let data = (window.allSuppliers || []).filter((s) => {
                     const hay = [
-                        s.name, s.phone, s.email, s.website, s.city, s.sphere, s.address, s.comment, s.brand_display
+                        s.name, s.phone, s.email, s.website, s.city, s.sphere, s.sphere_display, s.address, s.comment, s.brand_display
                     ].filter(Boolean).join(' ').toLowerCase();
                     const bySearch = !search || hay.includes(search);
                     const byType = tf === 'all' || (tf === 'recommended' && !!s.recommend) || (tf === 'favorites' && !!s.is_favorite);
@@ -1295,7 +1299,7 @@
                             <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.phone || '-')}</td>
                             <td class="px-4 py-3 text-sm">${s.website ? `<a href="${escapeHtml(s.website)}" target="_blank" class="text-[#f59e0b] hover:underline">${escapeHtml(s.website)}</a>` : '-'}</td>
                             <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.city || '-')}</td>
-                            <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.sphere || '-')}</td>
+                            <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.sphere_display || s.sphere || '-')}</td>
                             <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.brand_display || '-')}</td>
                             <td class="px-4 py-3 text-sm">
                                 <div class="flex items-center gap-2">
@@ -1306,13 +1310,6 @@
                                                 d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                        </svg>
-                                    </button>
-                                    <button type="button" title="{{ __('suppliers.edit') }}" onclick="editSupplier(${s.id})"
-                                        class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] transition-colors">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                         </svg>
                                     </button>
                                     <button type="button" title="{{ __('suppliers.delete') }}" onclick="deleteSupplier(${s.id})"
@@ -1367,7 +1364,7 @@
                                 <button type="button" onclick="toggleFavorite(${s.id}, this)" class="p-2 rounded favorite-btn ${s.is_favorite ? 'active' : ''}">★</button>
                             </div>
                             <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 text-sm">
-                                <div><span class="text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.sphere') }}:</span> <span class="text-[#0f172a] dark:text-[#EDEDEC] font-medium ml-2">${escapeHtml(s.sphere || '-')}</span></div>
+                                <div><span class="text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.sphere') }}:</span> <span class="text-[#0f172a] dark:text-[#EDEDEC] font-medium ml-2">${escapeHtml(s.sphere_display || s.sphere || '-')}</span></div>
                                 <div><span class="text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.brand') }}:</span> <span class="text-[#0f172a] dark:text-[#EDEDEC] font-medium ml-2">${escapeHtml(s.brand_display || '-')}</span></div>
                             </div>
                             <div class="flex items-center gap-2">
@@ -1437,6 +1434,17 @@
             'input[name="_token"]')?.value;
         const PHONE_MASK = '+7 000 000 00 00';
         const supplierMasks = {};
+
+        function escapeHtml(value) {
+            if (value === null || value === undefined) return '';
+            return String(value).replace(/[&<>"']/g, (c) => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[c]));
+        }
 
         function initSupplierMasks() {
             if (supplierMasks.phone) return;
@@ -1579,16 +1587,44 @@
                 const brands = Array.isArray(s.brands) ? s.brands.join(', ') : (s.brands || '-');
                 const cities = Array.isArray(s.cities_presence) ? s.cities_presence.join(', ') : (s.cities_presence ||
                     '-');
+                const workTerms = s.work_terms_type && s.work_terms_value ?
+                    `${s.work_terms_type === 'percent' ? '%' : '{{ __('suppliers.work_terms_amount') }}'}: ${s.work_terms_value}` :
+                    '-';
+                const orgForm = s.org_form === 'ip' ? '{{ __('suppliers.org_ip') }}' : '{{ __('suppliers.org_ooo') }}';
+                const websiteHtml = s.website ?
+                    `<a href="${escapeHtml(s.website)}" target="_blank" class="text-[#f59e0b] hover:underline">${escapeHtml(s.website)}</a>` :
+                    '-';
                 const logoHtml = s.logo_url ?
                     `<div class="mb-4"><img src="${s.logo_url}" alt="Logo" class="w-20 h-20 rounded-full object-cover border-2 border-[#e2e8f0] dark:border-[#3E3E3A]"></div>` :
                     '';
                 content.innerHTML = logoHtml + `
-            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.name') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${s.name || '-'}</p></div>
-            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.phone') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${s.phone || '-'}</p></div>
-            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.website') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${s.website ? '<a href="'+s.website+'" target="_blank" class="text-[#f59e0b] hover:underline">'+s.website+'</a>' : '-'}</p></div>
-            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.city') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${s.city || '-'}</p></div>
-            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.sphere') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${s.sphere || '-'}</p></div>
-            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.brand') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${brands}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.name') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.name || '-')}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.phone') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.phone || '-')}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">Email</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.email || '-')}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">Telegram</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.telegram || '-')}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">WhatsApp</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.whatsapp || '-')}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.website') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${websiteHtml}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.city') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.city || '-')}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.address') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.address || '-')}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.sphere') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.sphere_display || s.sphere || '-')}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.brand') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(brands)}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.cities_presence') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(cities)}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.work_terms') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(workTerms)}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.org_form') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(orgForm)}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.inn') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.inn || '-')}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.kpp') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.kpp || '-')}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.ogrn') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.ogrn || '-')}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.okpo') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.okpo || '-')}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.legal_address') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.legal_address || '-')}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.actual_address') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.actual_address || '-')}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.director') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.director || '-')}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.accountant') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.accountant || '-')}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.bank') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.bank || '-')}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.bik') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.bik || '-')}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.checking_account') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.checking_account || '-')}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.corr_account') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.corr_account || '-')}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.comment') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC] whitespace-pre-wrap">${escapeHtml(s.comment || '-')}</p></div>
+            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.comment_bank') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC] whitespace-pre-wrap">${escapeHtml(s.comment_bank || '-')}</p></div>
         `;
                 const modal = document.getElementById('view-supplier-modal');
                 const panel = modal?.querySelector('div[class*="absolute"]');
