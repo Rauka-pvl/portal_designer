@@ -2,6 +2,419 @@
 
 @section('title', __('projects.projects'))
 
+@section('content')
+    <div class="mb-6 flex items-center justify-between gap-4">
+        <h1 class="text-2xl font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ __('projects.projects') }}</h1>
+        <button id="add-project-btn" type="button"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[#f59e0b] text-[#f59e0b] hover:bg-[#f59e0b]/10 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            {{ __('projects.add_project') }}
+        </button>
+    </div>
+
+    <div class="mb-4">
+        <input id="projects-search" type="text" placeholder="{{ __('projects.search') }}"
+            class="w-full md:w-96 px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+    </div>
+
+    <div class="bg-white dark:bg-[#161615] border border-[#e2e8f0] dark:border-[#3E3E3A] rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-[#f8fafc] dark:bg-[#0a0a0a]">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('projects.name') }}</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('projects.object_address') }}</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('projects.client') }}</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('projects.status') }}</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('projects.start_date') }}</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('projects.planned_cost') }}</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody id="projects-table-body" class="divide-y divide-[#e2e8f0] dark:divide-[#3E3E3A]"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="project-modal" class="fixed inset-0 bg-black/50 z-[80] hidden flex items-center justify-center modal-overlay p-4" onmousedown="if(event.target===this) closeProjectModal()">
+        <div class="bg-white dark:bg-[#161615] rounded-xl max-w-5xl w-full max-h-[92vh] mx-auto overflow-hidden flex flex-col border border-[#e2e8f0] dark:border-[#3E3E3A]"
+            onclick="event.stopPropagation()">
+            <div class="px-6 py-4 border-b border-[#e2e8f0] dark:border-[#3E3E3A] flex items-center justify-between">
+                <h2 id="project-modal-title" class="text-xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]">{{ __('projects.new_project') }}</h2>
+                <button type="button" onclick="closeProjectModal()" class="p-2 rounded-lg hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a]">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <form id="project-form" class="flex-1 overflow-y-auto p-6 space-y-5" enctype="multipart/form-data">
+                @csrf
+                <input type="hidden" id="project_id" name="project_id">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm mb-1">{{ __('projects.project_name') }}</label>
+                        <input type="text" name="name" required class="w-full modal-input">
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-1">{{ __('projects.select_object') }}</label>
+                        <select name="object_id" required class="w-full modal-input" id="project-object-select"></select>
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-1">{{ __('projects.status') }}</label>
+                        <input type="text" name="status" required class="w-full modal-input">
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-1">{{ __('projects.start_date') }}</label>
+                        <input type="date" name="start_date" class="w-full modal-input">
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-1">{{ __('projects.planned_end_date') }}</label>
+                        <input type="date" name="planned_end_date" class="w-full modal-input">
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-1">{{ __('projects.actual_end_date') }}</label>
+                        <input type="date" name="actual_end_date" class="w-full modal-input">
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-1">{{ __('projects.planned_cost') }}</label>
+                        <input type="number" name="planned_cost" min="0" step="0.01" class="w-full modal-input">
+                    </div>
+                    <div>
+                        <label class="block text-sm mb-1">{{ __('projects.actual_cost') }}</label>
+                        <input type="number" name="actual_cost" min="0" step="0.01" class="w-full modal-input">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm mb-1">{{ __('projects.links') }}</label>
+                    <div id="project-links" class="space-y-2"></div>
+                    <button type="button" id="add-project-link" class="mt-2 text-sm text-[#f59e0b] hover:underline">{{ __('projects.add_link') }}</button>
+                </div>
+
+                <div>
+                    <label class="block text-sm mb-1">{{ __('projects.files') }}</label>
+                    <input type="file" name="files[]" multiple class="w-full modal-input">
+                    <div id="project-existing-files" class="mt-2 space-y-1"></div>
+                </div>
+
+                <div>
+                    <label class="block text-sm mb-1">{{ __('projects.comment') }}</label>
+                    <textarea name="comment" rows="3" class="w-full modal-input"></textarea>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="font-medium">{{ __('projects.project_stages') }}</h3>
+                        <button type="button" id="add-stage-btn" class="text-sm text-[#f59e0b] hover:underline">{{ __('projects.add_stage') }}</button>
+                    </div>
+                    <div id="project-stages" class="space-y-3"></div>
+                </div>
+            </form>
+            <div class="px-6 py-4 border-t border-[#e2e8f0] dark:border-[#3E3E3A] flex gap-2">
+                <button type="submit" form="project-form" class="px-4 py-2 rounded-lg bg-[#f59e0b] text-white hover:bg-[#d97706]">{{ __('projects.save') }}</button>
+                <button type="button" onclick="closeProjectModal()" class="px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A]">{{ __('projects.cancel') }}</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="project-view-modal" class="fixed inset-0 bg-black/50 z-[80] hidden modal-overlay" onmousedown="if(event.target===this) closeProjectViewModal()">
+        <div class="absolute right-0 top-0 h-full w-full max-w-xl bg-white dark:bg-[#161615] border-l border-[#e2e8f0] dark:border-[#3E3E3A] transform translate-x-full transition-transform duration-300">
+            <div class="px-6 py-4 border-b border-[#e2e8f0] dark:border-[#3E3E3A] flex items-center justify-between">
+                <h2 class="text-lg font-semibold">{{ __('projects.view') }}</h2>
+                <button type="button" onclick="closeProjectViewModal()" class="p-2 rounded hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a]">✕</button>
+            </div>
+            <div id="project-view-content" class="p-6 space-y-4 overflow-y-auto h-[calc(100%-64px)]"></div>
+        </div>
+    </div>
+@endsection
+
+@section('scripts')
+<script>
+(() => {
+    const token = document.querySelector('meta[name="csrf-token"]')?.content;
+    const state = {
+        projects: @json($projectsData ?? []),
+        objects: @json($objectsData ?? []),
+        templates: @json($templatesData ?? []),
+        stageTypes: @json($stageTypes ?? []),
+    };
+
+    const tableBody = document.getElementById('projects-table-body');
+    const searchInput = document.getElementById('projects-search');
+    const projectModal = document.getElementById('project-modal');
+    const projectForm = document.getElementById('project-form');
+    const projectStagesEl = document.getElementById('project-stages');
+    const projectLinksEl = document.getElementById('project-links');
+
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const stageLabels = {
+        measurement: `{{ __('projects.stage_measurement') }}`,
+        planning: `{{ __('projects.stage_planning') }}`,
+        drawings: `{{ __('projects.stage_drawings') }}`,
+        equipment: `{{ __('projects.stage_equipment') }}`,
+        estimate: `{{ __('projects.stage_estimate') }}`,
+        visualization: `{{ __('projects.stage_visualization') }}`,
+    };
+    const stageName = (t) => stageLabels[t] || t;
+    const templateById = (id) => state.templates.find(t => Number(t.id) === Number(id));
+
+    function renderObjectsSelect() {
+        const select = document.getElementById('project-object-select');
+        select.innerHTML = state.objects.map(o =>
+            `<option value="${o.id}">${esc([o.city, o.address].filter(Boolean).join(', '))}${o.client_name ? ` - ${esc(o.client_name)}` : ''}</option>`
+        ).join('');
+    }
+
+    function renderProjects() {
+        const q = (searchInput?.value || '').toLowerCase().trim();
+        const rows = state.projects.filter(p => !q || [p.name, p.object_address, p.client_name, p.status].join(' ').toLowerCase().includes(q));
+        if (!rows.length) {
+            tableBody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-[#64748b] dark:text-[#A1A09A]">{{ __('projects.no_projects') }}</td></tr>`;
+            return;
+        }
+        tableBody.innerHTML = rows.map(p => `
+            <tr class="hover:bg-[#f8fafc] dark:hover:bg-[#0a0a0a]">
+                <td class="px-4 py-3">${esc(p.name)}</td>
+                <td class="px-4 py-3">${esc([p.object_city, p.object_address].filter(Boolean).join(', ') || '-')}</td>
+                <td class="px-4 py-3">${esc(p.client_name || '-')}</td>
+                <td class="px-4 py-3">${esc(p.status || '-')}</td>
+                <td class="px-4 py-3">${esc(p.start_date || '-')}</td>
+                <td class="px-4 py-3">${Number(p.planned_cost || 0).toLocaleString()}</td>
+                <td class="px-4 py-3">
+                    <div class="flex gap-2">
+                        <button type="button" onclick="window.viewProject(${p.id})" class="text-[#f59e0b] hover:underline">{{ __('projects.view') }}</button>
+                        <button type="button" onclick="window.editProject(${p.id})" class="text-[#f59e0b] hover:underline">{{ __('projects.edit') }}</button>
+                        <button type="button" onclick="window.deleteProject(${p.id})" class="text-red-500 hover:underline">{{ __('projects.delete') }}</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function linkInput(value = '') {
+        return `<div class="flex gap-2"><input type="url" name="links[]" value="${esc(value)}" class="w-full modal-input"><button type="button" class="px-3 rounded border border-[#e2e8f0] dark:border-[#3E3E3A]" onclick="this.parentElement.remove()">×</button></div>`;
+    }
+
+    function stageBlock(stage = {}) {
+        const selectedType = stage.stage_type || 'measurement';
+        const templateOptions = state.templates
+            .filter(t => t.type === selectedType)
+            .map(t => `<option value="${t.id}" ${Number(stage.template_id)===Number(t.id)?'selected':''}>${esc(t.name)}${t.is_shared ? ' (base)' : ''}</option>`)
+            .join('');
+        const steps = Array.isArray(stage.steps) && stage.steps.length ? stage.steps : [''];
+
+        return `<div class="rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] p-4 stage-row">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <select name="stages[][stage_type]" class="modal-input stage-type">
+                    ${state.stageTypes.map(t => `<option value="${t}" ${t===selectedType?'selected':''}>${esc(stageName(t))}</option>`).join('')}
+                </select>
+                <select name="stages[][template_id]" class="modal-input stage-template">
+                    <option value="">{{ __('projects.select_template') }}</option>
+                    ${templateOptions}
+                </select>
+                <div class="flex gap-2">
+                    <input type="text" class="modal-input stage-template-name" placeholder="{{ __('projects.template_name_placeholder') }}">
+                    <button type="button" class="px-3 rounded border border-[#f59e0b] text-[#f59e0b] save-template-btn">{{ __('projects.save_as_template') }}</button>
+                </div>
+            </div>
+            <div class="mt-3 space-y-2 stage-steps">
+                ${steps.map(s => `<div class="flex gap-2"><input type="text" name="stages[][steps][]" class="w-full modal-input" value="${esc(s)}"><button type="button" class="px-3 rounded border border-[#e2e8f0] dark:border-[#3E3E3A]" onclick="this.parentElement.remove()">×</button></div>`).join('')}
+            </div>
+            <div class="mt-2 flex gap-3">
+                <button type="button" class="text-sm text-[#f59e0b] add-step-btn">{{ __('projects.add_item') }}</button>
+                <button type="button" class="text-sm text-red-500 delete-template-btn">{{ __('projects.delete_template') }}</button>
+                <button type="button" class="text-sm text-red-500 remove-stage-btn">{{ __('projects.delete') }}</button>
+            </div>
+        </div>`;
+    }
+
+    function bindStageEvents(wrapper) {
+        const typeSelect = wrapper.querySelector('.stage-type');
+        const tplSelect = wrapper.querySelector('.stage-template');
+        const stepsWrap = wrapper.querySelector('.stage-steps');
+
+        const refillTemplates = () => {
+            const st = typeSelect.value;
+            const list = state.templates.filter(t => t.type === st);
+            tplSelect.innerHTML = `<option value="">{{ __('projects.select_template') }}</option>` + list
+                .map(t => `<option value="${t.id}">${esc(t.name)}${t.is_shared ? ' (base)' : ''}</option>`).join('');
+        };
+
+        typeSelect.addEventListener('change', refillTemplates);
+        tplSelect.addEventListener('change', () => {
+            const tpl = templateById(tplSelect.value);
+            if (!tpl) return;
+            stepsWrap.innerHTML = tpl.steps.map(s => `<div class="flex gap-2"><input type="text" name="stages[][steps][]" class="w-full modal-input" value="${esc(s)}"><button type="button" class="px-3 rounded border border-[#e2e8f0] dark:border-[#3E3E3A]" onclick="this.parentElement.remove()">×</button></div>`).join('');
+        });
+        wrapper.querySelector('.add-step-btn').addEventListener('click', () => {
+            stepsWrap.insertAdjacentHTML('beforeend', `<div class="flex gap-2"><input type="text" name="stages[][steps][]" class="w-full modal-input"><button type="button" class="px-3 rounded border border-[#e2e8f0] dark:border-[#3E3E3A]" onclick="this.parentElement.remove()">×</button></div>`);
+        });
+        wrapper.querySelector('.remove-stage-btn').addEventListener('click', () => wrapper.remove());
+        wrapper.querySelector('.save-template-btn').addEventListener('click', async () => {
+            const name = wrapper.querySelector('.stage-template-name').value.trim();
+            const type = typeSelect.value;
+            const steps = Array.from(stepsWrap.querySelectorAll('input')).map(i => i.value.trim()).filter(Boolean);
+            if (!name || !steps.length) return projectAlert('error', '{{ __('projects.add_at_least_one_step') }}');
+            const res = await fetch('{{ route('projects.templates.store') }}', {
+                method: 'POST',
+                headers: {'X-CSRF-TOKEN': token, 'Accept': 'application/json', 'Content-Type': 'application/json'},
+                body: JSON.stringify({name, type, steps})
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) return projectAlert('error', data.message || 'Error');
+            state.templates.unshift(data.template);
+            refillTemplates();
+            tplSelect.value = String(data.template.id);
+            projectAlert('success', data.message || 'OK');
+        });
+        wrapper.querySelector('.delete-template-btn').addEventListener('click', async () => {
+            const templateId = Number(tplSelect.value || 0);
+            if (!templateId) return;
+            const tpl = templateById(templateId);
+            if (!tpl || !tpl.is_owned) return projectAlert('error', '{{ __('projects.template_delete_only_own') }}');
+            if (!confirm(`{{ __('projects.delete_template_confirm') }}`)) return;
+            const res = await fetch(`{{ url('/projects/templates') }}/${templateId}`, {
+                method: 'DELETE',
+                headers: {'X-CSRF-TOKEN': token, 'Accept': 'application/json'}
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) return projectAlert('error', data.message || 'Error');
+            state.templates = state.templates.filter(t => Number(t.id) !== templateId);
+            refillTemplates();
+            tplSelect.value = '';
+            projectAlert('success', data.message || 'OK');
+        });
+    }
+
+    function openProjectModal(project = null) {
+        projectForm.reset();
+        document.getElementById('project_id').value = project?.id || '';
+        document.getElementById('project-modal-title').textContent = project ? '{{ __('projects.edit_project') }}' : '{{ __('projects.new_project') }}';
+        projectLinksEl.innerHTML = '';
+        projectStagesEl.innerHTML = '';
+        document.getElementById('project-existing-files').innerHTML = '';
+        (project?.links?.length ? project.links : ['']).forEach(l => projectLinksEl.insertAdjacentHTML('beforeend', linkInput(l)));
+        (project?.stages?.length ? project.stages : [{}]).forEach(s => {
+            const temp = document.createElement('div');
+            temp.innerHTML = stageBlock(s);
+            const row = temp.firstElementChild;
+            projectStagesEl.appendChild(row);
+            bindStageEvents(row);
+        });
+        if (project) {
+            projectForm.querySelector('[name="name"]').value = project.name || '';
+            projectForm.querySelector('[name="object_id"]').value = String(project.object_id || '');
+            projectForm.querySelector('[name="status"]').value = project.status || '';
+            projectForm.querySelector('[name="start_date"]').value = project.start_date || '';
+            projectForm.querySelector('[name="planned_end_date"]').value = project.planned_end_date || '';
+            projectForm.querySelector('[name="actual_end_date"]').value = project.actual_end_date || '';
+            projectForm.querySelector('[name="planned_cost"]').value = project.planned_cost || '';
+            projectForm.querySelector('[name="actual_cost"]').value = project.actual_cost || '';
+            projectForm.querySelector('[name="comment"]').value = project.comment || '';
+            const existing = document.getElementById('project-existing-files');
+            (project.files || []).forEach((f, idx) => {
+                const url = project.file_urls?.[idx] || '';
+                existing.insertAdjacentHTML('beforeend', `<label class="flex items-center gap-2 text-sm"><input type="checkbox" name="existing_files[]" value="${esc(f)}" checked>${url ? `<a class="text-[#f59e0b] hover:underline" target="_blank" href="${esc(url)}">${esc(f.split('/').pop())}</a>` : esc(f)}</label>`);
+            });
+        }
+        projectModal.classList.remove('hidden');
+    }
+
+    window.closeProjectModal = () => projectModal.classList.add('hidden');
+
+    window.viewProject = (id) => {
+        const p = state.projects.find(v => Number(v.id) === Number(id));
+        if (!p) return;
+        const view = document.getElementById('project-view-modal');
+        const content = document.getElementById('project-view-content');
+        content.innerHTML = `
+            <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A]">{{ __('projects.name') }}</div><div>${esc(p.name || '-')}</div></div>
+            <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A]">{{ __('projects.object_address') }}</div><div>${esc([p.object_city,p.object_address].filter(Boolean).join(', ') || '-')}</div></div>
+            <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A]">{{ __('projects.client') }}</div><div>${esc(p.client_name || '-')}</div></div>
+            <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A]">{{ __('projects.status') }}</div><div>${esc(p.status || '-')}</div></div>
+            <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A]">{{ __('projects.comment') }}</div><div>${esc(p.comment || '-')}</div></div>
+        `;
+        view.classList.remove('hidden');
+        setTimeout(() => view.querySelector('div[class*="absolute"]').classList.remove('translate-x-full'), 10);
+    };
+    window.closeProjectViewModal = () => {
+        const view = document.getElementById('project-view-modal');
+        view.querySelector('div[class*="absolute"]').classList.add('translate-x-full');
+        view.classList.add('hidden');
+    };
+    window.editProject = (id) => {
+        const p = state.projects.find(v => Number(v.id) === Number(id));
+        if (p) openProjectModal(p);
+    };
+    window.deleteProject = async (id) => {
+        if (!confirm('{{ __('projects.delete_confirm') }}')) return;
+        const res = await fetch(`{{ url('/projects') }}/${id}`, {method: 'DELETE', headers: {'X-CSRF-TOKEN': token, 'Accept': 'application/json'}});
+        const data = await res.json();
+        if (!res.ok || !data.success) return projectAlert('error', data.message || 'Error');
+        state.projects = state.projects.filter(p => Number(p.id) !== Number(id));
+        renderProjects();
+        projectAlert('success', data.message || 'OK');
+    };
+
+    document.getElementById('add-project-btn').addEventListener('click', () => openProjectModal(null));
+    document.getElementById('add-project-link').addEventListener('click', () => projectLinksEl.insertAdjacentHTML('beforeend', linkInput('')));
+    document.getElementById('add-stage-btn').addEventListener('click', () => {
+        const temp = document.createElement('div');
+        temp.innerHTML = stageBlock({});
+        const row = temp.firstElementChild;
+        projectStagesEl.appendChild(row);
+        bindStageEvents(row);
+    });
+    searchInput?.addEventListener('input', renderProjects);
+
+    projectForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(projectForm);
+        const projectId = fd.get('project_id');
+
+        const stageRows = Array.from(projectStagesEl.querySelectorAll('.stage-row')).map((row) => {
+            return {
+                stage_type: row.querySelector('.stage-type')?.value || '',
+                template_id: row.querySelector('.stage-template')?.value || '',
+                steps: Array.from(row.querySelectorAll('.stage-steps input')).map(i => i.value.trim()).filter(Boolean),
+            };
+        });
+        fd.delete('stages[][stage_type]');
+        fd.delete('stages[][template_id]');
+        fd.delete('stages[][steps][]');
+        stageRows.forEach((stage, idx) => {
+            fd.append(`stages[${idx}][stage_type]`, stage.stage_type);
+            if (stage.template_id) fd.append(`stages[${idx}][template_id]`, stage.template_id);
+            stage.steps.forEach(step => fd.append(`stages[${idx}][steps][]`, step));
+        });
+
+        const url = projectId ? `{{ url('/projects') }}/${projectId}` : `{{ route('projects.store') }}`;
+        if (projectId) fd.append('_method', 'PUT');
+        const res = await fetch(url, {method: 'POST', headers: {'X-CSRF-TOKEN': token, 'Accept': 'application/json'}, body: fd});
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+            const msg = data?.message || Object.values(data?.errors || {}).flat().join('\n') || 'Error';
+            return projectAlert('error', msg);
+        }
+        const idx = state.projects.findIndex(p => Number(p.id) === Number(data.project.id));
+        if (idx >= 0) state.projects[idx] = data.project; else state.projects.unshift(data.project);
+        closeProjectModal();
+        renderProjects();
+        projectAlert('success', data.message || 'OK');
+    });
+
+    renderObjectsSelect();
+    renderProjects();
+})();
+</script>
+@endsection
+
+@extends('layouts.dashboard')
+
+@section('title', __('projects.projects'))
+
 @push('styles')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
@@ -453,7 +866,7 @@
 </div>
 
 <!-- Модалка просмотра проекта (справа) -->
-<div id="view-project-modal" class="fixed inset-0 bg-black/50 z-50 hidden modal-overlay" onmousedown="if(event.target === this) closeViewProjectModal()">
+<div id="view-project-modal" class="fixed inset-0 bg-black/50 z-[80] hidden modal-overlay" onmousedown="if(event.target === this) closeViewProjectModal()">
     <div class="absolute right-0 top-0 h-full w-full max-w-lg bg-white dark:bg-[#161615] border-l border-[#e2e8f0] dark:border-[#3E3E3A] shadow-2xl transform transition-transform duration-300 translate-x-full modal-content" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
         <div class="flex flex-col h-full">
             <div class="flex items-center justify-between px-6 py-5 border-b border-[#e2e8f0] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a]">
@@ -471,7 +884,7 @@
 </div>
 
 <!-- Модалка добавления/редактирования проекта -->
-<div id="project-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center modal-overlay p-4" onmousedown="if(event.target === this) closeProjectModal()">
+<div id="project-modal" class="fixed inset-0 bg-black/50 z-[80] hidden flex items-center justify-center modal-overlay p-4" onmousedown="if(event.target === this) closeProjectModal()">
     <div class="bg-white dark:bg-[#161615] rounded-xl max-w-2xl w-full mx-auto max-h-[90vh] overflow-hidden flex flex-col modal-content border border-[#e2e8f0] dark:border-[#3E3E3A]" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
         <div class="flex items-start justify-between px-6 pt-6 pb-4 border-b border-[#e2e8f0] dark:border-[#3E3E3A] shrink-0">
             <div>
@@ -968,6 +1381,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function openAddProjectModal(prefillObjectId) {
         document.getElementById('project-modal').classList.remove('hidden');
         document.getElementById('project-modal').classList.add('flex');
+        document.body.classList.add('overflow-hidden');
         document.getElementById('project-form').reset();
         document.getElementById('project_id').value = '';
         document.getElementById('project-modal-title').textContent = '{{ __('projects.new_project') }}';
@@ -1073,7 +1487,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 await fetch('{{ url("/sanctum/csrf-cookie") }}', { credentials: 'include' });
                 const res = await fetch('{{ url("/api/templates") }}', {
                     credentials: 'include',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', 'Authorization': 'Bearer ' + '{{ $token }}' }
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', 'X-CSRF-TOKEN': token }
                 });
                 if (!res.ok) return;
                 data = await res.json();
@@ -1202,7 +1616,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const res = await fetch('{{ url("/api/templates") }}', {
                         method: 'POST',
                         credentials: 'include',
-                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + '{{ $token }}' },
+                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
                         body: JSON.stringify({ name: name.trim(), type: stageValue, steps: titles })
                     });
                     if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.message || 'Save failed'); }
@@ -1226,7 +1640,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const res = await fetch(`{{ url("/api/templates") }}/${tid}`, {
                         method: 'DELETE',
                         credentials: 'include',
-                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', 'Authorization': 'Bearer ' + '{{ $token }}' }
+                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', 'X-CSRF-TOKEN': token }
                     });
                     if (!res.ok) throw new Error('Delete failed');
                     await fetchTemplates();
@@ -1398,6 +1812,7 @@ function closeViewProjectModal() {
         panel.classList.add('translate-x-full');
         panel.classList.remove('translate-x-0');
     }
+    document.body.classList.remove('overflow-hidden');
 }
 
 function viewProject(id) {
@@ -1475,6 +1890,7 @@ function viewProject(id) {
         const modal = document.getElementById('view-project-modal');
         const panel = modal.querySelector('div[class*="absolute"]');
         modal.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
         setTimeout(() => {
             if (panel) {
                 panel.classList.remove('translate-x-full');
@@ -1506,6 +1922,7 @@ async function editProject(id) {
     if (project) {
         document.getElementById('project-modal').classList.remove('hidden');
         document.getElementById('project-modal').classList.add('flex');
+        document.body.classList.add('overflow-hidden');
         document.getElementById('project-modal-title').textContent = '{{ __('projects.edit_project') }}';
         window._projectEditChecklists = project.stage_checklists || {};
         await fetchTemplates();
@@ -1564,6 +1981,7 @@ async function deleteProject(id) {
 function closeProjectModal() {
     document.getElementById('project-modal').classList.add('hidden');
     document.getElementById('project-modal').classList.remove('flex');
+    document.body.classList.remove('overflow-hidden');
     document.getElementById('project-form').reset();
     window._projectEditChecklists = null;
     const linksContainer = document.getElementById('project-links-container');

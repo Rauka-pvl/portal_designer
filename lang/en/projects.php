@@ -102,6 +102,13 @@ return [
     'delete_template' => 'Delete template',
     'add_at_least_one_step' => 'Add at least one step',
     'delete_template_confirm' => 'Delete this template?',
+    'template_delete_only_own' => 'Only your own template can be deleted',
+    'created' => 'Project created',
+    'updated' => 'Project updated',
+    'deleted' => 'Project deleted',
+    'template_saved' => 'Template saved',
+    'template_deleted' => 'Template deleted',
+    'delete_confirm' => 'Delete project?',
     
     // Заказ поставщику
     'supplier_order' => 'Supplier Order',

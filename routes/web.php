@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SupplierController;
 use App\Models\Supplier;
 use Illuminate\Support\Facades\Route;
@@ -114,6 +115,23 @@ Route::group(['middleware' => 'auth'], function () {
     Route::post('/suppliers/{supplierId}/toggle-favorite', [SupplierController::class, 'toggleFavorite'])
         ->whereNumber('supplierId')
         ->name('suppliers.toggle_favorite');
+
+    // Projects
+    Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
+    Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
+    Route::get('/projects/{projectId}', [ProjectController::class, 'show'])
+        ->whereNumber('projectId')
+        ->name('projects.show');
+    Route::put('/projects/{projectId}', [ProjectController::class, 'update'])
+        ->whereNumber('projectId')
+        ->name('projects.update');
+    Route::delete('/projects/{projectId}', [ProjectController::class, 'destroy'])
+        ->whereNumber('projectId')
+        ->name('projects.destroy');
+    Route::post('/projects/templates', [ProjectController::class, 'saveTemplate'])->name('projects.templates.store');
+    Route::delete('/projects/templates/{templateId}', [ProjectController::class, 'deleteTemplate'])
+        ->whereNumber('templateId')
+        ->name('projects.templates.destroy');
 
     // Temporary supplier orders page route (for "Add Order" button).
     Route::get('/supplier-orders', function (Request $request) {

@@ -102,6 +102,13 @@ return [
     'delete_template' => 'Удалить шаблон',
     'add_at_least_one_step' => 'Добавьте хотя бы один пункт',
     'delete_template_confirm' => 'Удалить этот шаблон?',
+    'template_delete_only_own' => 'Можно удалить только свой шаблон',
+    'created' => 'Проект добавлен',
+    'updated' => 'Проект обновлён',
+    'deleted' => 'Проект удалён',
+    'template_saved' => 'Шаблон сохранён',
+    'template_deleted' => 'Шаблон удалён',
+    'delete_confirm' => 'Удалить проект?',
 
     // Заказ поставщику
     'supplier_order' => 'Заказ поставщику',

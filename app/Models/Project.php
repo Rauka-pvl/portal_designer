@@ -1,0 +1,48 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class Project extends Model
+{
+    use SoftDeletes;
+
+    protected $table = 'projects';
+
+    protected $fillable = [
+        'user_id',
+        'object_id',
+        'name',
+        'status',
+        'start_date',
+        'planned_end_date',
+        'actual_end_date',
+        'actual_cost',
+        'planned_cost',
+        'links',
+        'files',
+        'comment',
+    ];
+
+    protected $casts = [
+        'links' => 'array',
+        'files' => 'array',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function object()
+    {
+        return $this->belongsTo(PassportObject::class);
+    }
+
+    public function stages()
+    {
+        return $this->hasMany(ProjectStages::class, 'project_id');
+    }
+}

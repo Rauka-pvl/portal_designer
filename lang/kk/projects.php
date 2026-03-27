@@ -102,6 +102,13 @@ return [
     'delete_template' => 'Үлгіні жою',
     'add_at_least_one_step' => 'Кем дегенде бір тармақ қосыңыз',
     'delete_template_confirm' => 'Бұл үлгіні жоясыз ба?',
+    'template_delete_only_own' => 'Тек өз үлгіңізді жоя аласыз',
+    'created' => 'Жоба қосылды',
+    'updated' => 'Жоба жаңартылды',
+    'deleted' => 'Жоба жойылды',
+    'template_saved' => 'Үлгі сақталды',
+    'template_deleted' => 'Үлгі жойылды',
+    'delete_confirm' => 'Жобаны жою керек пе?',
     
     // Заказ поставщику
     'supplier_order' => 'Жеткізушіге тапсырыс',
