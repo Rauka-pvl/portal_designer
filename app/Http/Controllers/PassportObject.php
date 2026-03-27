@@ -127,7 +127,7 @@ class PassportObject extends Controller
             'repair_budget_per_m2_actual' => ['nullable', 'numeric', 'min:0'],
             // links могут приходить как array (links[]) либо как строка (links_text)
             'links' => ['nullable', 'array'],
-            'links.*' => ['nullable', 'string', 'max:2048'],
+            'links.*' => ['nullable', 'url', 'max:2048'],
             'links_text' => ['nullable', 'string', 'max:10000'],
             'comment' => ['nullable', 'string'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
@@ -211,6 +211,24 @@ class PassportObject extends Controller
         } elseif ($request->filled('links_text')) {
             $links = preg_split('/\r\n|\r|\n/', (string) $request->input('links_text')) ?: [];
             $links = array_values(array_filter(array_map('trim', $links), fn($v) => $v !== ''));
+        }
+
+        foreach ($links as $url) {
+            if (!filter_var($url, FILTER_VALIDATE_URL)) {
+                $message = __('validation.url', ['attribute' => __('objects.links')]);
+                if ($request->expectsJson() || $request->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $message,
+                        'errors' => ['links' => [$message]],
+                    ], 422);
+                }
+
+                return back()->withInput()->withErrors([
+                    'links' => $message,
+                    'links_text' => $message,
+                ]);
+            }
         }
 
         // файлы (несколько)

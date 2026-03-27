@@ -234,7 +234,7 @@
             </select>
         </div>
 
-        
+
     </div>
 
     <!-- Контент вкладок -->
@@ -685,7 +685,7 @@
                     </div>
                     <div>
                         <label class="modal-label">{{ __('clients.link') }}</label>
-                        <input type="text" placeholder="https://..." name="link" id="client_link"
+                        <input type="url" placeholder="https://..." name="link" id="client_link"
                             class="modal-input">
                         @error('link')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>

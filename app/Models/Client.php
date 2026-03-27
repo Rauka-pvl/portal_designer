@@ -23,4 +23,9 @@ class Client extends Model
         'file_paths',
         'link',
     ];
+
+    public function objects()
+    {
+        return $this->hasMany(PassportObject::class);
+    }
 }

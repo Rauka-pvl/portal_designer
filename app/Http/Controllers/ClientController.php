@@ -17,13 +17,15 @@ class ClientController extends Controller
     public function index(Request $request)
     {
         $clients = Client::where('user_id', $request->user()->id)
+            ->withCount(['objects as count_objects'])
+            ->withSum('objects as sum_repair_budget_planned', 'repair_budget_planned')
             ->orderByDesc('id')
             ->get();
 
         // Для совместимости с фронтендом (в представлении ожидаются дополнительные поля)
         $clients->each(function (Client $client) {
-            $client->count_objects = 0;
-            $client->sum_repair_budget_planned = 0;
+            $client->count_objects = (int) ($client->count_objects ?? 0);
+            $client->sum_repair_budget_planned = (float) ($client->sum_repair_budget_planned ?? 0);
 
             // Чтобы JS-модалка "Просмотр" показывала ВСЕ файлы,
             // декодируем file_paths из JSON в массив прямо на этапе index.
@@ -51,7 +53,9 @@ class ClientController extends Controller
     public function search(Request $request)
     {
         $query = Client::query()
-            ->where('user_id', $request->user()->id);
+            ->where('user_id', $request->user()->id)
+            ->withCount(['objects as count_objects'])
+            ->withSum('objects as sum_repair_budget_planned', 'repair_budget_planned');
 
         $search = trim((string) $request->query('search', ''));
         $status = (string) $request->query('status', '');
@@ -113,7 +117,7 @@ class ClientController extends Controller
             'email' => ['required', 'string', 'email', 'max:255'],
             'status' => ['required', Rule::in(['new', 'in_work', 'not_working'])],
             'comment' => ['nullable', 'string'],
-            'link' => ['nullable', 'string', 'max:255'],
+            'link' => ['nullable', 'url', 'max:255'],
             // В таблице нет отдельной сущности для файлов, поэтому сохраняем опционально только file_path.
             'files' => ['nullable'],
         ]);
@@ -279,9 +283,13 @@ class ClientController extends Controller
             $filePaths = [$client->file_path];
         }
 
-        // Поля, которые ожидает фронтенд, но их пока нет в текущей модели/схеме.
-        $countObjects = 0;
-        $sumRepairBudgetPlanned = 0;
+        // Если агрегаты не были подгружены заранее, считаем их через связь.
+        $countObjects = isset($client->count_objects)
+            ? (int) $client->count_objects
+            : $client->objects()->count();
+        $sumRepairBudgetPlanned = isset($client->sum_repair_budget_planned)
+            ? (float) $client->sum_repair_budget_planned
+            : (float) $client->objects()->sum('repair_budget_planned');
 
         return [
             'id' => $client->id,
