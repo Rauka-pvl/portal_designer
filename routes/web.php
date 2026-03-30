@@ -2,8 +2,8 @@
 
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\SupplierOrderController;
 use App\Http\Controllers\SupplierController;
-use App\Models\Supplier;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -133,18 +133,16 @@ Route::group(['middleware' => 'auth'], function () {
         ->whereNumber('templateId')
         ->name('projects.templates.destroy');
 
-    // Temporary supplier orders page route (for "Add Order" button).
-    Route::get('/supplier-orders', function (Request $request) {
-        $suppliers = Supplier::where('user_id', $request->user()->id)
-            ->orderBy('name')
-            ->get(['id', 'name']);
-
-        return view('supplier-orders.index', [
-            'projects' => collect(),
-            'suppliers' => $suppliers,
-            'orders' => [],
-            'selectedProjectId' => $request->query('project_id'),
-            'selectedSupplierId' => $request->query('supplier_id'),
-        ]);
-    })->name('supplier-orders.index');
+    // Supplier orders
+    Route::get('/supplier-orders', [SupplierOrderController::class, 'index'])->name('supplier-orders.index');
+    Route::post('/supplier-orders', [SupplierOrderController::class, 'store'])->name('supplier-orders.store');
+    Route::put('/supplier-orders/{orderId}', [SupplierOrderController::class, 'update'])
+        ->whereNumber('orderId')
+        ->name('supplier-orders.update');
+    Route::delete('/supplier-orders/{orderId}', [SupplierOrderController::class, 'destroy'])
+        ->whereNumber('orderId')
+        ->name('supplier-orders.destroy');
+    Route::patch('/supplier-orders/{orderId}/status', [SupplierOrderController::class, 'updateStatus'])
+        ->whereNumber('orderId')
+        ->name('supplier-orders.update_status');
 });

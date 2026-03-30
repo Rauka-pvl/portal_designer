@@ -869,7 +869,7 @@
                     '>': '&gt;',
                     '"': '&quot;',
                     "'": '&#39;'
-                } [c]));
+                })[c]);
             }
 
             function formatTenge(amount) {
@@ -960,7 +960,7 @@
                         '>': '&gt;',
                         '"': '&quot;',
                         "'": '&#39;'
-                    } [c]));
+                    })[c]);
                     const url = `/storage/${p}`;
                     return `
                         <div class="flex items-center justify-between gap-3 flex-wrap">

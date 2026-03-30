@@ -309,7 +309,7 @@
                                     {{ $client->comment ?: '-' }}</td>
                                 <td class="px-4 py-3 text-sm">
                                     <div class="flex items-center gap-2">
-                                        <button onclick="viewClient({{ $client->id }})"
+                                        <button onclick="viewClient('{{ $client->id }}')"
                                             class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] dark:hover:text-[#f59e0b] transition-colors"
                                             title="{{ __('clients.view') }}">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -319,7 +319,7 @@
                                                     d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                             </svg>
                                         </button>
-                                        <button onclick="editClient({{ $client->id }})"
+                                        <button onclick="editClient('{{ $client->id }}')"
                                             class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] dark:hover:text-[#f59e0b] transition-colors"
                                             title="{{ __('clients.edit') }}">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -327,7 +327,7 @@
                                                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                             </svg>
                                         </button>
-                                        <button type="button" onclick="deleteClient({{ $client->id }})"
+                                        <button type="button" onclick="deleteClient('{{ $client->id }}')"
                                             class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-red-500 dark:hover:text-red-400 transition-colors"
                                             title="{{ __('clients.delete') }}">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor"
@@ -336,7 +336,7 @@
                                                     d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                             </svg>
                                         </button>
-                                        <button onclick="addObject({{ $client->id }})"
+                                        <button onclick="addObject('{{ $client->id }}')"
                                             class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] dark:hover:text-[#f59e0b] transition-colors"
                                             title="{{ __('clients.add_object') }}">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor"
@@ -478,13 +478,13 @@
                         <p class="text-sm text-[#0f172a] dark:text-[#EDEDEC] mb-4">{{ $client->comment }}</p>
                     @endif
                     <div class="flex items-center gap-2">
-                        <button onclick="viewClient({{ $client->id }})"
+                        <button onclick="viewClient('{{ $client->id }}')"
                             class="filter-btn">{{ __('clients.view') }}</button>
-                        <button onclick="editClient({{ $client->id }})"
+                        <button onclick="editClient('{{ $client->id }}')"
                             class="filter-btn">{{ __('clients.edit') }}</button>
-                        <button type="button" onclick="deleteClient({{ $client->id }})"
+                        <button type="button" onclick="deleteClient('{{ $client->id }}')"
                             class="filter-btn text-red-500 hover:text-red-600">{{ __('clients.delete') }}</button>
-                        <button onclick="addObject({{ $client->id }})"
+                        <button onclick="addObject('{{ $client->id }}')"
                             class="filter-btn">{{ __('clients.add_object') }}</button>
                     </div>
                 </div>
@@ -507,13 +507,13 @@
                                 <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">{{ $client->phone }}</p>
                                 <div class="flex items-center gap-2 mt-2" onclick="event.stopPropagation()">
                                     <button type="button"
-                                        onclick="event.stopPropagation(); viewClient({{ $client->id }})"
+                                        onclick="event.stopPropagation(); viewClient('{{ $client->id }}')"
                                         class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('clients.view') }}</button>
                                     <button type="button"
-                                        onclick="event.stopPropagation(); editClient({{ $client->id }})"
+                                        onclick="event.stopPropagation(); editClient('{{ $client->id }}')"
                                         class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('clients.edit') }}</button>
                                     <button type="button"
-                                        onclick="event.stopPropagation(); deleteClient({{ $client->id }})"
+                                        onclick="event.stopPropagation(); deleteClient('{{ $client->id }}')"
                                         class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-red-500 hover:border-red-500 hover:text-red-600 transition-colors">{{ __('clients.delete') }}</button>
                                 </div>
                             </div>
@@ -533,13 +533,13 @@
                                 <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">{{ $client->phone }}</p>
                                 <div class="flex items-center gap-2 mt-2" onclick="event.stopPropagation()">
                                     <button type="button"
-                                        onclick="event.stopPropagation(); viewClient({{ $client->id }})"
+                                        onclick="event.stopPropagation(); viewClient('{{ $client->id }}')"
                                         class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('clients.view') }}</button>
                                     <button type="button"
-                                        onclick="event.stopPropagation(); editClient({{ $client->id }})"
+                                        onclick="event.stopPropagation(); editClient('{{ $client->id }}')"
                                         class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('clients.edit') }}</button>
                                     <button type="button"
-                                        onclick="event.stopPropagation(); deleteClient({{ $client->id }})"
+                                        onclick="event.stopPropagation(); deleteClient('{{ $client->id }}')"
                                         class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-red-500 hover:border-red-500 hover:text-red-600 transition-colors">{{ __('clients.delete') }}</button>
                                 </div>
                             </div>
@@ -560,13 +560,13 @@
                                 <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">{{ $client->phone }}</p>
                                 <div class="flex items-center gap-2 mt-2" onclick="event.stopPropagation()">
                                     <button type="button"
-                                        onclick="event.stopPropagation(); viewClient({{ $client->id }})"
+                                        onclick="event.stopPropagation(); viewClient('{{ $client->id }}')"
                                         class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('clients.view') }}</button>
                                     <button type="button"
-                                        onclick="event.stopPropagation(); editClient({{ $client->id }})"
+                                        onclick="event.stopPropagation(); editClient('{{ $client->id }}')"
                                         class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('clients.edit') }}</button>
                                     <button type="button"
-                                        onclick="event.stopPropagation(); deleteClient({{ $client->id }})"
+                                        onclick="event.stopPropagation(); deleteClient('{{ $client->id }}')"
                                         class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-red-500 hover:border-red-500 hover:text-red-600 transition-colors">{{ __('clients.delete') }}</button>
                                 </div>
                             </div>

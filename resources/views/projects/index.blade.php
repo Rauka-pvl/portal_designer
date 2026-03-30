@@ -1,3 +1,4 @@
+{{-- Legacy duplicate block disabled to prevent conflicting markup/scripts.
 @extends('layouts.dashboard')
 
 @section('title', __('projects.projects'))
@@ -81,53 +82,84 @@
                         <label class="block text-sm mb-1">{{ __('projects.planned_cost') }}</label>
                         <input type="number" name="planned_cost" min="0" step="0.01" class="w-full modal-input">
                     </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
-                        <label class="block text-sm mb-1">{{ __('projects.actual_cost') }}</label>
-                        <input type="number" name="actual_cost" min="0" step="0.01" class="w-full modal-input">
+                        <label class="modal-label modal-label-required">{{ __('projects.planned_end_date') }}</label>
+                        <div class="relative">
+                            <input type="text" name="planned_end_date" id="project-planned-end-date" required class="modal-input pr-10" placeholder="дд.мм.гггг" autocomplete="off">
+                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748b] dark:text-[#A1A09A] cursor-pointer hover:text-[#f59e0b] transition-colors" onclick="document.getElementById('project-planned-end-date')._flatpickr?.open()">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            </span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="modal-label">{{ __('projects.actual_end_date') }}</label>
+                        <div class="relative">
+                            <input type="text" name="actual_end_date" id="project-actual-end-date" class="modal-input pr-10" placeholder="дд.мм.гггг" autocomplete="off">
+                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748b] dark:text-[#A1A09A] cursor-pointer hover:text-[#f59e0b] transition-colors" onclick="document.getElementById('project-actual-end-date')._flatpickr?.open()">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            </span>
+                        </div>
                     </div>
                 </div>
-
                 <div>
-                    <label class="block text-sm mb-1">{{ __('projects.links') }}</label>
-                    <div id="project-links" class="space-y-2"></div>
-                    <button type="button" id="add-project-link" class="mt-2 text-sm text-[#f59e0b] hover:underline">{{ __('projects.add_link') }}</button>
-                </div>
-
-                <div>
-                    <label class="block text-sm mb-1">{{ __('projects.files') }}</label>
-                    <input type="file" name="files[]" multiple class="w-full modal-input">
-                    <div id="project-existing-files" class="mt-2 space-y-1"></div>
-                </div>
-
-                <div>
-                    <label class="block text-sm mb-1">{{ __('projects.comment') }}</label>
-                    <textarea name="comment" rows="3" class="w-full modal-input"></textarea>
-                </div>
-
-                <div>
-                    <div class="flex items-center justify-between mb-2">
-                        <h3 class="font-medium">{{ __('projects.project_stages') }}</h3>
-                        <button type="button" id="add-stage-btn" class="text-sm text-[#f59e0b] hover:underline">{{ __('projects.add_stage') }}</button>
+                    <h3 class="modal-section-title">{{ __('projects.project_cost') }}</h3>
+                    <p class="modal-section-subtitle">{{ __('projects.project_cost_subtitle') }}</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <input type="text" name="planned_cost" id="project-planned-cost" class="modal-input" placeholder="{{ __('projects.planned_cost') }}" inputmode="numeric">
+                            <p class="modal-helper">{{ __('projects.cost_helper') }}</p>
+                        </div>
+                        <div>
+                            <input type="text" name="actual_cost" id="project-actual-cost" class="modal-input" placeholder="{{ __('projects.actual_cost') }}" inputmode="numeric">
+                            <p class="modal-helper">{{ __('projects.cost_helper') }}</p>
+                        </div>
                     </div>
-                    <div id="project-stages" class="space-y-3"></div>
                 </div>
-            </form>
-            <div class="px-6 py-4 border-t border-[#e2e8f0] dark:border-[#3E3E3A] flex gap-2">
-                <button type="submit" form="project-form" class="px-4 py-2 rounded-lg bg-[#f59e0b] text-white hover:bg-[#d97706]">{{ __('projects.save') }}</button>
-                <button type="button" onclick="closeProjectModal()" class="px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A]">{{ __('projects.cancel') }}</button>
+                <div>
+                    <h3 class="modal-section-title">{{ __('projects.links') }}</h3>
+                    <p class="modal-section-subtitle">{{ __('projects.links_subtitle') }}</p>
+                    <div id="project-links-container" class="space-y-3">
+                        <div class="input-with-icon">
+                            <span class="input-icon text-[#f59e0b]"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.172-1.172a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.172 1.172a4 4 0 01-5.656 0L9.172 7.172a4 4 0 015.656 0l1.172 1.172a4 4 0 010 5.656z"/></svg></span>
+                            <input type="url" name="project_links[]" class="modal-input" placeholder="{{ __('projects.paste_link') }}">
+                        </div>
+                    </div>
+                    <button type="button" onclick="addProjectLinkField()" class="mt-2 text-sm font-medium text-[#f59e0b] hover:underline flex items-center gap-1.5 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                        {{ __('projects.add_link') }}
+                    </button>
+                </div>
+                <div>
+                    <h3 class="modal-section-title">{{ __('projects.files') }}</h3>
+                    <p class="modal-section-subtitle">{{ __('projects.files_subtitle') }}</p>
+                    <div class="flex gap-0 overflow-hidden rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#0a0a0a]">
+                        <label class="flex-1 flex items-center gap-2 px-4 py-2.5 text-[#64748b] dark:text-[#A1A09A] text-sm cursor-pointer min-h-[2.5rem]">
+                            <svg class="w-5 h-5 text-[#f59e0b] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.172-1.172a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.172 1.172a4 4 0 01-5.656 0L9.172 7.172a4 4 0 015.656 0l1.172 1.172a4 4 0 010 5.656z"/></svg>
+                            <span id="project-files-label">{{ __('projects.files_not_selected') }}</span>
+                            <input type="file" name="project_files[]" id="project-files-input" multiple class="hidden">
+                        </label>
+                        <label for="project-files-input" class="px-4 py-2.5 bg-[#f59e0b] hover:bg-[#d97706] text-white font-medium text-sm cursor-pointer transition-colors shrink-0 flex items-center">
+                            {{ __('projects.select_files') }}
+                        </label>
+                    </div>
+                </div>
+                <div>
+                    <label class="modal-label">{{ __('projects.comment') }}</label>
+                    <textarea name="comment" rows="3" class="modal-input resize-none" placeholder="{{ __('projects.comment_placeholder') }}"></textarea>
+                </div>
             </div>
-        </div>
+            <div class="modal-footer flex-col sm:flex-row gap-3">
+                <button type="submit" id="project-submit-btn" class="add-btn w-full sm:w-auto">{{ __('projects.add_project') }}</button>
+                <button type="button" onclick="closeProjectModal()" class="btn-secondary w-full sm:w-auto flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    {{ __('projects.go_back') }}</button>
+            </div>
+        </form>
     </div>
+</div>
 
-    <div id="project-view-modal" class="fixed inset-0 bg-black/50 z-[80] hidden modal-overlay" onmousedown="if(event.target===this) closeProjectViewModal()">
-        <div class="absolute right-0 top-0 h-full w-full max-w-xl bg-white dark:bg-[#161615] border-l border-[#e2e8f0] dark:border-[#3E3E3A] transform translate-x-full transition-transform duration-300">
-            <div class="px-6 py-4 border-b border-[#e2e8f0] dark:border-[#3E3E3A] flex items-center justify-between">
-                <h2 class="text-lg font-semibold">{{ __('projects.view') }}</h2>
-                <button type="button" onclick="closeProjectViewModal()" class="p-2 rounded hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a]">✕</button>
-            </div>
-            <div id="project-view-content" class="p-6 space-y-4 overflow-y-auto h-[calc(100%-64px)]"></div>
-        </div>
-    </div>
 @endsection
 
 @section('scripts')
@@ -410,6 +442,7 @@
 })();
 </script>
 @endsection
+--}}
 
 @extends('layouts.dashboard')
 
