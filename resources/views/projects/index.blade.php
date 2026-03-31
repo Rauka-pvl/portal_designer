@@ -1071,6 +1071,8 @@
 let allProjects = @json($projects);
 let currentView = 'table';
 const projectUsers = @json($users ?? []);
+const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
+let templatesSource = @json($templatesData ?? []);
 let templatesByType = {};
 const stageLabels = { measurement: '{{ __("projects.stage_measurement") }}', planning: '{{ __("projects.stage_planning") }}', drawings: '{{ __("projects.stage_drawings") }}', equipment: '{{ __("projects.stage_equipment") }}', estimate: '{{ __("projects.stage_estimate") }}', visualization: '{{ __("projects.stage_visualization") }}' };
 function getStageDisplay(project) {
@@ -1513,26 +1515,17 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     async function fetchTemplates() {
         try {
-            let data;
-            if (typeof window.apiGet === 'function') {
-                data = await window.apiGet('/templates');
-            } else {
-                await fetch('{{ url("/sanctum/csrf-cookie") }}', { credentials: 'include' });
-                const res = await fetch('{{ url("/api/templates") }}', {
-                    credentials: 'include',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', 'X-CSRF-TOKEN': token }
+            templatesByType = (Array.isArray(templatesSource) ? templatesSource : []).reduce((acc, t) => {
+                const type = t.type || 'other';
+                if (!acc[type]) acc[type] = [];
+                acc[type].push({
+                    id: t.id,
+                    name: t.name || '',
+                    steps: t.steps || [],
+                    is_owner: Boolean(t.is_owner ?? t.is_owned),
                 });
-                if (!res.ok) return;
-                data = await res.json();
-            }
-            templatesByType = Array.isArray(data)
-                ? data.reduce((acc, t) => {
-                    const type = t.type || 'other';
-                    if (!acc[type]) acc[type] = [];
-                    acc[type].push({ id: t.id, name: t.name || '', steps: t.steps || [], is_owner: !!t.is_owner });
-                    return acc;
-                  }, {})
-                : data;
+                return acc;
+            }, {});
         } catch (e) { console.warn('Templates fetch failed', e); }
     }
     function renderProjectStageChecklists(initialChecklists) {
@@ -1542,8 +1535,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const checklistData = (initialChecklists || {})[stageValue];
             const label = stageLabels[stageValue] || stageValue;
             const templates = (templatesByType && templatesByType[stageValue]) || [];
+            console.log("templates", templates);
             const selTemplateId = (checklistData?.template_id || '').toString();
             const optionsHtml = templates.map(t => `<option value="${t.id}" data-is-owner="${t.is_owner ? '1' : '0'}"${t.id == selTemplateId ? ' selected' : ''}>${(t.name || '').replace(/"/g, '&quot;')}</option>`).join('');
+            
             const sect = document.createElement('div');
             sect.className = 'checklist-section rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a] overflow-hidden';
             sect.dataset.stage = stageValue;
@@ -1645,20 +1640,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 const name = prompt('{{ __('projects.template_name_placeholder') }}:', '');
                 if (!name || !name.trim()) return;
                 try {
-                    await fetch('{{ url("/sanctum/csrf-cookie") }}', { credentials: 'include' });
-                    const res = await fetch('{{ url("/api/templates") }}', {
+                    const res = await fetch('{{ route('projects.templates.store') }}', {
                         method: 'POST',
-                        credentials: 'include',
                         headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
                         body: JSON.stringify({ name: name.trim(), type: stageValue, steps: titles })
                     });
-                    if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.message || 'Save failed'); }
-                    const created = await res.json();
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok || !data.success || !data.template) {
+                        throw new Error(data.message || 'Save failed');
+                    }
+                    templatesSource.unshift(data.template);
                     await fetchTemplates();
                     renderProjectStageChecklists();
                     const newSect = document.getElementById('project-stage-checklists')?.querySelector(`[data-stage="${stageValue}"]`);
                     const sel = newSect?.querySelector('.stage-template-select');
-                    if (sel) { sel.value = created.id; sel.dispatchEvent(new Event('change')); }
+                    if (sel) { sel.value = String(data.template.id); sel.dispatchEvent(new Event('change')); }
                 } catch (e) { alert(e.message || 'Ошибка сохранения'); }
             });
             sect.querySelector('.delete-template-btn')?.addEventListener('click', async function() {
@@ -1669,13 +1665,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (opt?.dataset.isOwner !== '1') return;
                 if (!confirm('{{ __('projects.delete_template_confirm') }}')) return;
                 try {
-                    await fetch('{{ url("/sanctum/csrf-cookie") }}', { credentials: 'include' });
-                    const res = await fetch(`{{ url("/api/templates") }}/${tid}`, {
+                    const res = await fetch(`{{ url('/projects/templates') }}/${tid}`, {
                         method: 'DELETE',
-                        credentials: 'include',
                         headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', 'X-CSRF-TOKEN': token }
                     });
                     if (!res.ok) throw new Error('Delete failed');
+                    templatesSource = templatesSource.filter(t => String(t.id) !== String(tid));
                     await fetchTemplates();
                     renderProjectStageChecklists();
                 } catch (e) { alert(e.message || 'Ошибка удаления'); }
