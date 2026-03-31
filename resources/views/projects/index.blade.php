@@ -1075,9 +1075,16 @@ const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
 let templatesSource = @json($templatesData ?? []);
 let templatesByType = {};
 const stageLabels = { measurement: '{{ __("projects.stage_measurement") }}', planning: '{{ __("projects.stage_planning") }}', drawings: '{{ __("projects.stage_drawings") }}', equipment: '{{ __("projects.stage_equipment") }}', estimate: '{{ __("projects.stage_estimate") }}', visualization: '{{ __("projects.stage_visualization") }}' };
+function getProjectStageTypes(project) {
+    const stages = Array.isArray(project?.stages) ? project.stages : (project?.stage ? [project.stage] : []);
+    return stages
+        .map((item) => (typeof item === 'object' ? item.stage_type : item))
+        .map((value) => String(value || '').trim())
+        .filter(Boolean);
+}
 function getStageDisplay(project) {
-    const arr = project.stages || (project.stage ? [project.stage] : []);
-    return arr.map(s => stageLabels[s] || s).join(', ') || '-';
+    const stageTypes = getProjectStageTypes(project);
+    return stageTypes.map((s) => stageLabels[s] || s).join(', ') || '-';
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -1124,8 +1131,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const searchStr = Object.values(project).join(' ').toLowerCase();
             const matchSearch = !search || searchStr.includes(search);
             const matchStatus = !statusFilter || project.status === statusFilter;
-            const stages = project.stages || (project.stage ? [project.stage] : []);
-            const matchStage = !stageFilter || stages.includes(stageFilter);
+            const stageTypes = getProjectStageTypes(project);
+            const matchStage = !stageFilter || stageTypes.includes(stageFilter);
             const matchObject = !objectFilter || project.object_id == objectFilter;
             const matchClient = !clientFilter || project.client_id == clientFilter;
             return matchSearch && matchStatus && matchStage && matchObject && matchClient;
@@ -1171,7 +1178,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Рендеринг таблицы
+
     function renderTable() {
         let filtered = getFilteredProjects();
 
@@ -1180,7 +1187,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const paginated = filtered.slice(start, end);
 
         const tbody = document.getElementById('projects-table-body');
-        if (!tbody) return;
+        if (!tbody) {console.log("tbody not found"); return};
 
         if (paginated.length === 0) {
             tbody.innerHTML = '<tr><td colspan="11" class="px-4 py-8 text-center text-[#64748b] dark:text-[#A1A09A]">{{ __('projects.no_projects') }}</td></tr>';
@@ -1201,8 +1208,9 @@ document.addEventListener('DOMContentLoaded', function() {
                               project.status === 'tz_signed' ? '{{ __('projects.status_tz_signed') }}' :
                               project.status === 'documents_signed' ? '{{ __('projects.status_documents_signed') }}' :
                               '{{ __('projects.status_in_work') }}';
+            console.log("project", project);
             const stageText = getStageDisplay(project);
-
+            
             const startDate = new Date(project.start_date).toLocaleDateString('kk-KZ');
             const endDate = new Date(project.planned_end_date).toLocaleDateString('kk-KZ');
             const actualEndDate = project.actual_end_date ? new Date(project.actual_end_date).toLocaleDateString('kk-KZ') : '';
@@ -1325,27 +1333,56 @@ document.addEventListener('DOMContentLoaded', function() {
         }).join('');
     }
 
-    // Рендеринг воронки
+    // Рендеринг воронки (same interaction model as objects)
     function renderFunnel() {
-        const statuses = ['contract_negotiation', 'contract_signed', 'prepayment_received', 'tz_signed', 'documents_signed', 'in_work'];
-        statuses.forEach(status => {
-            const container = document.getElementById(`funnel-${status.replace(/_/g, '-')}`);
-            if (!container) return;
-            container.innerHTML = '';
+        const columns = {
+            contract_negotiation: document.getElementById('funnel-contract-negotiation'),
+            contract_signed: document.getElementById('funnel-contract-signed'),
+            prepayment_received: document.getElementById('funnel-prepayment-received'),
+            tz_signed: document.getElementById('funnel-tz-signed'),
+            documents_signed: document.getElementById('funnel-documents-signed'),
+            in_work: document.getElementById('funnel-in-work'),
+        };
 
-            const filtered = getFilteredProjects().filter(p => p.status === status);
-            filtered.forEach(project => {
-                const card = document.createElement('div');
-                card.className = 'funnel-card';
-                card.draggable = true;
-                card.dataset.projectId = project.id;
-                card.ondragstart = drag;
-                card.innerHTML = `
-                    <h4 class="font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-1">${project.name}</h4>
-                    <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">${project.client_name}</p>
+        Object.values(columns).forEach((el) => {
+            if (el) el.innerHTML = '';
+        });
+
+        const grouped = {
+            contract_negotiation: [],
+            contract_signed: [],
+            prepayment_received: [],
+            tz_signed: [],
+            documents_signed: [],
+            in_work: [],
+        };
+
+        getFilteredProjects().forEach((project) => {
+            const status = String(project.status || '').trim();
+            if (grouped[status]) grouped[status].push(project);
+        });
+
+        Object.entries(columns).forEach(([status, container]) => {
+            if (!container) return;
+            container.innerHTML = grouped[status].map((project) => {
+                const safeProject = JSON.stringify(project).replace(/'/g, '&#39;');
+                return `
+                    <div class="funnel-card" draggable="true"
+                         ondragstart="if(event.target.closest('button')) { event.preventDefault(); return false; } drag(event)"
+                         data-project-id="${project.id}" data-project='${safeProject}'>
+                        <h4 class="font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-1">${project.name || ''}</h4>
+                        <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">${project.client_name || ''}</p>
+                        <div class="flex flex-wrap items-center gap-2 mt-2" onclick="event.stopPropagation()">
+                            <button type="button" onclick="event.stopPropagation(); viewProject(${project.id})"
+                                class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] transition-colors">{{ __('projects.view') }}</button>
+                            <button type="button" onclick="event.stopPropagation(); editProject(${project.id})"
+                                class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] transition-colors">{{ __('projects.edit') }}</button>
+                            <button type="button" onclick="event.stopPropagation(); deleteProject(${project.id})"
+                                class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-red-500 hover:border-red-500 transition-colors">{{ __('projects.delete') }}</button>
+                        </div>
+                    </div>
                 `;
-                container.appendChild(card);
-            });
+            }).join('');
         });
     }
 
@@ -1625,12 +1662,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 sect.querySelector('.delete-template-btn')?.classList.toggle('hidden', !tid || !isOwner);
                 const t = templates.find(x => x.id == tid);
                 renderStageSteps(sect, stageValue, t ? t.steps : []);
+                applyStageMetaToAllStepCards();
             });
+            const stageDeadlineEl = sect.querySelector(`[name="stage_checklist_deadline[${stageValue}]"]`);
+            const stageResponsibleEl = sect.querySelector(`[name="stage_checklist_responsible[${stageValue}]"]`);
+            function applyStageMetaToCard(card) {
+                if (!card) return;
+                const deadlineValue = String(stageDeadlineEl?.value || '').trim();
+                const responsibleValue = String(stageResponsibleEl?.value || '').trim();
+
+                const stepDeadlineEl = card.querySelector('.step-deadline');
+                const stepResponsibleEl = card.querySelector('select[name^="stage_step_responsible"]');
+
+                if (stepDeadlineEl && deadlineValue) {
+                    stepDeadlineEl.value = deadlineValue;
+                }
+                if (stepResponsibleEl && responsibleValue) {
+                    stepResponsibleEl.value = responsibleValue;
+                }
+            }
+            function applyStageMetaToAllStepCards() {
+                const stepsEl = sect.querySelector('.stage-steps-container');
+                if (!stepsEl) return;
+                stepsEl.querySelectorAll('.step-card').forEach(applyStageMetaToCard);
+            }
+            stageDeadlineEl?.addEventListener('change', applyStageMetaToAllStepCards);
+            stageResponsibleEl?.addEventListener('change', applyStageMetaToAllStepCards);
             sect.querySelector('.add-step-btn')?.addEventListener('click', function() {
                 const stepsEl = sect.querySelector('.stage-steps-container');
                 if (!stepsEl) return;
                 const n = stepsEl.querySelectorAll('.step-card').length + 1;
                 addStepCard(stepsEl, stageValue, n, '');
+                const added = stepsEl.querySelector('.step-card:last-child');
+                applyStageMetaToCard(added);
             });
             sect.querySelector('.save-template-btn')?.addEventListener('click', async function() {
                 const stepsEl = sect.querySelector('.stage-steps-container');
@@ -1684,6 +1748,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 const step = typeof s === 'object' ? s : { title: s };
                 addStepCard(stepsEl, stageValue, i + 1, step.title || step, step);
             });
+            const stageDeadlineEl = sect.querySelector(`[name="stage_checklist_deadline[${stageValue}]"]`);
+            const stageResponsibleEl = sect.querySelector(`[name="stage_checklist_responsible[${stageValue}]"]`);
+            const deadlineValue = String(stageDeadlineEl?.value || '').trim();
+            const responsibleValue = String(stageResponsibleEl?.value || '').trim();
+            if (deadlineValue || responsibleValue) {
+                stepsEl.querySelectorAll('.step-card').forEach(card => {
+                    const stepDeadlineEl = card.querySelector('.step-deadline');
+                    const stepResponsibleEl = card.querySelector('select[name^="stage_step_responsible"]');
+                    if (stepDeadlineEl && deadlineValue) stepDeadlineEl.value = deadlineValue;
+                    if (stepResponsibleEl && responsibleValue) stepResponsibleEl.value = responsibleValue;
+                });
+            }
         }
         function addStepCard(container, stageValue, num, title, stepData) {
             const card = document.createElement('div');
@@ -1786,8 +1862,88 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.disabled = true;
         submitBtn.textContent = '...';
         try {
+            const parseDateInputForServer = (value) => {
+                const str = String(value || '').trim();
+                if (!str) return '';
+                const dmY = str.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+                if (dmY) return `${dmY[3]}-${dmY[2]}-${dmY[1]}`;
+                const iso = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                return iso ? iso[0] : '';
+            };
+            const parseMoneyInputForServer = (value) => String(value || '').replace(/[^\d]/g, '');
+
             const fd = new FormData(form);
             if (projectId) fd.append('_method', 'PUT');
+
+            // UI fields -> backend contract
+            fd.set('name', String(fd.get('project_name') || '').trim());
+            fd.set('start_date', parseDateInputForServer(fd.get('start_date')));
+            fd.set('planned_end_date', parseDateInputForServer(fd.get('planned_end_date')));
+            fd.set('actual_end_date', parseDateInputForServer(fd.get('actual_end_date')));
+            fd.set('planned_cost', parseMoneyInputForServer(fd.get('planned_cost')));
+            fd.set('actual_cost', parseMoneyInputForServer(fd.get('actual_cost')));
+
+            // Remove empty links to avoid links.* url validation errors
+            const links = fd.getAll('project_links[]').map(v => String(v || '').trim()).filter(Boolean);
+            fd.delete('links[]');
+            links.forEach(link => fd.append('links[]', link));
+
+            // Map files[] expected by backend
+            const files = fd.getAll('project_files[]').filter(v => v instanceof File && v.name);
+            fd.delete('files[]');
+            files.forEach(file => fd.append('files[]', file));
+
+            // Rebuild stages payload expected by backend
+            fd.delete('stages[]');
+            for (let i = 0; i < 100; i++) {
+                fd.delete(`stages[${i}][stage_type]`);
+                fd.delete(`stages[${i}][template_id]`);
+                fd.delete(`stages[${i}][deadline]`);
+                fd.delete(`stages[${i}][assign_task]`);
+                fd.delete(`stages[${i}][responsible_id]`);
+                for (let j = 0; j < 300; j++) {
+                    fd.delete(`stages[${i}][steps][${j}][title]`);
+                    fd.delete(`stages[${i}][steps][${j}][deadline]`);
+                    fd.delete(`stages[${i}][steps][${j}][responsible_id]`);
+                    fd.delete(`stages[${i}][steps][${j}][link]`);
+                }
+            }
+
+            (projectSelectedStages || []).forEach((stageValue, idx) => {
+                fd.append(`stages[${idx}][stage_type]`, String(stageValue || '').trim());
+                const sect = document.querySelector(`#project-stage-checklists [data-stage="${stageValue}"]`);
+                if (!sect) return;
+
+                const templateId = String(sect.querySelector('.stage-template-select')?.value || '').trim();
+                const deadlineValue = parseDateInputForServer(
+                    sect.querySelector(`[name="stage_checklist_deadline[${stageValue}]"]`)?.value || ''
+                );
+                const assignTask = !!sect.querySelector(`[name="stage_checklist_assign[${stageValue}]"]`)?.checked;
+                const responsibleId = String(
+                    sect.querySelector(`[name="stage_checklist_responsible[${stageValue}]"]`)?.value || ''
+                ).trim();
+
+                if (templateId) fd.append(`stages[${idx}][template_id]`, templateId);
+                if (deadlineValue) fd.append(`stages[${idx}][deadline]`, deadlineValue);
+                if (assignTask) fd.append(`stages[${idx}][assign_task]`, '1');
+                if (responsibleId) fd.append(`stages[${idx}][responsible_id]`, responsibleId);
+
+                const stepCards = Array.from(sect.querySelectorAll('.step-card'));
+                stepCards.forEach((card, stepIdx) => {
+                    const title = String(card.querySelector('.step-title')?.value || '').trim();
+                    if (!title) return;
+
+                    const stepDeadline = parseDateInputForServer(card.querySelector('.step-deadline')?.value || '');
+                    const stepResponsible = String(card.querySelector('select[name^="stage_step_responsible"]')?.value || '').trim();
+                    const stepLink = String(card.querySelector('input[type="url"]')?.value || '').trim();
+
+                    fd.append(`stages[${idx}][steps][${stepIdx}][title]`, title);
+                    if (stepDeadline) fd.append(`stages[${idx}][steps][${stepIdx}][deadline]`, stepDeadline);
+                    if (stepResponsible) fd.append(`stages[${idx}][steps][${stepIdx}][responsible_id]`, stepResponsible);
+                    if (stepLink) fd.append(`stages[${idx}][steps][${stepIdx}][link]`, stepLink);
+                });
+            });
+
             const res = await fetch(url, {
                 method: 'POST',
                 headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
@@ -1797,11 +1953,12 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!res.ok) {
                 throw new Error(data.message || Object.values(data.errors || {}).flat().join(' ') || 'Ошибка сохранения');
             }
-            const idx = allProjects.findIndex(p => p.id == data.id);
+            const project = data.project || data;
+            const idx = allProjects.findIndex(p => p.id == project.id);
             if (idx >= 0) {
-                allProjects[idx] = data;
+                allProjects[idx] = project;
             } else {
-                allProjects.unshift(data);
+                allProjects.unshift(project);
             }
             closeProjectModal();
             if (currentView === 'table') renderTable();
@@ -1952,14 +2109,32 @@ async function editProject(id) {
         document.getElementById('project-modal').classList.add('flex');
         document.body.classList.add('overflow-hidden');
         document.getElementById('project-modal-title').textContent = '{{ __('projects.edit_project') }}';
-        window._projectEditChecklists = project.stage_checklists || {};
+        const stageItems = Array.isArray(project.stages) ? project.stages : [];
+        const stageChecklists = {};
+        stageItems.forEach((s) => {
+            const type = typeof s === 'object' ? String(s.stage_type || '').trim() : String(s || '').trim();
+            if (!type) return;
+            stageChecklists[type] = {
+                template_id: typeof s === 'object' ? (s.template_id ?? '') : '',
+                deadline: typeof s === 'object' ? (s.deadline ?? '') : '',
+                responsible_id: typeof s === 'object' ? (s.responsible_id ?? '') : '',
+                assign_task: typeof s === 'object' ? !!s.assign_task : false,
+                steps: typeof s === 'object' ? (Array.isArray(s.steps) ? s.steps : []) : [],
+            };
+        });
+        window._projectEditChecklists = stageChecklists;
         await fetchTemplates();
         document.getElementById('project-submit-btn').textContent = '{{ __('projects.save') }}';
         document.getElementById('project_id').value = project.id;
         document.querySelector('input[name="project_name"]').value = project.name || '';
         document.querySelector('select[name="object_id"]').value = project.object_id || '';
         document.querySelector('select[name="status"]').value = project.status || '';
-        projectSelectedStages = project.stages || (project.stage ? [project.stage] : []);
+        projectSelectedStages = stageItems.length
+            ? stageItems
+                .map(s => (typeof s === 'object' ? s.stage_type : s))
+                .map(v => String(v || '').trim())
+                .filter(Boolean)
+            : (project.stage ? [String(project.stage).trim()] : []);
         renderProjectStageTags();
         const startEl = document.getElementById('project-start-date');
         const plannedEl = document.getElementById('project-planned-end-date');
@@ -2045,8 +2220,15 @@ function addSupplierOrder(projectId) {
 // Drag & Drop для воронок
 let draggedProjectElement = null;
 
+function clearFunnelHighlights() {
+    document.querySelectorAll('.funnel-column.drag-over').forEach(col => {
+        col.classList.remove('drag-over');
+    });
+}
+
 function allowDrop(ev) {
     ev.preventDefault();
+    clearFunnelHighlights();
     ev.currentTarget.classList.add('drag-over');
 }
 
@@ -2060,41 +2242,56 @@ function drag(ev) {
 
 function drop(ev) {
     ev.preventDefault();
-    ev.currentTarget.classList.remove('drag-over');
+    clearFunnelHighlights();
 
-    if (draggedProjectElement) {
-        const newStatus = ev.currentTarget.dataset.status;
-        const projectId = draggedProjectElement.dataset.projectId;
+    if (!draggedProjectElement) return;
 
-        const project = allProjects.find(p => p.id == projectId);
-        if (project) {
-            project.status = newStatus;
-        }
+    const newStatus = ev.currentTarget.dataset.status;
+    const projectId = draggedProjectElement.dataset.projectId;
+    const project = allProjects.find(p => p.id == projectId);
+    const prevStatus = project?.status;
 
-        ev.currentTarget.querySelector('.funnel-cards').appendChild(draggedProjectElement);
-        draggedProjectElement.classList.remove('dragging');
+    if (project) project.status = newStatus;
+    ev.currentTarget.querySelector('.funnel-cards')?.appendChild(draggedProjectElement);
+    draggedProjectElement.classList.remove('dragging');
+    draggedProjectElement = null;
 
-        const fd = new FormData();
-        fd.append('_token', document.querySelector('input[name="_token"]')?.value || '');
-        fd.append('_method', 'PATCH');
-        fd.append('status', newStatus);
-        fetch(`{{ url('projects') }}/${projectId}/status`, {
-            method: 'POST',
-            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
-            body: fd
-        }).then(r => r.json()).then(data => {
-            const idx = allProjects.findIndex(p => p.id == data.id);
-            if (idx >= 0) allProjects[idx] = data;
-        }).catch(() => {});
+    updateProjectStatus(projectId, newStatus).catch(() => {
+        
+        if (project) project.status = prevStatus;
+        renderFunnel();
+    });
+}
 
-        draggedProjectElement = null;
+async function updateProjectStatus(projectId, newStatus) {
+    const res = await fetch(`{{ url('projects') }}/${projectId}/status`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': token,
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Status update failed');
     }
+    const updatedProject = data.project || data;
+    const idx = allProjects.findIndex(p => p.id == updatedProject.id);
+    if (idx >= 0) allProjects[idx] = updatedProject;
+    else allProjects.unshift(updatedProject);
+    if (currentView === 'funnel') renderFunnel();
+    else if (currentView === 'table') renderTable();
+    else if (currentView === 'list') renderList();
 }
 
 // Убираем класс drag-over при уходе мыши
 document.querySelectorAll('.funnel-column').forEach(column => {
     column.addEventListener('dragleave', function(e) {
-        this.classList.remove('drag-over');
+        if (!column.contains(e.relatedTarget)) {
+            column.classList.remove('drag-over');
+        }
     });
 });
 </script>

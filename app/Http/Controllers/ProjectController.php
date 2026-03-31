@@ -136,6 +136,32 @@ class ProjectController extends Controller
         ]);
     }
 
+    public function updateStatus(Request $request, int $projectId)
+    {
+        $data = $request->validate([
+            'status' => ['required', Rule::in([
+                'contract_negotiation',
+                'contract_signed',
+                'prepayment_received',
+                'tz_signed',
+                'documents_signed',
+                'in_work',
+            ])],
+        ]);
+
+        $project = Project::query()
+            ->where('user_id', $request->user()->id)
+            ->findOrFail($projectId);
+
+        $project->status = $data['status'];
+        $project->save();
+
+        return response()->json([
+            'success' => true,
+            'project' => $this->projectPayload($project->load(['object.client', 'stages.steps', 'stages.template'])),
+        ]);
+    }
+
     public function saveTemplate(Request $request)
     {
         $data = $request->validate([
@@ -200,7 +226,10 @@ class ProjectController extends Controller
             'stages.*.assign_task' => ['nullable', 'boolean'],
             'stages.*.responsible_id' => ['nullable', 'integer', Rule::exists('users', 'id')],
             'stages.*.steps' => ['nullable', 'array'],
-            'stages.*.steps.*' => ['nullable', 'string', 'max:1000'],
+            'stages.*.steps.*.title' => ['nullable', 'string', 'max:1000'],
+            'stages.*.steps.*.deadline' => ['nullable', 'date'],
+            'stages.*.steps.*.responsible_id' => ['nullable', 'integer', Rule::exists('users', 'id')],
+            'stages.*.steps.*.link' => ['nullable', 'url', 'max:1000'],
         ]);
 
         $links = array_values(array_filter(array_map(fn ($v) => trim((string) $v), (array) ($data['links'] ?? []))));
@@ -259,16 +288,30 @@ class ProjectController extends Controller
                 'stage_type' => $type,
                 'template_id' => $templateId,
                 'deadline' => $stageRow['deadline'] ?? null,
-                'responsible_id' => ! empty($stageRow['assign_task']) ? ($stageRow['responsible_id'] ?? null) : null,
+                'responsible_id' => $stageRow['responsible_id'] ?? null,
                 'assign_task' => ! empty($stageRow['assign_task']),
                 'order' => $index,
             ]);
 
-            $steps = array_values(array_filter(array_map(fn ($v) => trim((string) $v), (array) ($stageRow['steps'] ?? []))));
-            foreach ($steps as $stepIdx => $stepTitle) {
+            $steps = (array) ($stageRow['steps'] ?? []);
+            foreach ($steps as $stepIdx => $stepRow) {
+                $title = is_array($stepRow)
+                    ? trim((string) ($stepRow['title'] ?? ''))
+                    : trim((string) $stepRow);
+                if ($title === '') {
+                    continue;
+                }
+
+                $deadline = is_array($stepRow) ? ($stepRow['deadline'] ?? null) : null;
+                $responsibleId = is_array($stepRow) ? ($stepRow['responsible_id'] ?? null) : null;
+                $link = is_array($stepRow) ? trim((string) ($stepRow['link'] ?? '')) : '';
+
                 ProjectStageStep::create([
                     'project_stage_id' => $stage->id,
-                    'title' => $stepTitle,
+                    'title' => $title,
+                    'deadline' => $deadline ?: null,
+                    'responsible_id' => $responsibleId ?: null,
+                    'link' => $link !== '' ? $link : null,
                     'order' => $stepIdx,
                 ]);
             }
@@ -305,7 +348,14 @@ class ProjectController extends Controller
                     'deadline' => $stage->deadline,
                     'responsible_id' => $stage->responsible_id,
                     'assign_task' => (bool) $stage->assign_task,
-                    'steps' => $stage->steps->sortBy('order')->pluck('title')->values(),
+                    'steps' => $stage->steps->sortBy('order')->map(function (ProjectStageStep $step) {
+                        return [
+                            'title' => $step->title,
+                            'deadline' => $step->deadline,
+                            'responsible_id' => $step->responsible_id,
+                            'link' => $step->link,
+                        ];
+                    })->values(),
                 ];
             })->values(),
         ];

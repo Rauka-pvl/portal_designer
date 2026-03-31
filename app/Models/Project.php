@@ -45,4 +45,13 @@ class Project extends Model
     {
         return $this->hasMany(ProjectStages::class, 'project_id');
     }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (Project $project) {
+            // Project uses SoftDeletes, so DB-level cascade is not triggered.
+            // Manually remove child stages to avoid orphaned stage/step rows.
+            $project->stages()->get()->each->delete();
+        });
+    }
 }

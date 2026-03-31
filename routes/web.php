@@ -128,6 +128,9 @@ Route::group(['middleware' => 'auth'], function () {
     Route::delete('/projects/{projectId}', [ProjectController::class, 'destroy'])
         ->whereNumber('projectId')
         ->name('projects.destroy');
+    Route::patch('/projects/{projectId}/status', [ProjectController::class, 'updateStatus'])
+        ->whereNumber('projectId')
+        ->name('projects.update_status');
     Route::post('/projects/templates', [ProjectController::class, 'saveTemplate'])->name('projects.templates.store');
     Route::delete('/projects/templates/{templateId}', [ProjectController::class, 'deleteTemplate'])
         ->whereNumber('templateId')
