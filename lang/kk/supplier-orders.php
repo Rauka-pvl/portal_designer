@@ -15,6 +15,7 @@ return [
     'product_service' => 'Тауар/қызмет',
     'links' => 'Сілтемелер',
     'view' => 'Көру',
+    'details' => 'Толығырақ',
     'edit' => 'Өңдеу',
     'delete' => 'Жою',
     'save' => 'Сақтау',

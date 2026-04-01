@@ -35,6 +35,7 @@ return [
     'links' => 'Links',
     'comment' => 'Comment',
     'view' => 'View',
+    'details' => 'Details',
     'edit' => 'Edit',
     'delete' => 'Delete',
     'add_supplier_order' => 'Supplier Order',

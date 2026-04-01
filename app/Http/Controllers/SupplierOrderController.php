@@ -33,7 +33,7 @@ class SupplierOrderController extends Controller
             ->where('user_id', $userId)
             ->orderBy('name')
             ->get(['id', 'name']);
-
+      
         $orders = Supplier_orders::query()
             ->where('user_id', $userId)
             ->with(['project:id,name', 'supplier:id,name'])
@@ -46,6 +46,8 @@ class SupplierOrderController extends Controller
             'orders' => $orders->map(fn (Supplier_orders $order) => $this->payload($order))->values(),
             'selectedProjectId' => $request->query('project_id'),
             'selectedSupplierId' => $request->query('supplier_id'),
+            'categoryOptions' => $this->categoryOptions(),
+            'roomOptions' => $this->roomOptions(),
         ]);
     }
 
@@ -71,10 +73,36 @@ class SupplierOrderController extends Controller
 
         $this->fillAndSave($request, $order);
 
+        if (! ($request->expectsJson() || $request->wantsJson())) {
+            return redirect()->route('supplier-orders.show', $order->id)->with('status', __('supplier-orders.saved'));
+        }
+
         return response()->json([
             'success' => true,
             'message' => __('supplier-orders.updated'),
             'order' => $this->payload($order->load(['project:id,name', 'supplier:id,name'])),
+        ]);
+    }
+
+    public function show(Request $request, int $orderId)
+    {
+        $order = Supplier_orders::query()
+            ->where('user_id', $request->user()->id)
+            ->with(['project:id,name', 'supplier:id,name'])
+            ->findOrFail($orderId);
+        $payload = $this->payload($order);
+
+        if ($request->expectsJson() || $request->wantsJson()) {
+            return response()->json($payload);
+        }
+
+        return view('supplier-orders.show', [
+            'order' => $order,
+            'orderData' => $payload,
+            'projects' => Project::query()->where('user_id', $request->user()->id)->orderBy('name')->get(['id', 'name']),
+            'suppliers' => Supplier::query()->where('user_id', $request->user()->id)->orderBy('name')->get(['id', 'name']),
+            'categoryOptions' => $this->categoryOptions(),
+            'roomOptions' => $this->roomOptions(),
         ]);
     }
 
@@ -91,6 +119,10 @@ class SupplierOrderController extends Controller
         }
 
         $order->delete();
+
+        if (! ($request->expectsJson() || $request->wantsJson())) {
+            return redirect()->route('supplier-orders.index')->with('status', __('supplier-orders.deleted'));
+        }
 
         return response()->json([
             'success' => true,
@@ -180,6 +212,24 @@ class SupplierOrderController extends Controller
         $order->files = $newFiles;
         $order->comment = $data['comment'] ?? null;
         $order->save();
+    }
+
+    private function categoryOptions(): array
+    {
+        $all = trans('categories');
+        if (! is_array($all) || $all === []) {
+            return [];
+        }
+        return $all;
+    }
+
+    private function roomOptions(): array
+    {
+        $all = trans('type_room');
+        if (! is_array($all) || $all === []) {
+            return [];
+        }
+        return $all;
     }
 
     private function payload(Supplier_orders $order): array

@@ -409,9 +409,9 @@
                 <option value="">{{ __('suppliers.all_spheres') }}</option>
                 @foreach ($spheres as $sphere)
                     @php
-                        $sphereTranslation = is_string($sphere) ? __('suppliers.' . $sphere) : '';
+                        $sphereTranslation = is_string($sphere) ? __('supplier_spheres.' . $sphere) : '';
                         $sphereLabel =
-                            is_string($sphere) && $sphereTranslation !== 'suppliers.' . $sphere
+                            is_string($sphere) && $sphereTranslation !== 'supplier_spheres.' . $sphere
                                 ? $sphereTranslation
                                 : $sphere;
                     @endphp
@@ -474,9 +474,9 @@
                                     {{ $supplier->city ?? '-' }}</td>
                                 <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">
                                     @php
-                                        $supplierSphereTranslation = $supplier->sphere ? __('suppliers.' . $supplier->sphere) : null;
+                                        $supplierSphereTranslation = $supplier->sphere ? __('supplier_spheres.' . $supplier->sphere) : null;
                                     @endphp
-                                    {{ $supplier->sphere ? ($supplierSphereTranslation !== 'suppliers.' . $supplier->sphere ? $supplierSphereTranslation : $supplier->sphere) : '-' }}</td>
+                                    {{ $supplier->sphere ? ($supplierSphereTranslation !== 'supplier_spheres.' . $supplier->sphere ? $supplierSphereTranslation : $supplier->sphere) : '-' }}</td>
                                 <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">
                                     {{ $supplier->brand_display ?: '-' }}</td>
                                 <td class="px-4 py-3 text-sm">
@@ -540,7 +540,7 @@
         <div class="space-y-4" id="suppliers-list-body">
             @foreach ($suppliers as $supplier)
                 @php
-                    $supplierSphereTranslation = $supplier->sphere ? __('suppliers.' . $supplier->sphere) : null;
+                    $supplierSphereTranslation = $supplier->sphere ? __('supplier_spheres.' . $supplier->sphere) : null;
                 @endphp
                 <div class="bg-white dark:bg-[#161615] border border-[#e2e8f0] dark:border-[#3E3E3A] rounded-lg p-6"
                     data-supplier-id="{{ $supplier->id }}">
@@ -569,7 +569,7 @@
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 text-sm">
                         <div><span class="text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.sphere') }}:</span> <span
-                                class="text-[#0f172a] dark:text-[#EDEDEC] font-medium ml-2">{{ $supplier->sphere ? ($supplierSphereTranslation !== 'suppliers.' . $supplier->sphere ? $supplierSphereTranslation : $supplier->sphere) : '-' }}</span>
+                                class="text-[#0f172a] dark:text-[#EDEDEC] font-medium ml-2">{{ $supplier->sphere ? ($supplierSphereTranslation !== 'supplier_spheres.' . $supplier->sphere ? $supplierSphereTranslation : $supplier->sphere) : '-' }}</span>
                         </div>
                         <div><span class="text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.brand') }}:</span> <span
                                 class="text-[#0f172a] dark:text-[#EDEDEC] font-medium ml-2">{{ $supplier->brand_display ?: '-' }}</span>
@@ -804,10 +804,8 @@
                                     <label class="modal-label">{{ __('suppliers.sphere_activity') }}</label>
                                     <select name="sphere" class="modal-input">
                                         <option value="">{{ __('suppliers.sphere_placeholder') }}</option>
-                                        @foreach ((array) ($sphereOptions ?? []) as $sphere)
-                                            <option value="{{ is_object($sphere) ? ($sphere->key ?? '') : (is_array($sphere) ? ($sphere['key'] ?? '') : '') }}">
-                                                {{ is_object($sphere) ? ($sphere->name ?? '') : (is_array($sphere) ? ($sphere['name'] ?? '') : '') }}
-                                            </option>
+                                        @foreach (($sphereOptions ?? []) as $key => $name)
+                                        <option value="{{ $key }}">{{ $name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -1610,21 +1608,17 @@
             <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.brand') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(brands)}</p></div>
             <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.cities_presence') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(cities)}</p></div>
             <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.work_terms') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(workTerms)}</p></div>
-            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.org_form') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(orgForm)}</p></div>
-            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.inn') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.inn || '-')}</p></div>
-            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.kpp') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.kpp || '-')}</p></div>
-            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.ogrn') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.ogrn || '-')}</p></div>
-            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.okpo') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.okpo || '-')}</p></div>
-            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.legal_address') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.legal_address || '-')}</p></div>
-            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.actual_address') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.actual_address || '-')}</p></div>
-            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.director') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.director || '-')}</p></div>
-            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.accountant') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.accountant || '-')}</p></div>
-            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.bank') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.bank || '-')}</p></div>
-            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.bik') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.bik || '-')}</p></div>
-            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.checking_account') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.checking_account || '-')}</p></div>
-            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.corr_account') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.corr_account || '-')}</p></div>
             <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.comment') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC] whitespace-pre-wrap">${escapeHtml(s.comment || '-')}</p></div>
-            <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.comment_bank') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC] whitespace-pre-wrap">${escapeHtml(s.comment_bank || '-')}</p></div>
+            <div class="pt-4">
+                <a href="/suppliers/${s.id}"
+                    class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
+                    title="{{ __('suppliers.details') }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {{ __('suppliers.details') }}
+                </a>
+            </div>
         `;
                 const modal = document.getElementById('view-supplier-modal');
                 const panel = modal?.querySelector('div[class*="absolute"]');

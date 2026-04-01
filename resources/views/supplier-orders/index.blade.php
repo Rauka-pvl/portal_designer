@@ -361,6 +361,7 @@
                     <div>
                         <label class="modal-label modal-label-required">{{ __('supplier-orders.select_supplier') }}</label>
                         <select name="supplier_id" id="order_supplier_id" required class="modal-input">
+                            <option value="">{{ __('supplier-orders.select_supplier') }}</option>
                             @foreach($suppliers as $supplier)
                                 <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
                             @endforeach
@@ -380,8 +381,8 @@
                         </select>
                     </div>
                     <div>
-                        <label class="modal-label">{{ __('supplier-orders.amount') }}</label>
-                        <input type="number" name="summa" id="order_summa" min="0" step="1" class="modal-input" placeholder="0">
+                        <label class="modal-label modal-label-required">{{ __('supplier-orders.amount') }}</label>
+                        <input type="number" name="summa" id="order_summa" min="0" step="1" required class="modal-input" placeholder="0">
                     </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -389,6 +390,9 @@
                         <label class="modal-label">{{ __('supplier-orders.category') }}</label>
                         <select name="category" id="order_category" class="modal-input">
                             <option value="">{{ __('supplier-orders.select_category') }}</option>
+                            @foreach (($categoryOptions ?? []) as $key => $name)
+                            <option value="{{ $key }}">{{ $name }}</option>
+                            @endforeach
                         </select>
                     </div>
                     <div>
@@ -400,6 +404,9 @@
                     <label class="modal-label">{{ __('supplier-orders.room') }}</label>
                     <select name="room" id="order_room" class="modal-input">
                         <option value="">{{ __('supplier-orders.select_room') }}</option>
+                        @foreach (($roomOptions ?? []) as $key => $name)
+                        <option value="{{ $key }}">{{ $name }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -934,6 +941,16 @@ function viewOrder(id) {
                 <p class="text-[#0f172a] dark:text-[#EDEDEC]">${order.product_service}</p>
             </div>
             ` : ''}
+            <div class="pt-4">
+                <a href="/supplier-orders/${order.id}"
+                    class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
+                    title="{{ __('supplier-orders.details') }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {{ __('supplier-orders.details') }}
+                </a>
+            </div>
         `;
         const modal = document.getElementById('view-order-modal');
         const panel = modal.querySelector('div[class*="absolute"]');
@@ -1036,6 +1053,10 @@ function addOrderLinkField() {
 document.getElementById('order-form')?.addEventListener('submit', function(e) {
     e.preventDefault();
     const form = this;
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
     const sendBtn = e.submitter && e.submitter.value === 'send';
     document.getElementById('send_to_supplier').value = sendBtn ? '1' : '0';
 

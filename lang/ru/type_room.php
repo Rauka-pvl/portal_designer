@@ -1,0 +1,26 @@
+<?php
+
+return [
+    'fitness_room' => 'Фитнесс зал',
+    'bedroom' => 'Спальня',
+    'shower_room' => 'Душевая',
+    'guest_room' => 'Гостевая',
+    'kitchen' => 'Кухня',
+    'pool' => 'Бассейн',
+    'children_room' => 'Детская',
+    'dressing_room' => 'Гардеробная',
+    'living_room' => 'Зал',
+    'workshop' => 'Мастерская',
+    'bathhouse' => 'Баня',
+    'dining_room' => 'Столовая',
+    'laundry_room' => 'Прачечная',
+    'corridor' => 'Коридор',
+    'cinema_room' => 'Кинотеатр',
+    'office' => 'Кабинет',
+    'bathroom' => 'Санузел',
+    'arsenal' => 'Арсенал',
+    'bathtub_room' => 'Ванная',
+    'storage_room' => 'Кладовка',
+    'boiler_room' => 'Котельная',
+    'other' => 'Иное',
+];

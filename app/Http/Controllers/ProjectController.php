@@ -82,8 +82,23 @@ class ProjectController extends Controller
             ->where('user_id', $request->user()->id)
             ->with(['object.client', 'stages.steps', 'stages.template'])
             ->findOrFail($projectId);
+        $payload = $this->projectPayload($project);
 
-        return response()->json($this->projectPayload($project));
+        if ($request->expectsJson() || $request->wantsJson()) {
+            return response()->json($payload);
+        }
+
+        $objects = PassportObject::query()
+            ->where('user_id', $request->user()->id)
+            ->orderByDesc('id')
+            ->get(['id', 'address', 'city']);
+
+        return view('projects.show', [
+            'project' => $project,
+            'projectData' => $payload,
+            'objects' => $objects,
+            'stageTypes' => self::STAGE_TYPES,
+        ]);
     }
 
     public function store(Request $request)
@@ -108,6 +123,10 @@ class ProjectController extends Controller
 
         $this->fillAndSave($request, $project);
 
+        if (! ($request->expectsJson() || $request->wantsJson())) {
+            return redirect()->route('projects.show', $project->id)->with('status', __('projects.updated'));
+        }
+
         return response()->json([
             'success' => true,
             'message' => __('projects.updated'),
@@ -129,6 +148,10 @@ class ProjectController extends Controller
         }
 
         $project->delete();
+
+        if (! ($request->expectsJson() || $request->wantsJson())) {
+            return redirect()->route('projects.index')->with('status', __('projects.deleted'));
+        }
 
         return response()->json([
             'success' => true,

@@ -1,0 +1,26 @@
+<?php
+
+return [
+    'fitness_room' => 'Fitness room',
+    'bedroom' => 'Bedroom',
+    'shower_room' => 'Shower room',
+    'guest_room' => 'Guest room',
+    'kitchen' => 'Kitchen',
+    'pool' => 'Pool',
+    'children_room' => 'Children room',
+    'dressing_room' => 'Dressing room',
+    'living_room' => 'Living room',
+    'workshop' => 'Workshop',
+    'bathhouse' => 'Bathhouse',
+    'dining_room' => 'Dining room',
+    'laundry_room' => 'Laundry room',
+    'corridor' => 'Corridor',
+    'cinema_room' => 'Cinema room',
+    'office' => 'Office',
+    'bathroom' => 'Bathroom',
+    'arsenal' => 'Arsenal',
+    'bathtub_room' => 'Bath room',
+    'storage_room' => 'Storage room',
+    'boiler_room' => 'Boiler room',
+    'other' => 'Other',
+];

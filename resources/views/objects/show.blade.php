@@ -149,6 +149,9 @@
             <button id="btn-edit" type="button" class="btn">
                 {{ __('objects.edit') }}
             </button>
+            <a href="{{ route('objects.index') }}" class="btn">
+                {{ __('objects.close') }}
+            </a>
         </div>
     </div>
 
@@ -297,7 +300,7 @@
                                         </a>
                                         <button type="button"
                                             onclick="window.deleteObjectFileFromShow({{ $object->id }}, {{ $loop->index }})"
-                                            class="p-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-500 hover:text-red-600 transition-colors"
+                                            class="edit-only-control hidden p-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-500 hover:text-red-600 transition-colors"
                                             title="{{ __('objects.delete_file') }}">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -542,6 +545,9 @@
                 if (btnSave) btnSave.classList.toggle('hidden', !enabled);
                 if (btnCancel) btnCancel.classList.toggle('hidden', !enabled);
                 if (btnEdit) btnEdit.classList.toggle('hidden', enabled);
+                document.querySelectorAll('.edit-only-control').forEach((el) => {
+                    el.classList.toggle('hidden', !enabled);
+                });
                 if (map) {
                     setTimeout(() => map.invalidateSize(), 80);
                 }

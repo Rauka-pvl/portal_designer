@@ -139,6 +139,9 @@ Route::group(['middleware' => 'auth'], function () {
     // Supplier orders
     Route::get('/supplier-orders', [SupplierOrderController::class, 'index'])->name('supplier-orders.index');
     Route::post('/supplier-orders', [SupplierOrderController::class, 'store'])->name('supplier-orders.store');
+    Route::get('/supplier-orders/{orderId}', [SupplierOrderController::class, 'show'])
+        ->whereNumber('orderId')
+        ->name('supplier-orders.show');
     Route::put('/supplier-orders/{orderId}', [SupplierOrderController::class, 'update'])
         ->whereNumber('orderId')
         ->name('supplier-orders.update');

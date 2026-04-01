@@ -1,0 +1,26 @@
+<?php
+
+return [
+    'fitness_room' => 'Фитнес залы',
+    'bedroom' => 'Жатын бөлме',
+    'shower_room' => 'Душ бөлмесі',
+    'guest_room' => 'Қонақ бөлме',
+    'kitchen' => 'Ас үй',
+    'pool' => 'Бассейн',
+    'children_room' => 'Балалар бөлмесі',
+    'dressing_room' => 'Киім ауыстыратын бөлме',
+    'living_room' => 'Зал',
+    'workshop' => 'Шеберхана',
+    'bathhouse' => 'Монша',
+    'dining_room' => 'Асхана',
+    'laundry_room' => 'Кір жуатын бөлме',
+    'corridor' => 'Дәліз',
+    'cinema_room' => 'Кинотеатр',
+    'office' => 'Кабинет',
+    'bathroom' => 'Дәретхана',
+    'arsenal' => 'Арсенал',
+    'bathtub_room' => 'Ванна бөлмесі',
+    'storage_room' => 'Қойма',
+    'boiler_room' => 'Қазандық',
+    'other' => 'Басқа',
+];

@@ -61,8 +61,17 @@ class SupplierController extends Controller
     public function show(Request $request, int $supplierId)
     {
         $supplier = Supplier::where('user_id', $request->user()->id)->findOrFail($supplierId);
+        $payload = $this->payload($supplier);
 
-        return response()->json($this->payload($supplier));
+        if ($request->expectsJson() || $request->wantsJson()) {
+            return response()->json($payload);
+        }
+
+        return view('suppliers.show', [
+            'supplier' => $supplier,
+            'supplierData' => $payload,
+            'sphereOptions' => $this->sphereOptions(),
+        ]);
     }
 
     public function store(Request $request)
@@ -84,6 +93,10 @@ class SupplierController extends Controller
         $supplier = Supplier::where('user_id', $request->user()->id)->findOrFail($supplierId);
 
         $this->fillAndSave($request, $supplier);
+
+        if (! ($request->expectsJson() || $request->wantsJson())) {
+            return redirect()->route('suppliers.show', $supplier->id)->with('status', __('suppliers.updated'));
+        }
 
         return response()->json([
             'success' => true,
@@ -219,45 +232,11 @@ class SupplierController extends Controller
 
     private function sphereOptions(): array
     {
-        $all = trans('suppliers');
-        if (! is_array($all)) {
+        $all = trans('supplier_spheres');
+        if (! is_array($all) || $all === []) {
             return [];
         }
-
-        $exclude = [
-            'suppliers','supplier','add_supplier','new_supplier','edit_supplier','supplier_modal_subtitle',
-            'main_info','requisites','bank_details','logo','upload','remove','logo_hint','crop_logo','apply',
-            'name_placeholder','name_helper','recommend_supplier','phone_placeholder','phone_helper','email',
-            'email_placeholder','email_helper','telegram_placeholder','whatsapp_placeholder','address',
-            'address_placeholder','address_helper','sphere_activity','sphere_placeholder','work_terms',
-            'work_terms_percent','work_terms_amount','value','value_placeholder','value_helper','brands',
-            'brands_helper','brand_placeholder','add','cities_presence','cities_helper','city_placeholder',
-            'org_form','org_ooo','org_ip','inn','inn_placeholder','kpp','kpp_placeholder','ogrn',
-            'ogrn_placeholder','okpo','okpo_placeholder','legal_address','legal_address_placeholder',
-            'actual_address','actual_address_placeholder','match_legal','director','director_placeholder',
-            'accountant','accountant_placeholder','bik','bik_placeholder','bank','bank_placeholder',
-            'checking_account','checking_account_placeholder','corr_account','corr_account_placeholder',
-            'comment','comment_placeholder','go_back','name','phone','website','city','sphere','brand',
-            'view','edit','delete','save','cancel','close','no_suppliers','table','list','search','all_cities',
-            'all_spheres','all_brands','filter_all','filter_recommended','filter_favorites','add_order',
-            'favorite','remove_favorite','add_favorite','city_filter','sphere_filter','brand_filter',
-            'actions','details',
-            'added','updated','deleted',
-        ];
-
-        $result = [];
-        foreach ($all as $key => $value) {
-            if (! is_string($key) || in_array($key, $exclude, true)) {
-                continue;
-            }
-            if (! is_string($value) || trim($value) === '') {
-                continue;
-            }
-            $result[] = (object) ['key' => $key, 'name' => $value];
-        }
-
-        usort($result, fn ($a, $b) => strcmp((string) $a->name, (string) $b->name));
-        return $result;
+        return $all;
     }
 
     private function payload(Supplier $supplier): array
@@ -265,8 +244,8 @@ class SupplierController extends Controller
         $sphere = $supplier->sphere;
         $sphereDisplay = $sphere;
         if (is_string($sphere) && trim($sphere) !== '') {
-            $translated = __('suppliers.' . $sphere);
-            $sphereDisplay = $translated !== 'suppliers.' . $sphere ? $translated : $sphere;
+            $translated = __('supplier_spheres.' . $sphere);
+            $sphereDisplay = $translated !== 'supplier_spheres.' . $sphere ? $translated : $sphere;
         }
 
         return [

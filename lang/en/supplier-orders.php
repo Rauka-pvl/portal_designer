@@ -15,6 +15,7 @@ return [
     'product_service' => 'Product/Service',
     'links' => 'Links',
     'view' => 'View',
+    'details' => 'Details',
     'edit' => 'Edit',
     'delete' => 'Delete',
     'save' => 'Save',

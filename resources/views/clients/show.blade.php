@@ -91,6 +91,9 @@
             <button id="btn-edit" type="button" class="btn">
                 {{ __('clients.edit') }}
             </button>
+            <a href="{{ route('clients.index') }}" class="btn">
+                {{ __('clients.close') }}
+            </a>
         </div>
     </div>
 
@@ -206,7 +209,7 @@
 
                                     <button type="button"
                                         onclick="window.deleteClientFileFromShow({{ $client->id }}, {{ $loop->index }})"
-                                        class="p-1.5 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-500 hover:text-red-600 transition-colors"
+                                        class="edit-only-control hidden p-1.5 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-500 hover:text-red-600 transition-colors"
                                         title="{{ __('clients.delete_file') }}">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -315,6 +318,10 @@
                 if (btnCancel) btnCancel.classList.toggle('hidden', !enabled);
 
                 if (btnEdit) btnEdit.classList.toggle('hidden', enabled);
+
+                document.querySelectorAll('.edit-only-control').forEach((el) => {
+                    el.classList.toggle('hidden', !enabled);
+                });
             };
 
             if (btnEdit) {

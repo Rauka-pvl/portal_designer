@@ -2071,6 +2071,16 @@ function viewProject(id) {
                 <p class="text-[#0f172a] dark:text-[#EDEDEC]">${project.comment}</p>
             </div>
             ` : ''}
+            <div class="pt-4">
+                <a href="/projects/${project.id}"
+                    class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
+                    title="{{ __('projects.details') }}">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {{ __('projects.details') }}
+                </a>
+            </div>
         `;
         const modal = document.getElementById('view-project-modal');
         const panel = modal.querySelector('div[class*="absolute"]');

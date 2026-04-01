@@ -699,61 +699,64 @@
                 }
             }
 
-            objectTypeEl?.addEventListener('change', syncApartmentVisibility);
+                objectTypeEl?.addEventListener('change', syncApartmentVisibility);
 
-            let objectMap = null;
-            let objectMapMarker = null;
-            const defaultMapCenter = [48.0196, 66.9237]; // Kazakhstan center
-            const defaultMapZoom = 5;
+                let objectMap = null;
+                let objectMapMarker = null;
+                const defaultMapCenter = [48.0196, 66.9237];
+                const defaultMapZoom = 5;
 
-            function ensureObjectMap() {
-                if (objectMap || typeof L === 'undefined') return;
-                const mapEl = document.getElementById('object-map');
-                if (!mapEl) return;
+                function ensureObjectMap() {
+                    if (objectMap || typeof L === 'undefined') return;
+                    const mapEl = document.getElementById('object-map');
+                    if (!mapEl) return;
 
-                objectMap = L.map(mapEl).setView(defaultMapCenter, defaultMapZoom);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; OpenStreetMap contributors',
-                    maxZoom: 19,
-                }).addTo(objectMap);
+                    objectMap = L.map(mapEl).setView(defaultMapCenter, defaultMapZoom);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; OpenStreetMap contributors',
+                        maxZoom: 19,
+                    }).addTo(objectMap);
 
-                objectMap.on('click', function(e) {
-                    const lat = e.latlng.lat;
-                    const lng = e.latlng.lng;
-                    if (!objectMapMarker) {
-                        objectMapMarker = L.marker([lat, lng]).addTo(objectMap);
-                    } else {
-                        objectMapMarker.setLatLng([lat, lng]);
-                    }
-                    if (objectLatEl) objectLatEl.value = String(lat);
-                    if (objectLngEl) objectLngEl.value = String(lng);
-                    reverseGeocodeAndFillAddress(lat, lng).catch(() => {});
-                    hideAddressSuggestions();
-                });
-            }
-
-            function updateObjectMapMarker(lat, lng) {
-                if (!objectMap) return;
-                const hasPoint = Number.isFinite(lat) && Number.isFinite(lng);
-                if (hasPoint) {
-                    if (!objectMapMarker) {
-                        objectMapMarker = L.marker([lat, lng]).addTo(objectMap);
-                    } else {
-                        objectMapMarker.setLatLng([lat, lng]);
-                    }
-                    objectMap.setView([lat, lng], 15);
-                } else if (objectMapMarker) {
-                    objectMap.removeLayer(objectMapMarker);
-                    objectMapMarker = null;
-                    objectMap.setView(defaultMapCenter, defaultMapZoom);
+                    objectMap.on('click', function(e) {
+                        const lat = e.latlng.lat;
+                        const lng = e.latlng.lng;
+                        if (!objectMapMarker) {
+                            objectMapMarker = L.marker([lat, lng]).addTo(objectMap);
+                        } else {
+                            objectMapMarker.setLatLng([lat, lng]);
+                        }
+                        if (objectLatEl) objectLatEl.value = String(lat);
+                        if (objectLngEl) objectLngEl.value = String(lng);
+                        reverseGeocodeAndFillAddress(lat, lng).catch(() => {});
+                        hideAddressSuggestions();
+                    });
                 }
-            }
+
+                function updateObjectMapMarker(lat, lng) {
+                    if (!objectMap) return;
+                    const hasPoint = Number.isFinite(lat) && Number.isFinite(lng);
+                    if (hasPoint) {
+                        if (!objectMapMarker) {
+                            objectMapMarker = L.marker([lat, lng]).addTo(objectMap);
+                        } else {
+                            objectMapMarker.setLatLng([lat, lng]);
+                        }
+                        objectMap.setView([lat, lng], 15);
+                    } else if (objectMapMarker) {
+                        objectMap.removeLayer(objectMapMarker);
+                        objectMapMarker = null;
+                        objectMap.setView(defaultMapCenter, defaultMapZoom);
+                    }
+                }
 
             function hideAddressSuggestions() {
                 if (!objectSuggestListEl) return;
                 objectSuggestListEl.classList.add('hidden');
                 objectSuggestListEl.innerHTML = '';
             }
+
+            const uiLocale = (document.documentElement.lang || 'ru').toLowerCase();
+            const nominatimLang = uiLocale.startsWith('kk') ? 'kk' : (uiLocale.startsWith('en') ? 'en' : 'ru');
 
             /** true пока адрес выставлен из карты/подсказки (не ручной ввод). */
             let addressFieldInternalUpdate = false;
@@ -767,99 +770,99 @@
                 });
             }
 
-            function clearMapCoords() {
-                if (objectLatEl) objectLatEl.value = '';
-                if (objectLngEl) objectLngEl.value = '';
-                updateObjectMapMarker(NaN, NaN);
-            }
+                function clearMapCoords() {
+                    if (objectLatEl) objectLatEl.value = '';
+                    if (objectLngEl) objectLngEl.value = '';
+                    updateObjectMapMarker(NaN, NaN);
+                }
 
-            function applyAddressPickFromGeocoder(lat, lon, displayName) {
-                ensureObjectMap();
-                setAddressValue(displayName);
-                if (objectLatEl) objectLatEl.value = Number.isFinite(lat) ? String(lat) : '';
-                if (objectLngEl) objectLngEl.value = Number.isFinite(lon) ? String(lon) : '';
-                hideAddressSuggestions();
-                setTimeout(() => {
-                    if (objectMap) objectMap.invalidateSize();
-                    updateObjectMapMarker(lat, lon);
-                }, 100);
-            }
+                function applyAddressPickFromGeocoder(lat, lon, displayName) {
+                    ensureObjectMap();
+                    setAddressValue(displayName);
+                    if (objectLatEl) objectLatEl.value = Number.isFinite(lat) ? String(lat) : '';
+                    if (objectLngEl) objectLngEl.value = Number.isFinite(lon) ? String(lon) : '';
+                    hideAddressSuggestions();
+                    setTimeout(() => {
+                        if (objectMap) objectMap.invalidateSize();
+                        updateObjectMapMarker(lat, lon);
+                    }, 100);
+                }
 
             let lastAddressSuggestionRows = [];
             let addressSearchTimer = null;
             let addressSearchAbort = null;
             let reverseGeocodeAbort = null;
 
-            async function searchAddressSuggestions(query) {
-                if (!objectSuggestListEl) return;
-                if (addressSearchAbort) addressSearchAbort.abort();
-                addressSearchAbort = new AbortController();
+                async function searchAddressSuggestions(query) {
+                    if (!objectSuggestListEl) return;
+                    if (addressSearchAbort) addressSearchAbort.abort();
+                    addressSearchAbort = new AbortController();
 
-                const cityPart = objectCityEl?.value ? `, ${objectCityEl.value}` : '';
-                const q = `${query}${cityPart}, Kazakhstan`;
-                const url =
-                    `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=6&countrycodes=kz&q=${encodeURIComponent(q)}`;
-                const r = await fetch(url, {
-                    signal: addressSearchAbort.signal,
-                    headers: {
-                        'Accept': 'application/json'
-                    },
-                });
-                const rows = await r.json().catch(() => []);
-                if (!Array.isArray(rows) || !rows.length) {
-                    hideAddressSuggestions();
-                    return;
+                    const cityPart = objectCityEl?.value ? `, ${objectCityEl.value}` : '';
+                    const q = `${query}${cityPart}, Kazakhstan`;
+                    const url =
+                        `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=6&countrycodes=kz&accept-language=${encodeURIComponent(nominatimLang)}&q=${encodeURIComponent(q)}`;
+                    const r = await fetch(url, {
+                        signal: addressSearchAbort.signal,
+                        headers: {
+                            'Accept': 'application/json'
+                        },
+                    });
+                    const rows = await r.json().catch(() => []);
+                    if (!Array.isArray(rows) || !rows.length) {
+                        hideAddressSuggestions();
+                        return;
+                    }
+
+                    lastAddressSuggestionRows = rows;
+                    objectSuggestListEl.innerHTML = rows.map((row, idx) => {
+                        const label = escapeHtml(String(row.display_name || row.name || '').slice(0, 255));
+                        return `<button type="button" class="address-suggest-item" data-idx="${idx}">${label}</button>`;
+                    }).join('');
+                    objectSuggestListEl.classList.remove('hidden');
+
+                    objectSuggestListEl.querySelectorAll('.address-suggest-item').forEach(btn => {
+                        btn.addEventListener('mousedown', function(e) {
+                            e.preventDefault();
+                            const idx = parseInt(this.dataset.idx, 10);
+                            const row = lastAddressSuggestionRows[idx];
+                            if (!row) return;
+                            const lat = parseFloat(row.lat);
+                            const lon = parseFloat(row.lon);
+                            const titleRaw = String(row.display_name || row.name || '').slice(0,
+                                255);
+                            applyAddressPickFromGeocoder(lat, lon, titleRaw);
+                        });
+                    });
                 }
 
-                lastAddressSuggestionRows = rows;
-                objectSuggestListEl.innerHTML = rows.map((row, idx) => {
-                    const label = escapeHtml(String(row.display_name || row.name || '').slice(0, 255));
-                    return `<button type="button" class="address-suggest-item" data-idx="${idx}">${label}</button>`;
-                }).join('');
-                objectSuggestListEl.classList.remove('hidden');
-
-                objectSuggestListEl.querySelectorAll('.address-suggest-item').forEach(btn => {
-                    btn.addEventListener('mousedown', function(e) {
-                        e.preventDefault();
-                        const idx = parseInt(this.dataset.idx, 10);
-                        const row = lastAddressSuggestionRows[idx];
-                        if (!row) return;
-                        const lat = parseFloat(row.lat);
-                        const lon = parseFloat(row.lon);
-                        const titleRaw = String(row.display_name || row.name || '').slice(0,
-                            255);
-                        applyAddressPickFromGeocoder(lat, lon, titleRaw);
+                async function reverseGeocodeAndFillAddress(lat, lng) {
+                    if (reverseGeocodeAbort) reverseGeocodeAbort.abort();
+                    reverseGeocodeAbort = new AbortController();
+                    const url =
+                        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${encodeURIComponent(String(lat))}&lon=${encodeURIComponent(String(lng))}&zoom=18&addressdetails=1&accept-language=${encodeURIComponent(nominatimLang)}`;
+                    const r = await fetch(url, {
+                        signal: reverseGeocodeAbort.signal,
+                        headers: {
+                            'Accept': 'application/json'
+                        },
                     });
-                });
-            }
+                    const data = await r.json().catch(() => ({}));
+                    if (data?.display_name) setAddressValue(data.display_name);
+                }
 
-            async function reverseGeocodeAndFillAddress(lat, lng) {
-                if (reverseGeocodeAbort) reverseGeocodeAbort.abort();
-                reverseGeocodeAbort = new AbortController();
-                const url =
-                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${encodeURIComponent(String(lat))}&lon=${encodeURIComponent(String(lng))}&zoom=18&addressdetails=1`;
-                const r = await fetch(url, {
-                    signal: reverseGeocodeAbort.signal,
-                    headers: {
-                        'Accept': 'application/json'
-                    },
-                });
-                const data = await r.json().catch(() => ({}));
-                if (data?.display_name) setAddressValue(data.display_name);
-            }
+                const _shortEntrance = '{{ __('objects.short_entrance') }}';
+                const _shortApt = '{{ __('objects.short_apt') }}';
+                const _shortFloor = '{{ __('objects.short_floor') }}';
 
-            const _shortEntrance = '{{ __('objects.short_entrance') }}';
-            const _shortApt = '{{ __('objects.short_apt') }}';
-            const _shortFloor = '{{ __('objects.short_floor') }}';
-
-            function buildFullAddress(obj) {
-                let addr = obj.address || '';
-                if (obj.apartment_entrance) addr += `, ${_shortEntrance} ${obj.apartment_entrance}`;
-                if (obj.apartment) addr += `, ${_shortApt} ${obj.apartment}`;
-                if (obj.apartment_floor) addr += `, ${_shortFloor} ${obj.apartment_floor}`;
-                if (obj.city) addr += `, ${obj.city}`;
-                return addr;
-            }
+                function buildFullAddress(obj) {
+                    let addr = obj.address || '';
+                    if (obj.apartment_entrance) addr += `, ${_shortEntrance} ${obj.apartment_entrance}`;
+                    if (obj.apartment) addr += `, ${_shortApt} ${obj.apartment}`;
+                    if (obj.apartment_floor) addr += `, ${_shortFloor} ${obj.apartment_floor}`;
+                    if (obj.city) addr += `, ${obj.city}`;
+                    return addr;
+                }
 
             function escapeHtml(value) {
                 if (value === null || value === undefined) return '';
@@ -1001,86 +1004,62 @@
                 }).join('') : '';
 
                 content.innerHTML = `
-                    <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
-                        <label class="modal-helper block mb-1">{{ __('objects.address') }}</label>
-                        <p class="text-[#0f172a] dark:text-[#EDEDEC] font-medium">${escapeHtml(buildFullAddress(obj))}</p>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
-                            <label class="modal-helper block mb-1">{{ __('objects.type') }}</label>
-                            <p class="text-[#0f172a] dark:text-[#EDEDEC] font-medium">${escapeHtml(typeLabel(obj.type || 'other'))}</p>
-                        </div>
-                        <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
-                            <label class="modal-helper block mb-1">{{ __('objects.status') }}</label>
-                            <span id="view-object-status-text"
-                                  class="px-2 py-0.5 rounded text-xs font-medium ${statusBadgeClasses[obj.status] || statusBadgeClasses.new}">
-                                ${escapeHtml(statusText)}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
-                        <label class="modal-helper block mb-1">{{ __('objects.client') }}</label>
-                        <p class="text-[#0f172a] dark:text-[#EDEDEC] font-medium">${escapeHtml(obj.client_name || '')}</p>
-                    </div>
-
-                    <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
-                        <label class="modal-helper block mb-1">{{ __('objects.area') }}</label>
-                        <p class="text-[#0f172a] dark:text-[#EDEDEC] font-medium">${parseFloat(obj.area || 0).toLocaleString('kk-KZ', {minimumFractionDigits: 2, maximumFractionDigits: 2})} {{ __('objects.area_m2') }}</p>
-                    </div>
-
                     <div>
-                        <h3 class="modal-section-title mb-2">{{ __('objects.repair_budget') }}</h3>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
-                                <p class="modal-helper mb-1">{{ __('objects.planned') }}</p>
-                                <p class="text-[#0f172a] dark:text-[#EDEDEC] font-medium">${formatTenge(obj.repair_budget_planned || 0)}</p>
-                            </div>
-                            <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
-                                <p class="modal-helper mb-1">{{ __('objects.actual') }}</p>
-                                <p class="text-[#0f172a] dark:text-[#EDEDEC] font-medium">${obj.repair_budget_actual ? formatTenge(obj.repair_budget_actual) : '-'}</p>
-                            </div>
-                        </div>
+                        <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('objects.address') }}</label>
+                        <p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(buildFullAddress(obj))}</p>
                     </div>
-
                     <div>
-                        <h3 class="modal-section-title mb-2">{{ __('objects.repair_budget_per_m2') }}</h3>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
-                                <p class="modal-helper mb-1">{{ __('objects.planned') }}</p>
-                                <p class="text-[#0f172a] dark:text-[#EDEDEC] font-medium">${formatTenge(obj.repair_budget_per_m2_planned || 0)}</p>
-                            </div>
-                            <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
-                                <p class="modal-helper mb-1">{{ __('objects.actual') }}</p>
-                                <p class="text-[#0f172a] dark:text-[#EDEDEC] font-medium">${obj.repair_budget_per_m2_actual ? formatTenge(obj.repair_budget_per_m2_actual) : '-'}</p>
-                            </div>
-                        </div>
+                        <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('objects.type') }}</label>
+                        <p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(typeLabel(obj.type || 'other'))}</p>
                     </div>
-
+                    <div>
+                        <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('objects.status') }}</label>
+                        <p id="view-object-status-text" class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(statusText)}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('objects.client') }}</label>
+                        <p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(obj.client_name || '-')}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('objects.area') }}</label>
+                        <p class="text-[#0f172a] dark:text-[#EDEDEC]">${parseFloat(obj.area || 0).toLocaleString('kk-KZ', {minimumFractionDigits: 2, maximumFractionDigits: 2})} {{ __('objects.area_m2') }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('objects.planned') }}</label>
+                        <p class="text-[#0f172a] dark:text-[#EDEDEC]">${formatTenge(obj.repair_budget_planned || 0)}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('objects.actual') }}</label>
+                        <p class="text-[#0f172a] dark:text-[#EDEDEC]">${obj.repair_budget_actual ? formatTenge(obj.repair_budget_actual) : '-'}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('objects.repair_budget_per_m2') }} ({{ __('objects.planned') }})</label>
+                        <p class="text-[#0f172a] dark:text-[#EDEDEC]">${formatTenge(obj.repair_budget_per_m2_planned || 0)}</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('objects.repair_budget_per_m2') }} ({{ __('objects.actual') }})</label>
+                        <p class="text-[#0f172a] dark:text-[#EDEDEC]">${obj.repair_budget_per_m2_actual ? formatTenge(obj.repair_budget_per_m2_actual) : '-'}</p>
+                    </div>
                     ${obj.links && obj.links.length ? `
-                                <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
-                                    <label class="modal-helper block mb-2">{{ __('objects.links') }}</label>
-                                    <div class="space-y-1">
-                                        ${obj.links.map(l => `<a href="${escapeHtml(l)}" target="_blank" class="block text-[#f59e0b] hover:underline text-sm truncate">${escapeHtml(l)}</a>`).join('')}
-                                    </div>
-                                </div>
-                            ` : ''}
-
+                        <div>
+                            <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-2">{{ __('objects.links') }}</label>
+                            <div class="space-y-1">
+                                ${obj.links.map(l => `<a href="${escapeHtml(l)}" target="_blank" class="block text-[#f59e0b] hover:underline text-sm truncate">${escapeHtml(l)}</a>`).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
                     ${obj.comment ? `
-                                <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
-                                    <label class="modal-helper block mb-1">{{ __('objects.comment') }}</label>
-                                    <p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(obj.comment)}</p>
-                                </div>
-                            ` : ''}
-
+                        <div>
+                            <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('objects.comment') }}</label>
+                            <p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(obj.comment)}</p>
+                        </div>
+                    ` : ''}
                     ${filesHtml ? `
-                                <div class="pt-2">
-                                    <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-2">{{ __('objects.files') }}</label>
-                                    <div class="space-y-2">${filesHtml}</div>
-                                </div>
-                            ` : ''}
-
+                        <div class="pt-2">
+                            <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-2">{{ __('objects.files') }}</label>
+                            <div class="space-y-2">${filesHtml}</div>
+                        </div>
+                    ` : ''}
                     <div class="pt-3">
                         <a href="/objects/${obj.id}"
                            class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
