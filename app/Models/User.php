@@ -22,6 +22,22 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'phone',
+        'city',
+        'short_description',
+        'work_regions',
+        'about_designer',
+        'website_portfolio',
+        'telegram',
+        'whatsapp',
+        'vk',
+        'instagram',
+        'experience',
+        'price_per_m2',
+        'education',
+        'awards',
+        'specialization',
+        'styles',
     ];
 
     /**
@@ -44,6 +60,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'price_per_m2' => 'decimal:2',
         ];
     }
 }

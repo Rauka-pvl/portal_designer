@@ -2,4 +2,43 @@
 
 return [
     'settings' => 'Баптаулар',
+    'profile_settings' => 'Профиль баптаулары',
+    'security' => 'Қауіпсіздік',
+    'roles_and_access' => 'Рөлдер мен рұқсаттар',
+    'team' => 'Команда',
+    'subscriptions' => 'Жазылымдар',
+    'payment_methods' => 'Төлем тәсілдері',
+    'integrations' => 'Интеграциялар',
+
+    'main_information' => 'Негізгі ақпарат',
+    'contact_information' => 'Байланыс ақпараты',
+    'professional_information' => 'Кәсіби ақпарат',
+
+    'name' => 'Аты-жөні',
+    'short_description' => 'Қысқаша сипаттама',
+    'city' => 'Қала',
+    'work_regions' => 'Жұмыс аймақтары',
+    'about_designer' => 'Дизайнер туралы',
+    'phone' => 'Телефон',
+    'email' => 'Email',
+    'website_portfolio' => 'Сайт/портфолио',
+    'telegram' => 'Telegram',
+    'whatsapp' => 'WhatsApp',
+    'vk' => 'VK',
+    'instagram' => 'Instagram',
+    'experience' => 'Жұмыс тәжірибесі',
+    'price_per_m2' => 'Ш.м бағасы',
+    'education' => 'Білімі',
+    'awards' => 'Марапаттар',
+    'specialization' => 'Мамандануы',
+    'styles' => 'Стильдер',
+
+    'change_password' => 'Құпиясөзді өзгерту',
+    'current_password' => 'Ағымдағы құпиясөз',
+    'new_password' => 'Жаңа құпиясөз',
+    'new_password_confirmation' => 'Жаңа құпиясөзді растау',
+
+    'save_changes' => 'Өзгерістерді сақтау',
+    'profile_saved' => 'Профиль жаңартылды',
+    'password_saved' => 'Құпиясөз жаңартылды',
 ];

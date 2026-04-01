@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SupplierOrderController;
 use App\Http\Controllers\SupplierController;
 use Illuminate\Support\Facades\Route;
@@ -151,4 +152,9 @@ Route::group(['middleware' => 'auth'], function () {
     Route::patch('/supplier-orders/{orderId}/status', [SupplierOrderController::class, 'updateStatus'])
         ->whereNumber('orderId')
         ->name('supplier-orders.update_status');
+
+    // Settings
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    Route::put('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile.update');
+    Route::put('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password.update');
 });
