@@ -4,6 +4,7 @@ return [
     'settings' => 'Settings',
     'profile_settings' => 'Profile settings',
     'security' => 'Security',
+    'notifications' => 'Notifications',
     'roles_and_access' => 'Roles and access',
     'team' => 'Team',
     'subscriptions' => 'Subscriptions',
@@ -39,6 +40,7 @@ return [
     'new_password_confirmation' => 'Confirm new password',
 
     'save_changes' => 'Save changes',
+    'cancel' => 'Cancel',
     'profile_saved' => 'Profile updated',
     'password_saved' => 'Password updated',
 ];

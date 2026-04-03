@@ -1,10 +1,13 @@
 <?php
 
 use App\Http\Controllers\ClientController;
+use App\Http\Controllers\DashboardCalendarController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SupplierOrderController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\ChecklistStepController;
+use App\Http\Controllers\Moderator\ModeratorController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -52,6 +55,9 @@ Route::group(['middleware' => 'auth'], function () {
             ],
         ]);
     })->name('dashboard');
+
+    Route::get('/dashboard/events', [DashboardCalendarController::class, 'events'])
+        ->name('dashboard.events');
 
     Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
 
@@ -137,6 +143,31 @@ Route::group(['middleware' => 'auth'], function () {
         ->whereNumber('templateId')
         ->name('projects.templates.destroy');
 
+    // Checklist step details (status + result comment)
+    Route::get('/checklist-steps/{stepId}', [ChecklistStepController::class, 'show'])
+        ->whereNumber('stepId')
+        ->name('checklist-steps.show');
+    Route::put('/checklist-steps/{stepId}', [ChecklistStepController::class, 'update'])
+        ->whereNumber('stepId')
+        ->name('checklist-steps.update');
+
+    // Moderator
+    Route::get('/moderator', [ModeratorController::class, 'index'])->name('moderator.index');
+
+    Route::get('/moderator/suppliers/{supplierId}', [ModeratorController::class, 'supplierShow'])
+        ->whereNumber('supplierId')
+        ->name('moderator.suppliers.show');
+    Route::post('/moderator/suppliers/{supplierId}/decision', [ModeratorController::class, 'supplierDecide'])
+        ->whereNumber('supplierId')
+        ->name('moderator.suppliers.decision');
+
+    Route::get('/moderator/projects/{projectId}', [ModeratorController::class, 'projectShow'])
+        ->whereNumber('projectId')
+        ->name('moderator.projects.show');
+    Route::post('/moderator/projects/{projectId}/decision', [ModeratorController::class, 'projectDecide'])
+        ->whereNumber('projectId')
+        ->name('moderator.projects.decision');
+
     // Supplier orders
     Route::get('/supplier-orders', [SupplierOrderController::class, 'index'])->name('supplier-orders.index');
     Route::post('/supplier-orders', [SupplierOrderController::class, 'store'])->name('supplier-orders.store');
@@ -154,6 +185,7 @@ Route::group(['middleware' => 'auth'], function () {
         ->name('supplier-orders.update_status');
 
     // Settings
+    Route::get('/profile', [SettingsController::class, 'profile'])->name('profile.show');
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::put('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile.update');
     Route::put('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password.update');

@@ -35,6 +35,26 @@
         <div>
             <h1 class="text-2xl font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ $s['name'] ?? '-' }}</h1>
             <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-1">{{ __('suppliers.supplier') }} #{{ $s['id'] ?? '-' }}</p>
+            @php
+                $modStatus = (string) ($s['moderation_status'] ?? '');
+            @endphp
+            @if($modStatus !== '')
+                <div class="mt-3 flex flex-wrap items-center gap-2">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+                        @if($modStatus === 'approved') bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300
+                        @elseif($modStatus === 'rejected') bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300
+                        @else bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-200
+                        @endif">
+                        {{ __('moderation.' . $modStatus) }}
+                    </span>
+
+                    @if(!empty($s['moderation_comment']))
+                        <span class="text-xs text-[#64748b] dark:text-[#A1A09A]">
+                            {{ $s['moderation_comment'] }}
+                        </span>
+                    @endif
+                </div>
+            @endif
         </div>
         <div class="flex gap-3">
             <button id="btn-edit" type="button" class="btn">{{ __('suppliers.edit') }}</button>

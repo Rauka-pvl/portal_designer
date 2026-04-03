@@ -4,6 +4,7 @@ return [
     'settings' => 'Баптаулар',
     'profile_settings' => 'Профиль баптаулары',
     'security' => 'Қауіпсіздік',
+    'notifications' => 'Хабарландырулар',
     'roles_and_access' => 'Рөлдер мен рұқсаттар',
     'team' => 'Команда',
     'subscriptions' => 'Жазылымдар',
@@ -39,6 +40,7 @@ return [
     'new_password_confirmation' => 'Жаңа құпиясөзді растау',
 
     'save_changes' => 'Өзгерістерді сақтау',
+    'cancel' => 'Бас тарту',
     'profile_saved' => 'Профиль жаңартылды',
     'password_saved' => 'Құпиясөз жаңартылды',
 ];

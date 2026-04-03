@@ -47,7 +47,7 @@
     }
 
     .event {
-        background: linear-gradient(135deg, #f59e0b, #ef4444, #ec4899);
+        background: linear-gradient(135deg, #f59e0b, #fb923c);
         color: white;
         padding: 0.3rem 0.5rem;
         border-radius: 4px;
@@ -66,7 +66,7 @@
         position: absolute;
         top: 0.5rem;
         right: 0.5rem;
-        background: linear-gradient(135deg, #f59e0b, #ef4444, #ec4899);
+        background: linear-gradient(135deg, #f59e0b, #fb923c);
         color: white;
         width: 24px;
         height: 24px;
@@ -128,6 +128,31 @@
     .dark .calendar-grid {
         background: #3E3E3A;
         border-color: #3E3E3A;
+    }
+
+    .event.done {
+        border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+
+    .done-check {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        border-radius: 9999px;
+        background: rgba(34, 197, 94, 1);
+        flex-shrink: 0;
+    }
+
+    .task-icon {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+
+    .event .task-icon {
+        color: #ffffff !important;
     }
 
     .dark .filter-btn {
@@ -268,6 +293,23 @@
     </div>
 </div>
 
+<!-- Правый сайдбар с задачами дня -->
+<div id="day-drawer-overlay" class="fixed inset-0 bg-black/40 hidden z-50" onclick="closeDayDrawer()"></div>
+<div id="day-drawer" class="fixed top-0 right-0 h-full w-full max-w-md bg-white dark:bg-[#161615] border-l border-[#e2e8f0] dark:border-[#3E3E3A] shadow-2xl hidden z-50 flex flex-col">
+    <div class="p-4 flex items-center justify-between border-b border-[#e2e8f0] dark:border-[#3E3E3A] flex-none">
+        <div class="text-base font-semibold text-[#0f172a] dark:text-[#EDEDEC]" id="day-drawer-title">—</div>
+        <button type="button" class="p-2 rounded-lg hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] transition-colors" onclick="closeDayDrawer()"
+            aria-label="Закрыть">
+            <svg class="w-5 h-5 text-[#64748b] dark:text-[#A1A09A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+    </div>
+    <div id="day-drawer-content" class="p-4 overflow-y-auto space-y-3 flex-1 min-h-0">
+        <!-- Сюда вставятся задачи -->
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     let currentDate = new Date();
@@ -289,6 +331,239 @@ document.addEventListener('DOMContentLoaded', function() {
     const locale = '{{ app()->getLocale() }}';
     const monthNames = months[locale] || months.en;
     const dayNames = weekdays[locale] || weekdays.en;
+
+    const eventsEndpoint = @json(route('dashboard.events'));
+
+    let eventsByDate = {};
+    let currentEvents = [];
+    let activeRangeToken = 0;
+
+    function toISODate(d) {
+        // Локальная дата без timezone-сдвигов
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function escapeHtml(str) {
+        return String(str ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#039;');
+    }
+
+    function formatAmount(amount) {
+        const n = Number(amount ?? 0);
+        if (!Number.isFinite(n) || n === 0) return '';
+        const loc = locale === 'ru' ? 'ru-RU' : (locale === 'kk' ? 'kk-KZ' : 'en-US');
+        try {
+            return new Intl.NumberFormat(loc, { maximumFractionDigits: 0 }).format(n);
+        } catch (e) {
+            return String(n);
+        }
+    }
+
+    function eventIconHtml(task) {
+        // Иконки по бизнес-смыслу: чек-лист и поставка
+        if (task?.event_type === 'checklist_step') {
+            return `
+                <svg class="task-icon text-[#f59e0b]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 11l3 3L22 4"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+            `;
+        }
+
+        // Всё остальное относим к поставке/платежам
+        return `
+            <svg class="task-icon text-[#f59e0b]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 7h13v14H3z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16 11h5l2 3v7h-7z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M7 21a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 21a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+            </svg>
+        `;
+    }
+
+    function doneCheckHtml(task) {
+        if (!task?.done) return '';
+        return `
+            <span class="done-check" title="Выполнено">
+                <svg class="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20 6L9 17l-5-5"/>
+                </svg>
+            </span>
+        `;
+    }
+
+    function getTaskHour(task) {
+        if (!task?.time || typeof task.time !== 'string') return null;
+        const parts = task.time.split(':');
+        const h = parseInt(parts[0] ?? '', 10);
+        return Number.isFinite(h) ? h : null;
+    }
+
+    function renderTaskMini(task, { showTime = true } = {}) {
+        const href = task?.url_show ? escapeHtml(task.url_show) : '#';
+        const time = showTime && task?.time ? `<span class="event-time">${escapeHtml(task.time)}</span>` : '';
+        const title = escapeHtml(task?.title);
+        const subtitle = task?.subtitle ? `<div class="text-[11px] opacity-90 mt-0.5">${escapeHtml(task.subtitle)}</div>` : '';
+        const amount = task?.amount ? formatAmount(task.amount) : '';
+        const amountHtml = amount ? `<div class="text-[11px] opacity-90 mt-0.5">${amount}</div>` : '';
+
+        const icon = eventIconHtml(task);
+        const doneMark = doneCheckHtml(task);
+        return `
+            <a href="${href}" class="event flex items-start gap-2 ${task?.done ? 'done' : ''}" style="padding:0.25rem 0.4rem; margin-bottom:0.25rem;">
+                ${icon}
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-start justify-between gap-2">
+                        <span class="leading-tight font-medium break-words">${time}${title ? ` ${title}` : ''}</span>
+                        ${doneMark}
+                    </div>
+                    ${subtitle}
+                    ${amountHtml}
+                </div>
+            </a>
+        `;
+    }
+
+    function renderTaskListItem(task) {
+        const href = task?.url_show ? escapeHtml(task.url_show) : '#';
+        const title = escapeHtml(task?.title);
+        const subtitle = task?.subtitle ? escapeHtml(task.subtitle) : '';
+        const doneMark = doneCheckHtml(task);
+        const amount = task?.amount ? formatAmount(task.amount) : '';
+        const amountHtml = amount ? `<div class="text-xs text-[#64748b] dark:text-[#A1A09A] mt-1">${amount}</div>` : '';
+        const resultComment = task?.result_comment ? escapeHtml(task.result_comment) : '';
+        const resultCommentHtml = resultComment
+            ? `<div class="text-[11px] text-[#64748b] dark:text-[#A1A09A] mt-1 whitespace-pre-wrap">${resultComment}</div>`
+            : '';
+        return `
+            <div class="p-3 border border-[#e2e8f0] dark:border-[#3E3E3A] rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a]">
+                <div class="flex items-start gap-3">
+                    <div class="mt-0.5">${eventIconHtml(task)}</div>
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-start justify-between gap-2">
+                            <a href="${href}" class="font-medium text-[#0f172a] dark:text-[#EDEDEC] hover:underline break-words">${title}</a>
+                            ${doneMark}
+                        </div>
+                        ${subtitle ? `<div class="text-xs text-[#64748b] dark:text-[#A1A09A] mt-0.5 break-words">${subtitle}</div>` : ''}
+                        ${amountHtml}
+                        ${task?.time ? `<div class="text-[11px] text-[#64748b] dark:text-[#A1A09A] mt-1">${escapeHtml(task.time)}</div>` : ''}
+                        ${resultCommentHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    async function loadEventsForRange(startISO, endISO) {
+        try {
+            const token = ++activeRangeToken;
+            const res = await fetch(`${eventsEndpoint}?start=${encodeURIComponent(startISO)}&end=${encodeURIComponent(endISO)}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            });
+            if (!res.ok) throw new Error('Events fetch failed');
+            const data = await res.json();
+            if (token !== activeRangeToken) return;
+
+            currentEvents = Array.isArray(data?.events) ? data.events : [];
+            eventsByDate = {};
+            currentEvents.forEach(ev => {
+                const key = ev?.date ? String(ev.date) : null;
+                if (!key) return;
+                if (!eventsByDate[key]) eventsByDate[key] = [];
+                eventsByDate[key].push(ev);
+            });
+
+            // сортировка внутри даты: сначала done=false, потом done=true (чтобы невыполненные были выше),
+            // затем по времени (если есть)
+            Object.keys(eventsByDate).forEach(k => {
+                eventsByDate[k].sort((a, b) => {
+                    const da = a?.done ? 1 : 0;
+                    const db = b?.done ? 1 : 0;
+                    if (da !== db) return da - db;
+                    const ta = getTaskHour(a);
+                    const tb = getTaskHour(b);
+                    if (ta == null && tb == null) return 0;
+                    if (ta == null) return 1;
+                    if (tb == null) return -1;
+                    return ta - tb;
+                });
+            });
+        } catch (e) {
+            eventsByDate = {};
+            currentEvents = [];
+            // можно молча: календарь будет пустым при ошибке
+        }
+    }
+
+    function calcCurrentRangeISO() {
+        if (currentView === 'day') {
+            const key = toISODate(currentDate);
+            return { startISO: key, endISO: key };
+        }
+
+        if (currentView === 'week') {
+            const weekStart = getWeekStart(currentDate);
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekEnd.getDate() + 6);
+            return { startISO: toISODate(weekStart), endISO: toISODate(weekEnd) };
+        }
+
+        // month: диапазон ячеек календаря (включая соседние месяцы)
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const firstDay = getFirstDayOfMonth(currentDate);
+        const lastDay = getLastDayOfMonth(currentDate);
+        const daysInMonth = lastDay.getDate();
+        const startingDayOfWeek = (firstDay.getDay() + 6) % 7; // Понедельник = 0
+        const weeks = Math.ceil((startingDayOfWeek + daysInMonth) / 7);
+
+        const gridStart = new Date(year, month, 1 - startingDayOfWeek);
+        const gridEnd = new Date(year, month, 1 - startingDayOfWeek + (weeks * 7) - 1);
+        return { startISO: toISODate(gridStart), endISO: toISODate(gridEnd) };
+    }
+
+    function openDayDrawer(dateISO) {
+        const overlay = document.getElementById('day-drawer-overlay');
+        const drawer = document.getElementById('day-drawer');
+        const titleEl = document.getElementById('day-drawer-title');
+        const contentEl = document.getElementById('day-drawer-content');
+        if (!drawer || !overlay || !contentEl) return;
+
+        const dt = new Date(`${dateISO}T00:00:00`);
+        const isValid = !Number.isNaN(dt.getTime());
+        titleEl.textContent = isValid ? `${dt.getDate()} ${monthNames[dt.getMonth()]} ${dt.getFullYear()}` : dateISO;
+
+        const tasks = eventsByDate?.[dateISO] || [];
+        if (!tasks.length) {
+            contentEl.innerHTML = `<div class="text-center text-[#64748b] dark:text-[#A1A09A] py-8">Нет задач</div>`;
+        } else {
+            contentEl.innerHTML = tasks.map(renderTaskListItem).join('');
+        }
+
+        overlay.classList.remove('hidden');
+        drawer.classList.remove('hidden');
+    }
+
+    window.openDayDrawer = openDayDrawer;
+
+    function closeDayDrawer() {
+        const overlay = document.getElementById('day-drawer-overlay');
+        const drawer = document.getElementById('day-drawer');
+        if (overlay) overlay.classList.add('hidden');
+        if (drawer) drawer.classList.add('hidden');
+    }
+
+    window.closeDayDrawer = closeDayDrawer;
 
     // Переключение между календарем и списком
     document.getElementById('view-calendar').addEventListener('click', function() {
@@ -419,12 +694,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.selectDate = selectDate;
 
-    function renderCalendar() {
+    async function renderCalendar() {
         renderMiniCalendar();
         updateCurrentPeriod();
-        
+
+        const { startISO, endISO } = calcCurrentRangeISO();
+        await loadEventsForRange(startISO, endISO);
+
         const mainCal = document.getElementById('main-calendar');
-        
+
         if (currentView === 'month') {
             renderMonthView(mainCal);
         } else if (currentView === 'week') {
@@ -473,7 +751,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 const date = new Date(year, month, dayNumber);
                 const isToday = date.toDateString() === new Date().toDateString();
                 const isCurrentMonth = date.getMonth() === month;
-                const tasks = getTasksForDate(date);
+                const key = toISODate(date);
+                const tasks = eventsByDate[key] || [];
+                const tasksFirst = tasks.slice(0, 2);
+                const restCount = Math.max(0, tasks.length - 2);
+                const tasksMiniHtml = tasksFirst.map(t => renderTaskMini(t, { showTime: false })).join('') + (
+                    restCount > 0
+                        ? `<button type="button" onclick="openDayDrawer('${key}')" class="text-[12px] text-[#f59e0b] hover:underline mt-0.5">+${restCount}</button>`
+                        : ''
+                );
                 
                 let dayClass = 'calendar-day';
                 if (!isCurrentMonth) {
@@ -487,9 +773,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="${dayClass}">
                         <div class="day-number">${dayNumber > 0 && dayNumber <= daysInMonth ? dayNumber : ''}</div>
                         ${tasks.length > 0 ? `<div class="day-badge">${tasks.length}</div>` : ''}
-                        <div class="space-y-1">
-                            ${renderTasksForDate(date)}
-                        </div>
+                        <div class="space-y-1">${tasksMiniHtml}</div>
                     </div>
                 `;
             }
@@ -555,7 +839,12 @@ document.addEventListener('DOMContentLoaded', function() {
         container.className = '';
         const date = currentDate;
         const isToday = date.toDateString() === new Date().toDateString();
-        
+
+        const key = toISODate(date);
+        const tasks = eventsByDate?.[key] || [];
+        const tasksFirst = tasks.slice(0, 2);
+        const restCount = Math.max(0, tasks.length - 2);
+
         let html = `
             <div class="grid grid-cols-2 border-b border-[#e2e8f0] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a]">
                 <div class="p-3 border-r border-[#e2e8f0] dark:border-[#3E3E3A]"></div>
@@ -566,71 +855,91 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
             </div>
+            <div class="p-4">
+                ${
+                    !tasks.length
+                        ? `<div class="text-center py-8 text-[#64748b] dark:text-[#A1A09A]">{{ __('dashboard.no_tasks') }}</div>`
+                        : `
+                            <div class="space-y-1">
+                                ${tasksFirst.map(t => renderTaskMini(t, { showTime: true })).join('')}
+                                ${
+                                    restCount > 0
+                                        ? `<button type="button" onclick="openDayDrawer('${key}')" class="text-[12px] text-[#f59e0b] hover:underline mt-1">+${restCount}</button>`
+                                        : ''
+                                }
+                            </div>
+                        `
+                }
+            </div>
         `;
-
-        for (let hour = 0; hour < 24; hour++) {
-            const hourDate = new Date(date);
-            hourDate.setHours(hour, 0, 0, 0);
-            const hourIsToday = hourDate.toDateString() === new Date().toDateString();
-            const dayClass = hourIsToday ? 'calendar-day today' : 'calendar-day';
-            html += `
-                <div class="grid grid-cols-2 border-b border-[#e2e8f0] dark:border-[#3E3E3A]">
-                    <div class="p-2 text-xs text-[#64748b] dark:text-[#A1A09A] border-r border-[#e2e8f0] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a] font-medium">${hour.toString().padStart(2, '0')}:00</div>
-                    <div class="min-h-[80px] p-2 ${dayClass}">${renderTasksForDate(hourDate, hour)}</div>
-                </div>
-            `;
-        }
 
         container.innerHTML = html;
     }
 
     function renderTasksForDate(date, hour = null) {
-        const tasks = getTasksForDate(date);
-        
-        if (tasks.length === 0) {
-            return '';
+        const key = toISODate(date);
+        let tasks = eventsByDate?.[key] || [];
+
+        if (hour !== null) {
+            tasks = tasks.filter(t => getTaskHour(t) === hour);
         }
 
-        return tasks.map(task => `
-            <div class="event">
-                ${task.time ? `<span class="event-time">${task.time}</span>` : ''}
-                <span>${task.title}</span>
-            </div>
-        `).join('');
+        if (!tasks.length) return '';
+
+        const tasksFirst = tasks.slice(0, 2);
+        const restCount = Math.max(0, tasks.length - 2);
+        return tasksFirst.map(t => renderTaskMini(t, { showTime: false })).join('') + (
+            restCount > 0
+                ? `<button type="button" onclick="openDayDrawer('${key}')" class="text-[12px] text-[#f59e0b] hover:underline mt-0.5">+${restCount}</button>`
+                : ''
+        );
     }
 
     function renderList() {
         const listContainer = document.getElementById('tasks-list');
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
-        
+
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
         let html = `
             <div class="mb-4">
                 <h2 class="text-xl font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-2">${monthNames[month]} ${year}</h2>
             </div>
         `;
 
-        // Примерный список задач
-        for (let day = 1; day <= 31; day++) {
+        let hasAny = false;
+
+        for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(year, month, day);
-            if (date.getMonth() !== month) break;
-            
-            if (day % 3 === 0 || day % 5 === 0) {
-                html += `
-                    <div class="mb-4 p-4 border border-[#e2e8f0] dark:border-[#3E3E3A] rounded-lg">
-                        <div class="text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-2">
-                            ${day} ${monthNames[month]} ${year}
-                        </div>
-                        <div class="space-y-2">
-                            ${day % 3 === 0 ? `<div class="event"><span class="event-time">10:00</span> <span>{{ __('dashboard.tasks') }} ${day}</span></div>` : ''}
-                            ${day % 5 === 0 ? `<div class="event"><span class="event-time">14:00</span> <span>{{ __('dashboard.tasks') }} ${day + 1}</span></div>` : ''}
-                        </div>
+            const key = toISODate(date);
+            const tasks = eventsByDate?.[key] || [];
+            if (!tasks.length) continue;
+
+            hasAny = true;
+
+            const tasksFirst = tasks.slice(0, 2);
+            const restCount = Math.max(0, tasks.length - 2);
+
+            const tasksHtml = tasksFirst.map(t => renderTaskMini(t, { showTime: true })).join('') + (
+                restCount > 0
+                    ? `<button type="button" onclick="openDayDrawer('${key}')" class="text-[12px] text-[#f59e0b] hover:underline mt-1">+${restCount}</button>`
+                    : ''
+            );
+
+            html += `
+                <div class="mb-4 p-4 border border-[#e2e8f0] dark:border-[#3E3E3A] rounded-lg">
+                    <div class="text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-2">
+                        ${day} ${monthNames[month]} ${year}
                     </div>
-                `;
-            }
+                    <div class="space-y-1">
+                        ${tasksHtml}
+                    </div>
+                </div>
+            `;
         }
 
-        if (html === `<div class="mb-4"><h2 class="text-xl font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-2">${monthNames[month]} ${year}</h2></div>`) {
+        if (!hasAny) {
             html += `<div class="text-center py-8 text-[#64748b] dark:text-[#A1A09A]">{{ __('dashboard.no_tasks') }}</div>`;
         }
 

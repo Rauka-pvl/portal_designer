@@ -4,6 +4,7 @@ return [
     'settings' => 'Настройки',
     'profile_settings' => 'Настройки профиля',
     'security' => 'Безопасность',
+    'notifications' => 'Уведомления',
     'roles_and_access' => 'Роли и доступы',
     'team' => 'Команда',
     'subscriptions' => 'Подписки',
@@ -39,6 +40,7 @@ return [
     'new_password_confirmation' => 'Подтверждение нового пароля',
 
     'save_changes' => 'Сохранить изменения',
+    'cancel' => 'Отменить',
     'profile_saved' => 'Профиль обновлен',
     'password_saved' => 'Пароль обновлен',
 ];

@@ -9,6 +9,13 @@ use Illuminate\Validation\Rules\Password;
 
 class SettingsController extends Controller
 {
+    public function profile(Request $request)
+    {
+        return view('profile.show', [
+            'user' => $request->user(),
+        ]);
+    }
+
     public function index(Request $request)
     {
         $user = $request->user();

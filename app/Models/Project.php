@@ -24,11 +24,19 @@ class Project extends Model
         'links',
         'files',
         'comment',
+
+        // Moderation
+        'moderation_status',
+        'moderation_reason',
+        'moderation_comment',
+        'moderation_reviewer_id',
+        'moderation_reviewed_at',
     ];
 
     protected $casts = [
         'links' => 'array',
         'files' => 'array',
+        'moderation_reviewed_at' => 'datetime',
     ];
 
     public function user()

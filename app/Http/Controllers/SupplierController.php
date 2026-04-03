@@ -81,6 +81,12 @@ class SupplierController extends Controller
 
         $this->fillAndSave($request, $supplier);
 
+        // Автоматически отправляем на модерацию после создания
+        $supplier->moderation_status = 'pending';
+        $supplier->moderation_reviewer_id = null;
+        $supplier->moderation_reviewed_at = null;
+        $supplier->save();
+
         return response()->json([
             'success' => true,
             'message' => __('suppliers.added'),
@@ -269,6 +275,10 @@ class SupplierController extends Controller
                 : null,
             'cities_presence' => is_array($supplier->cities_presence) ? $supplier->cities_presence : [],
             'comment' => $supplier->comment,
+
+            // Moderation
+            'moderation_status' => $supplier->moderation_status,
+            'moderation_comment' => $supplier->moderation_comment,
             'org_form' => $supplier->org_form,
             'inn' => $supplier->inn,
             'kpp' => $supplier->kpp,

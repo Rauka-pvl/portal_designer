@@ -14,7 +14,13 @@ class ProjectStageStep extends Model
         'deadline',
         'responsible_id',
         'link',
+        'result_status',
+        'result_comment',
         'order',
+    ];
+
+    protected $casts = [
+        'result_status' => 'string',
     ];
 
     public function stage()

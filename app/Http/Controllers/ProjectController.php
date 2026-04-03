@@ -108,6 +108,35 @@ class ProjectController extends Controller
 
         $this->fillAndSave($request, $project);
 
+        // Модерация проекта по совпадению адреса (apartment):
+        // проверяем дубликаты по city + apartment + apartment_entrance + apartment_floor.
+        $object = PassportObject::query()
+            ->where('user_id', (int) $request->user()->id)
+            ->findOrFail((int) $project->object_id);
+
+        $isApartment = (string) ($object->type ?? '') === 'apartment';
+        $isDuplicate = false;
+
+        if ($isApartment) {
+            $city = mb_strtolower(trim((string) ($object->city ?? '')));
+            $apartment = mb_strtolower(trim((string) ($object->apartment ?? '')));
+            $entrance = mb_strtolower(trim((string) ($object->apartment_entrance ?? '')));
+            $floor = mb_strtolower(trim((string) ($object->apartment_floor ?? '')));
+
+            $isDuplicate = PassportObject::query()
+                ->where('user_id', '!=', (int) $request->user()->id)
+                ->where('type', 'apartment')
+                ->whereRaw('LOWER(TRIM(COALESCE(city, ""))) = ?', [$city])
+                ->whereRaw('LOWER(TRIM(COALESCE(apartment, ""))) = ?', [$apartment])
+                ->whereRaw('LOWER(TRIM(COALESCE(apartment_entrance, ""))) = ?', [$entrance])
+                ->whereRaw('LOWER(TRIM(COALESCE(apartment_floor, ""))) = ?', [$floor])
+                ->exists();
+        }
+
+        $project->moderation_status = $isDuplicate ? 'pending' : 'approved';
+        $project->moderation_reason = $isDuplicate ? 'duplicate_address' : null;
+        $project->save();
+
         return response()->json([
             'success' => true,
             'message' => __('projects.created'),
@@ -253,6 +282,8 @@ class ProjectController extends Controller
             'stages.*.steps.*.deadline' => ['nullable', 'date'],
             'stages.*.steps.*.responsible_id' => ['nullable', 'integer', Rule::exists('users', 'id')],
             'stages.*.steps.*.link' => ['nullable', 'url', 'max:1000'],
+            'stages.*.steps.*.result_status' => ['nullable', 'string', Rule::in(['pending', 'done'])],
+            'stages.*.steps.*.result_comment' => ['nullable', 'string', 'max:5000'],
         ]);
 
         $links = array_values(array_filter(array_map(fn ($v) => trim((string) $v), (array) ($data['links'] ?? []))));
@@ -328,6 +359,8 @@ class ProjectController extends Controller
                 $deadline = is_array($stepRow) ? ($stepRow['deadline'] ?? null) : null;
                 $responsibleId = is_array($stepRow) ? ($stepRow['responsible_id'] ?? null) : null;
                 $link = is_array($stepRow) ? trim((string) ($stepRow['link'] ?? '')) : '';
+                $resultStatus = is_array($stepRow) ? (string) ($stepRow['result_status'] ?? 'pending') : 'pending';
+                $resultComment = is_array($stepRow) ? ($stepRow['result_comment'] ?? null) : null;
 
                 ProjectStageStep::create([
                     'project_stage_id' => $stage->id,
@@ -335,6 +368,8 @@ class ProjectController extends Controller
                     'deadline' => $deadline ?: null,
                     'responsible_id' => $responsibleId ?: null,
                     'link' => $link !== '' ? $link : null,
+                    'result_status' => $resultStatus,
+                    'result_comment' => is_string($resultComment) && trim($resultComment) !== '' ? $resultComment : null,
                     'order' => $stepIdx,
                 ]);
             }
@@ -351,6 +386,11 @@ class ProjectController extends Controller
             'client_name' => $project->object?->client?->full_name,
             'name' => $project->name,
             'status' => $project->status,
+
+            // Moderation
+            'moderation_status' => $project->moderation_status,
+            'moderation_reason' => $project->moderation_reason,
+            'moderation_comment' => $project->moderation_comment,
             'start_date' => $project->start_date,
             'planned_end_date' => $project->planned_end_date,
             'actual_end_date' => $project->actual_end_date,
@@ -377,6 +417,8 @@ class ProjectController extends Controller
                             'deadline' => $step->deadline,
                             'responsible_id' => $step->responsible_id,
                             'link' => $step->link,
+                            'result_status' => $step->result_status ?? 'pending',
+                            'result_comment' => $step->result_comment,
                         ];
                     })->values(),
                 ];

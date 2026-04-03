@@ -185,14 +185,14 @@
                 </div>
 
                 <!-- Профиль -->
-                <button type="button"
+                <a href="{{ route('profile.show') }}"
                     class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-[#706f6c] dark:text-[#A1A09A] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                     <span>{{ __('dashboard.profile') }}</span>
-                </button>
+                </a>
 
                 <!-- Выход -->
                 <form method="POST" action="{{ route('logout') }}" class="w-full">

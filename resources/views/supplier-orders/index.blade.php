@@ -596,7 +596,8 @@ document.addEventListener('DOMContentLoaded', function() {
                               order.status === 'full_payment' ? '{{ __('supplier-orders.status_full_payment') }}' :
                               '{{ __('supplier-orders.status_delivery_completed') }}';
 
-            const createdDate = new Date(order.created_at).toLocaleDateString('kk-KZ');
+            const createdDate = new Date(order.created_date).toLocaleDateString('kk-KZ');
+            console.log("createdDate", createdDate);
             const plannedDate = new Date(order.date_planned).toLocaleDateString('kk-KZ');
             const actualDate = order.date_actual ? new Date(order.date_actual).toLocaleDateString('kk-KZ') : '';
 
@@ -665,6 +666,7 @@ document.addEventListener('DOMContentLoaded', function() {
                               '{{ __('supplier-orders.status_delivery_completed') }}';
 
             const createdDate = new Date(order.created_date).toLocaleDateString('kk-KZ');
+            
             const plannedDate = new Date(order.planned_date).toLocaleDateString('kk-KZ');
             const actualDate = order.actual_date ? new Date(order.actual_date).toLocaleDateString('kk-KZ') : '';
 

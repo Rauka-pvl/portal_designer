@@ -45,12 +45,19 @@ class Supplier extends Model
         'corr_account',
         'comment_bank',
         'is_favorite',
+
+        // Moderation
+        'moderation_status',
+        'moderation_comment',
+        'moderation_reviewer_id',
+        'moderation_reviewed_at',
     ];
 
     protected $casts = [
         'recommend' => 'boolean',
         'address_match' => 'boolean',
         'is_favorite' => 'boolean',
+        'moderation_reviewed_at' => 'datetime',
         'brands' => 'array',
         'cities_presence' => 'array',
     ];

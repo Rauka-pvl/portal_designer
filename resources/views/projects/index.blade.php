@@ -1797,6 +1797,21 @@ document.addEventListener('DOMContentLoaded', function() {
                         <input type="url" name="stage_step_link[${stageValue}][]" class="modal-input text-sm" placeholder="{{ __('projects.paste_link') }}">
                     </div>
                 </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 mt-3 border-t border-[#e2e8f0] dark:border-[#3E3E3A]">
+                    <div>
+                        <label class="modal-label text-xs text-[#64748b] dark:text-[#A1A09A]">{{ __('projects.step_result_status') }}</label>
+                        <select name="stage_step_result_status[${stageValue}][]" class="modal-input text-sm">
+                            <option value="pending" selected>{{ __('projects.step_result_not_done') }}</option>
+                            <option value="done">{{ __('projects.step_result_done') }}</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="modal-label text-xs text-[#64748b] dark:text-[#A1A09A]">{{ __('projects.step_result_comment') }}</label>
+                        <textarea name="stage_step_result_comment[${stageValue}][]" rows="2" class="modal-input resize-none text-sm"
+                            placeholder="{{ __('projects.step_result_comment_placeholder') }}"></textarea>
+                    </div>
+                </div>
             `;
             container.appendChild(card);
             if (stepData && typeof stepData === 'object') {
@@ -1806,6 +1821,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (resp && stepData.responsible_id) { resp.value = stepData.responsible_id; }
                 const lnk = card.querySelector('input[type="url"]');
                 if (lnk && stepData.link) { lnk.value = stepData.link; }
+
+                const rs = card.querySelector('select[name^="stage_step_result_status"]');
+                if (rs && stepData.result_status) { rs.value = stepData.result_status; }
+                const rc = card.querySelector('textarea[name^="stage_step_result_comment"]');
+                if (rc && stepData.result_comment) { rc.value = stepData.result_comment; }
             }
             card.querySelector('.step-remove')?.addEventListener('click', () => card.remove());
             const dateInput = card.querySelector('.step-deadline');
@@ -1906,6 +1926,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     fd.delete(`stages[${i}][steps][${j}][deadline]`);
                     fd.delete(`stages[${i}][steps][${j}][responsible_id]`);
                     fd.delete(`stages[${i}][steps][${j}][link]`);
+                    fd.delete(`stages[${i}][steps][${j}][result_status]`);
+                    fd.delete(`stages[${i}][steps][${j}][result_comment]`);
                 }
             }
 
@@ -1936,11 +1958,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     const stepDeadline = parseDateInputForServer(card.querySelector('.step-deadline')?.value || '');
                     const stepResponsible = String(card.querySelector('select[name^="stage_step_responsible"]')?.value || '').trim();
                     const stepLink = String(card.querySelector('input[type="url"]')?.value || '').trim();
+                    const stepResultStatus = String(card.querySelector('select[name^="stage_step_result_status"]')?.value || '').trim();
+                    const stepResultComment = String(card.querySelector('textarea[name^="stage_step_result_comment"]')?.value || '').trim();
 
                     fd.append(`stages[${idx}][steps][${stepIdx}][title]`, title);
                     if (stepDeadline) fd.append(`stages[${idx}][steps][${stepIdx}][deadline]`, stepDeadline);
                     if (stepResponsible) fd.append(`stages[${idx}][steps][${stepIdx}][responsible_id]`, stepResponsible);
                     if (stepLink) fd.append(`stages[${idx}][steps][${stepIdx}][link]`, stepLink);
+                    if (stepResultStatus) fd.append(`stages[${idx}][steps][${stepIdx}][result_status]`, stepResultStatus);
+                    if (stepResultComment) fd.append(`stages[${idx}][steps][${stepIdx}][result_comment]`, stepResultComment);
                 });
             });
 
