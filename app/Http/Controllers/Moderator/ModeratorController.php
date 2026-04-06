@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Moderator;
 
 use App\Http\Controllers\Controller;
+use App\Models\PassportObject;
 use App\Models\Project;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
@@ -37,9 +38,32 @@ class ModeratorController extends Controller
             ->limit(50)
             ->get(['id', 'name', 'user_id', 'object_id', 'moderation_status', 'moderation_comment', 'moderation_reason']);
 
+        $pendingObjects = PassportObject::query()
+            ->where('moderation_status', 'pending')
+            ->whereNotNull('moderation_duplicate_of_object_id')
+            ->orderByDesc('id')
+            ->with([
+                'user:id,name',
+                'moderationDuplicateOf.user:id,name',
+            ])
+            ->limit(50)
+            ->get([
+                'id',
+                'user_id',
+                'city',
+                'address',
+                'type',
+                'apartment',
+                'apartment_floor',
+                'apartment_entrance',
+                'moderation_status',
+                'moderation_duplicate_of_object_id',
+            ]);
+
         return view('moderator.index', [
             'pendingSuppliers' => $pendingSuppliers,
             'pendingProjects' => $pendingProjects,
+            'pendingObjects' => $pendingObjects,
         ]);
     }
 
@@ -118,6 +142,62 @@ class ModeratorController extends Controller
             ]);
 
         return redirect()->route('moderator.projects.show', $projectId)->with('status', __('moderation.saved'));
+    }
+
+    public function objectShow(Request $request, int $objectId)
+    {
+        $this->authorizeModerator($request);
+
+        $object = PassportObject::query()
+            ->where('id', $objectId)
+            ->with([
+                'user:id,name',
+                'moderationDuplicateOf.user:id,name',
+            ])
+            ->findOrFail($objectId);
+
+        return view('moderator.objects.show', [
+            'object' => $object,
+            'existingObject' => $object->moderationDuplicateOf,
+        ]);
+    }
+
+    public function objectDecide(Request $request, int $objectId)
+    {
+        $this->authorizeModerator($request);
+
+        $data = $request->validate([
+            'decision' => ['required', Rule::in(['approved', 'rejected'])],
+            'comment' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        $object = PassportObject::query()
+            ->where('id', $objectId)
+            ->where('moderation_status', 'pending')
+            ->whereNotNull('moderation_duplicate_of_object_id')
+            ->findOrFail($objectId);
+
+        $comment = isset($data['comment']) && trim((string) $data['comment']) !== ''
+            ? $data['comment']
+            : null;
+
+        if ($data['decision'] === 'approved') {
+            $object->moderation_status = 'approved';
+            $object->moderation_duplicate_of_object_id = null;
+            $object->moderation_comment = $comment;
+            $object->moderation_reviewer_id = $request->user()->id;
+            $object->moderation_reviewed_at = now();
+            $object->save();
+        } else {
+            $object->moderation_comment = $comment;
+            $object->moderation_reviewer_id = $request->user()->id;
+            $object->moderation_reviewed_at = now();
+            $object->moderation_status = 'rejected';
+            $object->save();
+            $object->delete();
+        }
+
+        return redirect()->route('moderator.index')->with('status', __('moderation.saved'));
     }
 }
 

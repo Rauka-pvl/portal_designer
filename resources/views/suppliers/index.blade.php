@@ -453,6 +453,8 @@
                             <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">
                                 {{ __('suppliers.brand') }}</th>
                             <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">
+                                {{ __('moderation.status') }}</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">
                                 {{ __('suppliers.actions') }}</th>
                         </tr>
                     </thead>
@@ -480,6 +482,18 @@
                                 <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">
                                     {{ $supplier->brand_display ?: '-' }}</td>
                                 <td class="px-4 py-3 text-sm">
+                                    @php
+                                        $status = (string) ($supplier->moderation_status ?? 'pending');
+                                    @endphp
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                        @if($status === 'approved') bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300
+                                        @elseif($status === 'rejected') bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300
+                                        @else bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-200
+                                        @endif">
+                                        {{ __('moderation.' . $status) }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3 text-sm">
                                     <div class="flex items-center gap-2">
                                         <button type="button" onclick="viewSupplier({{ $supplier->id }})"
                                             class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] transition-colors"
@@ -491,6 +505,15 @@
                                                     d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                             </svg>
                                         </button>
+                                        <button type="button" onclick="editSupplier({{ $supplier->id }})"
+                                            class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] dark:hover:text-[#f59e0b] transition-colors"
+                                            title="{{ __('suppliers.edit') }}">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                        </button>
+             
                                         <button type="button" onclick="addOrderFromSupplier({{ $supplier->id }})"
                                             class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] transition-colors"
                                             title="{{ __('suppliers.add_order') }}">
@@ -805,6 +828,7 @@
                                     <select name="sphere" class="modal-input">
                                         <option value="">{{ __('suppliers.sphere_placeholder') }}</option>
                                         @foreach (($sphereOptions ?? []) as $key => $name)
+                                        
                                         <option value="{{ $key }}">{{ $name }}</option>
                                         @endforeach
                                     </select>
@@ -1300,6 +1324,23 @@
                             <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.sphere_display || s.sphere || '-')}</td>
                             <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.brand_display || '-')}</td>
                             <td class="px-4 py-3 text-sm">
+                                ${(() => {
+                                    const st = String(s.moderation_status || 'pending');
+                                    let cls = 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-200';
+                                    if (st === 'approved') {
+                                        cls = 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300';
+                                    } else if (st === 'rejected') {
+                                        cls = 'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300';
+                                    }
+                                    const label = {
+                                        approved: '{{ __('moderation.approved') }}',
+                                        rejected: '{{ __('moderation.rejected') }}',
+                                        pending: '{{ __('moderation.pending') }}',
+                                    }[st] || '{{ __('moderation.pending') }}';
+                                return `<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${cls}">${label}</span>`;
+                                })()}
+                            </td>
+                            <td class="px-4 py-3 text-sm">
                                 <div class="flex items-center gap-2">
                                     <button type="button" title="{{ __('suppliers.view') }}" onclick="viewSupplier(${s.id})"
                                         class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] transition-colors">
@@ -1308,6 +1349,13 @@
                                                 d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </button>
+                                    <button type="button" title="{{ __('suppliers.edit') }}" onclick="editSupplier(${s.id})"
+                                        class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] dark:hover:text-[#f59e0b] transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                         </svg>
                                     </button>
                                     <button type="button" title="{{ __('suppliers.delete') }}" onclick="deleteSupplier(${s.id})"

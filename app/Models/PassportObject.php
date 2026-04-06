@@ -31,6 +31,11 @@ class PassportObject extends Model
         'comment',
         'latitude',
         'longitude',
+        'moderation_status',
+        'moderation_duplicate_of_object_id',
+        'moderation_comment',
+        'moderation_reviewer_id',
+        'moderation_reviewed_at',
     ];
 
     protected $casts = [
@@ -38,7 +43,37 @@ class PassportObject extends Model
         'file_paths' => 'array',
         'latitude' => 'float',
         'longitude' => 'float',
+        'moderation_reviewed_at' => 'datetime',
     ];
+
+    /**
+     * Другой дизайнер: квартира с теми же latitude, longitude (как в БД, без округления в запросе)
+     * и теми же квартирой / подъездом / этажом.
+     */
+    public static function findOtherDesignerApartmentDuplicate(
+        int $userId,
+        float $latitude,
+        float $longitude,
+        ?string $apartment,
+        ?string $entrance,
+        ?string $floor,
+        ?int $excludeObjectId = null
+    ): ?self {
+        $query = self::query()
+            ->where('user_id', '!=', $userId)
+            ->where('type', 'apartment')
+            ->where('latitude', $latitude)
+            ->where('longitude', $longitude)
+            ->whereRaw('LOWER(TRIM(COALESCE(apartment, ""))) = ?', [mb_strtolower(trim((string) $apartment))])
+            ->whereRaw('LOWER(TRIM(COALESCE(apartment_entrance, ""))) = ?', [mb_strtolower(trim((string) $entrance))])
+            ->whereRaw('LOWER(TRIM(COALESCE(apartment_floor, ""))) = ?', [mb_strtolower(trim((string) $floor))]);
+
+        if ($excludeObjectId !== null) {
+            $query->where('id', '!=', $excludeObjectId);
+        }
+
+        return $query->first();
+    }
 
     public function user()
     {
@@ -48,5 +83,10 @@ class PassportObject extends Model
     public function client()
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function moderationDuplicateOf()
+    {
+        return $this->belongsTo(self::class, 'moderation_duplicate_of_object_id');
     }
 }

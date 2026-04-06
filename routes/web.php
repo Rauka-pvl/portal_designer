@@ -23,10 +23,7 @@ Route::get('/', function () {
     return Auth::check() ? redirect()->route('dashboard') : view('welcome');
 });
 
-/**
- * Переключение языка.
- * Поддерживаем любые папки внутри `lang/<locale>`.
- */
+
 Route::get('/language/{locale}', function (string $locale, Request $request) {
     if (! is_dir(lang_path($locale))) {
         abort(404);
@@ -167,6 +164,13 @@ Route::group(['middleware' => 'auth'], function () {
     Route::post('/moderator/projects/{projectId}/decision', [ModeratorController::class, 'projectDecide'])
         ->whereNumber('projectId')
         ->name('moderator.projects.decision');
+
+    Route::get('/moderator/objects/{objectId}', [ModeratorController::class, 'objectShow'])
+        ->whereNumber('objectId')
+        ->name('moderator.objects.show');
+    Route::post('/moderator/objects/{objectId}/decision', [ModeratorController::class, 'objectDecide'])
+        ->whereNumber('objectId')
+        ->name('moderator.objects.decision');
 
     // Supplier orders
     Route::get('/supplier-orders', [SupplierOrderController::class, 'index'])->name('supplier-orders.index');

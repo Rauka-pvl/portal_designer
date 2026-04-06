@@ -108,33 +108,16 @@ class ProjectController extends Controller
 
         $this->fillAndSave($request, $project);
 
-        // Модерация проекта по совпадению адреса (apartment):
-        // проверяем дубликаты по city + apartment + apartment_entrance + apartment_floor.
+        // Модерация проекта: если объект-квартира ещё в очереди на проверку дубликата адреса.
         $object = PassportObject::query()
             ->where('user_id', (int) $request->user()->id)
             ->findOrFail((int) $project->object_id);
 
-        $isApartment = (string) ($object->type ?? '') === 'apartment';
-        $isDuplicate = false;
+        $objectPendingDuplicate = $object->moderation_status === 'pending'
+            && ! empty($object->moderation_duplicate_of_object_id);
 
-        if ($isApartment) {
-            $city = mb_strtolower(trim((string) ($object->city ?? '')));
-            $apartment = mb_strtolower(trim((string) ($object->apartment ?? '')));
-            $entrance = mb_strtolower(trim((string) ($object->apartment_entrance ?? '')));
-            $floor = mb_strtolower(trim((string) ($object->apartment_floor ?? '')));
-
-            $isDuplicate = PassportObject::query()
-                ->where('user_id', '!=', (int) $request->user()->id)
-                ->where('type', 'apartment')
-                ->whereRaw('LOWER(TRIM(COALESCE(city, ""))) = ?', [$city])
-                ->whereRaw('LOWER(TRIM(COALESCE(apartment, ""))) = ?', [$apartment])
-                ->whereRaw('LOWER(TRIM(COALESCE(apartment_entrance, ""))) = ?', [$entrance])
-                ->whereRaw('LOWER(TRIM(COALESCE(apartment_floor, ""))) = ?', [$floor])
-                ->exists();
-        }
-
-        $project->moderation_status = $isDuplicate ? 'pending' : 'approved';
-        $project->moderation_reason = $isDuplicate ? 'duplicate_address' : null;
+        $project->moderation_status = $objectPendingDuplicate ? 'pending' : 'approved';
+        $project->moderation_reason = $objectPendingDuplicate ? 'object_duplicate_pending' : null;
         $project->save();
 
         return response()->json([

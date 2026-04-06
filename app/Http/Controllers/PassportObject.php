@@ -44,9 +44,7 @@ class PassportObject extends Controller
         ]);
     }
 
-    /**
-     * Живой поиск объектов (AJAX).
-     */
+    // Search objects
     public function search(Request $request)
     {
         $query = PassportObjectModel::query()
@@ -127,7 +125,6 @@ class PassportObject extends Controller
             'repair_budget_actual' => ['nullable', 'numeric', 'min:0'],
             'repair_budget_per_m2_planned' => ['nullable', 'numeric', 'min:0'],
             'repair_budget_per_m2_actual' => ['nullable', 'numeric', 'min:0'],
-            // links могут приходить как array (links[]) либо как строка (links_text)
             'links' => ['nullable', 'array'],
             'links.*' => ['nullable', 'url', 'max:2048'],
             'links_text' => ['nullable', 'string', 'max:10000'],
@@ -153,35 +150,6 @@ class PassportObject extends Controller
         $allowedTypes = ['apartment', 'house', 'commercial', 'other'];
         if (!in_array($data['type'], $allowedTypes, true)) {
             $data['type'] = 'other';
-        }
-
-        $duplicateQuery = PassportObjectModel::query()
-            ->where('user_id', '!=', $userId)
-            ->whereRaw('LOWER(TRIM(city)) = ?', [mb_strtolower(trim((string) $data['city']))])
-            ->whereRaw('LOWER(TRIM(address)) = ?', [mb_strtolower(trim((string) $data['address']))]);
-
-        if ($objectId) {
-            $duplicateQuery->where('id', '!=', (int) $objectId);
-        }
-
-        if ($data['type'] === 'apartment') {
-            $duplicateQuery
-                ->where('type', 'apartment')
-                ->whereRaw('LOWER(TRIM(COALESCE(apartment, ""))) = ?', [mb_strtolower(trim((string) ($data['apartment'] ?? '')))]);
-        }
-
-        if ($duplicateQuery->exists()) {
-            $msg = __('objects.duplicate_other_designer');
-            if ($request->expectsJson() || $request->wantsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => $msg,
-                ], 422);
-            }
-
-            return back()->withInput()->withErrors([
-                'address' => $msg,
-            ]);
         }
 
         $coordCheck = $this->verifySubmittedCoordinatesMatchAddress(
@@ -283,15 +251,45 @@ class PassportObject extends Controller
         $object->latitude = $data['latitude'];
         $object->longitude = $data['longitude'];
 
+        // Дубликат только для квартиры: те же latitude/longitude в БД + кв., подъезд, этаж у другого дизайнера → модерация.
+        $previousModerationStatus = $object->exists ? (string) ($object->getOriginal('moderation_status') ?? '') : '';
+        if ($isApartment) {
+            $dup = PassportObjectModel::findOtherDesignerApartmentDuplicate(
+                (int) $userId,
+                (float) $data['latitude'],
+                (float) $data['longitude'],
+                $object->apartment,
+                $object->apartment_entrance,
+                $object->apartment_floor,
+                $objectId ? (int) $objectId : null
+            );
+            if ($dup) {
+                $object->moderation_status = 'pending';
+                $object->moderation_duplicate_of_object_id = $dup->id;
+            } else {
+                $object->moderation_duplicate_of_object_id = null;
+                // Одобрено модератором — не сбрасываем при последующих правках без дубликата
+                $object->moderation_status = $previousModerationStatus === 'approved' ? 'approved' : null;
+            }
+        } else {
+            $object->moderation_status = null;
+            $object->moderation_duplicate_of_object_id = null;
+        }
+
         $object->save();
+        $object->load('client');
 
         $message = $isUpdate ? __('objects.object_updated') : __('objects.object_added');
+        if ($object->moderation_status === 'pending' && $object->moderation_duplicate_of_object_id) {
+            $message = __('objects.object_sent_to_moderation_duplicate');
+        }
 
         if ($request->expectsJson() || $request->wantsJson()) {
             return response()->json([
                 'success' => true,
                 'message' => $message,
-                'object' => $this->payload($object),
+                'object' => $this->payload($object->fresh(['client'])),
+                'moderation_pending' => $object->moderation_status === 'pending',
             ]);
         }
 
@@ -478,6 +476,8 @@ class PassportObject extends Controller
             'comment' => $object->comment,
             'latitude' => $object->latitude,
             'longitude' => $object->longitude,
+            'moderation_status' => $object->moderation_status,
+            'moderation_duplicate_of_object_id' => $object->moderation_duplicate_of_object_id,
         ];
     }
 }

@@ -303,6 +303,8 @@
                             <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header"
                                 data-sort="status">{{ __('objects.status') }}</th>
                             <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header"
+                                data-sort="moderation_status">{{ __('objects.moderation') }}</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header"
                                 data-sort="client_name">{{ __('objects.client') }}</th>
                             <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header"
                                 data-sort="area">{{ __('objects.area') }}</th>
@@ -890,6 +892,18 @@
                 not_working: 'object-status-badge px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-200'
             };
 
+            const moderationNotRequiredLabel = '{{ __('objects.moderation_not_required') }}';
+            const moderationStatusLabels = {
+                pending: '{{ __('moderation.pending') }}',
+                approved: '{{ __('moderation.approved') }}',
+                rejected: '{{ __('moderation.rejected') }}'
+            };
+            const moderationBadgeClasses = {
+                pending: 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-200',
+                approved: 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300',
+                rejected: 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300'
+            };
+
             function typeLabel(type) {
                 if (type === 'apartment') return '{{ __('objects.apartment') }}';
                 if (type === 'house') return '{{ __('objects.house') }}';
@@ -1205,6 +1219,16 @@
                 return `<span class="${cls}">${escapeHtml(label)}</span>`;
             }
 
+            function renderObjectModerationCell(obj) {
+                const st = obj.moderation_status;
+                if (!st || String(st).trim() === '') {
+                    return `<span class="text-sm text-[#64748b] dark:text-[#A1A09A]">${escapeHtml(moderationNotRequiredLabel)}</span>`;
+                }
+                const label = moderationStatusLabels[st] || st;
+                const cls = moderationBadgeClasses[st] || moderationBadgeClasses.pending;
+                return `<span class="${cls}">${escapeHtml(label)}</span>`;
+            }
+
             function sortAllObjects() {
                 if (!sortColumn) return;
                 const dir = sortDirection === 'asc' ? 1 : -1;
@@ -1333,7 +1357,7 @@
                 if (!tbody) return;
                 if (!allObjects.length) {
                     tbody.innerHTML =
-                        `<tr><td colspan="9" class="px-4 py-6 text-center text-[#64748b] dark:text-[#A1A09A]">{{ __('objects.no_objects') }}</td></tr>`;
+                        `<tr><td colspan="10" class="px-4 py-6 text-center text-[#64748b] dark:text-[#A1A09A]">{{ __('objects.no_objects') }}</td></tr>`;
                     document.getElementById('objects-pagination-table').innerHTML = '';
                     return;
                 }
@@ -1353,6 +1377,7 @@
                             <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(full_address)}</td>
                             <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(typeLabel(obj.type || 'other'))}</td>
                             <td class="px-4 py-3 text-sm">${renderClientStatusBadge(obj)}</td>
+                            <td class="px-4 py-3 text-sm">${renderObjectModerationCell(obj)}</td>
                             <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(obj.client_name || '')}</td>
                             <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${parseFloat(obj.area || 0).toLocaleString('kk-KZ', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                             <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(formatTenge(obj.repair_budget_planned || 0))}</td>
@@ -1414,7 +1439,7 @@
                                         <p>${escapeHtml(typeLabel(obj.type || 'other'))}</p>
                                     </div>
                                 </div>
-                                <div>${renderClientStatusBadge(obj)}</div>
+                                <div class="flex flex-col items-end gap-1">${renderClientStatusBadge(obj)}${renderObjectModerationCell(obj)}</div>
                             </div>
 
                             <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm mb-4">
@@ -1491,6 +1516,7 @@
                              data-object-id="${obj.id}" data-object='${objectToDataAttr(obj)}'>
                             <h4 class="font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-1">${escapeHtml(buildFullAddress(obj))}</h4>
                             <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">${escapeHtml(obj.client_name || '')}</p>
+                            <div class="mt-1.5">${renderObjectModerationCell(obj)}</div>
                             <div class="flex items-center gap-2 mt-2" onclick="event.stopPropagation()">
                                 <button type="button" onclick="event.stopPropagation(); window.viewObject(${obj.id})"
                                     class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] transition-colors">{{ __('objects.view') }}</button>

@@ -42,11 +42,19 @@
         </div>
     </div>
 
-    <div class="panel">
+    <div class="panel space-y-6">
         @php
             $status = (string) ($supplier->moderation_status ?? 'pending');
+            $sphere = $supplier->sphere;
+            $sphereTranslation = $sphere ? __('supplier_spheres.' . $sphere) : null;
+            $sphereDisplay = $sphere
+                ? ($sphereTranslation !== 'supplier_spheres.' . $sphere ? $sphereTranslation : $sphere)
+                : null;
+            $brands = is_array($supplier->brands) ? $supplier->brands : [];
+            $citiesPresence = is_array($supplier->cities_presence) ? $supplier->cities_presence : [];
         @endphp
-        <div class="mb-5">
+
+        <div>
             <div class="flex flex-wrap items-center gap-2">
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
                     @if($status === 'approved') bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300
@@ -79,7 +87,123 @@
             </div>
         </div>
 
-        <hr class="my-6 border-[#e2e8f0] dark:border-[#3E3E3A]">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+                <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.phone') }}</div>
+                <input disabled value="{{ $supplier->phone ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+            </div>
+            <div>
+                <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">Email</div>
+                <input disabled value="{{ $supplier->email ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+            </div>
+            <div>
+                <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">Telegram</div>
+                <input disabled value="{{ $supplier->telegram ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+            </div>
+            <div>
+                <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">WhatsApp</div>
+                <input disabled value="{{ $supplier->whatsapp ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+            </div>
+            <div class="md:col-span-2">
+                <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.website') }}</div>
+                <input disabled value="{{ $supplier->website ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+                <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.sphere') }}</div>
+                <input disabled value="{{ $sphereDisplay ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+            </div>
+            <div>
+                <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.work_terms') }}</div>
+                @php
+                    $workLabel = null;
+                    if ($supplier->work_terms_type && $supplier->work_terms_value) {
+                        $workLabel = $supplier->work_terms_type === 'percent'
+                            ? '%' . ': ' . $supplier->work_terms_value
+                            : __('suppliers.work_terms_amount') . ': ' . $supplier->work_terms_value;
+                    }
+                @endphp
+                <input disabled value="{{ $workLabel ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+            </div>
+            <div class="md:col-span-2">
+                <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.brands') }}</div>
+                <textarea disabled rows="2" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">@if($brands){{ implode(', ', $brands) }}@endif</textarea>
+            </div>
+            <div class="md:col-span-2">
+                <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.cities_presence') }}</div>
+                <textarea disabled rows="2" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">@if($citiesPresence){{ implode(', ', $citiesPresence) }}@endif</textarea>
+            </div>
+            <div class="md:col-span-2">
+                <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.comment') }}</div>
+                <textarea disabled rows="3" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">{{ $supplier->comment ?? '' }}</textarea>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+                <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.org_form') }}</div>
+                <input disabled value="{{ $supplier->org_form === 'ip' ? __('suppliers.org_ip') : __('suppliers.org_ooo') }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+            </div>
+            <div>
+                <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.inn') }}</div>
+                <input disabled value="{{ $supplier->inn ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+            </div>
+            <div>
+                <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.kpp') }}</div>
+                <input disabled value="{{ $supplier->kpp ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+            </div>
+            <div>
+                <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.ogrn') }}</div>
+                <input disabled value="{{ $supplier->ogrn ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+            </div>
+            <div>
+                <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.okpo') }}</div>
+                <input disabled value="{{ $supplier->okpo ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+            </div>
+            <div class="md:col-span-2">
+                <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.legal_address') }}</div>
+                <input disabled value="{{ $supplier->legal_address ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+            </div>
+            <div class="md:col-span-2">
+                <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.actual_address') }}</div>
+                <input disabled value="{{ $supplier->actual_address ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+                <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.director') }}</div>
+                <input disabled value="{{ $supplier->director ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+            </div>
+            <div>
+                <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.accountant') }}</div>
+                <input disabled value="{{ $supplier->accountant ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+            </div>
+            <div>
+                <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.bik') }}</div>
+                <input disabled value="{{ $supplier->bik ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+            </div>
+            <div>
+                <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.bank') }}</div>
+                <input disabled value="{{ $supplier->bank ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+            </div>
+            <div>
+                <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.checking_account') }}</div>
+                <input disabled value="{{ $supplier->checking_account ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+            </div>
+            <div>
+                <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.corr_account') }}</div>
+                <input disabled value="{{ $supplier->corr_account ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+            </div>
+            <div class="md:col-span-2">
+                <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.comment') }}</div>
+                <textarea disabled rows="3" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">{{ $supplier->comment_bank ?? '' }}</textarea>
+            </div>
+        </div>
+
+        <hr class="my-4 border-[#e2e8f0] dark:border-[#3E3E3A]">
 
         <form id="moderation-form" method="POST" action="{{ route('moderator.suppliers.decision', $supplier->id) }}">
             @csrf
