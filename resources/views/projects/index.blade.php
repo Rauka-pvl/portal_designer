@@ -1700,7 +1700,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const stepsEl = sect.querySelector('.stage-steps-container');
                 if (!stepsEl) return;
                 const titles = Array.from(stepsEl.querySelectorAll('.step-card .step-title')).map(inp => (inp.value || '').trim()).filter(Boolean);
-                if (!titles.length) { alert('{{ __('projects.add_at_least_one_step') }}'); return; }
+                if (!titles.length) { projectAlert('warning', '{{ __('projects.add_at_least_one_step') }}', '', 3200); return; }
                 const name = prompt('{{ __('projects.template_name_placeholder') }}:', '');
                 if (!name || !name.trim()) return;
                 try {
@@ -1719,7 +1719,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const newSect = document.getElementById('project-stage-checklists')?.querySelector(`[data-stage="${stageValue}"]`);
                     const sel = newSect?.querySelector('.stage-template-select');
                     if (sel) { sel.value = String(data.template.id); sel.dispatchEvent(new Event('change')); }
-                } catch (e) { alert(e.message || 'Ошибка сохранения'); }
+                } catch (e) { projectAlert('error', e.message || '{{ __('projects.save_error_generic') }}', '', 3200); }
             });
             sect.querySelector('.delete-template-btn')?.addEventListener('click', async function() {
                 const sel = sect.querySelector('.stage-template-select');
@@ -1737,7 +1737,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     templatesSource = templatesSource.filter(t => String(t.id) !== String(tid));
                     await fetchTemplates();
                     renderProjectStageChecklists();
-                } catch (e) { alert(e.message || 'Ошибка удаления'); }
+                } catch (e) { projectAlert('error', e.message || '{{ __('projects.delete_error_generic') }}', '', 3200); }
             });
         });
         function renderStageSteps(sect, stageValue, steps) {
@@ -1871,7 +1871,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('project-form')?.addEventListener('submit', async function(e) {
         e.preventDefault();
         if (!projectSelectedStages || projectSelectedStages.length === 0) {
-            alert('{{ __("projects.select_stage_placeholder") }}');
+            projectAlert('warning', '{{ __("projects.select_stage_placeholder") }}', '', 3200);
             return;
         }
         const form = this;
@@ -1991,7 +1991,7 @@ document.addEventListener('DOMContentLoaded', function() {
             else if (currentView === 'list') renderList();
             else if (currentView === 'funnel') renderFunnel();
         } catch (err) {
-            alert(err.message || 'Ошибка сохранения');
+            projectAlert('error', err.message || '{{ __('projects.save_error_generic') }}', '', 3200);
         } finally {
             submitBtn.disabled = false;
             submitBtn.textContent = origText;
@@ -2213,7 +2213,7 @@ async function deleteProject(id) {
         else if (currentView === 'list') renderList();
         else if (currentView === 'funnel') renderFunnel();
     } catch (e) {
-        alert(e.message || 'Ошибка удаления');
+        projectAlert('error', e.message || '{{ __('projects.delete_error_generic') }}', '', 3200);
     }
 }
 

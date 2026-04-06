@@ -76,7 +76,7 @@ class SupplierController extends Controller
 
     public function store(Request $request)
     {
-        $supplier = new Supplier();
+        $supplier = new Supplier;
         $supplier->user_id = $request->user()->id;
 
         $this->fillAndSave($request, $supplier);
@@ -242,6 +242,7 @@ class SupplierController extends Controller
         if (! is_array($all) || $all === []) {
             return [];
         }
+
         return $all;
     }
 
@@ -250,8 +251,8 @@ class SupplierController extends Controller
         $sphere = $supplier->sphere;
         $sphereDisplay = $sphere;
         if (is_string($sphere) && trim($sphere) !== '') {
-            $translated = __('supplier_spheres.' . $sphere);
-            $sphereDisplay = $translated !== 'supplier_spheres.' . $sphere ? $translated : $sphere;
+            $translated = __('supplier_spheres.'.$sphere);
+            $sphereDisplay = $translated !== 'supplier_spheres.'.$sphere ? $translated : $sphere;
         }
 
         return [
@@ -296,7 +297,7 @@ class SupplierController extends Controller
             'comment_bank' => $supplier->comment_bank,
             'is_favorite' => (bool) $supplier->is_favorite,
             'logo' => $supplier->logo,
-            'logo_url' => $supplier->logo ? asset('storage/' . $supplier->logo) : null,
+            'logo_url' => $supplier->logo ? asset('storage/'.$supplier->logo) : null,
         ];
     }
 }

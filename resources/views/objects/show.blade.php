@@ -525,13 +525,13 @@
                     });
                     const data = await r.json().catch(() => ({}));
                     if (!r.ok || !data.success) {
-                        alert(data.message || '{{ __('objects.error') }}');
+                        projectAlert('error', data.message || '{{ __('objects.error') }}', '', 3200);
                         return;
                     }
                     location.reload();
                 } catch (e) {
                     console.error(e);
-                    alert('{{ __('objects.error') }}');
+                    projectAlert('error', '{{ __('objects.error') }}', '', 3200);
                 }
             };
 
@@ -588,7 +588,7 @@
                 const lng = parseFloat(lngInput?.value || '');
                 if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
                     e.preventDefault();
-                    alert('{{ __('objects.map_point_required') }}');
+                    projectAlert('warning', '{{ __('objects.map_point_required') }}', '', 3500);
                 }
             });
             document.addEventListener('click', function(e) {

@@ -1,12 +1,12 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\Rules\Password as PasswordRule;
-use App\Models\User;
 
 /**
  * AUTH
@@ -16,7 +16,9 @@ use App\Models\User;
  */
 Route::match(['get', 'post'], '/login', function (Request $request) {
     if (Auth::check()) {
-        return redirect()->route('dashboard');
+        return Auth::user()->role === 'moderator'
+            ? redirect()->route('moderator.index')
+            : redirect()->route('dashboard');
     }
 
     if ($request->isMethod('get')) {
@@ -41,12 +43,18 @@ Route::match(['get', 'post'], '/login', function (Request $request) {
 
     $request->session()->regenerate();
 
+    if (Auth::user()->role === 'moderator') {
+        return redirect()->route('moderator.index');
+    }
+
     return redirect()->intended(route('dashboard'));
 })->name('login')->middleware('guest');
 
 Route::match(['get', 'post'], '/register', function (Request $request) {
     if (Auth::check()) {
-        return redirect()->route('dashboard');
+        return Auth::user()->role === 'moderator'
+            ? redirect()->route('moderator.index')
+            : redirect()->route('dashboard');
     }
 
     if ($request->isMethod('get')) {

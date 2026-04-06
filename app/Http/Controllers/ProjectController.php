@@ -4,13 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\PassportObject;
 use App\Models\Project;
-use App\Models\ProjectStageStep;
 use App\Models\ProjectStages;
+use App\Models\ProjectStageStep;
 use App\Models\Template;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
-use App\Models\User;
 
 class ProjectController extends Controller
 {
@@ -103,21 +103,19 @@ class ProjectController extends Controller
 
     public function store(Request $request)
     {
-        $project = new Project();
-        $project->user_id = $request->user()->id;
+        $userId = (int) $request->user()->id;
+
+        if ($msg = $this->passportObjectModerationError($request, $userId)) {
+            return response()->json(['success' => false, 'message' => $msg], 422);
+        }
+
+        $project = new Project;
+        $project->user_id = $userId;
 
         $this->fillAndSave($request, $project);
 
-        // Модерация проекта: если объект-квартира ещё в очереди на проверку дубликата адреса.
-        $object = PassportObject::query()
-            ->where('user_id', (int) $request->user()->id)
-            ->findOrFail((int) $project->object_id);
-
-        $objectPendingDuplicate = $object->moderation_status === 'pending'
-            && ! empty($object->moderation_duplicate_of_object_id);
-
-        $project->moderation_status = $objectPendingDuplicate ? 'pending' : 'approved';
-        $project->moderation_reason = $objectPendingDuplicate ? 'object_duplicate_pending' : null;
+        $project->moderation_status = 'approved';
+        $project->moderation_reason = null;
         $project->save();
 
         return response()->json([
@@ -129,8 +127,18 @@ class ProjectController extends Controller
 
     public function update(Request $request, int $projectId)
     {
+        $userId = (int) $request->user()->id;
+
+        if ($msg = $this->passportObjectModerationError($request, $userId)) {
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+
+            return redirect()->back()->withErrors(['object_id' => $msg])->withInput();
+        }
+
         $project = Project::query()
-            ->where('user_id', $request->user()->id)
+            ->where('user_id', $userId)
             ->findOrFail($projectId);
 
         $this->fillAndSave($request, $project);
@@ -233,6 +241,37 @@ class ProjectController extends Controller
             'success' => true,
             'message' => __('projects.template_deleted'),
         ]);
+    }
+
+    /**
+     * Не создавать/не привязывать проект к объекту на модерации или отклонённому модератором.
+     */
+    private function passportObjectModerationError(Request $request, int $userId): ?string
+    {
+        $objectId = $request->input('object_id');
+        if ($objectId === null || $objectId === '') {
+            return null;
+        }
+
+        $object = PassportObject::query()
+            ->where('user_id', $userId)
+            ->find((int) $objectId);
+
+        if (! $object) {
+            return null;
+        }
+
+        $status = (string) ($object->moderation_status ?? '');
+
+        if ($status === 'pending') {
+            return __('projects.object_moderation_pending');
+        }
+
+        if ($status === 'rejected') {
+            return __('projects.object_moderation_rejected');
+        }
+
+        return null;
     }
 
     private function fillAndSave(Request $request, Project $project): void
@@ -382,7 +421,7 @@ class ProjectController extends Controller
             'links' => is_array($project->links) ? $project->links : [],
             'files' => is_array($project->files) ? $project->files : [],
             'file_urls' => collect(is_array($project->files) ? $project->files : [])
-                ->map(fn ($f) => is_string($f) ? asset('storage/' . ltrim($f, '/')) : null)
+                ->map(fn ($f) => is_string($f) ? asset('storage/'.ltrim($f, '/')) : null)
                 ->filter()
                 ->values(),
             'comment' => $project->comment,
@@ -421,4 +460,3 @@ class ProjectController extends Controller
         ];
     }
 }
-

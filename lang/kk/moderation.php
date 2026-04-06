@@ -1,11 +1,11 @@
 <?php
 
 return [
+    'sidebar_brand' => 'МОДЕРАЦИЯ',
     'moderator_cabinet' => 'Модератор кабинеті',
     'queue_hint' => 'Қарауға кезек',
 
     'suppliers_queue' => 'Модерацияға жіберілген жеткізушілер',
-    'projects_queue' => 'Модерацияға жіберілген жобалар',
     'objects_queue' => 'Объектілер (пәтер қайталануы)',
     'empty' => 'Кезекте тапсырма жоқ',
     'review' => 'Тексеру',
@@ -27,4 +27,3 @@ return [
     'duplicate_designer_existing' => 'Бұл мекенжайы бар дизайнер',
     'duplicate_designer_requesting' => 'Объект жасап жатқан дизайнер',
 ];
-

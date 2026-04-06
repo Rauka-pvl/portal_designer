@@ -29,7 +29,7 @@ return [
     'all_projects' => 'All Projects',
     'all_suppliers' => 'All Suppliers',
     'all_statuses' => 'All Statuses',
-    
+
     // Статусы
     'status_order_created' => 'Order Created',
     'status_order_sent' => 'Order Sent',
@@ -46,6 +46,8 @@ return [
     'save_without_send' => 'Save without sending',
     'send_to_supplier' => 'Send to supplier',
     'delete_confirm' => 'Delete this order?',
+    'supplier_moderation_pending' => 'This supplier is awaiting moderation. Wait for approval before creating an order.',
+    'supplier_moderation_rejected' => 'This supplier was rejected by moderation. Choose another supplier or fix the supplier profile first.',
     'error' => 'An error occurred',
     'select_project' => 'Select project',
     'select_supplier' => 'Select supplier',

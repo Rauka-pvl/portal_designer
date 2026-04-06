@@ -1875,10 +1875,10 @@
                     window.renderSuppliersActiveTab?.();
                     projectAlert('success', data.message || '{{ __('suppliers.updated') }}', '', 2400);
                 } else {
-                    alert(data.message || 'Error');
+                    projectAlert('error', data.message || '{{ __('objects.error') }}', '', 3200);
                 }
             } catch (err) {
-                alert('Error');
+                projectAlert('error', '{{ __('objects.error') }}', '', 3200);
             } finally {
                 submitBtn.disabled = false;
             }

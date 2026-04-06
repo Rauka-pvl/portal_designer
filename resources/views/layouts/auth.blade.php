@@ -20,6 +20,8 @@
     </script>
 </head>
 <body class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] dark:text-[#EDEDEC] flex p-6 lg:p-8 items-center lg:justify-center min-h-screen flex-col transition-colors duration-200">
+    @include('layouts.partials.app-toasts')
+
     <div class="w-full lg:max-w-md max-w-[335px]">
         <!-- Логотип и заголовок -->
         <div class="mb-6 flex flex-col items-center">

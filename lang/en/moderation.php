@@ -1,11 +1,11 @@
 <?php
 
 return [
+    'sidebar_brand' => 'MODERATION',
     'moderator_cabinet' => 'Moderator Cabinet',
     'queue_hint' => 'Queue for review',
 
     'suppliers_queue' => 'Suppliers awaiting moderation',
-    'projects_queue' => 'Projects awaiting moderation',
     'objects_queue' => 'Objects (apartment duplicate)',
     'empty' => 'No tasks in the queue',
     'review' => 'Review',
@@ -27,4 +27,3 @@ return [
     'duplicate_designer_existing' => 'Designer who already has this address',
     'duplicate_designer_requesting' => 'Designer creating the object',
 ];
-

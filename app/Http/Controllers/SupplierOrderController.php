@@ -33,7 +33,7 @@ class SupplierOrderController extends Controller
             ->where('user_id', $userId)
             ->orderBy('name')
             ->get(['id', 'name']);
-      
+
         $orders = Supplier_orders::query()
             ->where('user_id', $userId)
             ->with(['project:id,name', 'supplier:id,name'])
@@ -53,8 +53,14 @@ class SupplierOrderController extends Controller
 
     public function store(Request $request)
     {
-        $order = new Supplier_orders();
-        $order->user_id = (int) $request->user()->id;
+        $userId = (int) $request->user()->id;
+
+        if ($msg = $this->supplierModerationErrorMessage($request, $userId)) {
+            return response()->json(['success' => false, 'message' => $msg], 422);
+        }
+
+        $order = new Supplier_orders;
+        $order->user_id = $userId;
 
         $this->fillAndSave($request, $order);
 
@@ -67,8 +73,18 @@ class SupplierOrderController extends Controller
 
     public function update(Request $request, int $orderId)
     {
+        $userId = (int) $request->user()->id;
+
+        if ($msg = $this->supplierModerationErrorMessage($request, $userId)) {
+            if ($request->expectsJson() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => $msg], 422);
+            }
+
+            return redirect()->back()->withErrors(['supplier_id' => $msg])->withInput();
+        }
+
         $order = Supplier_orders::query()
-            ->where('user_id', $request->user()->id)
+            ->where('user_id', $userId)
             ->findOrFail($orderId);
 
         $this->fillAndSave($request, $order);
@@ -150,6 +166,38 @@ class SupplierOrderController extends Controller
         ]);
     }
 
+    /**
+     * Поставщик с pending/rejected модерацией нельзя выбирать в поставке.
+     */
+    private function supplierModerationErrorMessage(Request $request, int $userId): ?string
+    {
+        $supplierId = (int) $request->input('supplier_id');
+        if ($supplierId < 1) {
+            return null;
+        }
+
+        $supplier = Supplier::query()
+            ->where('user_id', $userId)
+            ->whereKey($supplierId)
+            ->first(['id', 'moderation_status']);
+
+        if (! $supplier) {
+            return null;
+        }
+
+        $status = (string) ($supplier->moderation_status ?? '');
+
+        if ($status === 'pending') {
+            return __('supplier-orders.supplier_moderation_pending');
+        }
+
+        if ($status === 'rejected') {
+            return __('supplier-orders.supplier_moderation_rejected');
+        }
+
+        return null;
+    }
+
     private function fillAndSave(Request $request, Supplier_orders $order): void
     {
         $userId = (int) $request->user()->id;
@@ -220,6 +268,7 @@ class SupplierOrderController extends Controller
         if (! is_array($all) || $all === []) {
             return [];
         }
+
         return $all;
     }
 
@@ -229,6 +278,7 @@ class SupplierOrderController extends Controller
         if (! is_array($all) || $all === []) {
             return [];
         }
+
         return $all;
     }
 
@@ -261,7 +311,7 @@ class SupplierOrderController extends Controller
             'links' => is_array($order->links) ? $order->links : [],
             'files' => is_array($order->files) ? $order->files : [],
             'file_urls' => collect(is_array($order->files) ? $order->files : [])
-                ->map(fn ($f) => is_string($f) ? asset('storage/' . ltrim($f, '/')) : null)
+                ->map(fn ($f) => is_string($f) ? asset('storage/'.ltrim($f, '/')) : null)
                 ->filter()
                 ->values(),
             'product_service' => (string) ($order->comment ?? ''),

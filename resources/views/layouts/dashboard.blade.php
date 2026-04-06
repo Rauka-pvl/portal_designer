@@ -28,6 +28,12 @@
 </head>
 
 <body class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] dark:text-[#EDEDEC] transition-colors duration-200">
+    @php
+        $isModerator = auth()->check() && (auth()->user()->role ?? null) === 'moderator';
+    @endphp
+
+    @include('layouts.partials.app-toasts')
+
     <!-- Выдвижная навигация -->
     <aside id="sidebar"
         class="fixed left-0 top-0 h-full w-64 bg-white dark:bg-[#161615] border-r border-[#e3e3e0] dark:border-[#3E3E3A] transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-50">
@@ -61,98 +67,111 @@
                         <text x="120" y="45" font-family="'Arial Black', sans-serif" font-size="32" font-weight="900"
                             fill="currentColor" letter-spacing="1">ПОРТАЛ</text>
                         <text x="120" y="75" font-family="Arial, sans-serif" font-size="18" font-weight="400"
-                            fill="currentColor" letter-spacing="4">ДИЗАЙНЕРА</text>
+                            fill="currentColor" letter-spacing="4">{{ $isModerator ? __('moderation.sidebar_brand') : 'ДИЗАЙНЕРА' }}</text>
                     </svg>
                 </div>
             </div>
 
             <!-- Навигация -->
             <nav class="flex-1 p-4 overflow-y-auto">
-                <a href="{{ route('dashboard') }}"
-                    class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                    </svg>
-                    <span>{{ __('dashboard.dashboard') }}</span>
-                </a>
-                @if (Route::has('clients.index'))
-                    <a href="{{ route('clients.index') }}"
-                        class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                        <span>{{ __('clients.my_clients') }}</span>
-                    </a>
-                @endif
-
-                @if (Route::has('objects.index'))
-                    <a href="{{ route('objects.index') }}"
+                @if ($isModerator)
+                    @if (Route::has('moderator.index'))
+                        <a href="{{ route('moderator.index') }}"
+                            class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1 {{ request()->routeIs('moderator.*') ? 'bg-[#FDFDFC] dark:bg-[#0a0a0a]' : '' }}">
+                            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                            <span>{{ __('moderation.moderator_cabinet') }}</span>
+                        </a>
+                    @endif
+                @else
+                    <a href="{{ route('dashboard') }}"
                         class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                         </svg>
-                        <span>{{ __('objects.object_passport') }}</span>
+                        <span>{{ __('dashboard.dashboard') }}</span>
                     </a>
-                @endif
+                    @if (Route::has('clients.index'))
+                        <a href="{{ route('clients.index') }}"
+                            class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            <span>{{ __('clients.my_clients') }}</span>
+                        </a>
+                    @endif
 
-                @if (Route::has('projects.index'))
-                    <a href="{{ route('projects.index') }}"
-                        class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <span>{{ __('projects.projects') }}</span>
-                    </a>
-                @endif
+                    @if (Route::has('objects.index'))
+                        <a href="{{ route('objects.index') }}"
+                            class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                            </svg>
+                            <span>{{ __('objects.object_passport') }}</span>
+                        </a>
+                    @endif
 
-                @if (Route::has('supplier-orders.index'))
-                    <a href="{{ route('supplier-orders.index') }}"
-                        class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                        </svg>
-                        <span>{{ __('supplier-orders.supplier_orders') }}</span>
-                    </a>
-                @endif
+                    @if (Route::has('projects.index'))
+                        <a href="{{ route('projects.index') }}"
+                            class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span>{{ __('projects.projects') }}</span>
+                        </a>
+                    @endif
 
-                @if (Route::has('suppliers.index'))
-                    <a href="{{ route('suppliers.index') }}"
-                        class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                        </svg>
-                        <span>{{ __('suppliers.suppliers') }}</span>
-                    </a>
-                @endif
+                    @if (Route::has('supplier-orders.index'))
+                        <a href="{{ route('supplier-orders.index') }}"
+                            class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                            </svg>
+                            <span>{{ __('supplier-orders.supplier_orders') }}</span>
+                        </a>
+                    @endif
 
-                @if (Route::has('bonus-account.index'))
-                    <a href="{{ route('bonus-account.index') }}"
-                        class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span>{{ __('bonus-account.bonus_account') }}</span>
-                    </a>
-                @endif
+                    @if (Route::has('suppliers.index'))
+                        <a href="{{ route('suppliers.index') }}"
+                            class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            <span>{{ __('suppliers.suppliers') }}</span>
+                        </a>
+                    @endif
 
-                @if (Route::has('settings.index'))
-                    <a href="{{ route('settings.index') }}"
-                        class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        <span>{{ __('settings.settings') }}</span>
-                    </a>
+                    @if (Route::has('bonus-account.index'))
+                        <a href="{{ route('bonus-account.index') }}"
+                            class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>{{ __('bonus-account.bonus_account') }}</span>
+                        </a>
+                    @endif
+
+                    @if (Route::has('settings.index'))
+                        <a href="{{ route('settings.index') }}"
+                            class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span>{{ __('settings.settings') }}</span>
+                        </a>
+                    @endif
                 @endif
             </nav>
 
@@ -226,7 +245,9 @@
                             d="M4 6h16M4 12h16M4 18h16" />
                     </svg>
                 </button>
-                <h1 class="text-xl font-medium">{{ __('dashboard.dashboard') }}</h1>
+                <h1 class="text-xl font-medium">
+                    @yield('header_title', $isModerator ? __('moderation.moderator_cabinet') : __('dashboard.dashboard'))
+                </h1>
                 <div class="w-10"></div>
             </div>
         </header>
@@ -237,9 +258,6 @@
         </main>
     </div>
 
-    <!-- Project alerts container -->
-    <div id="project-alert-container" class="pointer-events-none fixed top-4 right-4 z-[9999] flex flex-col gap-3"></div>
-
     <script>
         // Переключение сайдбара
         function toggleSidebar() {
@@ -248,115 +266,6 @@
             sidebar.classList.toggle('-translate-x-full');
             overlay.classList.toggle('hidden');
         }
-
-        /**
-         * Красивые toasts вместо стандартного alert()
-         * @param {'success'|'error'|'info'} type
-         * @param {string} message
-         * @param {string} title
-         * @param {number} duration
-         */
-        function projectAlert(type, message, title = '', duration = 2800) {
-            const container = document.getElementById('project-alert-container');
-            if (!container) return;
-
-            const isDark = document.documentElement.classList.contains('dark');
-            const palette = {
-                success: isDark
-                    ? { bg: 'rgba(16,185,129,0.14)', border: 'rgba(16,185,129,0.45)', color: '#34d399' }
-                    : { bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.35)', color: '#059669' },
-                error: isDark
-                    ? { bg: 'rgba(239,68,68,0.14)', border: 'rgba(239,68,68,0.45)', color: '#f87171' }
-                    : { bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.35)', color: '#dc2626' },
-                info: isDark
-                    ? { bg: 'rgba(59,130,246,0.14)', border: 'rgba(59,130,246,0.45)', color: '#60a5fa' }
-                    : { bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.35)', color: '#2563eb' },
-            }[type] || (isDark
-                ? { bg: 'rgba(59,130,246,0.14)', border: 'rgba(59,130,246,0.45)', color: '#60a5fa' }
-                : { bg: 'rgba(59,130,246,0.12)', border: 'rgba(59,130,246,0.35)', color: '#2563eb' });
-
-            const iconSvg = (() => {
-                if (type === 'success') {
-                    return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 6L9 17l-5-5"></path>
-                    </svg>`;
-                }
-                if (type === 'error') {
-                    return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M18 6L6 18"></path>
-                        <path d="M6 6l12 12"></path>
-                    </svg>`;
-                }
-                return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path>
-                    <path d="M12 16v-4"></path>
-                    <path d="M12 8h.01"></path>
-                </svg>`;
-            })();
-
-            const el = document.createElement('div');
-            el.setAttribute('role', 'status');
-            el.className = 'pointer-events-auto flex items-start gap-3 rounded-xl border shadow-lg backdrop-blur-sm px-4 py-3 transition-all duration-200';
-            el.style.background = palette.bg;
-            el.style.borderColor = palette.border;
-            el.style.color = palette.color;
-            el.style.opacity = '0';
-            el.style.transform = 'translateY(10px)';
-
-            const iconWrap = document.createElement('div');
-            iconWrap.className = 'mt-0.5 flex items-center';
-            iconWrap.innerHTML = iconSvg;
-
-            const textWrap = document.createElement('div');
-            textWrap.className = 'flex-1 min-w-0';
-
-            const titleEl = document.createElement('div');
-            titleEl.className = 'text-sm font-semibold leading-4 mb-1';
-            titleEl.textContent = title || '';
-            titleEl.style.display = title ? 'block' : 'none';
-
-            const msgEl = document.createElement('div');
-            msgEl.className = 'text-sm leading-snug';
-            msgEl.textContent = message || '';
-
-            const closeBtn = document.createElement('button');
-            closeBtn.type = 'button';
-            closeBtn.className = 'ml-2 -mr-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors';
-            closeBtn.style.color = palette.color;
-            closeBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 6L6 18"></path>
-                <path d="M6 6l12 12"></path>
-            </svg>`;
-            closeBtn.addEventListener('click', () => removeToast());
-
-            textWrap.appendChild(titleEl);
-            textWrap.appendChild(msgEl);
-
-            el.appendChild(iconWrap);
-            el.appendChild(textWrap);
-            el.appendChild(closeBtn);
-
-            container.appendChild(el);
-
-            const removeToast = () => {
-                el.style.opacity = '0';
-                el.style.transform = 'translateY(10px)';
-                setTimeout(() => {
-                    try {
-                        el.remove();
-                    } catch (_) {}
-                }, 200);
-            };
-
-            requestAnimationFrame(() => {
-                el.style.opacity = '1';
-                el.style.transform = 'translateY(0)';
-            });
-
-            setTimeout(removeToast, duration);
-        }
-
-        window.projectAlert = projectAlert;
 
         /**
          * Кастомные select’ы для всех страниц проекта.

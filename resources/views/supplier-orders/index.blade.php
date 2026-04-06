@@ -1028,7 +1028,7 @@ function deleteOrder(id) {
             if (typeof window.renderList === 'function') window.renderList();
             if (typeof window.renderFunnel === 'function') window.renderFunnel();
         } else throw new Error('Delete failed');
-    }).catch(() => alert('{{ __("supplier-orders.error") }}'));
+    }).catch(() => projectAlert('error', '{{ __("supplier-orders.error") }}', '', 3200));
 }
 
 function closeOrderModal() {
@@ -1077,7 +1077,11 @@ document.getElementById('order-form')?.addEventListener('submit', function(e) {
         body: formData
     })
     .then(r => {
-        if (r.status === 422) return r.json().then(d => { throw { validation: true, errors: d.errors }; });
+        if (r.status === 422) {
+            return r.json().then(d => {
+                throw { validation: true, errors: d.errors, message: d.message };
+            });
+        }
         if (!r.ok) throw new Error('Request failed');
         return r.json();
     })
@@ -1093,12 +1097,18 @@ document.getElementById('order-form')?.addEventListener('submit', function(e) {
         }
     })
     .catch(err => {
-        if (err.validation && err.errors) {
-            const msg = Object.values(err.errors).flat().join('\n');
-            alert(msg);
+        if (err.validation) {
+            const errs = err.errors && typeof err.errors === 'object' ? err.errors : {};
+            const lines = Object.values(errs).flat().filter(Boolean);
+            const msg = lines.length ? lines.join('\n') : (typeof err.message === 'string' ? err.message : '');
+            if (msg) {
+                projectAlert('error', msg, '', 4000);
+            } else {
+                projectAlert('error', '{{ __("supplier-orders.error") }}', '', 3200);
+            }
         } else {
             console.error(err);
-            alert('{{ __("supplier-orders.error") }}');
+            projectAlert('error', '{{ __("supplier-orders.error") }}', '', 3200);
         }
     });
 });

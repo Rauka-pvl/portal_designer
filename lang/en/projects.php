@@ -70,7 +70,7 @@ return [
     'to' => 'to',
     'from' => 'from',
     'results' => 'results',
-    
+
     // Статусы
     'status_contract_negotiation' => 'Contract Negotiation',
     'status_contract_signed' => 'Contract Signed',
@@ -78,7 +78,7 @@ return [
     'status_tz_signed' => 'TZ Signed',
     'status_documents_signed' => 'Documents Signed',
     'status_in_work' => 'Project In Work',
-    
+
     // Этапы
     'stage_measurement' => 'Measurement',
     'stage_planning' => 'Planning',
@@ -109,13 +109,17 @@ return [
     'add_at_least_one_step' => 'Add at least one step',
     'delete_template_confirm' => 'Delete this template?',
     'template_delete_only_own' => 'Only your own template can be deleted',
+    'object_moderation_pending' => 'This object is awaiting moderation. Wait for the moderator decision before creating a project.',
+    'object_moderation_rejected' => 'The moderator rejected this object. You cannot create a project for it.',
+    'save_error_generic' => 'Could not save the project.',
+    'delete_error_generic' => 'Could not delete the project.',
     'created' => 'Project created',
     'updated' => 'Project updated',
     'deleted' => 'Project deleted',
     'template_saved' => 'Template saved',
     'template_deleted' => 'Template deleted',
     'delete_confirm' => 'Delete project?',
-    
+
     // Заказ поставщику
     'supplier_order' => 'Supplier Order',
     'select_project' => 'Select Project',
@@ -131,7 +135,7 @@ return [
     'final_payment_amount' => 'Final Payment Amount',
     'product_or_service' => 'Product or Service',
     'product_description' => 'Product or Service Description',
-    
+
     // Статусы заказа
     'order_created' => 'Order Created',
     'order_sent' => 'Order Sent',
@@ -139,7 +143,7 @@ return [
     'advance_payment' => 'Advance Payment',
     'full_payment' => '100% Payment',
     'delivery_completed' => 'Delivery Completed',
-    
+
     // Категории
     'category_furniture' => 'Furniture',
     'category_doors' => 'Doors, Stained Glass, Partitions',
@@ -147,7 +151,7 @@ return [
     'category_walls_ceiling' => 'Walls and Ceiling Finishing',
     'category_electrical' => 'Electrical Installations',
     'category_decor' => 'Decor, Textiles, Design',
-    
+
     // Помещения
     'room_fitness' => 'Fitness Hall',
     'room_bedroom' => 'Bedroom',

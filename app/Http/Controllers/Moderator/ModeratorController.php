@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Moderator;
 
 use App\Http\Controllers\Controller;
 use App\Models\PassportObject;
-use App\Models\Project;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -12,31 +11,14 @@ use Illuminate\Validation\Rule;
 
 class ModeratorController extends Controller
 {
-    private function authorizeModerator(Request $request): void
+    public function index()
     {
-        abort_unless(($request->user()->role ?? null) === 'moderator', 403);
-    }
-
-    public function index(Request $request)
-    {
-        $this->authorizeModerator($request);
-
         $pendingSuppliers = Supplier::query()
             ->where('moderation_status', 'pending')
             ->orderByDesc('id')
             ->with(['user:id,name'])
             ->limit(50)
             ->get(['id', 'name', 'user_id', 'city', 'address', 'moderation_status', 'moderation_comment']);
-
-        $pendingProjects = Project::query()
-            ->where('moderation_status', 'pending')
-            ->orderByDesc('id')
-            ->with([
-                'user:id,name',
-                'object:id,city,address,type,apartment,apartment_floor,apartment_entrance',
-            ])
-            ->limit(50)
-            ->get(['id', 'name', 'user_id', 'object_id', 'moderation_status', 'moderation_comment', 'moderation_reason']);
 
         $pendingObjects = PassportObject::query()
             ->where('moderation_status', 'pending')
@@ -62,15 +44,12 @@ class ModeratorController extends Controller
 
         return view('moderator.index', [
             'pendingSuppliers' => $pendingSuppliers,
-            'pendingProjects' => $pendingProjects,
             'pendingObjects' => $pendingObjects,
         ]);
     }
 
-    public function supplierShow(Request $request, int $supplierId)
+    public function supplierShow(int $supplierId)
     {
-        $this->authorizeModerator($request);
-
         $supplier = Supplier::query()
             ->where('id', $supplierId)
             ->with('user:id,name')
@@ -83,8 +62,6 @@ class ModeratorController extends Controller
 
     public function supplierDecide(Request $request, int $supplierId)
     {
-        $this->authorizeModerator($request);
-
         $data = $request->validate([
             'decision' => ['required', Rule::in(['approved', 'rejected'])],
             'comment' => ['nullable', 'string', 'max:5000'],
@@ -104,50 +81,8 @@ class ModeratorController extends Controller
         return redirect()->route('moderator.suppliers.show', $supplierId)->with('status', __('moderation.saved'));
     }
 
-    public function projectShow(Request $request, int $projectId)
+    public function objectShow(int $objectId)
     {
-        $this->authorizeModerator($request);
-
-        $project = Project::query()
-            ->where('id', $projectId)
-            ->with([
-                'user:id,name',
-                'object:id,city,address,type,apartment,apartment_floor,apartment_entrance',
-            ])
-            ->findOrFail($projectId);
-
-        return view('moderator.projects.show', [
-            'project' => $project,
-        ]);
-    }
-
-    public function projectDecide(Request $request, int $projectId)
-    {
-        $this->authorizeModerator($request);
-
-        $data = $request->validate([
-            'decision' => ['required', Rule::in(['approved', 'rejected'])],
-            'comment' => ['nullable', 'string', 'max:5000'],
-        ]);
-
-        DB::table('projects')
-            ->where('id', $projectId)
-            ->update([
-                'moderation_status' => $data['decision'],
-                'moderation_comment' => isset($data['comment']) && trim((string) $data['comment']) !== ''
-                    ? $data['comment']
-                    : null,
-                'moderation_reviewer_id' => $request->user()->id,
-                'moderation_reviewed_at' => now(),
-            ]);
-
-        return redirect()->route('moderator.projects.show', $projectId)->with('status', __('moderation.saved'));
-    }
-
-    public function objectShow(Request $request, int $objectId)
-    {
-        $this->authorizeModerator($request);
-
         $object = PassportObject::query()
             ->where('id', $objectId)
             ->with([
@@ -164,8 +99,6 @@ class ModeratorController extends Controller
 
     public function objectDecide(Request $request, int $objectId)
     {
-        $this->authorizeModerator($request);
-
         $data = $request->validate([
             'decision' => ['required', Rule::in(['approved', 'rejected'])],
             'comment' => ['nullable', 'string', 'max:5000'],
@@ -200,4 +133,3 @@ class ModeratorController extends Controller
         return redirect()->route('moderator.index')->with('status', __('moderation.saved'));
     }
 }
-

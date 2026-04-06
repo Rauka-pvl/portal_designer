@@ -273,12 +273,12 @@
                     });
                     const data = await r.json().catch(() => ({}));
                     if (!r.ok || !data.success) {
-                        alert(data.message || '{{ __('clients.error') }}');
+                        projectAlert('error', data.message || '{{ __('clients.error') }}', '', 3200);
                         return;
                     }
                     location.reload();
                 } catch (e) {
-                    alert('{{ __('clients.error') }}');
+                    projectAlert('error', '{{ __('clients.error') }}', '', 3200);
                     console.error(e);
                 }
             };

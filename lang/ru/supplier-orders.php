@@ -29,7 +29,7 @@ return [
     'all_projects' => 'Все проекты',
     'all_suppliers' => 'Все поставщики',
     'all_statuses' => 'Все статусы',
-    
+
     // Статусы
     'status_order_created' => 'Заказ создан',
     'status_order_sent' => 'Заказ отправлен',
@@ -46,6 +46,8 @@ return [
     'save_without_send' => 'Сохранить без отправки',
     'send_to_supplier' => 'Отправить поставщику',
     'delete_confirm' => 'Удалить эту поставку?',
+    'supplier_moderation_pending' => 'Выбранный поставщик на модерации. Дождитесь одобрения, чтобы создать поставку.',
+    'supplier_moderation_rejected' => 'Модератор отклонил этого поставщика. Выберите другого или сначала исправьте карточку поставщика.',
     'error' => 'Произошла ошибка',
     'select_project' => 'Выберите проект',
     'select_supplier' => 'Выберите поставщика',

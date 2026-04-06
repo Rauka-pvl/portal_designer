@@ -1,28 +1,29 @@
 <?php
 
+use App\Http\Controllers\ChecklistStepController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardCalendarController;
+use App\Http\Controllers\Moderator\ModeratorController;
+use App\Http\Controllers\PassportObject;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SettingsController;
-use App\Http\Controllers\SupplierOrderController;
 use App\Http\Controllers\SupplierController;
-use App\Http\Controllers\ChecklistStepController;
-use App\Http\Controllers\Moderator\ModeratorController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\SupplierOrderController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Password;
-use Illuminate\Validation\Rules\Password as PasswordRule;
-use App\Models\User;
+use Illuminate\Support\Facades\Route;
 
-require __DIR__ . '/auth.php';
-
+require __DIR__.'/auth.php';
 
 Route::get('/', function () {
-    return Auth::check() ? redirect()->route('dashboard') : view('welcome');
-});
+    if (! Auth::check()) {
+        return view('welcome');
+    }
 
+    return Auth::user()->role === 'moderator'
+        ? redirect()->route('moderator.index')
+        : redirect()->route('dashboard');
+});
 
 Route::get('/language/{locale}', function (string $locale, Request $request) {
     if (! is_dir(lang_path($locale))) {
@@ -34,14 +35,7 @@ Route::get('/language/{locale}', function (string $locale, Request $request) {
     return redirect()->back();
 })->name('language.switch');
 
-
-/**
- * Страница дашборда (заглушка данных), чтобы авторизованный пользователь видел интерфейс.
- * Остальные разделы защищаем дальше по мере добавления роутов/контроллеров.
- */
-
-
-Route::group(['middleware' => 'auth'], function () {
+Route::middleware(['auth', 'role:designer'])->group(function () {
     Route::get('/dashboard', function () {
         return view('dashboard', [
             'stats' => [
@@ -58,7 +52,6 @@ Route::group(['middleware' => 'auth'], function () {
 
     Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
 
-    // JSON endpoints for AJAX CRUD
     Route::get('/clients/search', [ClientController::class, 'search'])->name('clients.search');
     Route::post('/clients/add', [ClientController::class, 'save'])->name('clients.add_client');
     Route::delete('/clients/delete/{clientId}', [ClientController::class, 'destroy'])
@@ -77,34 +70,32 @@ Route::group(['middleware' => 'auth'], function () {
         ->whereNumber('clientId')
         ->name('clients.show');
 
-    // Passport objects (CRUD + JSON endpoints for AJAX)
-    Route::get('/objects', [\App\Http\Controllers\PassportObject::class, 'index'])
+    Route::get('/objects', [PassportObject::class, 'index'])
         ->name('objects.index');
 
-    Route::get('/objects/search', [\App\Http\Controllers\PassportObject::class, 'search'])
+    Route::get('/objects/search', [PassportObject::class, 'search'])
         ->name('objects.search');
 
-    Route::post('/objects/add', [\App\Http\Controllers\PassportObject::class, 'save'])
+    Route::post('/objects/add', [PassportObject::class, 'save'])
         ->name('objects.add_object');
 
-    Route::delete('/objects/delete/{objectId}', [\App\Http\Controllers\PassportObject::class, 'destroy'])
+    Route::delete('/objects/delete/{objectId}', [PassportObject::class, 'destroy'])
         ->whereNumber('objectId')
         ->name('objects.delete_object');
 
-    Route::patch('/objects/{objectId}/status', [\App\Http\Controllers\PassportObject::class, 'updateStatus'])
+    Route::patch('/objects/{objectId}/status', [PassportObject::class, 'updateStatus'])
         ->whereNumber('objectId')
         ->name('objects.update_status');
 
-    Route::delete('/objects/{objectId}/files/{fileIndex}', [\App\Http\Controllers\PassportObject::class, 'deleteFile'])
+    Route::delete('/objects/{objectId}/files/{fileIndex}', [PassportObject::class, 'deleteFile'])
         ->whereNumber('objectId')
         ->whereNumber('fileIndex')
         ->name('objects.delete_file');
 
-    Route::get('/objects/{objectId}', [\App\Http\Controllers\PassportObject::class, 'show'])
+    Route::get('/objects/{objectId}', [PassportObject::class, 'show'])
         ->whereNumber('objectId')
         ->name('objects.show');
 
-    // Suppliers
     Route::get('/suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
     Route::post('/suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
     Route::get('/suppliers/{supplierId}', [SupplierController::class, 'show'])
@@ -120,7 +111,6 @@ Route::group(['middleware' => 'auth'], function () {
         ->whereNumber('supplierId')
         ->name('suppliers.toggle_favorite');
 
-    // Projects
     Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
     Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
     Route::get('/projects/{projectId}', [ProjectController::class, 'show'])
@@ -140,7 +130,6 @@ Route::group(['middleware' => 'auth'], function () {
         ->whereNumber('templateId')
         ->name('projects.templates.destroy');
 
-    // Checklist step details (status + result comment)
     Route::get('/checklist-steps/{stepId}', [ChecklistStepController::class, 'show'])
         ->whereNumber('stepId')
         ->name('checklist-steps.show');
@@ -148,31 +137,6 @@ Route::group(['middleware' => 'auth'], function () {
         ->whereNumber('stepId')
         ->name('checklist-steps.update');
 
-    // Moderator
-    Route::get('/moderator', [ModeratorController::class, 'index'])->name('moderator.index');
-
-    Route::get('/moderator/suppliers/{supplierId}', [ModeratorController::class, 'supplierShow'])
-        ->whereNumber('supplierId')
-        ->name('moderator.suppliers.show');
-    Route::post('/moderator/suppliers/{supplierId}/decision', [ModeratorController::class, 'supplierDecide'])
-        ->whereNumber('supplierId')
-        ->name('moderator.suppliers.decision');
-
-    Route::get('/moderator/projects/{projectId}', [ModeratorController::class, 'projectShow'])
-        ->whereNumber('projectId')
-        ->name('moderator.projects.show');
-    Route::post('/moderator/projects/{projectId}/decision', [ModeratorController::class, 'projectDecide'])
-        ->whereNumber('projectId')
-        ->name('moderator.projects.decision');
-
-    Route::get('/moderator/objects/{objectId}', [ModeratorController::class, 'objectShow'])
-        ->whereNumber('objectId')
-        ->name('moderator.objects.show');
-    Route::post('/moderator/objects/{objectId}/decision', [ModeratorController::class, 'objectDecide'])
-        ->whereNumber('objectId')
-        ->name('moderator.objects.decision');
-
-    // Supplier orders
     Route::get('/supplier-orders', [SupplierOrderController::class, 'index'])->name('supplier-orders.index');
     Route::post('/supplier-orders', [SupplierOrderController::class, 'store'])->name('supplier-orders.store');
     Route::get('/supplier-orders/{orderId}', [SupplierOrderController::class, 'show'])
@@ -187,8 +151,27 @@ Route::group(['middleware' => 'auth'], function () {
     Route::patch('/supplier-orders/{orderId}/status', [SupplierOrderController::class, 'updateStatus'])
         ->whereNumber('orderId')
         ->name('supplier-orders.update_status');
+});
 
-    // Settings
+Route::middleware(['auth', 'role:moderator'])->group(function () {
+    Route::get('/moderator', [ModeratorController::class, 'index'])->name('moderator.index');
+
+    Route::get('/moderator/suppliers/{supplierId}', [ModeratorController::class, 'supplierShow'])
+        ->whereNumber('supplierId')
+        ->name('moderator.suppliers.show');
+    Route::post('/moderator/suppliers/{supplierId}/decision', [ModeratorController::class, 'supplierDecide'])
+        ->whereNumber('supplierId')
+        ->name('moderator.suppliers.decision');
+
+    Route::get('/moderator/objects/{objectId}', [ModeratorController::class, 'objectShow'])
+        ->whereNumber('objectId')
+        ->name('moderator.objects.show');
+    Route::post('/moderator/objects/{objectId}/decision', [ModeratorController::class, 'objectDecide'])
+        ->whereNumber('objectId')
+        ->name('moderator.objects.decision');
+});
+
+Route::middleware(['auth', 'role:designer|moderator'])->group(function () {
     Route::get('/profile', [SettingsController::class, 'profile'])->name('profile.show');
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::put('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile.update');

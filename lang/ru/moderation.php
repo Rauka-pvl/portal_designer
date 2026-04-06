@@ -1,11 +1,11 @@
 <?php
 
 return [
+    'sidebar_brand' => 'МОДЕРАЦИЯ',
     'moderator_cabinet' => 'Кабинет модератора',
     'queue_hint' => 'Очередь на проверку',
 
     'suppliers_queue' => 'Поставщики на модерации',
-    'projects_queue' => 'Проекты на модерации',
     'objects_queue' => 'Объекты (дубликат квартиры)',
     'empty' => 'Нет задач в очереди',
     'review' => 'Проверить',
@@ -27,4 +27,3 @@ return [
     'duplicate_designer_existing' => 'Дизайнер, у которого уже есть этот адрес',
     'duplicate_designer_requesting' => 'Дизайнер, который создаёт объект',
 ];
-

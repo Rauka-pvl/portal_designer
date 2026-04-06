@@ -70,7 +70,7 @@ return [
     'to' => 'дейін',
     'from' => 'бастап',
     'results' => 'нәтиже',
-    
+
     // Статусы
     'status_contract_negotiation' => 'Келісім жасау',
     'status_contract_signed' => 'Келісім қол қойылды',
@@ -78,7 +78,7 @@ return [
     'status_tz_signed' => 'ТЗ қол қойылды',
     'status_documents_signed' => 'Құжаттар қол қойылды',
     'status_in_work' => 'Жоба жұмысқа алынды',
-    
+
     // Этапы
     'stage_measurement' => 'Өлшеу',
     'stage_planning' => 'Жоспарлау',
@@ -109,13 +109,17 @@ return [
     'add_at_least_one_step' => 'Кем дегенде бір тармақ қосыңыз',
     'delete_template_confirm' => 'Бұл үлгіні жоясыз ба?',
     'template_delete_only_own' => 'Тек өз үлгіңізді жоя аласыз',
+    'object_moderation_pending' => 'Объект модерацияда. Жоба жасамас бұрын модератор шешімін күтіңіз.',
+    'object_moderation_rejected' => 'Модератор объектіні қабылдамады. Бұл объект үшін жоба құру мүмкін емес.',
+    'save_error_generic' => 'Жобаны сақтау мүмкін болмады.',
+    'delete_error_generic' => 'Жобаны жою мүмкін болмады.',
     'created' => 'Жоба қосылды',
     'updated' => 'Жоба жаңартылды',
     'deleted' => 'Жоба жойылды',
     'template_saved' => 'Үлгі сақталды',
     'template_deleted' => 'Үлгі жойылды',
     'delete_confirm' => 'Жобаны жою керек пе?',
-    
+
     // Заказ поставщику
     'supplier_order' => 'Жеткізушіге тапсырыс',
     'select_project' => 'Жобаны таңдаңыз',
@@ -131,7 +135,7 @@ return [
     'final_payment_amount' => 'Қосымша төлем сомасы',
     'product_or_service' => 'Тауар немесе қызмет',
     'product_description' => 'Тауар немесе қызмет сипаттамасы',
-    
+
     // Статусы заказа
     'order_created' => 'Тапсырыс жасалды',
     'order_sent' => 'Тапсырыс жіберілді',
@@ -139,7 +143,7 @@ return [
     'advance_payment' => 'Алдын ала төлем',
     'full_payment' => '100% төлем',
     'delivery_completed' => 'Жеткізу орындалды',
-    
+
     // Категории
     'category_furniture' => 'Жиһаз',
     'category_doors' => 'Есіктер, витраждар, бөлімдер',
@@ -147,7 +151,7 @@ return [
     'category_walls_ceiling' => 'Қабырға және төбе қаптауы',
     'category_electrical' => 'Электр қондырғылары',
     'category_decor' => 'Декор, тоқыма, безендіру',
-    
+
     // Помещения
     'room_fitness' => 'Фитнес залы',
     'room_bedroom' => 'Ұйықтайтын',

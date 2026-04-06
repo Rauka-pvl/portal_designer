@@ -1002,7 +1002,7 @@
                     return;
                 }
                 throw new Error('Delete failed');
-            }).catch(() => alert('{{ __('objects.error') }}'));
+            }).catch(() => projectAlert('error', '{{ __('objects.error') }}', '', 3200));
         }
 
         function addProject(objectId) {
