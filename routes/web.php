@@ -155,6 +155,13 @@ Route::middleware(['auth', 'role:designer'])->group(function () {
 
 Route::middleware(['auth', 'role:moderator'])->group(function () {
     Route::get('/moderator', [ModeratorController::class, 'index'])->name('moderator.index');
+    Route::get('/moderator/history', [ModeratorController::class, 'history'])->name('moderator.history');
+    Route::post('/moderator/history/suppliers/{supplierId}', [ModeratorController::class, 'historySupplierUpdate'])
+        ->whereNumber('supplierId')
+        ->name('moderator.history.suppliers.update');
+    Route::post('/moderator/history/objects/{objectId}', [ModeratorController::class, 'historyObjectUpdate'])
+        ->whereNumber('objectId')
+        ->name('moderator.history.objects.update');
 
     Route::get('/moderator/suppliers/{supplierId}', [ModeratorController::class, 'supplierShow'])
         ->whereNumber('supplierId')

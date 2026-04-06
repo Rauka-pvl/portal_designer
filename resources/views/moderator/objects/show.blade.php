@@ -92,26 +92,33 @@
 
         <hr class="border-[#e2e8f0] dark:border-[#3E3E3A]">
 
-        {{-- Решение по дубликату: только «одобрить» / «отклонить» (варианта «не требуется» нет). --}}
-        <form id="moderation-form" method="POST" action="{{ route('moderator.objects.decision', $object->id) }}">
-            @csrf
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                    <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('moderation.decision') }}</div>
-                    <p class="text-xs text-[#64748b] dark:text-[#A1A09A] mb-2">{{ __('moderation.decision_duplicate_object_hint') }}</p>
-                    <select name="decision" required class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
-                        <option value="approved">{{ __('moderation.approved') }}</option>
-                        <option value="rejected">{{ __('moderation.rejected') }}</option>
-                    </select>
+        @if (($object->moderation_status ?? '') === 'pending' && $object->moderation_duplicate_of_object_id)
+            {{-- Решение по дубликату: только «одобрить» / «отклонить» (варианта «не требуется» нет). --}}
+            <form id="moderation-form" method="POST" action="{{ route('moderator.objects.decision', $object->id) }}">
+                @csrf
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('moderation.decision') }}</div>
+                        <p class="text-xs text-[#64748b] dark:text-[#A1A09A] mb-2">{{ __('moderation.decision_duplicate_object_hint') }}</p>
+                        <select name="decision" required class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                            <option value="approved">{{ __('moderation.approved') }}</option>
+                            <option value="rejected">{{ __('moderation.rejected') }}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('moderation.comment') }}</div>
+                        <textarea name="comment" rows="4" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">{{ old('comment') }}</textarea>
+                    </div>
                 </div>
-                <div>
-                    <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('moderation.comment') }}</div>
-                    <textarea name="comment" rows="4" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">{{ old('comment') }}</textarea>
+                <div class="mt-6">
+                    <button type="submit" class="btn">{{ __('suppliers.save') }}</button>
                 </div>
-            </div>
-            <div class="mt-6">
-                <button type="submit" class="btn">{{ __('suppliers.save') }}</button>
-            </div>
-        </form>
+            </form>
+        @else
+            <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">{{ __('moderation.object_decision_done_hint') }}</p>
+            @if (Route::has('moderator.history'))
+                <a href="{{ route('moderator.history', ['type' => 'objects']) }}" class="inline-block mt-3 text-sm text-[#f59e0b] hover:underline">{{ __('moderation.history_title') }}</a>
+            @endif
+        @endif
     </div>
 @endsection
