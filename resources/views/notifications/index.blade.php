@@ -36,6 +36,19 @@
                     </div>
 
                     <div class="flex items-center gap-2 shrink-0">
+                        @if (!empty($n->related_supplier_id))
+                            <a href="{{ route('suppliers.show', ['supplierId' => $n->related_supplier_id, 'readonly' => 1]) }}" class="px-3 py-1.5 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-xs text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">
+                                {{ __('notifications.view_supplier') }}
+                            </a>
+                        @endif
+                        @if ((string) ($n->action_key ?? '') === 'confirm_referral_supplier' && !$n->is_read && !empty($n->related_supplier_id))
+                            <form method="POST" action="{{ route('notifications.confirm_referral_supplier', $n->id) }}">
+                                @csrf
+                                <button type="submit" class="px-3 py-1.5 rounded-lg border border-[#f59e0b] text-xs text-[#f59e0b] hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors">
+                                    {{ __('notifications.referral_supplier_add') }}
+                                </button>
+                            </form>
+                        @endif
                         @if ($n->is_read)
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
                                 {{ __('notifications.read') }}

@@ -93,5 +93,31 @@
                 <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('settings.styles') }}</div><div>{{ $user->styles ?: '-' }}</div></div>
             </div>
         </section>
+
+        @if (!empty($referralSupplierUrl))
+            <section class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-xl p-6">
+                <h2 class="text-sm font-semibold text-[#64748b] dark:text-[#A1A09A] mb-2 uppercase">{{ __('referrals.link_title') }}</h2>
+                <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-4">{{ __('referrals.link_subtitle') }}</p>
+                <div class="flex flex-col md:flex-row gap-3">
+                    <input id="referral-supplier-url" type="text" readonly value="{{ $referralSupplierUrl }}" class="w-full rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#0f0f0f] px-3 py-2 text-sm">
+                    <button
+                        id="copy-referral-btn"
+                        type="button"
+                        class="inline-flex items-center justify-center w-10 h-10 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors"
+                        onclick="(function(btn){navigator.clipboard.writeText(document.getElementById('referral-supplier-url').value);const copyIcon=btn.querySelector('[data-copy-icon]');const doneIcon=btn.querySelector('[data-done-icon]');copyIcon?.classList.add('hidden');doneIcon?.classList.remove('hidden');setTimeout(()=>{doneIcon?.classList.add('hidden');copyIcon?.classList.remove('hidden');},1200);})(this)"
+                        title="{{ __('referrals.copy_link') }}"
+                        aria-label="{{ __('referrals.copy_link') }}"
+                    >
+                        <svg data-copy-icon class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <rect x="9" y="9" width="11" height="11" rx="2" stroke-width="1.8"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-width="1.8" stroke-linecap="round"></path>
+                        </svg>
+                        <svg data-done-icon class="w-5 h-5 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M20 7L9 18l-5-5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                    </button>
+                </div>
+            </section>
+        @endif
     </div>
 @endsection

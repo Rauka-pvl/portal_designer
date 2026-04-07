@@ -15,11 +15,14 @@ class UserNotification extends Model
         'comment',
         'is_read',
         'read_at',
+        'related_supplier_id',
+        'action_key',
     ];
 
     protected $casts = [
         'is_read' => 'boolean',
         'read_at' => 'datetime',
+        'related_supplier_id' => 'integer',
     ];
 
     public function user(): BelongsTo

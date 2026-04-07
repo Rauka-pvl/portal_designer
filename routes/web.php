@@ -7,6 +7,7 @@ use App\Http\Controllers\Moderator\ModeratorController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PassportObject;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ReferralSupplierController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\SupplierOrderController;
@@ -35,6 +36,11 @@ Route::get('/language/{locale}', function (string $locale, Request $request) {
 
     return redirect()->back();
 })->name('language.switch');
+
+Route::get('/referrals/suppliers/create', [ReferralSupplierController::class, 'create'])
+    ->name('referrals.suppliers.create');
+Route::post('/referrals/suppliers', [ReferralSupplierController::class, 'store'])
+    ->name('referrals.suppliers.store');
 
 Route::middleware(['auth', 'role:designer'])->group(function () {
     Route::get('/dashboard', function () {
@@ -162,6 +168,9 @@ Route::middleware(['auth', 'role:designer'])->group(function () {
         ->name('notifications.destroy');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])
         ->name('notifications.read_all');
+    Route::post('/notifications/{notificationId}/confirm-referral-supplier', [NotificationController::class, 'confirmReferralSupplier'])
+        ->whereNumber('notificationId')
+        ->name('notifications.confirm_referral_supplier');
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])
         ->name('notifications.unread_count');
 });

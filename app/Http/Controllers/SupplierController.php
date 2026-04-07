@@ -14,7 +14,11 @@ class SupplierController extends Controller
         $userId = $request->user()->id;
 
         $query = Supplier::query()
-            ->where('user_id', $userId);
+            ->where('user_id', $userId)
+            ->where(function ($q) {
+                $q->where('is_confirmed_by_designer', true)
+                    ->orWhereNull('is_confirmed_by_designer');
+            });
 
         $suppliers = $query
             ->orderByDesc('id')
@@ -71,6 +75,7 @@ class SupplierController extends Controller
             'supplier' => $supplier,
             'supplierData' => $payload,
             'sphereOptions' => $this->sphereOptions(),
+            'isReadOnly' => $request->boolean('readonly'),
         ]);
     }
 

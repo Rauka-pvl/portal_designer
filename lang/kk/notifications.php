@@ -22,4 +22,11 @@ return [
 
     'object_title' => 'Объект: :status',
     'object_comment' => 'Модератор ":name" объектісінің статусын өзгертті.',
+    'referral_supplier_title' => 'Реферал сілтемеден жеткізуші',
+    'referral_supplier_comment' => 'Сіздің реферал сілтемеңіз арқылы ":name" жеткізушісі жіберілді. Тізімге қосу үшін "Қосу" батырмасын басыңыз.',
+    'referral_supplier_add' => 'Қосу',
+    'view_supplier' => 'Қарау',
+    'referral_supplier_confirmed' => 'Жеткізуші тізіміңізге қосылып, модерацияға жіберілді.',
+    'action_unavailable' => 'Бұл әрекет енді қолжетімсіз.',
+    'supplier_missing' => 'Жеткізуші табылмады.',
 ];

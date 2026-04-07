@@ -51,12 +51,16 @@ class Supplier extends Model
         'moderation_comment',
         'moderation_reviewer_id',
         'moderation_reviewed_at',
+        'is_confirmed_by_designer',
+        'is_referral_submitted',
     ];
 
     protected $casts = [
         'recommend' => 'boolean',
         'address_match' => 'boolean',
         'is_favorite' => 'boolean',
+        'is_confirmed_by_designer' => 'boolean',
+        'is_referral_submitted' => 'boolean',
         'moderation_reviewed_at' => 'datetime',
         'brands' => 'array',
         'cities_presence' => 'array',
