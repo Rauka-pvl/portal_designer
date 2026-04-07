@@ -152,7 +152,7 @@
             @yield('content')
 
             @hasSection('footer')
-                <div class="mt-6 pt-6 border-t border-[#e3e3e0] dark:border-[#3E3E3A]">
+                <div class="mt-6 pt-6 border-t border-[#94a3b8] dark:border-[#3E3E3A]">
                     @yield('footer')
                 </div>
             @endif

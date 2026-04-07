@@ -6,7 +6,7 @@
     <style>
         .panel {
             background: #ffffff;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #94a3b8;
             border-radius: 12px;
             padding: 1.25rem;
         }
@@ -16,7 +16,7 @@
         .btn {
             padding: 0.55rem 1rem;
             border-radius: 10px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #94a3b8;
             background: #ffffff;
             color: #64748b;
             transition: all 0.2s;
@@ -75,45 +75,45 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.name') }}</div>
-                <input disabled value="{{ $supplier->name ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                <input disabled value="{{ $supplier->name ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
             </div>
             <div>
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.city') }}</div>
-                <input disabled value="{{ $supplier->city ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                <input disabled value="{{ $supplier->city ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
             </div>
             <div class="md:col-span-2">
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.address') }}</div>
-                <input disabled value="{{ $supplier->address ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                <input disabled value="{{ $supplier->address ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
             </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.phone') }}</div>
-                <input disabled value="{{ $supplier->phone ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                <input disabled value="{{ $supplier->phone ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
             </div>
             <div>
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">Email</div>
-                <input disabled value="{{ $supplier->email ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                <input disabled value="{{ $supplier->email ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
             </div>
             <div>
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">Telegram</div>
-                <input disabled value="{{ $supplier->telegram ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                <input disabled value="{{ $supplier->telegram ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
             </div>
             <div>
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">WhatsApp</div>
-                <input disabled value="{{ $supplier->whatsapp ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                <input disabled value="{{ $supplier->whatsapp ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
             </div>
             <div class="md:col-span-2">
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.website') }}</div>
-                <input disabled value="{{ $supplier->website ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                <input disabled value="{{ $supplier->website ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
             </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.sphere') }}</div>
-                <input disabled value="{{ $sphereDisplay ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                <input disabled value="{{ $sphereDisplay ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
             </div>
             <div>
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.work_terms') }}</div>
@@ -125,92 +125,92 @@
                             : __('suppliers.work_terms_amount') . ': ' . $supplier->work_terms_value;
                     }
                 @endphp
-                <input disabled value="{{ $workLabel ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                <input disabled value="{{ $workLabel ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
             </div>
             <div class="md:col-span-2">
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.brands') }}</div>
-                <textarea disabled rows="2" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">@if($brands){{ implode(', ', $brands) }}@endif</textarea>
+                <textarea disabled rows="2" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">@if($brands){{ implode(', ', $brands) }}@endif</textarea>
             </div>
             <div class="md:col-span-2">
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.cities_presence') }}</div>
-                <textarea disabled rows="2" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">@if($citiesPresence){{ implode(', ', $citiesPresence) }}@endif</textarea>
+                <textarea disabled rows="2" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">@if($citiesPresence){{ implode(', ', $citiesPresence) }}@endif</textarea>
             </div>
             <div class="md:col-span-2">
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.comment') }}</div>
-                <textarea disabled rows="3" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">{{ $supplier->comment ?? '' }}</textarea>
+                <textarea disabled rows="3" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">{{ $supplier->comment ?? '' }}</textarea>
             </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.org_form') }}</div>
-                <input disabled value="{{ $supplier->org_form === 'ip' ? __('suppliers.org_ip') : __('suppliers.org_ooo') }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                <input disabled value="{{ $supplier->org_form === 'ip' ? __('suppliers.org_ip') : __('suppliers.org_ooo') }}" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
             </div>
             <div>
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.inn') }}</div>
-                <input disabled value="{{ $supplier->inn ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                <input disabled value="{{ $supplier->inn ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
             </div>
             <div>
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.kpp') }}</div>
-                <input disabled value="{{ $supplier->kpp ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                <input disabled value="{{ $supplier->kpp ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
             </div>
             <div>
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.ogrn') }}</div>
-                <input disabled value="{{ $supplier->ogrn ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                <input disabled value="{{ $supplier->ogrn ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
             </div>
             <div>
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.okpo') }}</div>
-                <input disabled value="{{ $supplier->okpo ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                <input disabled value="{{ $supplier->okpo ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
             </div>
             <div class="md:col-span-2">
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.legal_address') }}</div>
-                <input disabled value="{{ $supplier->legal_address ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                <input disabled value="{{ $supplier->legal_address ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
             </div>
             <div class="md:col-span-2">
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.actual_address') }}</div>
-                <input disabled value="{{ $supplier->actual_address ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                <input disabled value="{{ $supplier->actual_address ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
             </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.director') }}</div>
-                <input disabled value="{{ $supplier->director ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                <input disabled value="{{ $supplier->director ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
             </div>
             <div>
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.accountant') }}</div>
-                <input disabled value="{{ $supplier->accountant ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                <input disabled value="{{ $supplier->accountant ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
             </div>
             <div>
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.bik') }}</div>
-                <input disabled value="{{ $supplier->bik ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                <input disabled value="{{ $supplier->bik ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
             </div>
             <div>
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.bank') }}</div>
-                <input disabled value="{{ $supplier->bank ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                <input disabled value="{{ $supplier->bank ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
             </div>
             <div>
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.checking_account') }}</div>
-                <input disabled value="{{ $supplier->checking_account ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                <input disabled value="{{ $supplier->checking_account ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
             </div>
             <div>
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.corr_account') }}</div>
-                <input disabled value="{{ $supplier->corr_account ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                <input disabled value="{{ $supplier->corr_account ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
             </div>
             <div class="md:col-span-2">
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.comment') }}</div>
-                <textarea disabled rows="3" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">{{ $supplier->comment_bank ?? '' }}</textarea>
+                <textarea disabled rows="3" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">{{ $supplier->comment_bank ?? '' }}</textarea>
             </div>
         </div>
 
-        <hr class="my-4 border-[#e2e8f0] dark:border-[#3E3E3A]">
+        <hr class="my-4 border-[#94a3b8] dark:border-[#3E3E3A]">
 
         <form id="moderation-form" method="POST" action="{{ route('moderator.suppliers.decision', $supplier->id) }}">
             @csrf
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                     <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('moderation.decision') }}</div>
-                    <select name="decision" disabled class="editable-result w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                    <select name="decision" disabled class="editable-result w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
                         <option value="approved" @selected($supplier->moderation_status === 'approved')>
                             {{ __('moderation.approved') }}
                         </option>
@@ -222,7 +222,7 @@
 
                 <div>
                     <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('moderation.comment') }}</div>
-                    <textarea name="comment" disabled rows="4" class="editable-result w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">{{ old('comment', $supplier->moderation_comment ?? '') }}</textarea>
+                    <textarea name="comment" disabled rows="4" class="editable-result w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">{{ old('comment', $supplier->moderation_comment ?? '') }}</textarea>
                 </div>
             </div>
 

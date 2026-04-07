@@ -6,7 +6,7 @@
     <style>
         .tab-btn {
             background: #ffffff;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #94a3b8;
             padding: 0.6rem 1.2rem;
             border-radius: 8px;
             cursor: pointer;
@@ -32,7 +32,7 @@
             background: #f8fafc;
             border-radius: 8px;
             padding: 1rem;
-            border: 2px dashed #e2e8f0;
+            border: 2px dashed #94a3b8;
         }
 
         .funnel-column.drag-over {
@@ -42,7 +42,7 @@
 
         .funnel-card {
             background: white;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #94a3b8;
             border-radius: 8px;
             padding: 1rem;
             margin-bottom: 0.5rem;
@@ -157,7 +157,7 @@
 
         .pagination button {
             padding: 0.5rem 1rem;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #94a3b8;
             background: white;
             border-radius: 6px;
             cursor: pointer;
@@ -222,11 +222,11 @@
     <div class="mb-6 flex flex-col md:flex-row gap-4">
         <div class="flex-1">
             <input type="text" id="search-input" placeholder="{{ __('clients.search') }}"
-                class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+                class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
         </div>
         <div class="w-full md:w-48">
             <select id="status-filter"
-                class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+                class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
                 <option value="">{{ __('clients.all_statuses') }}</option>
                 <option value="new">{{ __('clients.new') }}</option>
                 <option value="in_work">{{ __('clients.in_work') }}</option>
@@ -239,7 +239,7 @@
 
     <!-- Контент вкладок -->
     <div id="table-view" class="tab-content">
-        <div class="bg-white dark:bg-[#161615] border border-[#e2e8f0] dark:border-[#3E3E3A] rounded-lg">
+        <div class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg">
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead class="bg-[#f8fafc] dark:bg-[#0a0a0a]">
@@ -264,7 +264,7 @@
                                 {{ __('clients.actions') }}</th>
                         </tr>
                     </thead>
-                    <tbody id="clients-table-body" class="divide-y divide-[#e2e8f0] dark:divide-[#3E3E3A]">
+                    <tbody id="clients-table-body" class="divide-y divide-[#94a3b8] dark:divide-[#3E3E3A]">
                         @foreach ($clients as $client)
                             <tr class="hover:bg-[#f8fafc] dark:hover:bg-[#0a0a0a]"
                                 data-client-id="{{ $client->id }}" data-client='@json($client)'>
@@ -360,7 +360,7 @@
 
                     <div class="relative w-40">
                         <button id="clients-per-page-button" type="button"
-                            class="w-full flex items-center justify-between px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+                            class="w-full flex items-center justify-between px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
                             <span id="clients-per-page-label">10</span>
                             <svg class="w-4 h-4 text-[#64748b] dark:text-[#A1A09A]" fill="none" stroke="currentColor"
                                 viewBox="0 0 24 24">
@@ -369,7 +369,7 @@
                         </button>
 
                         <div id="clients-per-page-menu"
-                            class="hidden absolute left-0 right-0 mt-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] shadow-lg overflow-hidden z-[60]">
+                            class="hidden absolute left-0 right-0 mt-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] shadow-lg overflow-hidden z-[60]">
                             <button type="button"
                                 class="w-full px-4 py-2 text-sm text-[#0f172a] dark:text-[#EDEDEC] hover:bg-[#f8fafc] dark:hover:bg-[#0a0a0a] transition-colors text-left clients-per-page-option"
                                 data-value="10">
@@ -434,7 +434,7 @@
     <div id="list-view" class="tab-content hidden">
         <div class="space-y-4" id="clients-list-body">
             @foreach ($clients as $client)
-                <div class="bg-white dark:bg-[#161615] border border-[#e2e8f0] dark:border-[#3E3E3A] rounded-lg p-6"
+                <div class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg p-6"
                     data-client-id="{{ $client->id }}" data-client='@json($client)'>
                     <div class="flex items-start justify-between mb-4">
                         <div>
@@ -508,13 +508,13 @@
                                 <div class="flex items-center gap-2 mt-2" onclick="event.stopPropagation()">
                                     <button type="button"
                                         onclick="event.stopPropagation(); viewClient('{{ $client->id }}')"
-                                        class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('clients.view') }}</button>
+                                        class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('clients.view') }}</button>
                                     <button type="button"
                                         onclick="event.stopPropagation(); editClient('{{ $client->id }}')"
-                                        class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('clients.edit') }}</button>
+                                        class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('clients.edit') }}</button>
                                     <button type="button"
                                         onclick="event.stopPropagation(); deleteClient('{{ $client->id }}')"
-                                        class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-red-500 hover:border-red-500 hover:text-red-600 transition-colors">{{ __('clients.delete') }}</button>
+                                        class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-red-500 hover:border-red-500 hover:text-red-600 transition-colors">{{ __('clients.delete') }}</button>
                                 </div>
                             </div>
                         @endif
@@ -534,13 +534,13 @@
                                 <div class="flex items-center gap-2 mt-2" onclick="event.stopPropagation()">
                                     <button type="button"
                                         onclick="event.stopPropagation(); viewClient('{{ $client->id }}')"
-                                        class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('clients.view') }}</button>
+                                        class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('clients.view') }}</button>
                                     <button type="button"
                                         onclick="event.stopPropagation(); editClient('{{ $client->id }}')"
-                                        class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('clients.edit') }}</button>
+                                        class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('clients.edit') }}</button>
                                     <button type="button"
                                         onclick="event.stopPropagation(); deleteClient('{{ $client->id }}')"
-                                        class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-red-500 hover:border-red-500 hover:text-red-600 transition-colors">{{ __('clients.delete') }}</button>
+                                        class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-red-500 hover:border-red-500 hover:text-red-600 transition-colors">{{ __('clients.delete') }}</button>
                                 </div>
                             </div>
                         @endif
@@ -561,13 +561,13 @@
                                 <div class="flex items-center gap-2 mt-2" onclick="event.stopPropagation()">
                                     <button type="button"
                                         onclick="event.stopPropagation(); viewClient('{{ $client->id }}')"
-                                        class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('clients.view') }}</button>
+                                        class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('clients.view') }}</button>
                                     <button type="button"
                                         onclick="event.stopPropagation(); editClient('{{ $client->id }}')"
-                                        class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('clients.edit') }}</button>
+                                        class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('clients.edit') }}</button>
                                     <button type="button"
                                         onclick="event.stopPropagation(); deleteClient('{{ $client->id }}')"
-                                        class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-red-500 hover:border-red-500 hover:text-red-600 transition-colors">{{ __('clients.delete') }}</button>
+                                        class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-red-500 hover:border-red-500 hover:text-red-600 transition-colors">{{ __('clients.delete') }}</button>
                                 </div>
                             </div>
                         @endif
@@ -580,18 +580,18 @@
     <!-- Модалка просмотра клиента (справа) -->
     <div id="view-client-modal" class="fixed inset-0 bg-black/50 z-50 hidden modal-overlay"
         onmousedown="if(event.target === this) closeViewClientModal()">
-        <div class="absolute right-0 top-0 h-full w-full max-w-lg bg-white dark:bg-[#161615] border-l border-[#e2e8f0] dark:border-[#3E3E3A] shadow-2xl transform transition-transform duration-300 translate-x-full modal-content"
+        <div class="absolute right-0 top-0 h-full w-full max-w-lg bg-white dark:bg-[#161615] border-l border-[#94a3b8] dark:border-[#3E3E3A] shadow-2xl transform transition-transform duration-300 translate-x-full modal-content"
             onclick="event.stopPropagation()">
             <div class="flex flex-col h-full">
                 <div
-                    class="flex items-center justify-between px-6 py-5 border-b border-[#e2e8f0] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a]">
+                    class="flex items-center justify-between px-6 py-5 border-b border-[#94a3b8] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a]">
                     <div>
                         <h2 class="text-xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]">{{ __('clients.view') }}</h2>
                         <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-0.5">{{ __('clients.view') }}
                             {{ __('clients.client') }}</p>
                     </div>
                     <button onclick="closeViewClientModal()"
-                        class="p-2 rounded-lg text-[#64748b] dark:text-[#A1A09A] hover:bg-[#e2e8f0] dark:hover:bg-[#3E3E3A] hover:text-[#0f172a] dark:hover:text-[#EDEDEC] transition-colors">
+                        class="p-2 rounded-lg text-[#64748b] dark:text-[#A1A09A] hover:bg-[#e5e7eb] dark:hover:bg-[#3E3E3A] hover:text-[#0f172a] dark:hover:text-[#EDEDEC] transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M6 18L18 6M6 6l12 12" />
@@ -607,10 +607,10 @@
     <div id="client-modal"
         class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center modal-overlay p-4"
         onmousedown="if(event.target === this) closeClientModal()">
-        <div class="bg-white dark:bg-[#161615] rounded-xl max-w-2xl w-full mx-auto max-h-[90vh] overflow-hidden flex flex-col modal-content border border-[#e2e8f0] dark:border-[#3E3E3A]"
+        <div class="bg-white dark:bg-[#161615] rounded-xl max-w-2xl w-full mx-auto max-h-[90vh] overflow-hidden flex flex-col modal-content border border-[#94a3b8] dark:border-[#3E3E3A]"
             onclick="event.stopPropagation()">
             <div
-                class="flex items-start justify-between px-6 pt-6 pb-4 border-b border-[#e2e8f0] dark:border-[#3E3E3A] shrink-0">
+                class="flex items-start justify-between px-6 pt-6 pb-4 border-b border-[#94a3b8] dark:border-[#3E3E3A] shrink-0">
                 <div>
                     <h2 class="text-xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]" id="client-modal-title">
                         {{ __('clients.add_client') }}</h2>
@@ -618,7 +618,7 @@
                         {{ __('clients.my_clients') }}</p>
                 </div>
                 <button type="button" onclick="closeClientModal()"
-                    class="p-2 rounded-lg text-[#64748b] dark:text-[#A1A09A] hover:bg-[#e2e8f0] dark:hover:bg-[#3E3E3A] hover:text-[#0f172a] dark:hover:text-[#EDEDEC] transition-colors">
+                    class="p-2 rounded-lg text-[#64748b] dark:text-[#A1A09A] hover:bg-[#e5e7eb] dark:hover:bg-[#3E3E3A] hover:text-[#0f172a] dark:hover:text-[#EDEDEC] transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -716,10 +716,10 @@
     <div id="object-modal"
         class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center modal-overlay p-4"
         onmousedown="if(event.target === this) closeObjectModal()">
-        <div class="bg-white dark:bg-[#161615] rounded-xl max-w-2xl w-full mx-auto max-h-[90vh] overflow-hidden flex flex-col modal-content border border-[#e2e8f0] dark:border-[#3E3E3A]"
+        <div class="bg-white dark:bg-[#161615] rounded-xl max-w-2xl w-full mx-auto max-h-[90vh] overflow-hidden flex flex-col modal-content border border-[#94a3b8] dark:border-[#3E3E3A]"
             onclick="event.stopPropagation()">
             <div
-                class="flex items-start justify-between px-6 pt-6 pb-4 border-b border-[#e2e8f0] dark:border-[#3E3E3A] shrink-0">
+                class="flex items-start justify-between px-6 pt-6 pb-4 border-b border-[#94a3b8] dark:border-[#3E3E3A] shrink-0">
                 <div>
                     <h2 class="text-xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]">{{ __('clients.add_object') }}
                     </h2>
@@ -727,7 +727,7 @@
                         {{ __('clients.client') }}</p>
                 </div>
                 <button type="button" onclick="closeObjectModal()"
-                    class="p-2 rounded-lg text-[#64748b] dark:text-[#A1A09A] hover:bg-[#e2e8f0] dark:hover:bg-[#3E3E3A] hover:text-[#0f172a] dark:hover:text-[#EDEDEC] transition-colors">
+                    class="p-2 rounded-lg text-[#64748b] dark:text-[#A1A09A] hover:bg-[#e5e7eb] dark:hover:bg-[#3E3E3A] hover:text-[#0f172a] dark:hover:text-[#EDEDEC] transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -836,10 +836,10 @@
     <div id="object-modal"
         class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center modal-overlay p-4"
         onmousedown="if(event.target === this) closeObjectModal()">
-        <div class="bg-white dark:bg-[#161615] rounded-xl max-w-2xl w-full mx-auto max-h-[90vh] overflow-hidden flex flex-col modal-content border border-[#e2e8f0] dark:border-[#3E3E3A]"
+        <div class="bg-white dark:bg-[#161615] rounded-xl max-w-2xl w-full mx-auto max-h-[90vh] overflow-hidden flex flex-col modal-content border border-[#94a3b8] dark:border-[#3E3E3A]"
             onclick="event.stopPropagation()">
             <div
-                class="flex items-start justify-between px-6 pt-6 pb-4 border-b border-[#e2e8f0] dark:border-[#3E3E3A] flex-shrink-0">
+                class="flex items-start justify-between px-6 pt-6 pb-4 border-b border-[#94a3b8] dark:border-[#3E3E3A] flex-shrink-0">
                 <div>
                     <h2 class="text-xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]" id="object-modal-title">
                         {{ __('objects.new_object') }}</h2>
@@ -847,7 +847,7 @@
                     </p>
                 </div>
                 <button type="button" onclick="closeObjectModal()"
-                    class="p-2 rounded-lg text-[#64748b] dark:text-[#A1A09A] hover:bg-[#e2e8f0] dark:hover:bg-[#3E3E3A] hover:text-[#0f172a] dark:hover:text-[#EDEDEC] transition-colors">
+                    class="p-2 rounded-lg text-[#64748b] dark:text-[#A1A09A] hover:bg-[#e5e7eb] dark:hover:bg-[#3E3E3A] hover:text-[#0f172a] dark:hover:text-[#EDEDEC] transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -1241,11 +1241,11 @@
                             <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">${client.phone || ''}</p>
                             <div class="flex items-center gap-2 mt-2" onclick="event.stopPropagation()">
                                 <button type="button" onclick="event.stopPropagation(); viewClient(${client.id})"
-                                    class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">${viewLabel}</button>
+                                    class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">${viewLabel}</button>
                                 <button type="button" onclick="event.stopPropagation(); editClient(${client.id})"
-                                    class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">${editLabel}</button>
+                                    class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">${editLabel}</button>
                                 <button type="button" onclick="event.stopPropagation(); deleteClient(${client.id})"
-                                    class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-red-500 hover:border-red-500 hover:text-red-600 transition-colors">${deleteLabel}</button>
+                                    class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-red-500 hover:border-red-500 hover:text-red-600 transition-colors">${deleteLabel}</button>
                             </div>
                         </div>
                     `).join('');
@@ -1410,7 +1410,7 @@
                     const commentHtml = client.comment ? `<p class="text-sm text-[#0f172a] dark:text-[#EDEDEC] mb-4">${escapeHtml(client.comment)}</p>` : '';
 
                     return `
-                        <div class="bg-white dark:bg-[#161615] border border-[#e2e8f0] dark:border-[#3E3E3A] rounded-lg p-6"
+                        <div class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg p-6"
                             data-client-id="${client.id}" data-client='${dataJson}'>
                             <div class="flex items-start justify-between mb-4">
                                 <div>
@@ -1631,7 +1631,7 @@
             const linksContainer = document.getElementById('links-container');
             linksContainer.innerHTML = `
         <div class="flex gap-2 mb-2">
-            <input type="url" name="links[]" class="flex-1 px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+            <input type="url" name="links[]" class="flex-1 px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
         </div>
     `;
             // Если выбран конкретный клиент - выбираем его и отключаем select
@@ -1649,7 +1649,7 @@
             div.className = 'flex gap-2';
             div.innerHTML = `
                 <input type="url" name="links[]" placeholder="{{ __('clients.add_link') }}" class="modal-input flex-1">
-                <button type="button" onclick="this.parentElement.remove()" class="px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 hover:border-red-300 transition-colors">×</button>
+                <button type="button" onclick="this.parentElement.remove()" class="px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 hover:border-red-300 transition-colors">×</button>
             `;
             container.appendChild(div);
         }
@@ -1697,7 +1697,7 @@
                                 <span class="text-xs text-[#64748b] dark:text-[#A1A09A]">${safeFileName}</span>
                                 <div class="flex items-center gap-2">
                                     <a href="${fileUrl}" target="_blank" rel="noopener"
-                                       class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] dark:hover:border-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
+                                       class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] dark:hover:border-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
                                        title="{{ __('clients.view') }}">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -1707,7 +1707,7 @@
                                     </a>
 
                                     <a href="${fileUrl}" download="${fileName}"
-                                       class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
+                                       class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
                                        title="{{ __('clients.download') }}">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
@@ -1719,7 +1719,7 @@
 
                                     <button type="button"
                                         onclick="window.deleteClientFile(${client.id}, ${idx})"
-                                        class="inline-flex items-center justify-center p-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-500 hover:text-red-600 transition-colors"
+                                        class="inline-flex items-center justify-center p-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-500 hover:text-red-600 transition-colors"
                                         title="{{ __('clients.delete_file') }}">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -1786,7 +1786,7 @@
 
                 <div class="pt-4">
                     <a href="/clients/${client.id}"
-                        class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
+                        class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
                         title="{{ __('clients.details') }}">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />

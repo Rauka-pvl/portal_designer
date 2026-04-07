@@ -6,7 +6,7 @@
     <style>
         .panel {
             background: #ffffff;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #94a3b8;
             border-radius: 12px;
             padding: 1.25rem;
         }
@@ -28,7 +28,7 @@
         .btn {
             padding: 0.55rem 1rem;
             border-radius: 10px;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #94a3b8;
             background: #ffffff;
             color: #64748b;
             transition: all 0.2s;
@@ -107,7 +107,7 @@
                 <div>
                     <div class="field-label mb-2">{{ __('clients.client_type') }}</div>
                     <select id="client_type" name="client_type"
-                        class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] form-control"
+                        class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] form-control"
                         disabled required>
                         <option value="person" @selected($client->client_type === 'person')>{{ __('clients.person') }}</option>
                         <option value="company" @selected($client->client_type === 'company')>{{ __('clients.company') }}</option>
@@ -116,26 +116,26 @@
                     <div class="field-label mb-2 mt-4" id="full_name_label">
                         {{ $client->client_type === 'person' ? __('clients.fio') : __('clients.company_name') }}
                     </div>
-                    <input id="full_name" name="full_name" type="text" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] form-control"
+                    <input id="full_name" name="full_name" type="text" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] form-control"
                         value="{{ $client->full_name }}" disabled required>
                 </div>
 
                 <div>
                     <div class="field-label mb-2">{{ __('clients.phone') }}</div>
-                    <input id="phone" name="phone" type="text" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] form-control"
+                    <input id="phone" name="phone" type="text" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] form-control"
                         value="{{ $client->phone }}" disabled required>
                 </div>
 
                 <div>
                     <div class="field-label mb-2">{{ __('clients.email') }}</div>
-                    <input id="email" name="email" type="email" class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] form-control"
+                    <input id="email" name="email" type="email" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] form-control"
                         value="{{ $client->email }}" disabled required>
                 </div>
 
                 <div>
                     <div class="field-label mb-2">{{ __('clients.status') }}</div>
                     <select id="status" name="status"
-                        class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] form-control"
+                        class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] form-control"
                         disabled required>
                         <option value="new" @selected($client->status === 'new')>{{ __('clients.new') }}</option>
                         <option value="in_work" @selected($client->status === 'in_work')>{{ __('clients.in_work') }}</option>
@@ -146,14 +146,14 @@
                 <div class="md:col-span-2">
                     <div class="field-label mb-2">{{ __('clients.comment') }}</div>
                     <textarea id="comment" name="comment" rows="5"
-                        class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] form-control resize-none"
+                        class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] form-control resize-none"
                         disabled>{{ $client->comment }}</textarea>
                 </div>
 
                 <div class="md:col-span-2">
                     <div class="field-label mb-2">{{ __('clients.link') }}</div>
                     <input id="link" name="link" type="url"
-                        class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] form-control"
+                        class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] form-control"
                         value="{{ $client->link }}" disabled>
                 </div>
 
@@ -180,7 +180,7 @@
                             @foreach ($filePaths as $path)
                                 <div class="flex flex-wrap items-center gap-2">
                                     <a href="{{ asset('storage/' . $path) }}" target="_blank" rel="noopener"
-                                        class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] dark:hover:border-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors">
+                                        class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] dark:hover:border-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -191,7 +191,7 @@
                                     </a>
 
                                     <a href="{{ asset('storage/' . $path) }}" download="{{ basename($path) }}"
-                                        class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors">
+                                        class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
@@ -209,7 +209,7 @@
 
                                     <button type="button"
                                         onclick="window.deleteClientFileFromShow({{ $client->id }}, {{ $loop->index }})"
-                                        class="edit-only-control hidden p-1.5 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-500 hover:text-red-600 transition-colors"
+                                        class="edit-only-control hidden p-1.5 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-500 hover:text-red-600 transition-colors"
                                         title="{{ __('clients.delete_file') }}">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

@@ -8,7 +8,7 @@
 </div>
 
 <!-- Контент будет добавлен позже -->
-<div class="bg-white dark:bg-[#161615] border border-[#e2e8f0] dark:border-[#3E3E3A] rounded-lg p-6">
+<div class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg p-6">
     <p class="text-[#64748b] dark:text-[#A1A09A]">{{ __('bonus-account.bonus_account') }}</p>
 </div>
 @endsection

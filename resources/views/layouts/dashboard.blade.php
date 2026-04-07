@@ -36,10 +36,10 @@
 
     <!-- Выдвижная навигация -->
     <aside id="sidebar"
-        class="fixed left-0 top-0 h-full w-64 bg-white dark:bg-[#161615] border-r border-[#e3e3e0] dark:border-[#3E3E3A] transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-50">
+        class="fixed left-0 top-0 h-full w-64 bg-white dark:bg-[#161615] border-r border-[#94a3b8] dark:border-[#3E3E3A] transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-50">
         <div class="flex flex-col h-full">
             <!-- Логотип -->
-            <div class="p-6 border-b border-[#e3e3e0] dark:border-[#3E3E3A]">
+            <div class="p-6 border-b border-[#94a3b8] dark:border-[#3E3E3A]">
                 <div class="w-full max-w-[200px]">
                     <svg viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto">
                         <defs>
@@ -186,7 +186,7 @@
             </nav>
 
             <!-- Нижняя панель -->
-            <div class="p-4 border-t border-[#e3e3e0] dark:border-[#3E3E3A] space-y-2">
+            <div class="p-4 border-t border-[#94a3b8] dark:border-[#3E3E3A] space-y-2">
                 <!-- Переключатель темы -->
                 <button id="theme-toggle" type="button"
                     class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-[#706f6c] dark:text-[#A1A09A] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors">
@@ -246,7 +246,7 @@
     <!-- Основной контент -->
     <div class="lg:ml-64 min-h-screen">
         <!-- Верхняя панель -->
-        <header class="sticky top-0 z-30 bg-white dark:bg-[#161615] border-b border-[#e3e3e0] dark:border-[#3E3E3A]">
+        <header class="sticky top-0 z-30 bg-white dark:bg-[#161615] border-b border-[#94a3b8] dark:border-[#3E3E3A]">
             <div class="flex items-center justify-between px-4 py-4">
                 <button id="sidebar-toggle" onclick="toggleSidebar()"
                     class="lg:hidden p-2 rounded-lg text-[#706f6c] dark:text-[#A1A09A] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a]">
@@ -321,7 +321,7 @@
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className =
-                    'w-full flex items-center justify-between px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] ' +
+                    'w-full flex items-center justify-between px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] ' +
                     'bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]';
                 btn.innerHTML = `
                     <span class="custom-select-label text-left">${currentLabel}</span>
@@ -332,7 +332,7 @@
 
                 const menu = document.createElement('div');
                 menu.className =
-                    'hidden absolute left-0 right-0 mt-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] ' +
+                    'hidden absolute left-0 right-0 mt-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] ' +
                     'bg-white dark:bg-[#161615] shadow-lg overflow-hidden z-[60]';
 
                 const showSearch = realOptions.length > 5;
@@ -341,8 +341,8 @@
                 let searchHtml = '';
                 if (showSearch) {
                     searchHtml = `
-                        <div class="p-2 border-b border-[#e2e8f0] dark:border-[#3E3E3A]">
-                            <input type="text" class="w-full px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]" placeholder="${searchPlaceholder}">
+                        <div class="p-2 border-b border-[#94a3b8] dark:border-[#3E3E3A]">
+                            <input type="text" class="w-full px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]" placeholder="${searchPlaceholder}">
                         </div>
                     `;
                 }

@@ -42,7 +42,7 @@
 
         .pagination button {
             padding: 0.5rem 1rem;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #94a3b8;
             background: white;
             border-radius: 6px;
             cursor: pointer;
@@ -85,7 +85,7 @@
 
         .tab-btn {
             background: #ffffff;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #94a3b8;
             padding: 0.6rem 1.2rem;
             border-radius: 8px;
             cursor: pointer;
@@ -111,7 +111,7 @@
             background: #f8fafc;
             border-radius: 8px;
             padding: 1rem;
-            border: 2px dashed #e2e8f0;
+            border: 2px dashed #94a3b8;
         }
 
         .funnel-column.drag-over {
@@ -121,7 +121,7 @@
 
         .funnel-card {
             background: white;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #94a3b8;
             border-radius: 8px;
             padding: 1rem;
             margin-bottom: 0.5rem;
@@ -194,11 +194,11 @@
     <div class="mb-6 flex flex-col md:flex-row gap-4">
         <div class="flex-1">
             <input type="text" id="search-input" placeholder="{{ __('objects.search') }}"
-                class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+                class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
         </div>
         <div class="w-full md:w-48">
             <select id="type-filter"
-                class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+                class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
                 <option value="">{{ __('objects.all_types') }}</option>
                 <option value="apartment">{{ __('objects.apartment') }}</option>
                 <option value="house">{{ __('objects.house') }}</option>
@@ -208,7 +208,7 @@
         </div>
         <div class="w-full md:w-48">
             <select id="client-filter"
-                class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+                class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
                 <option value="">{{ __('objects.all_clients') }}</option>
                 @foreach ($clients as $client)
                     <option value="{{ $client['id'] }}">{{ $client['full_name'] }}</option>
@@ -217,7 +217,7 @@
         </div>
         <div class="w-full md:w-48">
             <select id="status-filter"
-                class="w-full px-4 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+                class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
                 <option value="">{{ __('objects.all_statuses') }}</option>
                 <option value="new">{{ __('objects.new') }}</option>
                 <option value="in_work">{{ __('objects.in_work') }}</option>
@@ -229,7 +229,7 @@
     <!-- Контент вкладок -->
     <div id="table-view" class="tab-content">
         <!-- Таблица -->
-        <div class="bg-white dark:bg-[#161615] border border-[#e2e8f0] dark:border-[#3E3E3A] rounded-lg overflow-hidden">
+        <div class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead class="bg-[#f8fafc] dark:bg-[#0a0a0a]">
@@ -258,7 +258,7 @@
                                 {{ __('objects.view') }}</th>
                         </tr>
                     </thead>
-                    <tbody id="objects-table-body" class="divide-y divide-[#e2e8f0] dark:divide-[#3E3E3A]">
+                    <tbody id="objects-table-body" class="divide-y divide-[#94a3b8] dark:divide-[#3E3E3A]">
                         @foreach ($objects as $object)
                             <tr class="hover:bg-[#f8fafc] dark:hover:bg-[#0a0a0a]"
                                 data-object-id="{{ $object['id'] }}" data-object='@json($object)'>
@@ -378,7 +378,7 @@
     <div id="list-view" class="tab-content hidden">
         <div class="space-y-4" id="objects-list-body">
             @foreach ($objects as $object)
-                <div class="bg-white dark:bg-[#161615] border border-[#e2e8f0] dark:border-[#3E3E3A] rounded-lg p-6"
+                <div class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg p-6"
                     data-object-id="{{ $object['id'] }}" data-object='@json($object)'>
                     <div class="flex items-start justify-between mb-4">
                         <div>
@@ -461,10 +461,10 @@
                                 <div class="flex items-center gap-2 mt-2" onclick="event.stopPropagation()">
                                     <button type="button"
                                         onclick="event.stopPropagation(); viewObject({{ $object['id'] }})"
-                                        class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('objects.view') }}</button>
+                                        class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('objects.view') }}</button>
                                     <button type="button"
                                         onclick="event.stopPropagation(); editObject({{ $object['id'] }})"
-                                        class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('objects.edit') }}</button>
+                                        class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('objects.edit') }}</button>
                                 </div>
                             </div>
                         @endif
@@ -485,10 +485,10 @@
                                 <div class="flex items-center gap-2 mt-2" onclick="event.stopPropagation()">
                                     <button type="button"
                                         onclick="event.stopPropagation(); viewObject({{ $object['id'] }})"
-                                        class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('objects.view') }}</button>
+                                        class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('objects.view') }}</button>
                                     <button type="button"
                                         onclick="event.stopPropagation(); editObject({{ $object['id'] }})"
-                                        class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('objects.edit') }}</button>
+                                        class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('objects.edit') }}</button>
                                 </div>
                             </div>
                         @endif
@@ -510,10 +510,10 @@
                                 <div class="flex items-center gap-2 mt-2" onclick="event.stopPropagation()">
                                     <button type="button"
                                         onclick="event.stopPropagation(); viewObject({{ $object['id'] }})"
-                                        class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('objects.view') }}</button>
+                                        class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('objects.view') }}</button>
                                     <button type="button"
                                         onclick="event.stopPropagation(); editObject({{ $object['id'] }})"
-                                        class="text-xs px-2 py-1 rounded border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('objects.edit') }}</button>
+                                        class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('objects.edit') }}</button>
                                 </div>
                             </div>
                         @endif
@@ -526,11 +526,11 @@
     <!-- Модалка просмотра объекта (справа) -->
     <div id="view-object-modal" class="fixed inset-0 bg-black/50 z-50 hidden modal-overlay"
         onmousedown="if(event.target === this) closeViewObjectModal()">
-        <div class="absolute right-0 top-0 h-full w-full max-w-lg bg-white dark:bg-[#161615] border-l border-[#e2e8f0] dark:border-[#3E3E3A] shadow-2xl transform transition-transform duration-300 translate-x-full modal-content"
+        <div class="absolute right-0 top-0 h-full w-full max-w-lg bg-white dark:bg-[#161615] border-l border-[#94a3b8] dark:border-[#3E3E3A] shadow-2xl transform transition-transform duration-300 translate-x-full modal-content"
             onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
             <div class="flex flex-col h-full">
                 <div
-                    class="flex items-center justify-between px-6 py-5 border-b border-[#e2e8f0] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a]">
+                    class="flex items-center justify-between px-6 py-5 border-b border-[#94a3b8] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a]">
                     <div>
                         <h2 class="text-xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]">{{ __('objects.view') }}
                         </h2>
@@ -538,7 +538,7 @@
                             {{ __('objects.modal_view_subtitle') }}</p>
                     </div>
                     <button onclick="closeViewObjectModal()"
-                        class="p-2 rounded-lg text-[#64748b] dark:text-[#A1A09A] hover:bg-[#e2e8f0] dark:hover:bg-[#3E3E3A] hover:text-[#0f172a] dark:hover:text-[#EDEDEC] transition-colors">
+                        class="p-2 rounded-lg text-[#64748b] dark:text-[#A1A09A] hover:bg-[#e5e7eb] dark:hover:bg-[#3E3E3A] hover:text-[#0f172a] dark:hover:text-[#EDEDEC] transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M6 18L18 6M6 6l12 12" />
@@ -556,10 +556,10 @@
     <div id="object-modal"
         class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center modal-overlay p-4"
         onmousedown="if(event.target === this) closeObjectModal()">
-        <div class="bg-white dark:bg-[#161615] rounded-xl max-w-2xl w-full mx-auto max-h-[90vh] overflow-hidden flex flex-col modal-content border border-[#e2e8f0] dark:border-[#3E3E3A]"
+        <div class="bg-white dark:bg-[#161615] rounded-xl max-w-2xl w-full mx-auto max-h-[90vh] overflow-hidden flex flex-col modal-content border border-[#94a3b8] dark:border-[#3E3E3A]"
             onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
             <div
-                class="flex items-start justify-between px-6 pt-6 pb-4 border-b border-[#e2e8f0] dark:border-[#3E3E3A] flex-shrink-0">
+                class="flex items-start justify-between px-6 pt-6 pb-4 border-b border-[#94a3b8] dark:border-[#3E3E3A] flex-shrink-0">
                 <div>
                     <h2 class="text-xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]" id="object-modal-title">
                         {{ __('objects.new_object') }}</h2>
@@ -567,7 +567,7 @@
                     </p>
                 </div>
                 <button type="button" onclick="closeObjectModal()"
-                    class="p-2 rounded-lg text-[#64748b] dark:text-[#A1A09A] hover:bg-[#e2e8f0] dark:hover:bg-[#3E3E3A] hover:text-[#0f172a] dark:hover:text-[#EDEDEC] transition-colors">
+                    class="p-2 rounded-lg text-[#64748b] dark:text-[#A1A09A] hover:bg-[#e5e7eb] dark:hover:bg-[#3E3E3A] hover:text-[#0f172a] dark:hover:text-[#EDEDEC] transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -815,7 +815,7 @@
             </span>
             <input type="url" name="links[]" placeholder="{{ __('objects.paste_link') }}" class="modal-input">
         </div>
-        <button type="button" onclick="this.parentElement.remove()" class="px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 hover:border-red-300 transition-colors">×</button>
+        <button type="button" onclick="this.parentElement.remove()" class="px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 hover:border-red-300 transition-colors">×</button>
     `;
             container.appendChild(div);
         }
@@ -849,36 +849,36 @@
                     obj.type === 'commercial' ? '{{ __('objects.commercial') }}' :
                     '{{ __('objects.other') }}';
                 content.innerHTML = `
-            <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
+            <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#94a3b8] dark:border-[#3E3E3A]">
                 <label class="modal-section-title">{{ __('objects.address') }}</label>
                 <p class="text-[#0f172a] dark:text-[#EDEDEC] font-medium">${obj.address}</p>
             </div>
             <div class="grid grid-cols-2 gap-4">
-                <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
+                <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#94a3b8] dark:border-[#3E3E3A]">
                     <label class="modal-helper block mb-1">{{ __('objects.type') }}</label>
                     <p class="text-[#0f172a] dark:text-[#EDEDEC] font-medium">${typeText}</p>
                 </div>
-                <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
+                <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#94a3b8] dark:border-[#3E3E3A]">
                     <label class="modal-helper block mb-1">{{ __('objects.status') }}</label>
                     <span class="px-2 py-0.5 rounded text-xs font-medium ${obj.status === 'new' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200' : obj.status === 'in_work' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200' : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-200'}">${statusText}</span>
                 </div>
             </div>
-            <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
+            <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#94a3b8] dark:border-[#3E3E3A]">
                 <label class="modal-helper block mb-1">{{ __('objects.client') }}</label>
                 <p class="text-[#0f172a] dark:text-[#EDEDEC] font-medium">${obj.client_name}</p>
             </div>
-            <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
+            <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#94a3b8] dark:border-[#3E3E3A]">
                 <label class="modal-helper block mb-1">{{ __('objects.area') }}</label>
                 <p class="text-[#0f172a] dark:text-[#EDEDEC] font-medium">${parseFloat(obj.area).toLocaleString('kk-KZ', {minimumFractionDigits: 2, maximumFractionDigits: 2})} {{ __('objects.area_m2') }}</p>
             </div>
             <div>
                 <h3 class="modal-section-title mb-2">{{ __('objects.repair_budget') }}</h3>
                 <div class="grid grid-cols-2 gap-3">
-                    <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
+                    <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#94a3b8] dark:border-[#3E3E3A]">
                         <p class="modal-helper mb-1">{{ __('objects.planned') }}</p>
                         <p class="text-[#0f172a] dark:text-[#EDEDEC] font-medium">${parseInt(obj.repair_budget_planned).toLocaleString('kk-KZ')} ₸</p>
                     </div>
-                    <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
+                    <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#94a3b8] dark:border-[#3E3E3A]">
                         <p class="modal-helper mb-1">{{ __('objects.actual') }}</p>
                         <p class="text-[#0f172a] dark:text-[#EDEDEC] font-medium">${obj.repair_budget_actual > 0 ? parseInt(obj.repair_budget_actual).toLocaleString('kk-KZ') + ' ₸' : '-'}</p>
                     </div>
@@ -887,22 +887,22 @@
             <div>
                 <h3 class="modal-section-title mb-2">{{ __('objects.repair_budget_per_m2') }}</h3>
                 <div class="grid grid-cols-2 gap-3">
-                    <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
+                    <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#94a3b8] dark:border-[#3E3E3A]">
                         <p class="modal-helper mb-1">{{ __('objects.planned') }}</p>
                         <p class="text-[#0f172a] dark:text-[#EDEDEC] font-medium">${parseInt(obj.repair_budget_per_m2_planned).toLocaleString('kk-KZ')} ₸</p>
                     </div>
-                    <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
+                    <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#94a3b8] dark:border-[#3E3E3A]">
                         <p class="modal-helper mb-1">{{ __('objects.actual') }}</p>
                         <p class="text-[#0f172a] dark:text-[#EDEDEC] font-medium">${obj.repair_budget_per_m2_actual > 0 ? parseInt(obj.repair_budget_per_m2_actual).toLocaleString('kk-KZ') + ' ₸' : '-'}</p>
                     </div>
                 </div>
             </div>
-            <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
+            <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#94a3b8] dark:border-[#3E3E3A]">
                 <label class="modal-helper block mb-1">{{ __('objects.projects') }}</label>
                 <p class="text-[#0f172a] dark:text-[#EDEDEC] font-medium">${obj.projects_count}</p>
             </div>
             ${obj.links && obj.links.length > 0 ? `
-                <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
+                <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#94a3b8] dark:border-[#3E3E3A]">
                     <label class="modal-helper block mb-2">{{ __('objects.links') }}</label>
                     <div class="space-y-1">
                         ${obj.links.map(link => '<a href="'+link+'" target="_blank" class="block text-[#f59e0b] hover:underline text-sm truncate">'+link+'</a>').join('')}
@@ -910,7 +910,7 @@
                 </div>
                 ` : ''}
             ${obj.comment ? `
-                <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#e2e8f0] dark:border-[#3E3E3A]">
+                <div class="p-4 rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a] border border-[#94a3b8] dark:border-[#3E3E3A]">
                     <label class="modal-helper block mb-1">{{ __('objects.comment') }}</label>
                     <p class="text-[#0f172a] dark:text-[#EDEDEC]">${obj.comment}</p>
                 </div>
@@ -972,7 +972,7 @@
                         </span>
                         <input type="url" name="links[]" placeholder="{{ __('objects.paste_link') }}" class="modal-input" value="${(url || '').replace(/"/g, '&quot;')}">
                     </div>
-                    <button type="button" onclick="this.parentElement.remove()" class="px-3 py-2 rounded-lg border border-[#e2e8f0] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 hover:border-red-300 transition-colors">×</button>
+                    <button type="button" onclick="this.parentElement.remove()" class="px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 hover:border-red-300 transition-colors">×</button>
                 `;
                         container.appendChild(div);
                     }
