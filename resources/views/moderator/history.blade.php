@@ -9,17 +9,17 @@
             <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-1">{{ __('moderation.history_hint') }}</p>
         </div>
         <a href="{{ route('moderator.index') }}"
-            class="px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] text-sm transition-colors">
+            class="px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] text-sm transition-colors">
             {{ __('moderation.queue_link') }}
         </a>
     </div>
 
     <form method="get" action="{{ route('moderator.history') }}"
-        class="mb-6 flex flex-col lg:flex-row flex-wrap gap-3 items-stretch lg:items-end bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg p-4">
+        class="mb-6 flex flex-col lg:flex-row flex-wrap gap-3 items-stretch lg:items-end bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg p-4">
         <div class="flex flex-col gap-1 min-w-[140px]">
             <label class="text-xs font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('moderation.filter_type') }}</label>
             <select name="type"
-                class="px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-sm">
+                class="px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-sm">
                 <option value="all" @selected($filters['type'] === 'all')>{{ __('moderation.filter_type_all') }}</option>
                 <option value="suppliers" @selected($filters['type'] === 'suppliers')>{{ __('moderation.filter_type_suppliers') }}</option>
                 <option value="objects" @selected($filters['type'] === 'objects')>{{ __('moderation.filter_type_objects') }}</option>
@@ -28,12 +28,12 @@
         <div class="flex flex-col gap-1 flex-1 min-w-[200px]">
             <label class="text-xs font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('moderation.search') }}</label>
             <input type="search" name="q" value="{{ $filters['q'] }}" placeholder="{{ __('moderation.search_placeholder') }}"
-                class="px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-sm w-full">
+                class="px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-sm w-full">
         </div>
         <div class="flex flex-col gap-1 min-w-[140px]">
             <label class="text-xs font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('moderation.filter_status') }}</label>
             <select name="status"
-                class="px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-sm">
+                class="px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-sm">
                 <option value="all" @selected($filters['status'] === 'all')>{{ __('moderation.filter_status_all') }}</option>
                 <option value="approved" @selected($filters['status'] === 'approved')>{{ __('moderation.approved') }}</option>
                 <option value="rejected" @selected($filters['status'] === 'rejected')>{{ __('moderation.rejected') }}</option>
@@ -42,7 +42,7 @@
         <div class="flex flex-col gap-1 min-w-[200px]">
             <label class="text-xs font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('moderation.sort_label') }}</label>
             <select name="sort"
-                class="px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-sm">
+                class="px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-sm">
                 <option value="reviewed_desc" @selected($filters['sort'] === 'reviewed_desc')>{{ __('moderation.sort_reviewed_desc') }}</option>
                 <option value="reviewed_asc" @selected($filters['sort'] === 'reviewed_asc')>{{ __('moderation.sort_reviewed_asc') }}</option>
                 <option value="type_asc" @selected($filters['sort'] === 'type_asc')>{{ __('moderation.sort_type_asc') }}</option>
@@ -57,7 +57,7 @@
                 {{ __('moderation.apply_filters') }}
             </button>
             <a href="{{ route('moderator.history') }}"
-                class="px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-sm text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b]">
+                class="px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-sm text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b]">
                 {{ __('moderation.reset_filters') }}
             </a>
         </div>
@@ -69,9 +69,9 @@
         </div>
     @endif
 
-    <div class="hidden md:block overflow-x-auto bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg">
+    <div class="hidden md:block overflow-x-auto bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg">
         <table class="w-full text-sm text-left">
-            <thead class="text-xs uppercase text-[#64748b] dark:text-[#A1A09A] border-b border-[#94a3b8] dark:border-[#3E3E3A]">
+            <thead class="text-xs uppercase text-[#64748b] dark:text-[#A1A09A] border-b border-[#7c8799] dark:border-[#3E3E3A]">
                 <tr>
                     <th class="px-4 py-3">{{ __('moderation.col_type') }}</th>
                     <th class="px-4 py-3">{{ __('moderation.col_record') }}</th>
@@ -80,7 +80,7 @@
                     <th class="px-4 py-3">{{ __('moderation.col_reviewed') }}</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-[#94a3b8] dark:divide-[#3E3E3A]">
+            <tbody class="divide-y divide-[#7c8799] dark:divide-[#3E3E3A]">
                 @forelse ($items as $row)
                     <tr class="align-top">
                         <td class="px-4 py-3 whitespace-nowrap">
@@ -132,7 +132,7 @@
     {{-- Mobile cards --}}
     <div class="md:hidden space-y-4">
         @forelse ($items as $row)
-            <div class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg p-4">
+            <div class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg p-4">
                 <div class="flex items-start justify-between gap-2 mb-2">
                     @if ($row['kind'] === 'supplier')
                         <span class="inline-flex px-2 py-0.5 rounded text-xs bg-amber-50 text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">{{ __('moderation.kind_supplier') }}</span>

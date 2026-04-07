@@ -6,7 +6,7 @@
     <style>
         .panel {
             background: #ffffff;
-            border: 1px solid #94a3b8;
+            border: 1px solid #7c8799;
             border-radius: 12px;
             padding: 1.25rem;
         }
@@ -14,7 +14,7 @@
         .btn {
             padding: 0.55rem 1rem;
             border-radius: 10px;
-            border: 1px solid #94a3b8;
+            border: 1px solid #7c8799;
             background: #ffffff;
             color: #64748b;
             transition: all 0.2s;
@@ -81,11 +81,11 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                     <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('projects.project_name') }}</div>
-                    <input name="name" required value="{{ $p['name'] ?? '' }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                    <input name="name" required value="{{ $p['name'] ?? '' }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
                 </div>
                 <div>
                     <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('projects.select_object') }}</div>
-                    <select name="object_id" required disabled class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                    <select name="object_id" required disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
                         @foreach (($objects ?? []) as $obj)
                             <option value="{{ $obj->id }}" @selected((int) ($p['object_id'] ?? 0) === (int) $obj->id)>
                                 {{ $obj->address }}{{ $obj->city ? ' (' . $obj->city . ')' : '' }}
@@ -95,7 +95,7 @@
                 </div>
                 <div>
                     <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('projects.status') }}</div>
-                    <select name="status" required disabled class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                    <select name="status" required disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
                         <option value="contract_negotiation" @selected(($p['status'] ?? '') === 'contract_negotiation')>{{ __('projects.status_contract_negotiation') }}</option>
                         <option value="contract_signed" @selected(($p['status'] ?? '') === 'contract_signed')>{{ __('projects.status_contract_signed') }}</option>
                         <option value="prepayment_received" @selected(($p['status'] ?? '') === 'prepayment_received')>{{ __('projects.status_prepayment_received') }}</option>
@@ -104,12 +104,12 @@
                         <option value="in_work" @selected(($p['status'] ?? '') === 'in_work')>{{ __('projects.status_in_work') }}</option>
                     </select>
                 </div>
-                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('projects.start_date') }}</div><input type="date" name="start_date" value="{{ $p['start_date'] ?? '' }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
-                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('projects.planned_end_date') }}</div><input type="date" name="planned_end_date" value="{{ $p['planned_end_date'] ?? '' }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
-                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('projects.actual_end_date') }}</div><input type="date" name="actual_end_date" value="{{ $p['actual_end_date'] ?? '' }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
-                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('projects.planned_cost') }}</div><input type="number" step="0.01" name="planned_cost" value="{{ $p['planned_cost'] ?? 0 }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
-                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('projects.actual_cost') }}</div><input type="number" step="0.01" name="actual_cost" value="{{ $p['actual_cost'] ?? 0 }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
-                <div class="md:col-span-2"><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('projects.comment') }}</div><textarea name="comment" rows="3" disabled class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">{{ $p['comment'] ?? '' }}</textarea></div>
+                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('projects.start_date') }}</div><input type="date" name="start_date" value="{{ $p['start_date'] ?? '' }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
+                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('projects.planned_end_date') }}</div><input type="date" name="planned_end_date" value="{{ $p['planned_end_date'] ?? '' }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
+                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('projects.actual_end_date') }}</div><input type="date" name="actual_end_date" value="{{ $p['actual_end_date'] ?? '' }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
+                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('projects.planned_cost') }}</div><input type="number" step="0.01" name="planned_cost" value="{{ $p['planned_cost'] ?? 0 }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
+                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('projects.actual_cost') }}</div><input type="number" step="0.01" name="actual_cost" value="{{ $p['actual_cost'] ?? 0 }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
+                <div class="md:col-span-2"><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('projects.comment') }}</div><textarea name="comment" rows="3" disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">{{ $p['comment'] ?? '' }}</textarea></div>
 
                 @foreach (($p['links'] ?? []) as $link)
                     <input type="hidden" name="links[]" value="{{ $link }}">

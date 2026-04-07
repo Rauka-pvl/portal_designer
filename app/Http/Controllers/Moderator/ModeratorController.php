@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Moderator;
 use App\Http\Controllers\Controller;
 use App\Models\PassportObject;
 use App\Models\Supplier;
+use App\Models\UserNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -202,6 +203,11 @@ class ModeratorController extends Controller
                 'moderation_reviewed_at' => now(),
             ]);
 
+        $supplier = Supplier::query()->whereKey($supplierId)->first(['id', 'user_id', 'name']);
+        if ($supplier) {
+            $this->createSupplierNotification($supplier, (string) $data['decision'], $comment);
+        }
+
         return $this->redirectToHistory($request)->with('status', __('moderation.saved'));
     }
 
@@ -237,10 +243,9 @@ class ModeratorController extends Controller
             $object->moderation_reviewed_at = now();
             $object->moderation_status = 'rejected';
             $object->save();
-            if (! $object->trashed()) {
-                $object->delete();
-            }
         }
+
+        $this->createObjectNotification($object, (string) $data['decision'], $comment);
 
         return $this->redirectToHistory($request)->with('status', __('moderation.saved'));
     }
@@ -287,6 +292,11 @@ class ModeratorController extends Controller
                 'moderation_reviewer_id' => $request->user()->id,
                 'moderation_reviewed_at' => now(),
             ]);
+
+        $supplier = Supplier::query()->whereKey($supplierId)->first(['id', 'user_id', 'name']);
+        if ($supplier) {
+            $this->createSupplierNotification($supplier, (string) $data['decision'], $data['comment'] ?? null);
+        }
 
         return redirect()->route('moderator.suppliers.show', $supplierId)->with('status', __('moderation.saved'));
     }
@@ -337,9 +347,48 @@ class ModeratorController extends Controller
             $object->moderation_reviewed_at = now();
             $object->moderation_status = 'rejected';
             $object->save();
-            $object->delete();
         }
 
+        $this->createObjectNotification($object, (string) $data['decision'], $comment);
+
         return redirect()->route('moderator.index')->with('status', __('moderation.saved'));
+    }
+
+    private function createSupplierNotification(Supplier $supplier, string $decision, ?string $comment): void
+    {
+        if ((int) $supplier->user_id < 1) {
+            return;
+        }
+
+        $label = trim((string) ($supplier->name ?? ''));
+        $statusLabel = $decision === 'approved'
+            ? __('notifications.status_approved')
+            : __('notifications.status_rejected');
+
+        UserNotification::query()->create([
+            'user_id' => (int) $supplier->user_id,
+            'title' => __('notifications.supplier_title', ['status' => $statusLabel]),
+            'comment' => __('notifications.supplier_comment', ['name' => $label !== '' ? $label : '#'.$supplier->id])."\n".$comment,
+        ]);
+    }
+
+    private function createObjectNotification(PassportObject $object, string $decision, ?string $comment): void
+    {
+        if ((int) $object->user_id < 1) {
+            return;
+        }
+
+        $label = trim((string) (($object->city ?? '').' '.($object->address ?? '').' '.($object->apartment ?? '')));
+        $statusLabel = $decision === 'approved'
+            ? __('notifications.status_approved')
+            : __('notifications.status_rejected');
+
+        UserNotification::query()->create([
+            'user_id' => (int) $object->user_id,
+            'title' => __('notifications.object_title', ['status' => $statusLabel]),
+            'comment' => __('notifications.object_comment', [
+                'name' => $label !== '' ? $label : '#'.$object->id,
+            ])."\n".$comment,
+        ]);
     }
 }

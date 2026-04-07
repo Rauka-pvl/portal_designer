@@ -12,7 +12,7 @@
 
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <!-- Suppliers queue -->
-        <div class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg p-6">
+        <div class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg p-6">
             <div class="flex items-center justify-between mb-3">
                 <h2 class="text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('moderation.suppliers_queue') }}</h2>
                 <span class="px-2 py-1 rounded-lg text-xs bg-[#f1f5f9] dark:bg-[#0a0a0a] text-[#f59e0b]">
@@ -25,7 +25,7 @@
             @else
                 <div class="space-y-3">
                     @foreach($pendingSuppliers as $s)
-                        <div class="p-4 border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a]">
+                        <div class="p-4 border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a]">
                             <div class="flex items-start justify-between gap-3">
                                 <div class="min-w-0">
                                     <div class="font-medium text-[#0f172a] dark:text-[#EDEDEC] truncate">{{ $s->name }}</div>
@@ -36,7 +36,7 @@
                                         {{ __('moderation.designer') }}: {{ $s->user?->name ?? '-' }}
                                     </div>
                                 </div>
-                                <a href="{{ route('moderator.suppliers.show', $s->id) }}" class="px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors text-sm whitespace-nowrap">
+                                <a href="{{ route('moderator.suppliers.show', $s->id) }}" class="px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors text-sm whitespace-nowrap">
                                     {{ __('moderation.review') }}
                                 </a>
                             </div>
@@ -47,7 +47,7 @@
         </div>
 
         <!-- Objects (duplicate apartment) queue -->
-        <div class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg p-6">
+        <div class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg p-6">
             <div class="flex items-center justify-between mb-3">
                 <h2 class="text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('moderation.objects_queue') }}</h2>
                 <span class="px-2 py-1 rounded-lg text-xs bg-[#f1f5f9] dark:bg-[#0a0a0a] text-[#f59e0b]">
@@ -63,7 +63,7 @@
                         @php
                             $addr = trim(($o->city ?? '') . ' ' . ($o->address ?? '') . ' ' . ($o->apartment ?? ''));
                         @endphp
-                        <div class="p-4 border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a]">
+                        <div class="p-4 border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a]">
                             <div class="flex items-start justify-between gap-3">
                                 <div class="min-w-0">
                                     <div class="font-medium text-[#0f172a] dark:text-[#EDEDEC] truncate">{{ $addr ?: '#' . $o->id }}</div>
@@ -74,7 +74,7 @@
                                         {{ __('moderation.duplicate_designer_existing') }}: {{ $o->moderationDuplicateOf?->user?->name ?? '-' }}
                                     </div>
                                 </div>
-                                <a href="{{ route('moderator.objects.show', $o->id) }}" class="px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors text-sm whitespace-nowrap">
+                                <a href="{{ route('moderator.objects.show', $o->id) }}" class="px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors text-sm whitespace-nowrap">
                                     {{ __('moderation.review') }}
                                 </a>
                             </div>

@@ -7,7 +7,7 @@
     <style>
         .tab-btn {
             background: #ffffff;
-            border: 1px solid #94a3b8;
+            border: 1px solid #7c8799;
             padding: 0.6rem 1.2rem;
             border-radius: 8px;
             cursor: pointer;
@@ -88,7 +88,7 @@
 
         .pagination button {
             padding: 0.5rem 1rem;
-            border: 1px solid #94a3b8;
+            border: 1px solid #7c8799;
             background: white;
             border-radius: 6px;
             cursor: pointer;
@@ -380,11 +380,11 @@
         <input type="hidden" name="sort_dir" id="sort_dir_input" value="{{ request('sort_dir', 'asc') }}">
         <div class="flex-1 min-w-[200px]">
             <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('suppliers.search') }}"
-                class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+                class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
         </div>
         <div class="w-full md:w-44">
             <select name="type_filter"
-                class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+                class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
                 <option value="all" {{ request('type_filter', 'all') === 'all' ? 'selected' : '' }}>
                     {{ __('suppliers.filter_all') }}</option>
                 <option value="recommended" {{ request('type_filter') === 'recommended' ? 'selected' : '' }}>
@@ -395,7 +395,7 @@
         </div>
         <div class="w-full md:w-48">
             <select name="city_filter"
-                class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+                class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
                 <option value="">{{ __('suppliers.all_cities') }}</option>
                 @foreach ($cities as $city)
                     <option value="{{ $city }}" {{ request('city_filter') == $city ? 'selected' : '' }}>
@@ -405,7 +405,7 @@
         </div>
         <div class="w-full md:w-48">
             <select name="sphere_filter"
-                class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+                class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
                 <option value="">{{ __('suppliers.all_spheres') }}</option>
                 @foreach ($spheres as $sphere)
                     @php
@@ -422,7 +422,7 @@
         </div>
         <div class="w-full md:w-48">
             <select name="brand_filter"
-                class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+                class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
                 <option value="">{{ __('suppliers.all_brands') }}</option>
                 @foreach ($brands as $brand)
                     <option value="{{ $brand }}" {{ request('brand_filter') == $brand ? 'selected' : '' }}>
@@ -435,7 +435,7 @@
 
     <!-- Контент вкладок -->
     <div id="table-view" class="tab-content">
-        <div class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg overflow-hidden">
+        <div class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead class="bg-[#f8fafc] dark:bg-[#0a0a0a]">
@@ -458,7 +458,7 @@
                                 {{ __('suppliers.actions') }}</th>
                         </tr>
                     </thead>
-                    <tbody id="suppliers-table-body" class="divide-y divide-[#94a3b8] dark:divide-[#3E3E3A]">
+                    <tbody id="suppliers-table-body" class="divide-y divide-[#7c8799] dark:divide-[#3E3E3A]">
                         @forelse($suppliers as $supplier)
                             <tr class="hover:bg-[#f8fafc] dark:hover:bg-[#0a0a0a]" data-supplier-id="{{ $supplier->id }}">
                                 <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">{{ $supplier->name }}</td>
@@ -565,7 +565,7 @@
                 @php
                     $supplierSphereTranslation = $supplier->sphere ? __('supplier_spheres.' . $supplier->sphere) : null;
                 @endphp
-                <div class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg p-6"
+                <div class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg p-6"
                     data-supplier-id="{{ $supplier->id }}">
                     <div class="flex items-start justify-between mb-4">
                         <div>
@@ -619,7 +619,7 @@
             <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('objects.per_page') }}</div>
             <div class="relative">
                 <button id="suppliers-per-page-button" type="button"
-                    class="w-full flex items-center justify-between px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+                    class="w-full flex items-center justify-between px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
                     <span id="suppliers-per-page-label">10</span>
                     <svg class="w-4 h-4 text-[#64748b] dark:text-[#A1A09A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -627,7 +627,7 @@
                 </button>
 
                 <div id="suppliers-per-page-menu"
-                    class="hidden absolute left-0 right-0 mt-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] shadow-lg overflow-hidden z-[60]">
+                    class="hidden absolute left-0 right-0 mt-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] shadow-lg overflow-hidden z-[60]">
                     @foreach ([10, 30, 50, 100] as $v)
                         <button type="button"
                             class="w-full px-4 py-2 text-sm text-[#0f172a] dark:text-[#EDEDEC] hover:bg-[#f8fafc] dark:hover:bg-[#0a0a0a] transition-colors text-left suppliers-per-page-option"
@@ -656,11 +656,11 @@
     <!-- Модалка просмотра поставщика (справа) -->
     <div id="view-supplier-modal" class="fixed inset-0 bg-black/50 z-50 hidden modal-overlay"
         onmousedown="if(event.target === this) closeViewSupplierModal()">
-        <div class="absolute right-0 top-0 h-full w-full max-w-lg bg-white dark:bg-[#161615] border-l border-[#94a3b8] dark:border-[#3E3E3A] shadow-2xl transform transition-transform duration-300 translate-x-full modal-content"
+        <div class="absolute right-0 top-0 h-full w-full max-w-lg bg-white dark:bg-[#161615] border-l border-[#7c8799] dark:border-[#3E3E3A] shadow-2xl transform transition-transform duration-300 translate-x-full modal-content"
             onclick="event.stopPropagation()">
             <div class="flex flex-col h-full">
                 <div
-                    class="flex items-center justify-between px-6 py-5 border-b border-[#94a3b8] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a]">
+                    class="flex items-center justify-between px-6 py-5 border-b border-[#7c8799] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a]">
                     <div>
                         <h2 class="text-xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]">{{ __('suppliers.view') }}
                         </h2>
@@ -684,10 +684,10 @@
     <div id="supplier-modal"
         class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center modal-overlay p-4"
         onmousedown="if(event.target === this) closeSupplierModal()">
-        <div class="bg-white dark:bg-[#161615] rounded-xl max-w-2xl w-full mx-auto max-h-[90vh] overflow-hidden flex flex-col modal-content border border-[#94a3b8] dark:border-[#3E3E3A]"
+        <div class="bg-white dark:bg-[#161615] rounded-xl max-w-2xl w-full mx-auto max-h-[90vh] overflow-hidden flex flex-col modal-content border border-[#7c8799] dark:border-[#3E3E3A]"
             onclick="event.stopPropagation()">
             <div
-                class="flex items-start justify-between px-6 pt-6 pb-4 border-b border-[#94a3b8] dark:border-[#3E3E3A] shrink-0">
+                class="flex items-start justify-between px-6 pt-6 pb-4 border-b border-[#7c8799] dark:border-[#3E3E3A] shrink-0">
                 <div>
                     <h2 class="text-xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]" id="supplier-modal-title">
                         {{ __('suppliers.new_supplier') }}</h2>
@@ -721,13 +721,13 @@
                         <div class="accordion-content accordion-open" id="accordion-main" aria-hidden="false">
                             <div class="accordion-body space-y-5">
                                 <div class="flex items-start gap-4">
-                                    <div class="relative w-24 h-24 rounded-full bg-[#f1f5f9] dark:bg-[#0a0a0a] border-2 border-dashed border-[#94a3b8] dark:border-[#3E3E3A] flex items-center justify-center flex-shrink-0 overflow-hidden cursor-pointer group"
+                                    <div class="relative w-24 h-24 rounded-full bg-[#f1f5f9] dark:bg-[#0a0a0a] border-2 border-dashed border-[#7c8799] dark:border-[#3E3E3A] flex items-center justify-center flex-shrink-0 overflow-hidden cursor-pointer group"
                                         id="logo-preview" onclick="window.handleLogoPreviewClick(event)"
                                         title="{{ __('suppliers.upload') }}">
                                         <img id="logo-preview-img" src="" alt=""
                                             class="hidden w-full h-full object-cover">
                                         <span id="logo-preview-placeholder"
-                                            class="text-3xl text-[#94a3b8] dark:text-[#71716c] group-hover:text-[#f59e0b] transition-colors">+</span>
+                                            class="text-3xl text-[#7c8799] dark:text-[#71716c] group-hover:text-[#f59e0b] transition-colors">+</span>
                                         <span id="logo-edit-hint"
                                             class="hidden absolute inset-0 bg-black/40 rounded-full flex items-center justify-center text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">{{ __('suppliers.edit') }}</span>
                                     </div>
@@ -737,7 +737,7 @@
                                             <input type="file" name="logo" id="logo-file-input"
                                                 accept="image/jpeg,image/gif,image/png,image/webp" class="hidden">
                                             <label for="logo-file-input"
-                                                class="px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-sm font-medium text-[#64748b] dark:text-[#A1A09A] cursor-pointer hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">
+                                                class="px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-sm font-medium text-[#64748b] dark:text-[#A1A09A] cursor-pointer hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">
                                                 {{ __('suppliers.upload') }}
                                             </label>
                                             <button type="button" id="logo-remove-btn"
@@ -756,7 +756,7 @@
 
                                 <div class="flex items-center gap-2">
                                     <input type="checkbox" name="recommend" id="recommend"
-                                        class="rounded border-[#94a3b8] dark:border-[#3E3E3A] text-[#f59e0b] focus:ring-[#f59e0b]">
+                                        class="rounded border-[#7c8799] dark:border-[#3E3E3A] text-[#f59e0b] focus:ring-[#f59e0b]">
                                     <label for="recommend"
                                         class="text-sm text-[#0f172a] dark:text-[#EDEDEC]">{{ __('suppliers.recommend_supplier') }}</label>
                                 </div>
@@ -957,7 +957,7 @@
                                         placeholder="{{ __('suppliers.actual_address_placeholder') }}">
                                     <div class="flex items-center gap-2 mt-2">
                                         <input type="checkbox" name="address_match" id="address_match"
-                                            class="rounded border-[#94a3b8] dark:border-[#3E3E3A] text-[#f59e0b] focus:ring-[#f59e0b]">
+                                            class="rounded border-[#7c8799] dark:border-[#3E3E3A] text-[#f59e0b] focus:ring-[#f59e0b]">
                                         <label for="address_match"
                                             class="text-sm text-[#0f172a] dark:text-[#EDEDEC]">{{ __('suppliers.match_legal') }}</label>
                                     </div>
@@ -1042,9 +1042,9 @@
     <!-- Модалка обрезки логотипа -->
     <div id="logo-crop-modal" class="fixed inset-0 bg-black/70 z-[60] hidden items-center justify-center p-4"
         onmousedown="if(event.target === this) closeLogoCropModal()">
-        <div class="bg-white dark:bg-[#161615] rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col border border-[#94a3b8] dark:border-[#3E3E3A]"
+        <div class="bg-white dark:bg-[#161615] rounded-xl max-w-2xl w-full max-h-[90vh] flex flex-col border border-[#7c8799] dark:border-[#3E3E3A]"
             onclick="event.stopPropagation()">
-            <div class="px-6 py-4 border-b border-[#94a3b8] dark:border-[#3E3E3A] flex items-center justify-between">
+            <div class="px-6 py-4 border-b border-[#7c8799] dark:border-[#3E3E3A] flex items-center justify-between">
                 <h3 class="text-lg font-semibold text-[#0f172a] dark:text-[#EDEDEC]">{{ __('suppliers.crop_logo') }}</h3>
                 <button type="button" onclick="closeLogoCropModal()"
                     class="p-2 rounded-lg text-[#64748b] hover:bg-[#e5e7eb] dark:hover:bg-[#3E3E3A]">
@@ -1058,7 +1058,7 @@
                     <img id="logo-crop-image" src="" alt="Crop" class="max-w-full max-h-[60vh]">
                 </div>
             </div>
-            <div class="px-6 py-4 border-t border-[#94a3b8] dark:border-[#3E3E3A] flex gap-3 justify-end">
+            <div class="px-6 py-4 border-t border-[#7c8799] dark:border-[#3E3E3A] flex gap-3 justify-end">
                 <button type="button" onclick="closeLogoCropModal()"
                     class="btn-secondary">{{ __('suppliers.cancel') }}</button>
                 <button type="button" id="logo-crop-apply" class="add-btn">{{ __('suppliers.apply') }}</button>
@@ -1397,7 +1397,7 @@
                     listBody.innerHTML = `<div class="text-center py-8 text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.no_suppliers') }}</div>`;
                 } else {
                     listBody.innerHTML = paged.map((s) => `
-                        <div class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg p-6" data-supplier-id="${s.id}">
+                        <div class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg p-6" data-supplier-id="${s.id}">
                             <div class="flex items-start justify-between mb-4">
                                 <div>
                                     <h3 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-2">${escapeHtml(s.name || '')}</h3>
@@ -1641,7 +1641,7 @@
                     `<a href="${escapeHtml(s.website)}" target="_blank" class="text-[#f59e0b] hover:underline">${escapeHtml(s.website)}</a>` :
                     '-';
                 const logoHtml = s.logo_url ?
-                    `<div class="mb-4"><img src="${s.logo_url}" alt="Logo" class="w-20 h-20 rounded-full object-cover border-2 border-[#94a3b8] dark:border-[#3E3E3A]"></div>` :
+                    `<div class="mb-4"><img src="${s.logo_url}" alt="Logo" class="w-20 h-20 rounded-full object-cover border-2 border-[#7c8799] dark:border-[#3E3E3A]"></div>` :
                     '';
                 content.innerHTML = logoHtml + `
             <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.name') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.name || '-')}</p></div>
@@ -1659,7 +1659,7 @@
             <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.comment') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC] whitespace-pre-wrap">${escapeHtml(s.comment || '-')}</p></div>
             <div class="pt-4">
                 <a href="/suppliers/${s.id}"
-                    class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
+                    class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
                     title="{{ __('suppliers.details') }}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />

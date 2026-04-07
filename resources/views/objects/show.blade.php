@@ -8,7 +8,7 @@
     <style>
         .panel {
             background: #ffffff;
-            border: 1px solid #94a3b8;
+            border: 1px solid #7c8799;
             border-radius: 12px;
             padding: 1.25rem;
         }
@@ -30,7 +30,7 @@
         .btn {
             padding: 0.55rem 1rem;
             border-radius: 10px;
-            border: 1px solid #94a3b8;
+            border: 1px solid #7c8799;
             background: #ffffff;
             color: #64748b;
             transition: all 0.2s;
@@ -74,7 +74,7 @@
         .object-map {
             height: 280px;
             border-radius: 10px;
-            border: 1px solid #94a3b8;
+            border: 1px solid #7c8799;
             overflow: hidden;
         }
 
@@ -93,7 +93,7 @@
             right: 0;
             z-index: 60;
             background: #fff;
-            border: 1px solid #94a3b8;
+            border: 1px solid #7c8799;
             border-radius: 10px;
             box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
             max-height: 220px;
@@ -163,7 +163,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                     <div class="field-label mb-2">{{ __('objects.city') }}</div>
-                    <select id="object_city" name="city" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input" disabled required>
+                    <select id="object_city" name="city" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input" disabled required>
                         @foreach (['Алматы', 'Астана', 'Шымкент', 'Караганда', 'Актобе', 'Тараз', 'Павлодар', 'Усть-Каменогорск', 'Семей', 'Атырау', 'Костанай', 'Кызылорда', 'Уральск', 'Петропавловск', 'Актау', 'Темиртау', 'Туркестан', 'Кокшетау', 'Талдыкорган', 'Экибастуз'] as $city)
                             <option value="{{ $city }}" @selected($object->city === $city)>{{ $city }}</option>
                         @endforeach
@@ -173,7 +173,7 @@
                 <div class="md:col-span-2 address-suggest">
                     <div class="field-label mb-2">{{ __('objects.address') }}</div>
                     <input id="object_address" name="address" type="text"
-                        class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
+                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
                         value="{{ $object->address }}" disabled required autocomplete="off" autocorrect="off" spellcheck="false">
                     <div id="object-address-suggest-list" class="address-suggest-list hidden"></div>
                 </div>
@@ -181,27 +181,27 @@
                 <div id="object_floor_wrap" class="object-apartment-field {{ $object->type === 'apartment' ? '' : 'hidden' }}">
                     <div class="field-label mb-2">{{ __('objects.apartment_floor') }}</div>
                     <input id="object_apartment_floor" name="apartment_floor" type="text"
-                        class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
+                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
                         value="{{ $object->apartment_floor }}" disabled autocomplete="off" autocorrect="off" spellcheck="false">
                 </div>
 
                 <div id="object_entrance_wrap" class="object-apartment-field {{ $object->type === 'apartment' ? '' : 'hidden' }}">
                     <div class="field-label mb-2">{{ __('objects.apartment_entrance') }}</div>
                     <input id="object_apartment_entrance" name="apartment_entrance" type="text"
-                        class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
+                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
                         value="{{ $object->apartment_entrance }}" disabled autocomplete="off" autocorrect="off" spellcheck="false">
                 </div>
 
                 <div id="object_apartment_wrap" class="object-apartment-field {{ $object->type === 'apartment' ? '' : 'hidden' }}">
                     <div class="field-label mb-2">{{ __('objects.apartment_number') }}</div>
                     <input id="object_apartment" name="apartment" type="text"
-                        class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
+                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
                         value="{{ $object->apartment }}" disabled autocomplete="off" autocorrect="off" spellcheck="false">
                 </div>
 
                 <div>
                     <div class="field-label mb-2">{{ __('objects.type') }}</div>
-                    <select id="object_type" name="type" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input" disabled required>
+                    <select id="object_type" name="type" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input" disabled required>
                         <option value="apartment" @selected($object->type === 'apartment')>{{ __('objects.apartment') }}</option>
                         <option value="house" @selected($object->type === 'house')>{{ __('objects.house') }}</option>
                         <option value="commercial" @selected($object->type === 'commercial')>{{ __('objects.commercial') }}</option>
@@ -211,7 +211,7 @@
 
                 <div>
                     <div class="field-label mb-2">{{ __('objects.status') }}</div>
-                    <select id="object_status" name="status" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input" disabled required>
+                    <select id="object_status" name="status" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input" disabled required>
                         <option value="new" @selected($object->status === 'new')>{{ __('objects.new') }}</option>
                         <option value="in_work" @selected($object->status === 'in_work')>{{ __('objects.in_work') }}</option>
                         <option value="not_working" @selected($object->status === 'not_working')>{{ __('objects.not_working') }}</option>
@@ -221,35 +221,35 @@
                 <div>
                     <div class="field-label mb-2">{{ __('objects.area') }} ({{ __('objects.area_m2') }})</div>
                     <input id="object_area" name="area" type="number" step="0.01"
-                        class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
+                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
                         value="{{ $object->area }}" disabled required>
                 </div>
 
                 <div>
                     <div class="field-label mb-2">{{ __('objects.planned') }}</div>
                     <input id="repair_budget_planned" name="repair_budget_planned" type="number" step="0.01"
-                        class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
+                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
                         value="{{ $object->repair_budget_planned }}" disabled>
                 </div>
 
                 <div>
                     <div class="field-label mb-2">{{ __('objects.actual') }}</div>
                     <input id="repair_budget_actual" name="repair_budget_actual" type="number" step="0.01"
-                        class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
+                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
                         value="{{ $object->repair_budget_actual }}" disabled>
                 </div>
 
                 <div>
                     <div class="field-label mb-2">{{ __('objects.repair_budget_per_m2') }} - {{ __('objects.planned') }}</div>
                     <input id="repair_budget_per_m2_planned" name="repair_budget_per_m2_planned" type="number" step="0.01"
-                        class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
+                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
                         value="{{ $object->repair_budget_per_m2_planned }}" disabled>
                 </div>
 
                 <div>
                     <div class="field-label mb-2">{{ __('objects.repair_budget_per_m2') }} - {{ __('objects.actual') }}</div>
                     <input id="repair_budget_per_m2_actual" name="repair_budget_per_m2_actual" type="number" step="0.01"
-                        class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
+                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
                         value="{{ $object->repair_budget_per_m2_actual }}" disabled>
                 </div>
 
@@ -264,7 +264,7 @@
                 <div class="md:col-span-2">
                     <div class="field-label mb-2">{{ __('objects.links') }}</div>
                     <textarea id="links_text" name="links_text" rows="4"
-                        class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input resize-none"
+                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input resize-none"
                         disabled>{{ is_array($object->links) ? implode("\n", $object->links) : '' }}</textarea>
                 </div>
 
@@ -291,16 +291,16 @@
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <a href="{{ asset('storage/' . $path) }}" target="_blank" rel="noopener"
-                                            class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] dark:hover:border-[#f59e0b] transition-colors">
+                                            class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] dark:hover:border-[#f59e0b] transition-colors">
                                             {{ __('objects.view') }}
                                         </a>
                                         <a href="{{ asset('storage/' . $path) }}" download="{{ basename($path) }}"
-                                            class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors">
+                                            class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors">
                                             {{ __('objects.download') }}
                                         </a>
                                         <button type="button"
                                             onclick="window.deleteObjectFileFromShow({{ $object->id }}, {{ $loop->index }})"
-                                            class="edit-only-control hidden p-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-500 hover:text-red-600 transition-colors"
+                                            class="edit-only-control hidden p-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-500 hover:text-red-600 transition-colors"
                                             title="{{ __('objects.delete_file') }}">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

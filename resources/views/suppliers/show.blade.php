@@ -6,7 +6,7 @@
     <style>
         .panel {
             background: #ffffff;
-            border: 1px solid #94a3b8;
+            border: 1px solid #7c8799;
             border-radius: 12px;
             padding: 1.25rem;
         }
@@ -14,7 +14,7 @@
         .btn {
             padding: 0.55rem 1rem;
             border-radius: 10px;
-            border: 1px solid #94a3b8;
+            border: 1px solid #7c8799;
             background: #ffffff;
             color: #64748b;
             transition: all 0.2s;
@@ -74,28 +74,28 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                     <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.name') }}</div>
-                    <input name="name" value="{{ $s['name'] ?? '' }}" required disabled class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                    <input name="name" value="{{ $s['name'] ?? '' }}" required disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
                 </div>
                 <div>
                     <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.phone') }}</div>
-                    <input name="phone" value="{{ $s['phone'] ?? '' }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                    <input name="phone" value="{{ $s['phone'] ?? '' }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
                 </div>
-                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">Email</div><input name="email" value="{{ $s['email'] ?? '' }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
-                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">Telegram</div><input name="telegram" value="{{ $s['telegram'] ?? '' }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
-                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">WhatsApp</div><input name="whatsapp" value="{{ $s['whatsapp'] ?? '' }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
-                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.website') }}</div><input name="website" value="{{ $s['website'] ?? '' }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
-                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.city') }}</div><input name="city" value="{{ $s['city'] ?? '' }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
-                <div class="md:col-span-2"><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.address') }}</div><input name="address" value="{{ $s['address'] ?? '' }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
+                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">Email</div><input name="email" value="{{ $s['email'] ?? '' }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
+                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">Telegram</div><input name="telegram" value="{{ $s['telegram'] ?? '' }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
+                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">WhatsApp</div><input name="whatsapp" value="{{ $s['whatsapp'] ?? '' }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
+                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.website') }}</div><input name="website" value="{{ $s['website'] ?? '' }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
+                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.city') }}</div><input name="city" value="{{ $s['city'] ?? '' }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
+                <div class="md:col-span-2"><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.address') }}</div><input name="address" value="{{ $s['address'] ?? '' }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
                 <div>
                     <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.sphere') }}</div>
-                    <select name="sphere" disabled class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                    <select name="sphere" disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
                         <option value=""></option>
                         @foreach (($sphereOptions ?? []) as $key => $name)
                             <option value="{{ $key }}" @selected(($s['sphere'] ?? '') === $key)>{{ $name }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.comment') }}</div><textarea name="comment_main" disabled rows="3" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">{{ $s['comment'] ?? '' }}</textarea></div>
+                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.comment') }}</div><textarea name="comment_main" disabled rows="3" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">{{ $s['comment'] ?? '' }}</textarea></div>
 
                 @foreach (($s['brands'] ?? []) as $brand)
                     <input type="hidden" name="brands[]" value="{{ $brand }}">

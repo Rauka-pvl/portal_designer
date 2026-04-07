@@ -6,7 +6,7 @@
 <style>
     .tab-btn {
         background: #ffffff;
-        border: 1px solid #94a3b8;
+        border: 1px solid #7c8799;
         padding: 0.6rem 1.2rem;
         border-radius: 8px;
         cursor: pointer;
@@ -32,7 +32,7 @@
         background: #f8fafc;
         border-radius: 8px;
         padding: 1rem;
-        border: 2px dashed #94a3b8;
+        border: 2px dashed #7c8799;
     }
 
     .funnel-column.drag-over {
@@ -42,7 +42,7 @@
 
     .funnel-card {
         background: white;
-        border: 1px solid #94a3b8;
+        border: 1px solid #7c8799;
         border-radius: 8px;
         padding: 1rem;
         margin-bottom: 0.5rem;
@@ -97,7 +97,7 @@
 
     .pagination button {
         padding: 0.5rem 1rem;
-        border: 1px solid #94a3b8;
+        border: 1px solid #7c8799;
         background: white;
         border-radius: 6px;
         cursor: pointer;
@@ -128,7 +128,7 @@
     .custom-select-toggle {
         width: 100%;
         padding: 0.5rem 1rem;
-        border: 1px solid #94a3b8;
+        border: 1px solid #7c8799;
         background: white;
         border-radius: 8px;
         cursor: pointer;
@@ -145,7 +145,7 @@
         left: 0;
         right: 0;
         background: white;
-        border: 1px solid #94a3b8;
+        border: 1px solid #7c8799;
         border-radius: 8px;
         margin-top: 0.25rem;
         max-height: 300px;
@@ -160,13 +160,13 @@
 
     .custom-select-search {
         padding: 0.5rem;
-        border-bottom: 1px solid #94a3b8;
+        border-bottom: 1px solid #7c8799;
     }
 
     .custom-select-search input {
         width: 100%;
         padding: 0.5rem;
-        border: 1px solid #94a3b8;
+        border: 1px solid #7c8799;
         border-radius: 6px;
         font-size: 0.875rem;
     }
@@ -295,7 +295,7 @@
 <div class="mb-6 flex flex-col md:flex-row gap-4">
     <div class="flex-1">
         <input type="text" id="search-input" placeholder="{{ __('projects.search') }}"
-               class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+               class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
     </div>
     <div class="w-full md:w-48">
         <div class="custom-select" id="status-filter-wrapper">

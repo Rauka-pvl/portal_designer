@@ -4,6 +4,7 @@ use App\Http\Controllers\ChecklistStepController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardCalendarController;
 use App\Http\Controllers\Moderator\ModeratorController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PassportObject;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SettingsController;
@@ -151,6 +152,18 @@ Route::middleware(['auth', 'role:designer'])->group(function () {
     Route::patch('/supplier-orders/{orderId}/status', [SupplierOrderController::class, 'updateStatus'])
         ->whereNumber('orderId')
         ->name('supplier-orders.update_status');
+
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{notificationId}/read', [NotificationController::class, 'markRead'])
+        ->whereNumber('notificationId')
+        ->name('notifications.read');
+    Route::delete('/notifications/{notificationId}', [NotificationController::class, 'destroy'])
+        ->whereNumber('notificationId')
+        ->name('notifications.destroy');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])
+        ->name('notifications.read_all');
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])
+        ->name('notifications.unread_count');
 });
 
 Route::middleware(['auth', 'role:moderator'])->group(function () {

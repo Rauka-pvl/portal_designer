@@ -10,7 +10,7 @@
         grid-template-columns: repeat(7, 1fr);
         gap: 1px;
         background: #d1d5db;
-        border: 1px solid #94a3b8;
+        border: 1px solid #7c8799;
         border-radius: 8px;
         overflow: hidden;
     }
@@ -80,7 +80,7 @@
 
     .filter-btn {
         background: #ffffff;
-        border: 1px solid #94a3b8;
+        border: 1px solid #7c8799;
         padding: 0.6rem 1.2rem;
         border-radius: 8px;
         cursor: pointer;
@@ -179,7 +179,7 @@
 <!-- Карточки метрик -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
     <!-- Клиенты -->
-    <div class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg p-6">
+    <div class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg p-6">
         <div class="flex items-center justify-between mb-2">
             <h3 class="text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('dashboard.clients') }}</h3>
             <svg class="w-5 h-5 text-[#64748b] dark:text-[#A1A09A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -190,7 +190,7 @@
     </div>
 
     <!-- Поставки в работе -->
-    <div class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg p-6">
+    <div class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg p-6">
         <div class="flex items-center justify-between mb-2">
             <h3 class="text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('dashboard.orders_in_work') }}</h3>
             <svg class="w-5 h-5 text-[#64748b] dark:text-[#A1A09A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -201,7 +201,7 @@
     </div>
 
     <!-- Задачи на сегодня -->
-    <div class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg p-6">
+    <div class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg p-6">
         <div class="flex items-center justify-between mb-2">
             <h3 class="text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('dashboard.tasks_today') }}</h3>
             <svg class="w-5 h-5 text-[#64748b] dark:text-[#A1A09A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -212,7 +212,7 @@
     </div>
 
     <!-- Накопленные бонусы -->
-    <div class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg p-6">
+    <div class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg p-6">
         <div class="flex items-center justify-between mb-2">
             <h3 class="text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('dashboard.accumulated_bonuses') }}</h3>
             <svg class="w-5 h-5 text-[#64748b] dark:text-[#A1A09A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -236,7 +236,7 @@
 </div>
 
 <!-- Контейнер календаря -->
-<div id="calendar-container" class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg p-6">
+<div id="calendar-container" class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg p-6">
     <!-- Панель управления календарем -->
     <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
         <!-- Режимы отображения -->
@@ -274,7 +274,7 @@
     <!-- Мини календарь для выбора даты -->
     <div class="mb-6">
         <div class="max-w-xs mx-auto">
-            <div id="mini-calendar" class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg p-4">
+            <div id="mini-calendar" class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg p-4">
                 <!-- Мини календарь будет вставлен через JavaScript -->
             </div>
         </div>
@@ -287,7 +287,7 @@
 </div>
 
 <!-- Контейнер списка -->
-<div id="list-container" class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg p-6 hidden">
+<div id="list-container" class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg p-6 hidden">
     <div id="tasks-list">
         <!-- Список задач будет вставлен через JavaScript -->
     </div>
@@ -295,8 +295,8 @@
 
 <!-- Правый сайдбар с задачами дня -->
 <div id="day-drawer-overlay" class="fixed inset-0 bg-black/40 hidden z-50" onclick="closeDayDrawer()"></div>
-<div id="day-drawer" class="fixed top-0 right-0 h-full w-full max-w-md bg-white dark:bg-[#161615] border-l border-[#94a3b8] dark:border-[#3E3E3A] shadow-2xl hidden z-50 flex flex-col">
-    <div class="p-4 flex items-center justify-between border-b border-[#94a3b8] dark:border-[#3E3E3A] flex-none">
+<div id="day-drawer" class="fixed top-0 right-0 h-full w-full max-w-md bg-white dark:bg-[#161615] border-l border-[#7c8799] dark:border-[#3E3E3A] shadow-2xl hidden z-50 flex flex-col">
+    <div class="p-4 flex items-center justify-between border-b border-[#7c8799] dark:border-[#3E3E3A] flex-none">
         <div class="text-base font-semibold text-[#0f172a] dark:text-[#EDEDEC]" id="day-drawer-title">—</div>
         <button type="button" class="p-2 rounded-lg hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] transition-colors" onclick="closeDayDrawer()"
             aria-label="Закрыть">
@@ -443,7 +443,7 @@ document.addEventListener('DOMContentLoaded', function() {
             ? `<div class="text-[11px] text-[#64748b] dark:text-[#A1A09A] mt-1 whitespace-pre-wrap">${resultComment}</div>`
             : '';
         return `
-            <div class="p-3 border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a]">
+            <div class="p-3 border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg bg-[#f8fafc] dark:bg-[#0a0a0a]">
                 <div class="flex items-start gap-3">
                     <div class="mt-0.5">${eventIconHtml(task)}</div>
                     <div class="min-w-0 flex-1">
@@ -797,8 +797,8 @@ document.addEventListener('DOMContentLoaded', function() {
         container.className = '';
         const weekStart = getWeekStart(currentDate);
         let html = `
-            <div class="grid grid-cols-8 border-b border-[#94a3b8] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a]">
-                <div class="p-3 border-r border-[#94a3b8] dark:border-[#3E3E3A]"></div>
+            <div class="grid grid-cols-8 border-b border-[#7c8799] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a]">
+                <div class="p-3 border-r border-[#7c8799] dark:border-[#3E3E3A]"></div>
         `;
 
         for (let i = 0; i < 7; i++) {
@@ -806,7 +806,7 @@ document.addEventListener('DOMContentLoaded', function() {
             date.setDate(date.getDate() + i);
             const isToday = date.toDateString() === new Date().toDateString();
             html += `
-                <div class="p-3 text-center border-r border-[#94a3b8] dark:border-[#3E3E3A] last:border-r-0">
+                <div class="p-3 text-center border-r border-[#7c8799] dark:border-[#3E3E3A] last:border-r-0">
                     <div class="text-xs mb-1 text-[#64748b] dark:text-[#A1A09A] font-medium">${dayNames[i]}</div>
                     <div class="text-lg font-medium ${isToday ? 'text-[#f59e0b]' : 'text-[#0f172a] dark:text-[#EDEDEC]'}">
                         ${date.getDate()}
@@ -819,15 +819,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Часы дня
         for (let hour = 0; hour < 24; hour++) {
-            html += `<div class="grid grid-cols-8 border-b border-[#94a3b8] dark:border-[#3E3E3A]">`;
-            html += `<div class="p-2 text-xs text-[#64748b] dark:text-[#A1A09A] border-r border-[#94a3b8] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a] font-medium">${hour.toString().padStart(2, '0')}:00</div>`;
+            html += `<div class="grid grid-cols-8 border-b border-[#7c8799] dark:border-[#3E3E3A]">`;
+            html += `<div class="p-2 text-xs text-[#64748b] dark:text-[#A1A09A] border-r border-[#7c8799] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a] font-medium">${hour.toString().padStart(2, '0')}:00</div>`;
             for (let i = 0; i < 7; i++) {
                 const date = new Date(weekStart);
                 date.setDate(date.getDate() + i);
                 date.setHours(hour, 0, 0, 0);
                 const isToday = date.toDateString() === new Date().toDateString();
                 const dayClass = isToday ? 'calendar-day today' : 'calendar-day';
-                html += `<div class="min-h-[60px] p-1 border-r border-[#94a3b8] dark:border-[#3E3E3A] last:border-r-0 ${dayClass}">${renderTasksForDate(date, hour)}</div>`;
+                html += `<div class="min-h-[60px] p-1 border-r border-[#7c8799] dark:border-[#3E3E3A] last:border-r-0 ${dayClass}">${renderTasksForDate(date, hour)}</div>`;
             }
             html += `</div>`;
         }
@@ -846,8 +846,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const restCount = Math.max(0, tasks.length - 2);
 
         let html = `
-            <div class="grid grid-cols-2 border-b border-[#94a3b8] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a]">
-                <div class="p-3 border-r border-[#94a3b8] dark:border-[#3E3E3A]"></div>
+            <div class="grid grid-cols-2 border-b border-[#7c8799] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a]">
+                <div class="p-3 border-r border-[#7c8799] dark:border-[#3E3E3A]"></div>
                 <div class="p-3 text-center">
                     <div class="text-xs mb-1 text-[#64748b] dark:text-[#A1A09A] font-medium">${dayNames[date.getDay() === 0 ? 6 : date.getDay() - 1]}</div>
                     <div class="text-lg font-medium ${isToday ? 'text-[#f59e0b]' : 'text-[#0f172a] dark:text-[#EDEDEC]'}">
@@ -928,7 +928,7 @@ document.addEventListener('DOMContentLoaded', function() {
             );
 
             html += `
-                <div class="mb-4 p-4 border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg">
+                <div class="mb-4 p-4 border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg">
                     <div class="text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-2">
                         ${day} ${monthNames[month]} ${year}
                     </div>

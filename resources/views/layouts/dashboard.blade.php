@@ -30,16 +30,22 @@
 <body class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] dark:text-[#EDEDEC] transition-colors duration-200">
     @php
         $isModerator = auth()->check() && (auth()->user()->role ?? null) === 'moderator';
+        $unreadNotifications = ! $isModerator && auth()->check()
+            ? \App\Models\UserNotification::query()
+                ->where('user_id', auth()->id())
+                ->where('is_read', false)
+                ->count()
+            : 0;
     @endphp
 
     @include('layouts.partials.app-toasts')
 
     <!-- Выдвижная навигация -->
     <aside id="sidebar"
-        class="fixed left-0 top-0 h-full w-64 bg-white dark:bg-[#161615] border-r border-[#94a3b8] dark:border-[#3E3E3A] transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-50">
+        class="fixed left-0 top-0 h-full w-64 bg-white dark:bg-[#161615] border-r border-[#7c8799] dark:border-[#3E3E3A] transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-50">
         <div class="flex flex-col h-full">
             <!-- Логотип -->
-            <div class="p-6 border-b border-[#94a3b8] dark:border-[#3E3E3A]">
+            <div class="p-6 border-b border-[#7c8799] dark:border-[#3E3E3A]">
                 <div class="w-full max-w-[200px]">
                     <svg viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto">
                         <defs>
@@ -171,6 +177,24 @@
                     @endif
 
                     @if (Route::has('settings.index'))
+                        @if (Route::has('notifications.index'))
+                            <a href="{{ route('notifications.index') }}"
+                                class="flex items-center justify-between gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1">
+                                <span class="flex items-center gap-3">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                    </svg>
+                                    <span>{{ __('notifications.title') }}</span>
+                                </span>
+                                @if ($unreadNotifications > 0)
+                                    <span class="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs bg-[#f59e0b] text-white">
+                                        {{ $unreadNotifications }}
+                                    </span>
+                                @endif
+                            </a>
+                        @endif
+
                         <a href="{{ route('settings.index') }}"
                             class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -186,7 +210,7 @@
             </nav>
 
             <!-- Нижняя панель -->
-            <div class="p-4 border-t border-[#94a3b8] dark:border-[#3E3E3A] space-y-2">
+            <div class="p-4 border-t border-[#7c8799] dark:border-[#3E3E3A] space-y-2">
                 <!-- Переключатель темы -->
                 <button id="theme-toggle" type="button"
                     class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-[#706f6c] dark:text-[#A1A09A] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors">
@@ -246,7 +270,7 @@
     <!-- Основной контент -->
     <div class="lg:ml-64 min-h-screen">
         <!-- Верхняя панель -->
-        <header class="sticky top-0 z-30 bg-white dark:bg-[#161615] border-b border-[#94a3b8] dark:border-[#3E3E3A]">
+        <header class="sticky top-0 z-30 bg-white dark:bg-[#161615] border-b border-[#7c8799] dark:border-[#3E3E3A]">
             <div class="flex items-center justify-between px-4 py-4">
                 <button id="sidebar-toggle" onclick="toggleSidebar()"
                     class="lg:hidden p-2 rounded-lg text-[#706f6c] dark:text-[#A1A09A] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a]">
@@ -321,7 +345,7 @@
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className =
-                    'w-full flex items-center justify-between px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] ' +
+                    'w-full flex items-center justify-between px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] ' +
                     'bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]';
                 btn.innerHTML = `
                     <span class="custom-select-label text-left">${currentLabel}</span>
@@ -332,7 +356,7 @@
 
                 const menu = document.createElement('div');
                 menu.className =
-                    'hidden absolute left-0 right-0 mt-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] ' +
+                    'hidden absolute left-0 right-0 mt-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] ' +
                     'bg-white dark:bg-[#161615] shadow-lg overflow-hidden z-[60]';
 
                 const showSearch = realOptions.length > 5;
@@ -341,8 +365,8 @@
                 let searchHtml = '';
                 if (showSearch) {
                     searchHtml = `
-                        <div class="p-2 border-b border-[#94a3b8] dark:border-[#3E3E3A]">
-                            <input type="text" class="w-full px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]" placeholder="${searchPlaceholder}">
+                        <div class="p-2 border-b border-[#7c8799] dark:border-[#3E3E3A]">
+                            <input type="text" class="w-full px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]" placeholder="${searchPlaceholder}">
                         </div>
                     `;
                 }

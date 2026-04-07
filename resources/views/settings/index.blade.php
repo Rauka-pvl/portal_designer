@@ -12,7 +12,7 @@
         .settings-tab {
             padding: 8px 14px;
             border-radius: 8px;
-            border: 1px solid #94a3b8;
+            border: 1px solid #7c8799;
             background: #ffffff;
             color: #64748b;
             font-size: 13px;
@@ -25,7 +25,7 @@
             background: #f8fafc;
         }
         .settings-shell {
-            border: 1px solid #94a3b8;
+            border: 1px solid #7c8799;
             background: #ffffff;
             border-radius: 12px;
             padding: 18px;
@@ -36,7 +36,7 @@
             margin-bottom: 10px;
         }
         .settings-divider {
-            border-top: 1px solid #94a3b8;
+            border-top: 1px solid #7c8799;
             margin: 8px 0 14px;
         }
         .settings-grid {
@@ -51,7 +51,7 @@
         }
         .settings-input, .settings-textarea, .settings-select {
             width: 100%;
-            border: 1px solid #94a3b8;
+            border: 1px solid #7c8799;
             background: #ffffff;
             color: #0f172a;
             border-radius: 6px;
@@ -65,7 +65,7 @@
             gap: 18px;
         }
         .settings-actions .cancel-btn {
-            border: 1px solid #94a3b8;
+            border: 1px solid #7c8799;
             background: #ffffff;
             color: #64748b;
             border-radius: 8px;

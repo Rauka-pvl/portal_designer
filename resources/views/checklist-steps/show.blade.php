@@ -12,7 +12,7 @@
         .btn {
             padding: 0.55rem 1rem;
             border-radius: 10px;
-            border: 1px solid #94a3b8;
+            border: 1px solid #7c8799;
             background: #ffffff;
             color: #4b5563;
             transition: all 0.2s;
@@ -45,7 +45,7 @@
         #checklist-step-details-form textarea {
             border-width: 1px;
             border-style: solid;
-            border-color: #94a3b8;
+            border-color: #7c8799;
         }
 
         .dark #checklist-step-details-form input,
@@ -58,7 +58,7 @@
         #checklist-step-details-form select:focus,
         #checklist-step-details-form textarea:focus {
             outline: none;
-            box-shadow: 0 0 0 1px #94a3b8;
+            box-shadow: 0 0 0 1px #7c8799;
         }
 
         .dark #checklist-step-details-form input:focus,
@@ -75,7 +75,7 @@
     @endphp
 
     <div
-        class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-solid border-[#94a3b8] dark:border-[#525252]">
+        class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-6 border-b border-solid border-[#7c8799] dark:border-[#525252]">
         <div>
             <h1 class="text-2xl font-medium text-[#0f172a] dark:text-[#EDEDEC]">
                 {{ $project?->name ?? '-' }}
@@ -92,7 +92,7 @@
     </div>
 
     <div
-        class="panel bg-[#f1f5f9] dark:bg-[#161615] border border-solid border-[#94a3b8] dark:border-[#525252] shadow-md shadow-gray-500/20 dark:shadow-none">
+        class="panel bg-[#f1f5f9] dark:bg-[#161615] border border-solid border-[#7c8799] dark:border-[#525252] shadow-md shadow-gray-500/20 dark:shadow-none">
         <form id="checklist-step-details-form" method="POST" action="{{ route('checklist-steps.update', $step->id) }}">
             @csrf
             @method('PUT')

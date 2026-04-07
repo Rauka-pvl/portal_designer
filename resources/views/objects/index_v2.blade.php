@@ -62,7 +62,7 @@
 
         .pagination button {
             padding: 0.5rem 1rem;
-            border: 1px solid #94a3b8;
+            border: 1px solid #7c8799;
             background: white;
             border-radius: 6px;
             cursor: pointer;
@@ -108,7 +108,7 @@
             background: #f8fafc;
             border-radius: 8px;
             padding: 1rem;
-            border: 2px dashed #94a3b8;
+            border: 2px dashed #7c8799;
         }
 
         .funnel-column.drag-over {
@@ -118,7 +118,7 @@
 
         .funnel-card {
             background: white;
-            border: 1px solid #94a3b8;
+            border: 1px solid #7c8799;
             border-radius: 8px;
             padding: 0.95rem;
             margin-bottom: 0.5rem;
@@ -147,7 +147,7 @@
 
         .tab-btn {
             background: #ffffff;
-            border: 1px solid #94a3b8;
+            border: 1px solid #7c8799;
             padding: 0.6rem 1.2rem;
             border-radius: 8px;
             cursor: pointer;
@@ -178,7 +178,7 @@
         .object-map {
             height: 250px;
             border-radius: 10px;
-            border: 1px solid #94a3b8;
+            border: 1px solid #7c8799;
             overflow: hidden;
         }
 
@@ -197,7 +197,7 @@
             right: 0;
             z-index: 80;
             background: #fff;
-            border: 1px solid #94a3b8;
+            border: 1px solid #7c8799;
             border-radius: 10px;
             box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
             max-height: 220px;
@@ -255,12 +255,12 @@
     <div class="mb-6 flex flex-col md:flex-row gap-4">
         <div class="flex-1">
             <input type="text" id="search-input" placeholder="{{ __('objects.search') }}"
-                class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+                class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
         </div>
 
         <div class="w-full md:w-48">
             <select id="type-filter"
-                class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+                class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
                 <option value="">{{ __('objects.all_types') }}</option>
                 <option value="apartment">{{ __('objects.apartment') }}</option>
                 <option value="house">{{ __('objects.house') }}</option>
@@ -271,7 +271,7 @@
 
         <div class="w-full md:w-52">
             <select id="client-filter"
-                class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+                class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
                 <option value="">{{ __('objects.all_clients') }}</option>
                 @foreach ($clients as $client)
                     <option value="{{ $client->id }}">{{ $client->full_name }}</option>
@@ -281,7 +281,7 @@
 
         <div class="w-full md:w-48">
             <select id="status-filter"
-                class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+                class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
                 <option value="">{{ __('objects.all_statuses') }}</option>
                 <option value="new">{{ __('objects.new') }}</option>
                 <option value="in_work">{{ __('objects.in_work') }}</option>
@@ -291,7 +291,7 @@
     </div>
 
     <div id="table-view" class="tab-content">
-        <div class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg">
+        <div class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg">
             <div class="overflow-x-auto">
                 <table class="w-full">
                     <thead class="bg-[#f8fafc] dark:bg-[#0a0a0a]">
@@ -318,7 +318,7 @@
                                 {{ __('objects.view') }}</th>
                         </tr>
                     </thead>
-                    <tbody id="objects-table-body" class="divide-y divide-[#94a3b8] dark:divide-[#3E3E3A]"></tbody>
+                    <tbody id="objects-table-body" class="divide-y divide-[#7c8799] dark:divide-[#3E3E3A]"></tbody>
                 </table>
             </div>
             <div class="pagination" id="objects-pagination-table"></div>
@@ -329,7 +329,7 @@
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('objects.per_page') }}</div>
                 <div class="relative">
                     <button id="objects-per-page-button" type="button"
-                        class="w-full flex items-center justify-between px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+                        class="w-full flex items-center justify-between px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
                         <span id="objects-per-page-label">10</span>
                         <svg class="w-4 h-4 text-[#64748b] dark:text-[#A1A09A]" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">
@@ -338,7 +338,7 @@
                     </button>
 
                     <div id="objects-per-page-menu"
-                        class="hidden absolute left-0 right-0 mt-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] shadow-lg overflow-hidden z-[60]">
+                        class="hidden absolute left-0 right-0 mt-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] shadow-lg overflow-hidden z-[60]">
                         @foreach ([10, 30, 50, 100] as $v)
                             <button type="button"
                                 class="w-full px-4 py-2 text-sm text-[#0f172a] dark:text-[#EDEDEC] hover:bg-[#f8fafc] dark:hover:bg-[#0a0a0a] transition-colors text-left objects-per-page-option"
@@ -391,11 +391,11 @@
     <!-- View modal -->
     <div id="view-object-modal" class="fixed inset-0 bg-black/50 z-50 hidden modal-overlay"
         onmousedown="if(event.target === this) closeViewObjectModal()">
-        <div class="absolute right-0 top-0 h-full w-full max-w-lg bg-white dark:bg-[#161615] border-l border-[#94a3b8] dark:border-[#3E3E3A] shadow-2xl transform transition-transform duration-200 translate-x-full modal-content"
+        <div class="absolute right-0 top-0 h-full w-full max-w-lg bg-white dark:bg-[#161615] border-l border-[#7c8799] dark:border-[#3E3E3A] shadow-2xl transform transition-transform duration-200 translate-x-full modal-content"
             onclick="event.stopPropagation()">
             <div class="flex flex-col h-full">
                 <div
-                    class="flex items-center justify-between px-6 py-5 border-b border-[#94a3b8] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a]">
+                    class="flex items-center justify-between px-6 py-5 border-b border-[#7c8799] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a]">
                     <div>
                         <h2 class="text-xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]">{{ __('objects.view') }}</h2>
                         <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-0.5">{{ __('objects.view') }}</p>
@@ -417,10 +417,10 @@
     <div id="object-modal"
         class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center modal-overlay p-4"
         onmousedown="if(event.target === this) closeObjectModal()">
-        <div class="bg-white dark:bg-[#161615] rounded-xl max-w-2xl w-full mx-auto max-h-[90vh] overflow-hidden flex flex-col modal-content border border-[#94a3b8] dark:border-[#3E3E3A]"
+        <div class="bg-white dark:bg-[#161615] rounded-xl max-w-2xl w-full mx-auto max-h-[90vh] overflow-hidden flex flex-col modal-content border border-[#7c8799] dark:border-[#3E3E3A]"
             onclick="event.stopPropagation()">
             <div
-                class="flex items-start justify-between px-6 pt-6 pb-4 border-b border-[#94a3b8] dark:border-[#3E3E3A] shrink-0">
+                class="flex items-start justify-between px-6 pt-6 pb-4 border-b border-[#7c8799] dark:border-[#3E3E3A] shrink-0">
                 <div>
                     <h2 class="text-xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]" id="object-modal-title">
                         {{ __('objects.new_object') }}</h2>
@@ -984,7 +984,7 @@
                             <span class="text-xs text-[#64748b] dark:text-[#A1A09A]">${safeName}</span>
                             <div class="flex items-center gap-2">
                                 <a href="${url}" target="_blank" rel="noopener"
-                                   class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] dark:hover:border-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
+                                   class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] dark:hover:border-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
                                    title="{{ __('objects.view') }}">
                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -994,7 +994,7 @@
                                 </a>
 
                                 <a href="${url}" download="${safeName}"
-                                   class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
+                                   class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
                                    title="{{ __('objects.download') }}">
                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
@@ -1006,7 +1006,7 @@
 
                                 <button type="button"
                                    onclick="window.deleteObjectFile(${obj.id}, ${idx})"
-                                   class="inline-flex items-center justify-center p-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-500 hover:text-red-600 transition-colors"
+                                   class="inline-flex items-center justify-center p-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-500 hover:text-red-600 transition-colors"
                                    title="{{ __('objects.delete_file') }}">
                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -1076,7 +1076,7 @@
                     ` : ''}
                     <div class="pt-3">
                         <a href="/objects/${obj.id}"
-                           class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
+                           class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
                            title="{{ __('objects.details') }}">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1430,7 +1430,7 @@
                 listBody.innerHTML = paged.map(obj => {
                     const dataJson = objectToDataAttr(obj);
                     return `
-                        <div class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg p-6" data-object-id="${obj.id}" data-object='${dataJson}'>
+                        <div class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg p-6" data-object-id="${obj.id}" data-object='${dataJson}'>
                             <div class="flex items-start justify-between mb-4">
                                 <div>
                                     <h3 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-2">${escapeHtml(buildFullAddress(obj))}</h3>
@@ -1461,20 +1461,20 @@
 
                             <div class="flex gap-2">
                                 <button type="button" onclick="window.viewObject(${obj.id})"
-                                    class="filter-btn p-1.5 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] transition-colors">
+                                    class="filter-btn p-1.5 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] transition-colors">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                     </svg>
                                 </button>
                                 <button type="button" onclick="window.editObject(${obj.id})"
-                                    class="filter-btn p-1.5 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] transition-colors">
+                                    class="filter-btn p-1.5 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] transition-colors">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
                                 </button>
                                 <button type="button" onclick="window.deleteObject(${obj.id})"
-                                    class="filter-btn p-1.5 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-red-500 hover:border-red-500 transition-colors">
+                                    class="filter-btn p-1.5 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-red-500 hover:border-red-500 transition-colors">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                     </svg>
@@ -1519,11 +1519,11 @@
                             <div class="mt-1.5">${renderObjectModerationCell(obj)}</div>
                             <div class="flex items-center gap-2 mt-2" onclick="event.stopPropagation()">
                                 <button type="button" onclick="event.stopPropagation(); window.viewObject(${obj.id})"
-                                    class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] transition-colors">{{ __('objects.view') }}</button>
+                                    class="text-xs px-2 py-1 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] transition-colors">{{ __('objects.view') }}</button>
                                 <button type="button" onclick="event.stopPropagation(); window.editObject(${obj.id})"
-                                    class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] transition-colors">{{ __('objects.edit') }}</button>
+                                    class="text-xs px-2 py-1 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] transition-colors">{{ __('objects.edit') }}</button>
                                 <button type="button" onclick="event.stopPropagation(); window.deleteObject(${obj.id})"
-                                    class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-red-500 hover:border-red-500 transition-colors">{{ __('objects.delete') }}</button>
+                                    class="text-xs px-2 py-1 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-red-500 hover:border-red-500 transition-colors">{{ __('objects.delete') }}</button>
                             </div>
                         </div>
                     `).join('');

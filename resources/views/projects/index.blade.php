@@ -17,10 +17,10 @@
 
     <div class="mb-4">
         <input id="projects-search" type="text" placeholder="{{ __('projects.search') }}"
-            class="w-full md:w-96 px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+            class="w-full md:w-96 px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
     </div>
 
-    <div class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg overflow-hidden">
+    <div class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full">
                 <thead class="bg-[#f8fafc] dark:bg-[#0a0a0a]">
@@ -34,15 +34,15 @@
                         <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.actions') }}</th>
                     </tr>
                 </thead>
-                <tbody id="projects-table-body" class="divide-y divide-[#94a3b8] dark:divide-[#3E3E3A]"></tbody>
+                <tbody id="projects-table-body" class="divide-y divide-[#7c8799] dark:divide-[#3E3E3A]"></tbody>
             </table>
         </div>
     </div>
 
     <div id="project-modal" class="fixed inset-0 bg-black/50 z-[80] hidden flex items-center justify-center modal-overlay p-4" onmousedown="if(event.target===this) closeProjectModal()">
-        <div class="bg-white dark:bg-[#161615] rounded-xl max-w-5xl w-full max-h-[92vh] mx-auto overflow-hidden flex flex-col border border-[#94a3b8] dark:border-[#3E3E3A]"
+        <div class="bg-white dark:bg-[#161615] rounded-xl max-w-5xl w-full max-h-[92vh] mx-auto overflow-hidden flex flex-col border border-[#7c8799] dark:border-[#3E3E3A]"
             onclick="event.stopPropagation()">
-            <div class="px-6 py-4 border-b border-[#94a3b8] dark:border-[#3E3E3A] flex items-center justify-between">
+            <div class="px-6 py-4 border-b border-[#7c8799] dark:border-[#3E3E3A] flex items-center justify-between">
                 <h2 id="project-modal-title" class="text-xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]">{{ __('projects.new_project') }}</h2>
                 <button type="button" onclick="closeProjectModal()" class="p-2 rounded-lg hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a]">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -134,7 +134,7 @@
                 <div>
                     <h3 class="modal-section-title">{{ __('projects.files') }}</h3>
                     <p class="modal-section-subtitle">{{ __('projects.files_subtitle') }}</p>
-                    <div class="flex gap-0 overflow-hidden rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#0a0a0a]">
+                    <div class="flex gap-0 overflow-hidden rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#0a0a0a]">
                         <label class="flex-1 flex items-center gap-2 px-4 py-2.5 text-[#64748b] dark:text-[#A1A09A] text-sm cursor-pointer min-h-[2.5rem]">
                             <svg class="w-5 h-5 text-[#f59e0b] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.172-1.172a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.172 1.172a4 4 0 01-5.656 0L9.172 7.172a4 4 0 015.656 0l1.172 1.172a4 4 0 010 5.656z"/></svg>
                             <span id="project-files-label">{{ __('projects.files_not_selected') }}</span>
@@ -226,7 +226,7 @@
     }
 
     function linkInput(value = '') {
-        return `<div class="flex gap-2"><input type="url" name="links[]" value="${esc(value)}" class="w-full modal-input"><button type="button" class="px-3 rounded border border-[#94a3b8] dark:border-[#3E3E3A]" onclick="this.parentElement.remove()">×</button></div>`;
+        return `<div class="flex gap-2"><input type="url" name="links[]" value="${esc(value)}" class="w-full modal-input"><button type="button" class="px-3 rounded border border-[#7c8799] dark:border-[#3E3E3A]" onclick="this.parentElement.remove()">×</button></div>`;
     }
 
     function stageBlock(stage = {}) {
@@ -237,7 +237,7 @@
             .join('');
         const steps = Array.isArray(stage.steps) && stage.steps.length ? stage.steps : [''];
 
-        return `<div class="rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] p-4 stage-row">
+        return `<div class="rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] p-4 stage-row">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <select name="stages[][stage_type]" class="modal-input stage-type">
                     ${state.stageTypes.map(t => `<option value="${t}" ${t===selectedType?'selected':''}>${esc(stageName(t))}</option>`).join('')}
@@ -252,7 +252,7 @@
                 </div>
             </div>
             <div class="mt-3 space-y-2 stage-steps">
-                ${steps.map(s => `<div class="flex gap-2"><input type="text" name="stages[][steps][]" class="w-full modal-input" value="${esc(s)}"><button type="button" class="px-3 rounded border border-[#94a3b8] dark:border-[#3E3E3A]" onclick="this.parentElement.remove()">×</button></div>`).join('')}
+                ${steps.map(s => `<div class="flex gap-2"><input type="text" name="stages[][steps][]" class="w-full modal-input" value="${esc(s)}"><button type="button" class="px-3 rounded border border-[#7c8799] dark:border-[#3E3E3A]" onclick="this.parentElement.remove()">×</button></div>`).join('')}
             </div>
             <div class="mt-2 flex gap-3">
                 <button type="button" class="text-sm text-[#f59e0b] add-step-btn">{{ __('projects.add_item') }}</button>
@@ -278,10 +278,10 @@
         tplSelect.addEventListener('change', () => {
             const tpl = templateById(tplSelect.value);
             if (!tpl) return;
-            stepsWrap.innerHTML = tpl.steps.map(s => `<div class="flex gap-2"><input type="text" name="stages[][steps][]" class="w-full modal-input" value="${esc(s)}"><button type="button" class="px-3 rounded border border-[#94a3b8] dark:border-[#3E3E3A]" onclick="this.parentElement.remove()">×</button></div>`).join('');
+            stepsWrap.innerHTML = tpl.steps.map(s => `<div class="flex gap-2"><input type="text" name="stages[][steps][]" class="w-full modal-input" value="${esc(s)}"><button type="button" class="px-3 rounded border border-[#7c8799] dark:border-[#3E3E3A]" onclick="this.parentElement.remove()">×</button></div>`).join('');
         });
         wrapper.querySelector('.add-step-btn').addEventListener('click', () => {
-            stepsWrap.insertAdjacentHTML('beforeend', `<div class="flex gap-2"><input type="text" name="stages[][steps][]" class="w-full modal-input"><button type="button" class="px-3 rounded border border-[#94a3b8] dark:border-[#3E3E3A]" onclick="this.parentElement.remove()">×</button></div>`);
+            stepsWrap.insertAdjacentHTML('beforeend', `<div class="flex gap-2"><input type="text" name="stages[][steps][]" class="w-full modal-input"><button type="button" class="px-3 rounded border border-[#7c8799] dark:border-[#3E3E3A]" onclick="this.parentElement.remove()">×</button></div>`);
         });
         wrapper.querySelector('.remove-stage-btn').addEventListener('click', () => wrapper.remove());
         wrapper.querySelector('.save-template-btn').addEventListener('click', async () => {
@@ -454,7 +454,7 @@
 <style>
     .tab-btn {
         background: #ffffff;
-        border: 1px solid #94a3b8;
+        border: 1px solid #7c8799;
         padding: 0.6rem 1.2rem;
         border-radius: 8px;
         cursor: pointer;
@@ -480,7 +480,7 @@
         background: #f8fafc;
         border-radius: 8px;
         padding: 1rem;
-        border: 2px dashed #94a3b8;
+        border: 2px dashed #7c8799;
     }
 
     .funnel-column.drag-over {
@@ -490,7 +490,7 @@
 
     .funnel-card {
         background: white;
-        border: 1px solid #94a3b8;
+        border: 1px solid #7c8799;
         border-radius: 8px;
         padding: 1rem;
         margin-bottom: 0.5rem;
@@ -545,7 +545,7 @@
 
     .pagination button {
         padding: 0.5rem 1rem;
-        border: 1px solid #94a3b8;
+        border: 1px solid #7c8799;
         background: white;
         border-radius: 6px;
         cursor: pointer;
@@ -642,7 +642,7 @@
     /* Stage dropdown - light theme */
     .stage-dropdown {
         background: #ffffff;
-        border: 1px solid #94a3b8;
+        border: 1px solid #7c8799;
     }
     .stage-dropdown .stage-option {
         color: #0f172a;
@@ -694,9 +694,9 @@
         display: block;
         padding: 1.5rem;
         text-align: center;
-        color: #94a3b8;
+        color: #7c8799;
         font-size: 0.875rem;
-        border: 1px dashed #94a3b8;
+        border: 1px dashed #7c8799;
         border-radius: 0.5rem;
         background: #f8fafc;
     }
@@ -789,10 +789,10 @@
 <div class="mb-6 flex flex-col md:flex-row gap-4">
     <div class="flex-1">
         <input type="text" id="search-input" placeholder="{{ __('projects.search') }}"
-               class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+               class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
     </div>
     <div class="w-full md:w-48">
-        <select id="status-filter" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+        <select id="status-filter" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
             <option value="">{{ __('projects.all_statuses') }}</option>
             <option value="contract_negotiation">{{ __('projects.status_contract_negotiation') }}</option>
             <option value="contract_signed">{{ __('projects.status_contract_signed') }}</option>
@@ -803,7 +803,7 @@
         </select>
     </div>
     <div class="w-full md:w-48">
-        <select id="stage-filter" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+        <select id="stage-filter" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
             <option value="">{{ __('projects.all_stages') }}</option>
             <option value="measurement">{{ __('projects.stage_measurement') }}</option>
             <option value="planning">{{ __('projects.stage_planning') }}</option>
@@ -814,7 +814,7 @@
         </select>
     </div>
     <div class="w-full md:w-48">
-        <select id="object-filter" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+        <select id="object-filter" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
             <option value="">{{ __('projects.all_objects') }}</option>
             @foreach($objects as $object)
                 <option value="{{ $object['id'] }}">{{ $object['address'] }}</option>
@@ -822,7 +822,7 @@
         </select>
     </div>
     <div class="w-full md:w-48">
-        <select id="client-filter" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+        <select id="client-filter" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
             <option value="">{{ __('projects.all_clients') }}</option>
             @foreach($clients as $client)
                 <option value="{{ $client['id'] }}">{{ $client['name'] }}</option>
@@ -833,7 +833,7 @@
 
 <!-- Контент вкладок -->
 <div id="table-view" class="tab-content">
-    <div class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg overflow-hidden">
+    <div class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full">
                 <thead class="bg-[#f8fafc] dark:bg-[#0a0a0a]">
@@ -851,7 +851,7 @@
                         <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('projects.view') }}</th>
                     </tr>
                 </thead>
-                <tbody id="projects-table-body" class="divide-y divide-[#94a3b8] dark:divide-[#3E3E3A]">
+                <tbody id="projects-table-body" class="divide-y divide-[#7c8799] dark:divide-[#3E3E3A]">
                     <!-- Данные будут загружены через JavaScript -->
                 </tbody>
             </table>
@@ -900,9 +900,9 @@
 
 <!-- Модалка просмотра проекта (справа) -->
 <div id="view-project-modal" class="fixed inset-0 bg-black/50 z-[80] hidden modal-overlay" onmousedown="if(event.target === this) closeViewProjectModal()">
-    <div class="absolute right-0 top-0 h-full w-full max-w-lg bg-white dark:bg-[#161615] border-l border-[#94a3b8] dark:border-[#3E3E3A] shadow-2xl transform transition-transform duration-300 translate-x-full modal-content" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
+    <div class="absolute right-0 top-0 h-full w-full max-w-lg bg-white dark:bg-[#161615] border-l border-[#7c8799] dark:border-[#3E3E3A] shadow-2xl transform transition-transform duration-300 translate-x-full modal-content" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
         <div class="flex flex-col h-full">
-            <div class="flex items-center justify-between px-6 py-5 border-b border-[#94a3b8] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a]">
+            <div class="flex items-center justify-between px-6 py-5 border-b border-[#7c8799] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a]">
                 <div>
                     <h2 class="text-xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]">{{ __('projects.view') }}</h2>
                     <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-0.5">{{ __('projects.view') }} {{ __('projects.project') }}</p>
@@ -918,8 +918,8 @@
 
 <!-- Модалка добавления/редактирования проекта -->
 <div id="project-modal" class="fixed inset-0 bg-black/50 z-[80] hidden flex items-center justify-center modal-overlay p-4" onmousedown="if(event.target === this) closeProjectModal()">
-    <div class="bg-white dark:bg-[#161615] rounded-xl max-w-2xl w-full mx-auto max-h-[90vh] overflow-hidden flex flex-col modal-content border border-[#94a3b8] dark:border-[#3E3E3A]" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
-        <div class="flex items-start justify-between px-6 pt-6 pb-4 border-b border-[#94a3b8] dark:border-[#3E3E3A] shrink-0">
+    <div class="bg-white dark:bg-[#161615] rounded-xl max-w-2xl w-full mx-auto max-h-[90vh] overflow-hidden flex flex-col modal-content border border-[#7c8799] dark:border-[#3E3E3A]" onclick="event.stopPropagation()" onmousedown="event.stopPropagation()">
+        <div class="flex items-start justify-between px-6 pt-6 pb-4 border-b border-[#7c8799] dark:border-[#3E3E3A] shrink-0">
             <div>
                 <h2 class="text-xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]" id="project-modal-title">{{ __('projects.new_project') }}</h2>
                 <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-1">{{ __('projects.project_modal_subtitle') }}</p>
@@ -964,7 +964,7 @@
                     <div class="project-stage-multiselect relative">
                         <div id="project-stage-trigger" class="modal-input min-h-10 pr-10 flex flex-wrap items-center gap-2 cursor-pointer" tabindex="0">
                             <div id="project-stage-tags" class="flex flex-wrap gap-1.5"></div>
-                            <span id="project-stage-placeholder" class="text-[#94a3b8] dark:text-[#71716c]">{{ __('projects.select_stage_placeholder') }}</span>
+                            <span id="project-stage-placeholder" class="text-[#7c8799] dark:text-[#71716c]">{{ __('projects.select_stage_placeholder') }}</span>
                         </div>
                         <span class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#64748b] dark:text-[#A1A09A]">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
@@ -1040,7 +1040,7 @@
                 <div>
                     <h3 class="modal-section-title">{{ __('projects.files') }}</h3>
                     <p class="modal-section-subtitle">{{ __('projects.files_subtitle') }}</p>
-                    <div class="flex gap-0 overflow-hidden rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#0a0a0a]">
+                    <div class="flex gap-0 overflow-hidden rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#0a0a0a]">
                         <label class="flex-1 flex items-center gap-2 px-4 py-2.5 text-[#64748b] dark:text-[#A1A09A] text-sm cursor-pointer min-h-[2.5rem]">
                             <svg class="w-5 h-5 text-[#f59e0b] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.172-1.172a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.172 1.172a4 4 0 01-5.656 0L9.172 7.172a4 4 0 015.656 0l1.172 1.172a4 4 0 010 5.656z"/></svg>
                             <span id="project-files-label">{{ __('projects.files_not_selected') }}</span>
@@ -1295,7 +1295,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const endDate = new Date(project.planned_end_date).toLocaleDateString('kk-KZ');
 
             return `
-                <div class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg p-6" data-project='${JSON.stringify(project)}'>
+                <div class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg p-6" data-project='${JSON.stringify(project)}'>
                     <div class="flex items-start justify-between mb-4">
                         <div>
                             <h3 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-2">${project.name}</h3>
@@ -1374,11 +1374,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">${project.client_name || ''}</p>
                         <div class="flex flex-wrap items-center gap-2 mt-2" onclick="event.stopPropagation()">
                             <button type="button" onclick="event.stopPropagation(); viewProject(${project.id})"
-                                class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] transition-colors">{{ __('projects.view') }}</button>
+                                class="text-xs px-2 py-1 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] transition-colors">{{ __('projects.view') }}</button>
                             <button type="button" onclick="event.stopPropagation(); editProject(${project.id})"
-                                class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] transition-colors">{{ __('projects.edit') }}</button>
+                                class="text-xs px-2 py-1 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] transition-colors">{{ __('projects.edit') }}</button>
                             <button type="button" onclick="event.stopPropagation(); deleteProject(${project.id})"
-                                class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-red-500 hover:border-red-500 transition-colors">{{ __('projects.delete') }}</button>
+                                class="text-xs px-2 py-1 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-red-500 hover:border-red-500 transition-colors">{{ __('projects.delete') }}</button>
                         </div>
                     </div>
                 `;
@@ -1577,7 +1577,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const optionsHtml = templates.map(t => `<option value="${t.id}" data-is-owner="${t.is_owner ? '1' : '0'}"${t.id == selTemplateId ? ' selected' : ''}>${(t.name || '').replace(/"/g, '&quot;')}</option>`).join('');
             
             const sect = document.createElement('div');
-            sect.className = 'checklist-section rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a] overflow-hidden';
+            sect.className = 'checklist-section rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a] overflow-hidden';
             sect.dataset.stage = stageValue;
             sect.innerHTML = `
                 <button type="button" class="checklist-toggle w-full px-4 py-3 flex items-center justify-between gap-2 text-left hover:bg-[#f1f5f9] dark:hover:bg-[#161615] transition-colors">
@@ -1763,7 +1763,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         function addStepCard(container, stageValue, num, title, stepData) {
             const card = document.createElement('div');
-            card.className = 'step-card rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] p-4 bg-white dark:bg-[#161615]';
+            card.className = 'step-card rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] p-4 bg-white dark:bg-[#161615]';
             const safeTitle = (title || '').toString().replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             card.innerHTML = `
                 <div class="flex items-start justify-between gap-2 mb-3">
@@ -1775,7 +1775,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                     </button>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-[#94a3b8] dark:border-[#3E3E3A]">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-[#7c8799] dark:border-[#3E3E3A]">
                     <div>
                         <label class="modal-label text-xs text-[#64748b] dark:text-[#A1A09A]">{{ __('projects.deadline_until') }}</label>
                         <div class="relative">
@@ -1798,7 +1798,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 mt-3 border-t border-[#94a3b8] dark:border-[#3E3E3A]">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 mt-3 border-t border-[#7c8799] dark:border-[#3E3E3A]">
                     <div>
                         <label class="modal-label text-xs text-[#64748b] dark:text-[#A1A09A]">{{ __('projects.step_result_status') }}</label>
                         <select name="stage_step_result_status[${stageValue}][]" class="modal-input text-sm">
@@ -2099,7 +2099,7 @@ function viewProject(id) {
             ` : ''}
             <div class="pt-4">
                 <a href="/projects/${project.id}"
-                    class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
+                    class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
                     title="{{ __('projects.details') }}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />

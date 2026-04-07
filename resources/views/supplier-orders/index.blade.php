@@ -6,7 +6,7 @@
 <style>
     .tab-btn {
         background: #ffffff;
-        border: 1px solid #94a3b8;
+        border: 1px solid #7c8799;
         padding: 0.6rem 1.2rem;
         border-radius: 8px;
         cursor: pointer;
@@ -33,7 +33,7 @@
         background: #f8fafc;
         border-radius: 8px;
         padding: 1rem;
-        border: 2px dashed #94a3b8;
+        border: 2px dashed #7c8799;
     }
 
     .funnel-column.drag-over {
@@ -43,7 +43,7 @@
 
     .funnel-card {
         background: white;
-        border: 1px solid #94a3b8;
+        border: 1px solid #7c8799;
         border-radius: 8px;
         padding: 1rem;
         margin-bottom: 0.5rem;
@@ -119,7 +119,7 @@
 
     .pagination button {
         padding: 0.5rem 1rem;
-        border: 1px solid #94a3b8;
+        border: 1px solid #7c8799;
         background: white;
         border-radius: 6px;
         cursor: pointer;
@@ -216,10 +216,10 @@
 <div class="mb-6 flex flex-col md:flex-row gap-4">
     <div class="flex-1">
         <input type="text" id="search-input" placeholder="{{ __('supplier-orders.search') }}"
-               class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+               class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
     </div>
     <div class="w-full md:w-48">
-        <select id="project-filter" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+        <select id="project-filter" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
             <option value="">{{ __('supplier-orders.all_projects') }}</option>
             @foreach($projects as $project)
                 <option value="{{ $project->id }}" @if(isset($selectedProjectId) && $selectedProjectId == $project->id) selected @endif>{{ $project->name }}</option>
@@ -227,7 +227,7 @@
         </select>
     </div>
     <div class="w-full md:w-48">
-        <select id="supplier-filter" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+        <select id="supplier-filter" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
             <option value="">{{ __('supplier-orders.all_suppliers') }}</option>
             @foreach($suppliers as $supplier)
                 <option value="{{ $supplier->id }}" @if(isset($selectedSupplierId) && $selectedSupplierId == $supplier->id) selected @endif>{{ $supplier->name }}</option>
@@ -235,7 +235,7 @@
         </select>
     </div>
     <div class="w-full md:w-48">
-        <select id="status-filter" class="w-full px-4 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+        <select id="status-filter" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
             <option value="">{{ __('supplier-orders.all_statuses') }}</option>
             <option value="order_created">{{ __('supplier-orders.status_order_created') }}</option>
             <option value="order_sent">{{ __('supplier-orders.status_order_sent') }}</option>
@@ -249,7 +249,7 @@
 
 <!-- Контент вкладок -->
 <div id="table-view" class="tab-content">
-    <div class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg overflow-hidden">
+    <div class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full">
                 <thead class="bg-[#f8fafc] dark:bg-[#0a0a0a]">
@@ -267,7 +267,7 @@
                         <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('supplier-orders.view') }}</th>
                     </tr>
                 </thead>
-                <tbody id="orders-table-body" class="divide-y divide-[#94a3b8] dark:divide-[#3E3E3A]">
+                <tbody id="orders-table-body" class="divide-y divide-[#7c8799] dark:divide-[#3E3E3A]">
                     <!-- Данные загружаются через JavaScript -->
                 </tbody>
             </table>
@@ -316,9 +316,9 @@
 
 <!-- Модалка просмотра заказа (справа) -->
 <div id="view-order-modal" class="fixed inset-0 bg-black/50 z-50 hidden modal-overlay" onmousedown="if(event.target === this) closeViewOrderModal()">
-    <div class="absolute right-0 top-0 h-full w-full max-w-lg bg-white dark:bg-[#161615] border-l border-[#94a3b8] dark:border-[#3E3E3A] shadow-2xl transform transition-transform duration-300 translate-x-full modal-content" onclick="event.stopPropagation()">
+    <div class="absolute right-0 top-0 h-full w-full max-w-lg bg-white dark:bg-[#161615] border-l border-[#7c8799] dark:border-[#3E3E3A] shadow-2xl transform transition-transform duration-300 translate-x-full modal-content" onclick="event.stopPropagation()">
         <div class="flex flex-col h-full">
-            <div class="flex items-center justify-between px-6 py-5 border-b border-[#94a3b8] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a]">
+            <div class="flex items-center justify-between px-6 py-5 border-b border-[#7c8799] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a]">
                 <div>
                     <h2 class="text-xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]">{{ __('supplier-orders.view') }}</h2>
                     <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-0.5">{{ __('supplier-orders.supplier_order') }}</p>
@@ -334,8 +334,8 @@
 
 <!-- Модалка добавления/редактирования заказа -->
 <div id="order-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center modal-overlay p-4" onmousedown="if(event.target === this) closeOrderModal()">
-    <div class="bg-white dark:bg-[#161615] rounded-xl max-w-2xl w-full mx-auto max-h-[90vh] overflow-hidden flex flex-col modal-content border border-[#94a3b8] dark:border-[#3E3E3A]" onclick="event.stopPropagation()">
-        <div class="flex items-start justify-between px-6 pt-6 pb-4 border-b border-[#94a3b8] dark:border-[#3E3E3A] shrink-0">
+    <div class="bg-white dark:bg-[#161615] rounded-xl max-w-2xl w-full mx-auto max-h-[90vh] overflow-hidden flex flex-col modal-content border border-[#7c8799] dark:border-[#3E3E3A]" onclick="event.stopPropagation()">
+        <div class="flex items-start justify-between px-6 pt-6 pb-4 border-b border-[#7c8799] dark:border-[#3E3E3A] shrink-0">
             <div>
                 <h2 class="text-xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]" id="order-modal-title">{{ __('supplier-orders.add_supplier_order') }}</h2>
                 <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-1">{{ __('supplier-orders.order_info_subtitle') }}</p>
@@ -671,7 +671,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const actualDate = order.actual_date ? new Date(order.actual_date).toLocaleDateString('kk-KZ') : '';
 
             return `
-                <div class="bg-white dark:bg-[#161615] border border-[#94a3b8] dark:border-[#3E3E3A] rounded-lg p-6" data-order-id="${order.id}" data-order='${JSON.stringify(order).replace(/'/g, "&#39;")}'>
+                <div class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg p-6" data-order-id="${order.id}" data-order='${JSON.stringify(order).replace(/'/g, "&#39;")}'>
                     <div class="flex items-start justify-between mb-4">
                         <div>
                             <h3 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-2">${order.number}</h3>
@@ -732,11 +732,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     <p class="text-xs text-[#64748b] dark:text-[#A1A09A] mt-1 truncate" title="${(order.project_name || '-').replace(/"/g,'&quot;')}">${order.project_name || '-'}</p>
                     <div class="funnel-card-actions" onclick="event.stopPropagation()">
                         <button type="button" onclick="event.stopPropagation();viewOrder(${order.id})"
-                            class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors shrink-0">${viewLabel}</button>
+                            class="text-xs px-2 py-1 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors shrink-0">${viewLabel}</button>
                         <button type="button" onclick="event.stopPropagation();editOrder(${order.id})"
-                            class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors shrink-0">${editLabel}</button>
+                            class="text-xs px-2 py-1 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors shrink-0">${editLabel}</button>
                         <button type="button" onclick="event.stopPropagation();deleteOrder(${order.id})"
-                            class="text-xs px-2 py-1 rounded border border-[#94a3b8] dark:border-[#3E3E3A] text-red-500 hover:border-red-500 transition-colors shrink-0">${deleteLabel}</button>
+                            class="text-xs px-2 py-1 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-red-500 hover:border-red-500 transition-colors shrink-0">${deleteLabel}</button>
                     </div>
                 </div>
             `).join('');
@@ -945,7 +945,7 @@ function viewOrder(id) {
             ` : ''}
             <div class="pt-4">
                 <a href="/supplier-orders/${order.id}"
-                    class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
+                    class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
                     title="{{ __('supplier-orders.details') }}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1005,8 +1005,8 @@ function editOrder(id) {
         const links = order.links || [];
         linksContainer.innerHTML = links.length ? links.map(l => {
             const v = (l||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;');
-            return `<div class="flex gap-2"><input type="url" name="links[]" value="${v}" placeholder="{{ __('supplier-orders.paste_link') }}" class="modal-input flex-1"><button type="button" onclick="this.parentElement.remove()" class="px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500">×</button></div>`;
-        }).join('') + `<div class="flex gap-2"><input type="url" name="links[]" placeholder="{{ __('supplier-orders.paste_link') }}" class="modal-input flex-1"><button type="button" onclick="this.parentElement.remove()" class="px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500">×</button></div>` :
+            return `<div class="flex gap-2"><input type="url" name="links[]" value="${v}" placeholder="{{ __('supplier-orders.paste_link') }}" class="modal-input flex-1"><button type="button" onclick="this.parentElement.remove()" class="px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500">×</button></div>`;
+        }).join('') + `<div class="flex gap-2"><input type="url" name="links[]" placeholder="{{ __('supplier-orders.paste_link') }}" class="modal-input flex-1"><button type="button" onclick="this.parentElement.remove()" class="px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500">×</button></div>` :
             `<input type="url" name="links[]" placeholder="{{ __('supplier-orders.paste_link') }}" class="modal-input">`;
     }
 }
@@ -1047,7 +1047,7 @@ function addOrderLinkField() {
     div.className = 'flex gap-2';
     div.innerHTML = `
         <input type="url" name="links[]" placeholder="{{ __('supplier-orders.paste_link') }}" class="modal-input flex-1">
-        <button type="button" onclick="this.parentElement.remove()" class="px-3 py-2 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 hover:border-red-300 transition-colors">×</button>
+        <button type="button" onclick="this.parentElement.remove()" class="px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 hover:border-red-300 transition-colors">×</button>
     `;
     container.appendChild(div);
 }
