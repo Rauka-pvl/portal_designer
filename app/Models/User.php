@@ -73,10 +73,10 @@ class User extends Authenticatable
     }
 
     /**
-     * Карточка компании, привязанная к аккаунту поставщика (account_user_id).
+     * Карточка компании, привязанная к аккаунту поставщика (user_id).
      */
     public function supplierProfile(): HasOne
     {
-        return $this->hasOne(Supplier::class, 'account_user_id');
+        return $this->hasOne(Supplier::class, 'user_id');
     }
 }

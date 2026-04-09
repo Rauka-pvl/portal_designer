@@ -107,7 +107,7 @@ class SupplierController extends Controller
         $designerId = (int) $request->user()->id;
 
         $supplier = Supplier::query()->findOrFail($supplierId);
-        if ((string) $supplier->profile_status !== 'active' || (int) ($supplier->account_user_id ?? 0) < 1) {
+        if ((string) $supplier->profile_status !== 'active' || (int) ($supplier->user_id ?? 0) < 1) {
             return response()->json([
                 'success' => false,
                 'message' => __('suppliers.invite_unavailable'),
@@ -128,7 +128,7 @@ class SupplierController extends Controller
 
         if (! $alreadyModerated) {
             UserNotification::query()->create([
-                'user_id' => (int) $supplier->account_user_id,
+                'user_id' => (int) $supplier->user_id,
                 'title' => __('notifications.supplier_invite_title'),
                 'comment' => __('notifications.supplier_invite_comment', ['name' => (string) $request->user()->name]),
                 'is_read' => false,
@@ -358,7 +358,7 @@ class SupplierController extends Controller
 
         return [
             'id' => $supplier->id,
-            'account_user_id' => $supplier->account_user_id,
+            'user_id' => $supplier->user_id,
             'profile_status' => $supplier->profile_status,
             'name' => $supplier->name,
             'recommend' => (bool) $supplier->recommend,

@@ -204,7 +204,7 @@ class ModeratorController extends Controller
                 'moderation_reviewed_at' => now(),
             ]);
 
-        $supplier = Supplier::query()->whereKey($supplierId)->first(['id', 'user_id', 'account_user_id', 'name']);
+        $supplier = Supplier::query()->whereKey($supplierId)->first(['id', 'user_id', 'name']);
         if ($supplier) {
             $this->createSupplierNotification($supplier, (string) $data['decision'], $comment);
         }
@@ -295,7 +295,7 @@ class ModeratorController extends Controller
                 'moderation_reviewed_at' => now(),
             ]);
 
-        $supplier = Supplier::query()->whereKey($supplierId)->first(['id', 'user_id', 'account_user_id', 'name']);
+        $supplier = Supplier::query()->whereKey($supplierId)->first(['id', 'user_id', 'name']);
         if ($supplier) {
             $this->createSupplierNotification($supplier, (string) $data['decision'], $data['comment'] ?? null);
         }
@@ -358,7 +358,7 @@ class ModeratorController extends Controller
 
     private function createSupplierNotification(Supplier $supplier, string $decision, ?string $comment): void
     {
-        $targetUserId = (int) ($supplier->account_user_id ?: $supplier->user_id);
+        $targetUserId = (int) $supplier->user_id;
         if ($targetUserId < 1) {
             return;
         }

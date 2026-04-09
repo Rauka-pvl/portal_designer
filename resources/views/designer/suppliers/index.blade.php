@@ -347,6 +347,76 @@
             transform: translateX(3px);
             opacity: 0.9;
         }
+
+        .supplier-step-section {
+            display: none;
+        }
+
+        .supplier-step-section.active {
+            display: block;
+        }
+
+        .supplier-steps-track {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.5rem;
+            margin-bottom: 0.875rem;
+        }
+
+        .supplier-step-chip {
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #64748b;
+            border-radius: 10px;
+            padding: 0.55rem 0.6rem;
+            font-size: 0.78rem;
+            line-height: 1.15;
+            text-align: center;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .supplier-step-chip.active {
+            border-color: #f59e0b;
+            color: #f59e0b;
+            background: #fef3c7;
+        }
+
+        .supplier-step-chip.done {
+            border-color: #10b981;
+            color: #047857;
+            background: #ecfdf5;
+        }
+
+        .supplier-step-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            width: 100%;
+        }
+
+        .dark .supplier-step-chip {
+            border-color: #3E3E3A;
+            background: #0a0a0a;
+            color: #A1A09A;
+        }
+
+        .dark .supplier-step-chip.active {
+            border-color: #f59e0b;
+            color: #f59e0b;
+            background: #1D0002;
+        }
+
+        .dark .supplier-step-chip.done {
+            border-color: #10b981;
+            color: #6ee7b7;
+            background: #052e25;
+        }
+
+        #supplier-step-submit.hidden {
+            display: none;
+        }
     </style>
 @endpush
 
@@ -706,19 +776,25 @@
                 <input type="hidden" name="supplier_id" id="supplier_id">
                 <input type="hidden" name="remove_logo" id="remove_logo" value="0">
                 <div class="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+                    <div>
+                        <div class="supplier-steps-track" id="supplier-steps-track">
+                            <div class="supplier-step-chip active" data-step-chip="1">1. Основная информация</div>
+                            <div class="supplier-step-chip" data-step-chip="2">2. Реквизиты компании</div>
+                            <div class="supplier-step-chip" data-step-chip="3">3. Банковские данные</div>
+                        </div>
+                        <p class="text-xs text-[#64748b] dark:text-[#A1A09A]" id="supplier-step-caption">Шаг 1 из 3</p>
+                    </div>
 
                     <!-- Секция 1: Основная информация -->
-                    <div class="accordion-section">
-                        <button type="button" class="accordion-header" aria-expanded="true"
-                            aria-controls="accordion-main" id="accordion-main-btn"
-                            onclick="toggleAccordion('accordion-main')">
+                    <div class="accordion-section supplier-step-section active" data-supplier-step="1">
+                        <div class="accordion-header">
                             {{ __('suppliers.main_info') }}
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M19 9l-7 7-7-7" />
                             </svg>
-                        </button>
-                        <div class="accordion-content accordion-open" id="accordion-main" aria-hidden="false">
+                        </div>
+                        <div class="accordion-content accordion-open">
                             <div class="accordion-body space-y-5">
                                 <div class="flex items-start gap-4">
                                     <div class="relative w-24 h-24 rounded-full bg-[#f1f5f9] dark:bg-[#0a0a0a] border-2 border-dashed border-[#7c8799] dark:border-[#3E3E3A] flex items-center justify-center flex-shrink-0 overflow-hidden cursor-pointer group"
@@ -888,16 +964,15 @@
                     </div>
 
                     <!-- Секция 2: Реквизиты -->
-                    <div class="accordion-section">
-                        <button type="button" class="accordion-header" aria-expanded="false"
-                            aria-controls="accordion-requisites" onclick="toggleAccordion('accordion-requisites')">
+                    <div class="accordion-section supplier-step-section" data-supplier-step="2">
+                        <div class="accordion-header">
                             {{ __('suppliers.requisites') }}
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M19 9l-7 7-7-7" />
                             </svg>
-                        </button>
-                        <div class="accordion-content" id="accordion-requisites" aria-hidden="true">
+                        </div>
+                        <div class="accordion-content accordion-open">
                             <div class="accordion-body space-y-5">
                                 <div>
                                     <label class="modal-label">{{ __('suppliers.org_form') }}</label>
@@ -979,16 +1054,15 @@
                     </div>
 
                     <!-- Секция 3: Банковские реквизиты -->
-                    <div class="accordion-section">
-                        <button type="button" class="accordion-header" aria-expanded="false"
-                            aria-controls="accordion-bank" onclick="toggleAccordion('accordion-bank')">
+                    <div class="accordion-section supplier-step-section" data-supplier-step="3">
+                        <div class="accordion-header">
                             {{ __('suppliers.bank_details') }}
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M19 9l-7 7-7-7" />
                             </svg>
-                        </button>
-                        <div class="accordion-content" id="accordion-bank" aria-hidden="true">
+                        </div>
+                        <div class="accordion-content accordion-open">
                             <div class="accordion-body space-y-5">
                                 <div>
                                     <label class="modal-label">{{ __('suppliers.bik') }}</label>
@@ -1024,8 +1098,20 @@
 
                 </div>
                 <div class="modal-footer flex-col sm:flex-row gap-3">
-                    <button type="submit" id="supplier-submit-btn"
-                        class="add-btn w-full sm:w-auto">{{ __('suppliers.add_supplier') }}</button>
+                    <div class="supplier-step-actions">
+                        <button type="button" id="supplier-step-prev"
+                            class="btn-secondary w-full sm:w-auto flex items-center justify-center gap-2">
+                            {{ __('objects.prev') }}
+                        </button>
+                        <button type="button" id="supplier-step-next"
+                            class="add-btn w-full sm:w-auto">{{ __('objects.next') }}</button>
+                        <button type="submit" id="supplier-step-submit" class="add-btn w-full sm:w-auto hidden">
+                            Отправить на проверку
+                        </button>
+                    </div>
+                    <button type="submit" id="supplier-submit-btn" class="hidden" tabindex="-1" aria-hidden="true">
+                        {{ __('suppliers.add_supplier') }}
+                    </button>
                     <button type="button" onclick="closeSupplierModal()"
                         class="btn-secondary w-full sm:w-auto flex items-center justify-center gap-2 transition-all duration-200 hover:gap-3">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1067,13 +1153,70 @@
     </div>
 
     <script>
-        function toggleAccordion(id) {
-            const content = document.getElementById(id);
-            const btn = document.querySelector('[aria-controls="' + id + '"]');
-            const isOpen = content.classList.contains('accordion-open');
-            content.classList.toggle('accordion-open', !isOpen);
-            content.setAttribute('aria-hidden', isOpen ? 'true' : 'false');
-            if (btn) btn.setAttribute('aria-expanded', !isOpen);
+        const supplierWizardState = {
+            step: 1,
+            maxStep: 3,
+        };
+
+        function updateSupplierWizardUi() {
+            const step = supplierWizardState.step;
+            const sections = document.querySelectorAll('.supplier-step-section');
+            sections.forEach((section) => {
+                section.classList.toggle('active', parseInt(section.dataset.supplierStep, 10) === step);
+            });
+
+            document.querySelectorAll('[data-step-chip]').forEach((chip) => {
+                const chipStep = parseInt(chip.dataset.stepChip, 10);
+                chip.classList.toggle('active', chipStep === step);
+                chip.classList.toggle('done', chipStep < step);
+            });
+
+            const caption = document.getElementById('supplier-step-caption');
+            if (caption) {
+                caption.textContent = `Шаг ${step} из ${supplierWizardState.maxStep}`;
+            }
+
+            const prevBtn = document.getElementById('supplier-step-prev');
+            const nextBtn = document.getElementById('supplier-step-next');
+            const submitBtn = document.getElementById('supplier-step-submit');
+
+            if (prevBtn) {
+                prevBtn.disabled = step === 1;
+                prevBtn.classList.toggle('opacity-50', step === 1);
+                prevBtn.classList.toggle('cursor-not-allowed', step === 1);
+            }
+            if (nextBtn) {
+                nextBtn.classList.toggle('hidden', step === supplierWizardState.maxStep);
+            }
+            if (submitBtn) {
+                submitBtn.classList.toggle('hidden', step !== supplierWizardState.maxStep);
+            }
+        }
+
+        function validateSupplierStep(step) {
+            const form = document.getElementById('supplier-form');
+            if (!form) return true;
+            const section = form.querySelector(`.supplier-step-section[data-supplier-step="${step}"]`);
+            if (!section) return true;
+            const requiredFields = section.querySelectorAll('[required]');
+            for (const field of requiredFields) {
+                if (!field.checkValidity()) {
+                    field.reportValidity();
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function goSupplierStep(nextStep) {
+            const normalized = Math.max(1, Math.min(supplierWizardState.maxStep, nextStep));
+            supplierWizardState.step = normalized;
+            updateSupplierWizardUi();
+        }
+
+        function resetSupplierWizard() {
+            supplierWizardState.step = 1;
+            updateSupplierWizardUi();
         }
     </script>
 
@@ -1130,9 +1273,17 @@
             };
             document.getElementById('add-brand-btn')?.addEventListener('click', addBrand);
             document.getElementById('add-city-btn')?.addEventListener('click', addCity);
+            document.getElementById('supplier-step-prev')?.addEventListener('click', () => {
+                goSupplierStep(supplierWizardState.step - 1);
+            });
+            document.getElementById('supplier-step-next')?.addEventListener('click', () => {
+                if (!validateSupplierStep(supplierWizardState.step)) return;
+                goSupplierStep(supplierWizardState.step + 1);
+            });
 
             // Инициализация масок при первом открытии формы
             initSupplierMasks();
+            resetSupplierWizard();
 
             // Кнопка добавления поставщика
             document.getElementById('add-supplier-btn')?.addEventListener('click', () => {
@@ -1142,11 +1293,11 @@
                 document.getElementById('supplier_id').value = '';
                 document.getElementById('supplier-modal-title').textContent =
                     '{{ __('suppliers.new_supplier') }}';
-                document.getElementById('supplier-submit-btn').textContent =
-                    '{{ __('suppliers.add_supplier') }}';
+                document.getElementById('supplier-step-submit').textContent = 'Отправить на проверку';
                 document.getElementById('brands-tags').innerHTML = '';
                 document.getElementById('cities-tags').innerHTML = '';
                 window.resetLogoPreview();
+                resetSupplierWizard();
                 if (supplierMasks.phone) {
                     supplierMasks.phone.value = '';
                     supplierMasks.whatsapp.value = '';
@@ -1693,7 +1844,7 @@
                 document.getElementById('supplier-modal').classList.remove('hidden');
                 document.getElementById('supplier-modal').classList.add('flex');
                 document.getElementById('supplier-modal-title').textContent = '{{ __('suppliers.edit_supplier') }}';
-                document.getElementById('supplier-submit-btn').textContent = '{{ __('suppliers.save') }}';
+                document.getElementById('supplier-step-submit').textContent = '{{ __('suppliers.save') }}';
                 document.getElementById('supplier_id').value = s.id;
                 document.querySelector('input[name="name"]').value = s.name || '';
                 setPhoneMaskValue(supplierMasks.phone, s.phone);
@@ -1764,6 +1915,7 @@
                     span.appendChild(hi);
                     ct.appendChild(span);
                 });
+                resetSupplierWizard();
             } catch (e) {
                 console.error(e);
             }
@@ -1831,12 +1983,18 @@
                 modal.classList.add('hidden');
                 document.getElementById('supplier-form').reset();
                 window.resetLogoPreview?.();
+                resetSupplierWizard();
             }, 280);
         }
 
         // Обработка формы поставщика
         document.getElementById('supplier-form')?.addEventListener('submit', async function(e) {
             e.preventDefault();
+            if (supplierWizardState.step < supplierWizardState.maxStep) {
+                if (!validateSupplierStep(supplierWizardState.step)) return;
+                goSupplierStep(supplierWizardState.step + 1);
+                return;
+            }
             const form = e.target;
             const id = form.querySelector('#supplier_id').value;
             const url = id ? '{{ url('suppliers') }}/' + id : '{{ route('suppliers.store') }}';
@@ -1852,7 +2010,7 @@
             }
             const removeLogo = document.getElementById('remove_logo').value;
             if (removeLogo === '1') fd.set('remove_logo', '1');
-            const submitBtn = document.getElementById('supplier-submit-btn');
+            const submitBtn = document.getElementById('supplier-step-submit');
             submitBtn.disabled = true;
             try {
                 const r = await fetch(url, {

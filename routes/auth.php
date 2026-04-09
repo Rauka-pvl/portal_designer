@@ -94,9 +94,8 @@ Route::match(['get', 'post'], '/register', function (Request $request) {
 
     if ($isSupplier) {
         Supplier::query()->firstOrCreate(
-            ['account_user_id' => (int) $user->id],
+            ['user_id' => (int) $user->id],
             [
-                'user_id' => (int) $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
                 'profile_status' => 'draft',

@@ -295,9 +295,9 @@ class SupplierOrderController extends Controller
 
         if ($request->boolean('send_to_supplier')) {
             $supplier = Supplier::query()->find($supplierId);
-            if ($supplier && (int) ($supplier->account_user_id ?? 0) > 0) {
+            if ($supplier && (int) ($supplier->user_id ?? 0) > 0) {
                 UserNotification::query()->create([
-                    'user_id' => (int) $supplier->account_user_id,
+                    'user_id' => (int) $supplier->user_id,
                     'title' => __('notifications.new_order_title'),
                     'comment' => __('notifications.new_order_comment', ['order' => (string) $order->id]),
                     'is_read' => false,
