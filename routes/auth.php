@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,8 +12,8 @@ use Illuminate\Validation\Rules\Password as PasswordRule;
 /**
  * AUTH
  *
- * Делаем "match"-роуты с одинаковым именем (`login`/`register`),
- * чтобы ваши формы в Blade (action="{{ route('login') }}") работали и для GET, и для POST.
+ * Ð”ÐµÐ»Ð°ÐµÐ¼ "match"-Ñ€Ð¾ÑƒÑ‚Ñ‹ Ñ Ð¾Ð´Ð¸Ð½Ð°ÐºÐ¾Ð²Ñ‹Ð¼ Ð¸Ð¼ÐµÐ½ÐµÐ¼ (`login`/`register`),
+ * Ñ‡Ñ‚Ð¾Ð±Ñ‹ Ð²Ð°ÑˆÐ¸ Ñ„Ð¾Ñ€Ð¼Ñ‹ Ð² Blade (action="{{ route('login') }}") Ñ€Ð°Ð±Ð¾Ñ‚Ð°Ð»Ð¸ Ð¸ Ð´Ð»Ñ GET, Ð¸ Ð´Ð»Ñ POST.
  */
 Route::match(['get', 'post'], '/login', function (Request $request) {
     if (Auth::check()) {
@@ -91,6 +92,19 @@ Route::match(['get', 'post'], '/register', function (Request $request) {
         'role' => $isSupplier ? 'supplier' : 'designer',
     ]);
 
+    if ($isSupplier) {
+        Supplier::query()->firstOrCreate(
+            ['account_user_id' => (int) $user->id],
+            [
+                'user_id' => (int) $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'profile_status' => 'draft',
+                'moderation_status' => 'draft',
+            ]
+        );
+    }
+
     Auth::login($user);
     $request->session()->regenerate();
 
@@ -122,7 +136,7 @@ Route::post('/password/email', function (Request $request) {
 })->name('password.email')->middleware('guest');
 
 Route::get('/password/reset/{token}', function (string $token, Request $request) {
-    // Передаем весь $request, чтобы в reset-vieве работал $request->email
+    // ÐŸÐµÑ€ÐµÐ´Ð°ÐµÐ¼ Ð²ÐµÑÑŒ $request, Ñ‡Ñ‚Ð¾Ð±Ñ‹ Ð² reset-vieÐ²Ðµ Ñ€Ð°Ð±Ð¾Ñ‚Ð°Ð» $request->email
     $request->merge(['token' => $token]);
 
     return view('auth.reset-password', ['request' => $request]);

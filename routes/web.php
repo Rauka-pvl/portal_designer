@@ -3,7 +3,6 @@
 use App\Http\Controllers\Designer\ChecklistStepController;
 use App\Http\Controllers\Designer\ClientController;
 use App\Http\Controllers\Designer\DashboardCalendarController;
-use App\Http\Controllers\Moderator\ModeratorController;
 use App\Http\Controllers\Designer\NotificationController;
 use App\Http\Controllers\Designer\PassportObject;
 use App\Http\Controllers\Designer\ProjectController;
@@ -11,6 +10,7 @@ use App\Http\Controllers\Designer\ReferralSupplierController;
 use App\Http\Controllers\Designer\SettingsController;
 use App\Http\Controllers\Designer\SupplierController;
 use App\Http\Controllers\Designer\SupplierOrderController;
+use App\Http\Controllers\Moderator\ModeratorController;
 use App\Http\Controllers\Supplier\SupplierPortalController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -32,6 +32,7 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'role:supplier'])->group(function () {
     Route::get('/supplier', [SupplierPortalController::class, 'index'])->name('supplier.index');
+    Route::post('/supplier/profile', [SupplierPortalController::class, 'saveProfile'])->name('supplier.profile.save');
 });
 
 Route::get('/language/{locale}', function (string $locale, Request $request) {
@@ -218,4 +219,3 @@ Route::middleware(['auth', 'role:designer|moderator'])->group(function () {
     Route::put('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile.update');
     Route::put('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password.update');
 });
-

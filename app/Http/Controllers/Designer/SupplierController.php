@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Designer;
 
 use App\Http\Controllers\Controller;
-use App\Models\DesignerSupplierLink;
 use App\Models\Supplier;
 use App\Models\UserNotification;
+use App\Models\UserSupplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -25,7 +25,7 @@ class SupplierController extends Controller
             ->where('user_id', $userId)
             ->pluck('id');
 
-        $linkedSupplierIds = DesignerSupplierLink::query()
+        $linkedSupplierIds = UserSupplier::query()
             ->where('designer_user_id', $userId)
             ->pluck('supplier_id');
 
@@ -80,6 +80,7 @@ class SupplierController extends Controller
         $supplier = Supplier::query()
             ->where('inn', $inn)
             ->where('profile_status', 'active')
+            ->where('moderation_status', 'approved')
             ->first();
 
         if (! $supplier) {
@@ -89,7 +90,7 @@ class SupplierController extends Controller
             ], 404);
         }
 
-        $link = DesignerSupplierLink::query()
+        $link = UserSupplier::query()
             ->where('designer_user_id', (int) $request->user()->id)
             ->where('supplier_id', (int) $supplier->id)
             ->first();
@@ -113,29 +114,33 @@ class SupplierController extends Controller
             ], 422);
         }
 
-        $link = DesignerSupplierLink::query()->firstOrNew([
+        $link = UserSupplier::query()->firstOrNew([
             'designer_user_id' => $designerId,
             'supplier_id' => (int) $supplier->id,
         ]);
-        $link->status = 'pending';
+        $alreadyModerated = (string) ($supplier->moderation_status ?? '') === 'approved';
+
+        $link->status = $alreadyModerated ? 'accepted' : 'pending';
         $link->invited_at = now();
-        $link->accepted_at = null;
+        $link->accepted_at = $alreadyModerated ? now() : null;
         $link->rejected_at = null;
         $link->save();
 
-        UserNotification::query()->create([
-            'user_id' => (int) $supplier->account_user_id,
-            'title' => __('notifications.supplier_invite_title'),
-            'comment' => __('notifications.supplier_invite_comment', ['name' => (string) $request->user()->name]),
-            'is_read' => false,
-            'related_supplier_id' => (int) $supplier->id,
-            'action_key' => 'supplier_invite',
-        ]);
+        if (! $alreadyModerated) {
+            UserNotification::query()->create([
+                'user_id' => (int) $supplier->account_user_id,
+                'title' => __('notifications.supplier_invite_title'),
+                'comment' => __('notifications.supplier_invite_comment', ['name' => (string) $request->user()->name]),
+                'is_read' => false,
+                'related_supplier_id' => (int) $supplier->id,
+                'action_key' => 'supplier_invite',
+            ]);
+        }
 
         return response()->json([
             'success' => true,
-            'message' => __('suppliers.invited'),
-            'link_status' => 'pending',
+            'message' => $alreadyModerated ? __('suppliers.added') : __('suppliers.invited'),
+            'link_status' => $link->status,
         ]);
     }
 
@@ -146,7 +151,7 @@ class SupplierController extends Controller
             ->where('user_id', $userId)
             ->whereKey($supplierId)
             ->exists();
-        $isLinked = DesignerSupplierLink::query()
+        $isLinked = UserSupplier::query()
             ->where('designer_user_id', $userId)
             ->where('supplier_id', $supplierId)
             ->exists();
@@ -399,5 +404,3 @@ class SupplierController extends Controller
         ];
     }
 }
-
-

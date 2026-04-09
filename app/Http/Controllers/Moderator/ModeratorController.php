@@ -198,12 +198,13 @@ class ModeratorController extends Controller
             ->where('id', $supplierId)
             ->update([
                 'moderation_status' => $data['decision'],
+                'profile_status' => $data['decision'] === 'approved' ? 'active' : 'rejected',
                 'moderation_comment' => $comment,
                 'moderation_reviewer_id' => $request->user()->id,
                 'moderation_reviewed_at' => now(),
             ]);
 
-        $supplier = Supplier::query()->whereKey($supplierId)->first(['id', 'user_id', 'name']);
+        $supplier = Supplier::query()->whereKey($supplierId)->first(['id', 'user_id', 'account_user_id', 'name']);
         if ($supplier) {
             $this->createSupplierNotification($supplier, (string) $data['decision'], $comment);
         }
@@ -286,6 +287,7 @@ class ModeratorController extends Controller
             ->where('id', $supplierId)
             ->update([
                 'moderation_status' => $data['decision'],
+                'profile_status' => $data['decision'] === 'approved' ? 'active' : 'rejected',
                 'moderation_comment' => isset($data['comment']) && trim((string) $data['comment']) !== ''
                     ? $data['comment']
                     : null,
@@ -293,7 +295,7 @@ class ModeratorController extends Controller
                 'moderation_reviewed_at' => now(),
             ]);
 
-        $supplier = Supplier::query()->whereKey($supplierId)->first(['id', 'user_id', 'name']);
+        $supplier = Supplier::query()->whereKey($supplierId)->first(['id', 'user_id', 'account_user_id', 'name']);
         if ($supplier) {
             $this->createSupplierNotification($supplier, (string) $data['decision'], $data['comment'] ?? null);
         }
@@ -356,7 +358,8 @@ class ModeratorController extends Controller
 
     private function createSupplierNotification(Supplier $supplier, string $decision, ?string $comment): void
     {
-        if ((int) $supplier->user_id < 1) {
+        $targetUserId = (int) ($supplier->account_user_id ?: $supplier->user_id);
+        if ($targetUserId < 1) {
             return;
         }
 
@@ -366,7 +369,7 @@ class ModeratorController extends Controller
             : __('notifications.status_rejected');
 
         UserNotification::query()->create([
-            'user_id' => (int) $supplier->user_id,
+            'user_id' => $targetUserId,
             'title' => __('notifications.supplier_title', ['status' => $statusLabel]),
             'comment' => __('notifications.supplier_comment', ['name' => $label !== '' ? $label : '#'.$supplier->id])."\n".$comment,
         ]);

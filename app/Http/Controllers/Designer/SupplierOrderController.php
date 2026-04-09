@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Designer;
 
 use App\Http\Controllers\Controller;
-use App\Models\DesignerSupplierLink;
 use App\Models\Project;
 use App\Models\Supplier;
 use App\Models\Supplier_orders;
 use App\Models\UserNotification;
+use App\Models\UserSupplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -167,7 +167,7 @@ class SupplierOrderController extends Controller
     }
 
     /**
-     * ÃÅ¸ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ²Ã‘â€°ÃÂ¸ÃÂº Ã‘Â pending/rejected ÃÂ¼ÃÂ¾ÃÂ´ÃÂµÃ‘â‚¬ÃÂ°Ã‘â€ ÃÂ¸ÃÂµÃÂ¹ ÃÂ½ÃÂµÃÂ»Ã‘Å’ÃÂ·Ã‘Â ÃÂ²Ã‘â€¹ÃÂ±ÃÂ¸Ã‘â‚¬ÃÂ°Ã‘â€šÃ‘Å’ ÃÂ² ÃÂ¿ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ²ÃÂºÃÂµ.
+     * ÃƒÂÃ…Â¸ÃƒÂÃ‚Â¾Ãƒâ€˜Ã‚ÂÃƒâ€˜Ã¢â‚¬Å¡ÃƒÂÃ‚Â°ÃƒÂÃ‚Â²Ãƒâ€˜Ã¢â‚¬Â°ÃƒÂÃ‚Â¸ÃƒÂÃ‚Âº Ãƒâ€˜Ã‚Â pending/rejected ÃƒÂÃ‚Â¼ÃƒÂÃ‚Â¾ÃƒÂÃ‚Â´ÃƒÂÃ‚ÂµÃƒâ€˜Ã¢â€šÂ¬ÃƒÂÃ‚Â°Ãƒâ€˜Ã¢â‚¬Â ÃƒÂÃ‚Â¸ÃƒÂÃ‚ÂµÃƒÂÃ‚Â¹ ÃƒÂÃ‚Â½ÃƒÂÃ‚ÂµÃƒÂÃ‚Â»Ãƒâ€˜Ã…â€™ÃƒÂÃ‚Â·Ãƒâ€˜Ã‚Â ÃƒÂÃ‚Â²Ãƒâ€˜Ã¢â‚¬Â¹ÃƒÂÃ‚Â±ÃƒÂÃ‚Â¸Ãƒâ€˜Ã¢â€šÂ¬ÃƒÂÃ‚Â°Ãƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã…â€™ ÃƒÂÃ‚Â² ÃƒÂÃ‚Â¿ÃƒÂÃ‚Â¾Ãƒâ€˜Ã‚ÂÃƒâ€˜Ã¢â‚¬Å¡ÃƒÂÃ‚Â°ÃƒÂÃ‚Â²ÃƒÂÃ‚ÂºÃƒÂÃ‚Âµ.
      */
     private function supplierModerationErrorMessage(Request $request, int $userId): ?string
     {
@@ -236,7 +236,7 @@ class SupplierOrderController extends Controller
                 $q->where('user_id', $userId)
                     ->orWhereIn('id', function ($sub) use ($userId) {
                         $sub->select('supplier_id')
-                            ->from('designer_supplier_links')
+                            ->from('user_suppliers')
                             ->where('designer_user_id', $userId)
                             ->where('status', 'accepted');
                     });
@@ -279,7 +279,7 @@ class SupplierOrderController extends Controller
         $order->comment = $data['comment'] ?? null;
 
         if ($request->boolean('send_to_supplier')) {
-            $link = DesignerSupplierLink::query()
+            $link = UserSupplier::query()
                 ->where('designer_user_id', $userId)
                 ->where('supplier_id', $supplierId)
                 ->where('status', 'accepted')
@@ -313,7 +313,7 @@ class SupplierOrderController extends Controller
         $ownedIds = Supplier::query()
             ->where('user_id', $designerId)
             ->pluck('id');
-        $linkedIds = DesignerSupplierLink::query()
+        $linkedIds = UserSupplier::query()
             ->where('designer_user_id', $designerId)
             ->where('status', 'accepted')
             ->pluck('supplier_id');
@@ -381,5 +381,3 @@ class SupplierOrderController extends Controller
         ];
     }
 }
-
-
