@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Designer;
 
+use App\Http\Controllers\Controller;
 use App\Models\Supplier;
 use App\Models\UserNotification;
 use Illuminate\Http\JsonResponse;
@@ -20,7 +21,7 @@ class NotificationController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('notifications.index', [
+        return view('designer.notifications.index', [
             'notifications' => $notifications,
         ]);
     }
@@ -107,3 +108,5 @@ class NotificationController extends Controller
         return redirect()->back()->with('status', __('notifications.referral_supplier_confirmed'));
     }
 }
+
+

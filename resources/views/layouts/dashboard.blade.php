@@ -164,6 +164,15 @@
                             <span>{{ __('suppliers.suppliers') }}</span>
                         </a>
                     @endif
+                    @if (Route::has('suppliers.network'))
+                        <a href="{{ route('suppliers.network') }}"
+                            class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11h8m-8 4h5m5 4H6a2 2 0 01-2-2V7a2 2 0 012-2h7l5 5v7a2 2 0 01-2 2z" />
+                            </svg>
+                            <span>Поиск по ИИН</span>
+                        </a>
+                    @endif
 
                     @if (Route::has('bonus-account.index'))
                         <a href="{{ route('bonus-account.index') }}"

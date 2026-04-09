@@ -70,4 +70,6 @@ return [
     'select_files' => 'Выбрать',
     'product_service_placeholder' => 'Например, поставка дверей и окон',
     'files' => 'Файлы',
+    'supplier_not_linked' => 'Поставщик недоступен для этого дизайнера.',
+    'supplier_invite_required' => 'Сначала отправьте приглашение и дождитесь подтверждения поставщика.',
 ];

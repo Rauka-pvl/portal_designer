@@ -906,7 +906,7 @@
                                             <input type="radio" name="org_form" value="ooo" checked
                                                 class="text-[#f59e0b] focus:ring-[#f59e0b]">
                                             <span
-                                                class="text-sm text-[#0f172a] dark:text-[#EDEDEC]">{{ __('suppliers.org_ooo') }}</span>
+                                                class="text-sm text-[#0f172a] dark:text-[#EDEDEC]">{{ __('suppliers.org_too') }}</span>
                                         </label>
                                         <label class="flex items-center gap-2 cursor-pointer">
                                             <input type="radio" name="org_form" value="ip"
@@ -1636,7 +1636,7 @@
                 const workTerms = s.work_terms_type && s.work_terms_value ?
                     `${s.work_terms_type === 'percent' ? '%' : '{{ __('suppliers.work_terms_amount') }}'}: ${s.work_terms_value}` :
                     '-';
-                const orgForm = s.org_form === 'ip' ? '{{ __('suppliers.org_ip') }}' : '{{ __('suppliers.org_ooo') }}';
+                const orgForm = s.org_form === 'ip' ? '{{ __('suppliers.org_ip') }}' : '{{ __('suppliers.org_too') }}';
                 const websiteHtml = s.website ?
                     `<a href="${escapeHtml(s.website)}" target="_blank" class="text-[#f59e0b] hover:underline">${escapeHtml(s.website)}</a>` :
                     '-';

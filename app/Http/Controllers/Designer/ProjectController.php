@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Designer;
 
+use App\Http\Controllers\Controller;
 use App\Models\PassportObject;
 use App\Models\Project;
 use App\Models\ProjectStages;
@@ -45,7 +46,7 @@ class ProjectController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('projects.index', [
+        return view('designer.projects.index', [
             // Legacy variables kept for current Blade JS initialization
             'projects' => $projects->map(fn (Project $project) => $this->projectPayload($project))->values(),
             'users' => User::query()->orderBy('name')->get(['id', 'name']),
@@ -93,7 +94,7 @@ class ProjectController extends Controller
             ->orderByDesc('id')
             ->get(['id', 'address', 'city']);
 
-        return view('projects.show', [
+        return view('designer.projects.show', [
             'project' => $project,
             'projectData' => $payload,
             'objects' => $objects,
@@ -244,7 +245,7 @@ class ProjectController extends Controller
     }
 
     /**
-     * Не создавать/не привязывать проект к объекту на модерации или отклонённому модератором.
+     * ÃÂÃÂµ Ã‘ÂÃÂ¾ÃÂ·ÃÂ´ÃÂ°ÃÂ²ÃÂ°Ã‘â€šÃ‘Å’/ÃÂ½ÃÂµ ÃÂ¿Ã‘â‚¬ÃÂ¸ÃÂ²Ã‘ÂÃÂ·Ã‘â€¹ÃÂ²ÃÂ°Ã‘â€šÃ‘Å’ ÃÂ¿Ã‘â‚¬ÃÂ¾ÃÂµÃÂºÃ‘â€š ÃÂº ÃÂ¾ÃÂ±Ã‘Å ÃÂµÃÂºÃ‘â€šÃ‘Æ’ ÃÂ½ÃÂ° ÃÂ¼ÃÂ¾ÃÂ´ÃÂµÃ‘â‚¬ÃÂ°Ã‘â€ ÃÂ¸ÃÂ¸ ÃÂ¸ÃÂ»ÃÂ¸ ÃÂ¾Ã‘â€šÃÂºÃÂ»ÃÂ¾ÃÂ½Ã‘â€˜ÃÂ½ÃÂ½ÃÂ¾ÃÂ¼Ã‘Æ’ ÃÂ¼ÃÂ¾ÃÂ´ÃÂµÃ‘â‚¬ÃÂ°Ã‘â€šÃÂ¾Ã‘â‚¬ÃÂ¾ÃÂ¼.
      */
     private function passportObjectModerationError(Request $request, int $userId): ?string
     {
@@ -460,3 +461,5 @@ class ProjectController extends Controller
         ];
     }
 }
+
+

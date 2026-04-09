@@ -22,4 +22,13 @@ return [
     'login_button' => 'Log in',
     'register_button' => 'Register',
     'language' => 'Language',
+
+    'login_designer' => 'Designer sign in',
+    'im_supplier' => 'I am a supplier',
+    'im_designer' => 'I am a designer',
+    'login_supplier' => 'Supplier sign in',
+    'register_supplier' => 'Supplier registration',
+    'register_designer' => 'Designer registration',
+    'supplier_mode_hint' => 'Sign in to your supplier company account',
+    'login_designer' => 'Designer sign in',
 ];

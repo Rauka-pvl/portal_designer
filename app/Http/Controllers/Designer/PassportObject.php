@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Designer;
 
+use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\PassportObject as PassportObjectModel;
 use Illuminate\Http\Request;
@@ -12,9 +13,9 @@ use Illuminate\Validation\Rule;
 class PassportObject extends Controller
 {
     private const KZ_CITIES = [
-        'Алматы', 'Астана', 'Шымкент', 'Караганда', 'Актобе', 'Тараз', 'Павлодар', 'Усть-Каменогорск',
-        'Семей', 'Атырау', 'Костанай', 'Кызылорда', 'Уральск', 'Петропавловск', 'Актау', 'Темиртау',
-        'Туркестан', 'Кокшетау', 'Талдыкорган', 'Экибастуз',
+        'ÃÂÃÂ»ÃÂ¼ÃÂ°Ã‘â€šÃ‘â€¹', 'ÃÂÃ‘ÂÃ‘â€šÃÂ°ÃÂ½ÃÂ°', 'ÃÂ¨Ã‘â€¹ÃÂ¼ÃÂºÃÂµÃÂ½Ã‘â€š', 'ÃÅ¡ÃÂ°Ã‘â‚¬ÃÂ°ÃÂ³ÃÂ°ÃÂ½ÃÂ´ÃÂ°', 'ÃÂÃÂºÃ‘â€šÃÂ¾ÃÂ±ÃÂµ', 'ÃÂ¢ÃÂ°Ã‘â‚¬ÃÂ°ÃÂ·', 'ÃÅ¸ÃÂ°ÃÂ²ÃÂ»ÃÂ¾ÃÂ´ÃÂ°Ã‘â‚¬', 'ÃÂ£Ã‘ÂÃ‘â€šÃ‘Å’-ÃÅ¡ÃÂ°ÃÂ¼ÃÂµÃÂ½ÃÂ¾ÃÂ³ÃÂ¾Ã‘â‚¬Ã‘ÂÃÂº',
+        'ÃÂ¡ÃÂµÃÂ¼ÃÂµÃÂ¹', 'ÃÂÃ‘â€šÃ‘â€¹Ã‘â‚¬ÃÂ°Ã‘Æ’', 'ÃÅ¡ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ½ÃÂ°ÃÂ¹', 'ÃÅ¡Ã‘â€¹ÃÂ·Ã‘â€¹ÃÂ»ÃÂ¾Ã‘â‚¬ÃÂ´ÃÂ°', 'ÃÂ£Ã‘â‚¬ÃÂ°ÃÂ»Ã‘Å’Ã‘ÂÃÂº', 'ÃÅ¸ÃÂµÃ‘â€šÃ‘â‚¬ÃÂ¾ÃÂ¿ÃÂ°ÃÂ²ÃÂ»ÃÂ¾ÃÂ²Ã‘ÂÃÂº', 'ÃÂÃÂºÃ‘â€šÃÂ°Ã‘Æ’', 'ÃÂ¢ÃÂµÃÂ¼ÃÂ¸Ã‘â‚¬Ã‘â€šÃÂ°Ã‘Æ’',
+        'ÃÂ¢Ã‘Æ’Ã‘â‚¬ÃÂºÃÂµÃ‘ÂÃ‘â€šÃÂ°ÃÂ½', 'ÃÅ¡ÃÂ¾ÃÂºÃ‘Ë†ÃÂµÃ‘â€šÃÂ°Ã‘Æ’', 'ÃÂ¢ÃÂ°ÃÂ»ÃÂ´Ã‘â€¹ÃÂºÃÂ¾Ã‘â‚¬ÃÂ³ÃÂ°ÃÂ½', 'ÃÂ­ÃÂºÃÂ¸ÃÂ±ÃÂ°Ã‘ÂÃ‘â€šÃ‘Æ’ÃÂ·',
     ];
 
     private function objectForUserOrFail(Request $request, int $objectId): PassportObjectModel
@@ -38,7 +39,7 @@ class PassportObject extends Controller
             ->map(fn (PassportObjectModel $o) => $this->payload($o))
             ->values();
 
-        return view('objects.index_v2', [
+        return view('designer.objects.index_v2', [
             'objects' => $objects,
             'clients' => $clients,
         ]);
@@ -57,7 +58,7 @@ class PassportObject extends Controller
         $status = (string) $request->query('status', '');
 
         if ($search !== '') {
-            $like = '%' . $search . '%';
+            $like = '%'.$search.'%';
             $query->where(function ($q) use ($like) {
                 $q->where('address', 'like', $like)
                     ->orWhere('type', 'like', $like)
@@ -98,8 +99,8 @@ class PassportObject extends Controller
         $object = $this->objectForUserOrFail($request, $objectId);
         $object->load('client');
 
-        // payload удобно использовать для фронта, но в форме нам нужен сам модельный объект.
-        return view('objects.show', [
+        // payload Ã‘Æ’ÃÂ´ÃÂ¾ÃÂ±ÃÂ½ÃÂ¾ ÃÂ¸Ã‘ÂÃÂ¿ÃÂ¾ÃÂ»Ã‘Å’ÃÂ·ÃÂ¾ÃÂ²ÃÂ°Ã‘â€šÃ‘Å’ ÃÂ´ÃÂ»Ã‘Â Ã‘â€žÃ‘â‚¬ÃÂ¾ÃÂ½Ã‘â€šÃÂ°, ÃÂ½ÃÂ¾ ÃÂ² Ã‘â€žÃÂ¾Ã‘â‚¬ÃÂ¼ÃÂµ ÃÂ½ÃÂ°ÃÂ¼ ÃÂ½Ã‘Æ’ÃÂ¶ÃÂµÃÂ½ Ã‘ÂÃÂ°ÃÂ¼ ÃÂ¼ÃÂ¾ÃÂ´ÃÂµÃÂ»Ã‘Å’ÃÂ½Ã‘â€¹ÃÂ¹ ÃÂ¾ÃÂ±Ã‘Å ÃÂµÃÂºÃ‘â€š.
+        return view('designer.objects.show', [
             'object' => $object,
         ]);
     }
@@ -131,7 +132,7 @@ class PassportObject extends Controller
             'comment' => ['nullable', 'string'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
-            'files' => ['nullable'], // хотим принять файлы через multipart
+            'files' => ['nullable'], // Ã‘â€¦ÃÂ¾Ã‘â€šÃÂ¸ÃÂ¼ ÃÂ¿Ã‘â‚¬ÃÂ¸ÃÂ½Ã‘ÂÃ‘â€šÃ‘Å’ Ã‘â€žÃÂ°ÃÂ¹ÃÂ»Ã‘â€¹ Ã‘â€¡ÃÂµÃ‘â‚¬ÃÂµÃÂ· multipart
         ]);
 
         $userId = $request->user()->id;
@@ -142,13 +143,13 @@ class PassportObject extends Controller
         if ($objectId) {
             $object = PassportObjectModel::where('user_id', $userId)->findOrFail((int) $objectId);
         } else {
-            $object = new PassportObjectModel();
+            $object = new PassportObjectModel;
             $object->user_id = $userId;
         }
 
-        // type whitelist (чтобы не сломать UI)
+        // type whitelist (Ã‘â€¡Ã‘â€šÃÂ¾ÃÂ±Ã‘â€¹ ÃÂ½ÃÂµ Ã‘ÂÃÂ»ÃÂ¾ÃÂ¼ÃÂ°Ã‘â€šÃ‘Å’ UI)
         $allowedTypes = ['apartment', 'house', 'commercial', 'other'];
-        if (!in_array($data['type'], $allowedTypes, true)) {
+        if (! in_array($data['type'], $allowedTypes, true)) {
             $data['type'] = 'other';
         }
 
@@ -171,20 +172,20 @@ class PassportObject extends Controller
             ]);
         }
 
-        // ссылки
+        // Ã‘ÂÃ‘ÂÃ‘â€¹ÃÂ»ÃÂºÃÂ¸
         $links = [];
         if ($request->filled('links') && is_array($request->input('links'))) {
             $links = array_values(array_filter(
                 $request->input('links'),
-                fn($v) => is_string($v) && trim($v) !== ''
+                fn ($v) => is_string($v) && trim($v) !== ''
             ));
         } elseif ($request->filled('links_text')) {
             $links = preg_split('/\r\n|\r|\n/', (string) $request->input('links_text')) ?: [];
-            $links = array_values(array_filter(array_map('trim', $links), fn($v) => $v !== ''));
+            $links = array_values(array_filter(array_map('trim', $links), fn ($v) => $v !== ''));
         }
 
         foreach ($links as $url) {
-            if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            if (! filter_var($url, FILTER_VALIDATE_URL)) {
                 $message = __('validation.url', ['attribute' => __('objects.links')]);
                 if ($request->expectsJson() || $request->wantsJson()) {
                     return response()->json([
@@ -201,28 +202,30 @@ class PassportObject extends Controller
             }
         }
 
-        // файлы (несколько)
+        // Ã‘â€žÃÂ°ÃÂ¹ÃÂ»Ã‘â€¹ (ÃÂ½ÃÂµÃ‘ÂÃÂºÃÂ¾ÃÂ»Ã‘Å’ÃÂºÃÂ¾)
         $newPaths = [];
         $files = $request->file('files');
         if ($files) {
             $uploaded = is_array($files) ? $files : [$files];
             foreach ($uploaded as $file) {
-                if (! $file) continue;
+                if (! $file) {
+                    continue;
+                }
                 $newPaths[] = $file->store('passport_objects', 'public');
             }
         }
 
-        // существующие пути
+        // Ã‘ÂÃ‘Æ’Ã‘â€°ÃÂµÃ‘ÂÃ‘â€šÃÂ²Ã‘Æ’Ã‘Å½Ã‘â€°ÃÂ¸ÃÂµ ÃÂ¿Ã‘Æ’Ã‘â€šÃÂ¸
         $existingPaths = [];
-        if (!empty($object->file_paths) && is_array($object->file_paths)) {
-            $existingPaths = array_values(array_filter($object->file_paths, fn($p) => is_string($p) && $p !== ''));
+        if (! empty($object->file_paths) && is_array($object->file_paths)) {
+            $existingPaths = array_values(array_filter($object->file_paths, fn ($p) => is_string($p) && $p !== ''));
         }
 
         if (! empty($newPaths)) {
             $merged = array_values(array_unique(array_merge($existingPaths, $newPaths)));
             $object->file_paths = $merged;
         } else {
-            // оставляем как было
+            // ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ²ÃÂ»Ã‘ÂÃÂµÃÂ¼ ÃÂºÃÂ°ÃÂº ÃÂ±Ã‘â€¹ÃÂ»ÃÂ¾
             $object->file_paths = $existingPaths ?: $object->file_paths;
         }
 
@@ -251,7 +254,7 @@ class PassportObject extends Controller
         $object->latitude = $data['latitude'];
         $object->longitude = $data['longitude'];
 
-        // Дубликат только для квартиры: те же latitude/longitude в БД + кв., подъезд, этаж у другого дизайнера → модерация.
+        // Ãâ€Ã‘Æ’ÃÂ±ÃÂ»ÃÂ¸ÃÂºÃÂ°Ã‘â€š Ã‘â€šÃÂ¾ÃÂ»Ã‘Å’ÃÂºÃÂ¾ ÃÂ´ÃÂ»Ã‘Â ÃÂºÃÂ²ÃÂ°Ã‘â‚¬Ã‘â€šÃÂ¸Ã‘â‚¬Ã‘â€¹: Ã‘â€šÃÂµ ÃÂ¶ÃÂµ latitude/longitude ÃÂ² Ãâ€˜Ãâ€ + ÃÂºÃÂ²., ÃÂ¿ÃÂ¾ÃÂ´Ã‘Å ÃÂµÃÂ·ÃÂ´, Ã‘ÂÃ‘â€šÃÂ°ÃÂ¶ Ã‘Æ’ ÃÂ´Ã‘â‚¬Ã‘Æ’ÃÂ³ÃÂ¾ÃÂ³ÃÂ¾ ÃÂ´ÃÂ¸ÃÂ·ÃÂ°ÃÂ¹ÃÂ½ÃÂµÃ‘â‚¬ÃÂ° Ã¢â€ â€™ ÃÂ¼ÃÂ¾ÃÂ´ÃÂµÃ‘â‚¬ÃÂ°Ã‘â€ ÃÂ¸Ã‘Â.
         $previousModerationStatus = $object->exists ? (string) ($object->getOriginal('moderation_status') ?? '') : '';
         if ($isApartment) {
             $dup = PassportObjectModel::findOtherDesignerApartmentDuplicate(
@@ -268,7 +271,7 @@ class PassportObject extends Controller
                 $object->moderation_duplicate_of_object_id = $dup->id;
             } else {
                 $object->moderation_duplicate_of_object_id = null;
-                // Одобрено модератором — не сбрасываем при последующих правках без дубликата
+                // ÃÅ¾ÃÂ´ÃÂ¾ÃÂ±Ã‘â‚¬ÃÂµÃÂ½ÃÂ¾ ÃÂ¼ÃÂ¾ÃÂ´ÃÂµÃ‘â‚¬ÃÂ°Ã‘â€šÃÂ¾Ã‘â‚¬ÃÂ¾ÃÂ¼ Ã¢â‚¬â€ ÃÂ½ÃÂµ Ã‘ÂÃÂ±Ã‘â‚¬ÃÂ°Ã‘ÂÃ‘â€¹ÃÂ²ÃÂ°ÃÂµÃÂ¼ ÃÂ¿Ã‘â‚¬ÃÂ¸ ÃÂ¿ÃÂ¾Ã‘ÂÃÂ»ÃÂµÃÂ´Ã‘Æ’Ã‘Å½Ã‘â€°ÃÂ¸Ã‘â€¦ ÃÂ¿Ã‘â‚¬ÃÂ°ÃÂ²ÃÂºÃÂ°Ã‘â€¦ ÃÂ±ÃÂµÃÂ· ÃÂ´Ã‘Æ’ÃÂ±ÃÂ»ÃÂ¸ÃÂºÃÂ°Ã‘â€šÃÂ°
                 $object->moderation_status = $previousModerationStatus === 'approved' ? 'approved' : null;
             }
         } else {
@@ -325,7 +328,7 @@ class PassportObject extends Controller
     }
 
     /**
-     * Удаление одного файла объекта по индексу из file_paths.
+     * ÃÂ£ÃÂ´ÃÂ°ÃÂ»ÃÂµÃÂ½ÃÂ¸ÃÂµ ÃÂ¾ÃÂ´ÃÂ½ÃÂ¾ÃÂ³ÃÂ¾ Ã‘â€žÃÂ°ÃÂ¹ÃÂ»ÃÂ° ÃÂ¾ÃÂ±Ã‘Å ÃÂµÃÂºÃ‘â€šÃÂ° ÃÂ¿ÃÂ¾ ÃÂ¸ÃÂ½ÃÂ´ÃÂµÃÂºÃ‘ÂÃ‘Æ’ ÃÂ¸ÃÂ· file_paths.
      */
     public function deleteFile(Request $request, int $objectId, int $fileIndex)
     {
@@ -362,25 +365,25 @@ class PassportObject extends Controller
     }
 
     /**
-     * Проверка: точка на карте соответствует текстовому адресу (геокодинг OSM Nominatim).
-     * Возвращает текст ошибки или null, если всё ок.
+     * ÃÅ¸Ã‘â‚¬ÃÂ¾ÃÂ²ÃÂµÃ‘â‚¬ÃÂºÃÂ°: Ã‘â€šÃÂ¾Ã‘â€¡ÃÂºÃÂ° ÃÂ½ÃÂ° ÃÂºÃÂ°Ã‘â‚¬Ã‘â€šÃÂµ Ã‘ÂÃÂ¾ÃÂ¾Ã‘â€šÃÂ²ÃÂµÃ‘â€šÃ‘ÂÃ‘â€šÃÂ²Ã‘Æ’ÃÂµÃ‘â€š Ã‘â€šÃÂµÃÂºÃ‘ÂÃ‘â€šÃÂ¾ÃÂ²ÃÂ¾ÃÂ¼Ã‘Æ’ ÃÂ°ÃÂ´Ã‘â‚¬ÃÂµÃ‘ÂÃ‘Æ’ (ÃÂ³ÃÂµÃÂ¾ÃÂºÃÂ¾ÃÂ´ÃÂ¸ÃÂ½ÃÂ³ OSM Nominatim).
+     * Ãâ€™ÃÂ¾ÃÂ·ÃÂ²Ã‘â‚¬ÃÂ°Ã‘â€°ÃÂ°ÃÂµÃ‘â€š Ã‘â€šÃÂµÃÂºÃ‘ÂÃ‘â€š ÃÂ¾Ã‘Ë†ÃÂ¸ÃÂ±ÃÂºÃÂ¸ ÃÂ¸ÃÂ»ÃÂ¸ null, ÃÂµÃ‘ÂÃÂ»ÃÂ¸ ÃÂ²Ã‘ÂÃ‘â€˜ ÃÂ¾ÃÂº.
      */
     private function verifySubmittedCoordinatesMatchAddress(float $lat, float $lng, string $city, string $address): ?string
     {
-        $query = trim($city . ', ' . $address . ', Kazakhstan');
+        $query = trim($city.', '.$address.', Kazakhstan');
         if ($query === ', Kazakhstan') {
             return __('objects.address_map_mismatch');
         }
 
         $geo = $this->forwardGeocodeFirstKz($query);
         if ($geo === null) {
-            // Не блокируем сохранение, если внешний геокодер недоступен/ограничил запрос.
+            // ÃÂÃÂµ ÃÂ±ÃÂ»ÃÂ¾ÃÂºÃÂ¸Ã‘â‚¬Ã‘Æ’ÃÂµÃÂ¼ Ã‘ÂÃÂ¾Ã‘â€¦Ã‘â‚¬ÃÂ°ÃÂ½ÃÂµÃÂ½ÃÂ¸ÃÂµ, ÃÂµÃ‘ÂÃÂ»ÃÂ¸ ÃÂ²ÃÂ½ÃÂµÃ‘Ë†ÃÂ½ÃÂ¸ÃÂ¹ ÃÂ³ÃÂµÃÂ¾ÃÂºÃÂ¾ÃÂ´ÃÂµÃ‘â‚¬ ÃÂ½ÃÂµÃÂ´ÃÂ¾Ã‘ÂÃ‘â€šÃ‘Æ’ÃÂ¿ÃÂµÃÂ½/ÃÂ¾ÃÂ³Ã‘â‚¬ÃÂ°ÃÂ½ÃÂ¸Ã‘â€¡ÃÂ¸ÃÂ» ÃÂ·ÃÂ°ÃÂ¿Ã‘â‚¬ÃÂ¾Ã‘Â.
             return null;
         }
 
         $meters = $this->haversineMeters($lat, $lng, $geo[0], $geo[1]);
 
-        // Допуск: здание / улица могут давать небольшой разброс относительно центроида геокодера.
+        // Ãâ€ÃÂ¾ÃÂ¿Ã‘Æ’Ã‘ÂÃÂº: ÃÂ·ÃÂ´ÃÂ°ÃÂ½ÃÂ¸ÃÂµ / Ã‘Æ’ÃÂ»ÃÂ¸Ã‘â€ ÃÂ° ÃÂ¼ÃÂ¾ÃÂ³Ã‘Æ’Ã‘â€š ÃÂ´ÃÂ°ÃÂ²ÃÂ°Ã‘â€šÃ‘Å’ ÃÂ½ÃÂµÃÂ±ÃÂ¾ÃÂ»Ã‘Å’Ã‘Ë†ÃÂ¾ÃÂ¹ Ã‘â‚¬ÃÂ°ÃÂ·ÃÂ±Ã‘â‚¬ÃÂ¾Ã‘Â ÃÂ¾Ã‘â€šÃÂ½ÃÂ¾Ã‘ÂÃÂ¸Ã‘â€šÃÂµÃÂ»Ã‘Å’ÃÂ½ÃÂ¾ Ã‘â€ ÃÂµÃÂ½Ã‘â€šÃ‘â‚¬ÃÂ¾ÃÂ¸ÃÂ´ÃÂ° ÃÂ³ÃÂµÃÂ¾ÃÂºÃÂ¾ÃÂ´ÃÂµÃ‘â‚¬ÃÂ°.
         if ($meters > 3000) {
             return __('objects.address_map_mismatch');
         }
@@ -481,3 +484,5 @@ class PassportObject extends Controller
         ];
     }
 }
+
+

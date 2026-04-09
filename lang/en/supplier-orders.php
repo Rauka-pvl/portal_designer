@@ -70,4 +70,6 @@ return [
     'select_files' => 'Select',
     'product_service_placeholder' => 'e.g. delivery of doors and windows',
     'files' => 'Files',
+    'supplier_not_linked' => 'Supplier is not available for this designer.',
+    'supplier_invite_required' => 'Send invitation first and wait for supplier approval.',
 ];

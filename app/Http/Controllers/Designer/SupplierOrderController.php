@@ -1,10 +1,13 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Designer;
 
+use App\Http\Controllers\Controller;
+use App\Models\DesignerSupplierLink;
 use App\Models\Project;
 use App\Models\Supplier;
 use App\Models\Supplier_orders;
+use App\Models\UserNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -29,10 +32,7 @@ class SupplierOrderController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        $suppliers = Supplier::query()
-            ->where('user_id', $userId)
-            ->orderBy('name')
-            ->get(['id', 'name']);
+        $suppliers = $this->availableSuppliers($userId);
 
         $orders = Supplier_orders::query()
             ->where('user_id', $userId)
@@ -40,7 +40,7 @@ class SupplierOrderController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        return view('supplier-orders.index', [
+        return view('designer.supplier-orders.index', [
             'projects' => $projects,
             'suppliers' => $suppliers,
             'orders' => $orders->map(fn (Supplier_orders $order) => $this->payload($order))->values(),
@@ -112,11 +112,11 @@ class SupplierOrderController extends Controller
             return response()->json($payload);
         }
 
-        return view('supplier-orders.show', [
+        return view('designer.supplier-orders.show', [
             'order' => $order,
             'orderData' => $payload,
             'projects' => Project::query()->where('user_id', $request->user()->id)->orderBy('name')->get(['id', 'name']),
-            'suppliers' => Supplier::query()->where('user_id', $request->user()->id)->orderBy('name')->get(['id', 'name']),
+            'suppliers' => $this->availableSuppliers((int) $request->user()->id),
             'categoryOptions' => $this->categoryOptions(),
             'roomOptions' => $this->roomOptions(),
         ]);
@@ -167,7 +167,7 @@ class SupplierOrderController extends Controller
     }
 
     /**
-     * Поставщик с pending/rejected модерацией нельзя выбирать в поставке.
+     * ÃÅ¸ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ²Ã‘â€°ÃÂ¸ÃÂº Ã‘Â pending/rejected ÃÂ¼ÃÂ¾ÃÂ´ÃÂµÃ‘â‚¬ÃÂ°Ã‘â€ ÃÂ¸ÃÂµÃÂ¹ ÃÂ½ÃÂµÃÂ»Ã‘Å’ÃÂ·Ã‘Â ÃÂ²Ã‘â€¹ÃÂ±ÃÂ¸Ã‘â‚¬ÃÂ°Ã‘â€šÃ‘Å’ ÃÂ² ÃÂ¿ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ²ÃÂºÃÂµ.
      */
     private function supplierModerationErrorMessage(Request $request, int $userId): ?string
     {
@@ -204,8 +204,9 @@ class SupplierOrderController extends Controller
 
         $data = $request->validate([
             'project_id' => ['required', Rule::exists('projects', 'id')->where(fn ($q) => $q->where('user_id', $userId))],
-            'supplier_id' => ['required', Rule::exists('suppliers', 'id')->where(fn ($q) => $q->where('user_id', $userId))],
+            'supplier_id' => ['required', 'integer', Rule::exists('suppliers', 'id')],
             'status' => ['nullable', Rule::in(self::STATUSES)],
+            'send_to_supplier' => ['nullable', 'boolean'],
             'summa' => ['required', 'integer', 'min:0'],
             'category' => ['nullable', 'string', 'max:255'],
             'mark' => ['nullable', 'string', 'max:255'],
@@ -227,6 +228,23 @@ class SupplierOrderController extends Controller
 
         $links = array_values(array_filter(array_map(fn ($v) => trim((string) $v), (array) ($data['links'] ?? []))));
         $existingFiles = array_values(array_filter(array_map(fn ($v) => trim((string) $v), (array) ($data['existing_files'] ?? []))));
+        $supplierId = (int) $data['supplier_id'];
+
+        $supplierAllowed = Supplier::query()
+            ->whereKey($supplierId)
+            ->where(function ($q) use ($userId) {
+                $q->where('user_id', $userId)
+                    ->orWhereIn('id', function ($sub) use ($userId) {
+                        $sub->select('supplier_id')
+                            ->from('designer_supplier_links')
+                            ->where('designer_user_id', $userId)
+                            ->where('status', 'accepted');
+                    });
+            })
+            ->exists();
+        if (! $supplierAllowed) {
+            abort(422, __('supplier-orders.supplier_not_linked'));
+        }
 
         $uploadedFiles = [];
         foreach ($request->file('files', []) as $file) {
@@ -244,7 +262,7 @@ class SupplierOrderController extends Controller
         }
 
         $order->project_id = (int) $data['project_id'];
-        $order->supplier_id = (int) $data['supplier_id'];
+        $order->supplier_id = $supplierId;
         $order->status = (string) ($data['status'] ?? 'order_created');
         $order->summa = (int) $data['summa'];
         $order->category = $data['category'] ?? null;
@@ -259,7 +277,51 @@ class SupplierOrderController extends Controller
         $order->links = $links;
         $order->files = $newFiles;
         $order->comment = $data['comment'] ?? null;
+
+        if ($request->boolean('send_to_supplier')) {
+            $link = DesignerSupplierLink::query()
+                ->where('designer_user_id', $userId)
+                ->where('supplier_id', $supplierId)
+                ->where('status', 'accepted')
+                ->first();
+            if (! $link) {
+                abort(422, __('supplier-orders.supplier_invite_required'));
+            }
+
+            $order->status = 'order_sent';
+        }
+
         $order->save();
+
+        if ($request->boolean('send_to_supplier')) {
+            $supplier = Supplier::query()->find($supplierId);
+            if ($supplier && (int) ($supplier->account_user_id ?? 0) > 0) {
+                UserNotification::query()->create([
+                    'user_id' => (int) $supplier->account_user_id,
+                    'title' => __('notifications.new_order_title'),
+                    'comment' => __('notifications.new_order_comment', ['order' => (string) $order->id]),
+                    'is_read' => false,
+                    'related_supplier_id' => (int) $supplier->id,
+                    'action_key' => 'supplier_order',
+                ]);
+            }
+        }
+    }
+
+    private function availableSuppliers(int $designerId)
+    {
+        $ownedIds = Supplier::query()
+            ->where('user_id', $designerId)
+            ->pluck('id');
+        $linkedIds = DesignerSupplierLink::query()
+            ->where('designer_user_id', $designerId)
+            ->where('status', 'accepted')
+            ->pluck('supplier_id');
+
+        return Supplier::query()
+            ->whereIn('id', $ownedIds->merge($linkedIds)->unique()->values())
+            ->orderBy('name')
+            ->get(['id', 'name']);
     }
 
     private function categoryOptions(): array
@@ -319,3 +381,5 @@ class SupplierOrderController extends Controller
         ];
     }
 }
+
+

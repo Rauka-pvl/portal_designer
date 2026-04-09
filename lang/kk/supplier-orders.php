@@ -70,4 +70,6 @@ return [
     'select_files' => 'Таңдау',
     'product_service_placeholder' => 'Мысалы, есіктер мен терезелерді жеткізу',
     'files' => 'Файлдар',
+    'supplier_not_linked' => 'Бұл дизайнер үшін жеткізуші қолжетімсіз.',
+    'supplier_invite_required' => 'Алдымен шақыру жіберіп, жеткізушінің растауын күтіңіз.',
 ];

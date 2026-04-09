@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'login' => 'Вход',
+
     'register' => 'Регистрация',
     'forgot_password' => 'Восстановление пароля',
     'reset_password' => 'Сброс пароля',
@@ -22,4 +22,13 @@ return [
     'login_button' => 'Войти',
     'register_button' => 'Зарегистрироваться',
     'language' => 'Язык',
+
+    'login_designer' => 'Вход для дизайнеров',
+    'im_supplier' => 'Я поставщик',
+    'im_designer' => 'Я дизайнер',
+    'login_supplier' => 'Вход для поставщиков',
+    'register_supplier' => 'Регистрация поставщика',
+    'supplier_mode_hint' => 'Вход в кабинет компании-поставщика',
+    'login_designer' => 'Вход для дизайнеров',
+    'register_designer' => 'Регистрация дизайнера',
 ];

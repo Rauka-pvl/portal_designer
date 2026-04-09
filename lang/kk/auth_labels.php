@@ -22,4 +22,13 @@ return [
     'login_button' => 'Кіру',
     'register_button' => 'Тіркелу',
     'language' => 'Тіл',
+
+    'login_designer' => 'Дизайнерлерге кіру',
+    'im_supplier' => 'Мен жеткізушімін',
+    'im_designer' => 'Мен дизайнермін',
+    'login_supplier' => 'Жеткізушілерге кіру',
+    'register_supplier' => 'Жеткізуші тіркелуі',
+    'supplier_mode_hint' => 'Жеткізуші компания аккаунтына кіру',
+    'login_designer' => 'Дизайнерлерге кіру',
+    'register_designer' => 'Дизайнер тіркелуі',
 ];

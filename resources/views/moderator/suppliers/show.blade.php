@@ -144,7 +144,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.org_form') }}</div>
-                <input disabled value="{{ $supplier->org_form === 'ip' ? __('suppliers.org_ip') : __('suppliers.org_ooo') }}" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                <input disabled value="{{ $supplier->org_form === 'ip' ? __('suppliers.org_ip') : __('suppliers.org_too') }}" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
             </div>
             <div>
                 <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.inn') }}</div>

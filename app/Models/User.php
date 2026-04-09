@@ -6,6 +6,7 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -69,5 +70,13 @@ class User extends Authenticatable
     public function notifications(): HasMany
     {
         return $this->hasMany(UserNotification::class)->latest();
+    }
+
+    /**
+     * Карточка компании, привязанная к аккаунту поставщика (account_user_id).
+     */
+    public function supplierProfile(): HasOne
+    {
+        return $this->hasOne(Supplier::class, 'account_user_id');
     }
 }

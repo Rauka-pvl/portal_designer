@@ -29,4 +29,8 @@ return [
     'referral_supplier_confirmed' => 'Supplier added to your list and sent to moderation.',
     'action_unavailable' => 'This action is no longer available.',
     'supplier_missing' => 'Supplier not found.',
+    'supplier_invite_title' => 'New designer invitation',
+    'supplier_invite_comment' => 'Designer :name invites you to collaborate. Confirm this invitation in supplier portal.',
+    'new_order_title' => 'New delivery order',
+    'new_order_comment' => 'A new delivery order #:order was sent to you.',
 ];

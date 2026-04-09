@@ -1,16 +1,17 @@
 <?php
 
-use App\Http\Controllers\ChecklistStepController;
-use App\Http\Controllers\ClientController;
-use App\Http\Controllers\DashboardCalendarController;
+use App\Http\Controllers\Designer\ChecklistStepController;
+use App\Http\Controllers\Designer\ClientController;
+use App\Http\Controllers\Designer\DashboardCalendarController;
 use App\Http\Controllers\Moderator\ModeratorController;
-use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\PassportObject;
-use App\Http\Controllers\ProjectController;
-use App\Http\Controllers\ReferralSupplierController;
-use App\Http\Controllers\SettingsController;
-use App\Http\Controllers\SupplierController;
-use App\Http\Controllers\SupplierOrderController;
+use App\Http\Controllers\Designer\NotificationController;
+use App\Http\Controllers\Designer\PassportObject;
+use App\Http\Controllers\Designer\ProjectController;
+use App\Http\Controllers\Designer\ReferralSupplierController;
+use App\Http\Controllers\Designer\SettingsController;
+use App\Http\Controllers\Designer\SupplierController;
+use App\Http\Controllers\Designer\SupplierOrderController;
+use App\Http\Controllers\Supplier\SupplierPortalController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -19,12 +20,18 @@ require __DIR__.'/auth.php';
 
 Route::get('/', function () {
     if (! Auth::check()) {
-        return view('welcome');
+        return view('auth.login');
     }
 
-    return Auth::user()->role === 'moderator'
-        ? redirect()->route('moderator.index')
-        : redirect()->route('dashboard');
+    return match (Auth::user()->role) {
+        'moderator' => redirect()->route('moderator.index'),
+        'supplier' => redirect()->route('supplier.index'),
+        default => redirect()->route('dashboard'),
+    };
+});
+
+Route::middleware(['auth', 'role:supplier'])->group(function () {
+    Route::get('/supplier', [SupplierPortalController::class, 'index'])->name('supplier.index');
 });
 
 Route::get('/language/{locale}', function (string $locale, Request $request) {
@@ -44,7 +51,7 @@ Route::post('/referrals/suppliers', [ReferralSupplierController::class, 'store']
 
 Route::middleware(['auth', 'role:designer'])->group(function () {
     Route::get('/dashboard', function () {
-        return view('dashboard', [
+        return view('designer.dashboard', [
             'stats' => [
                 'clients' => 0,
                 'orders_in_work' => 0,
@@ -104,7 +111,12 @@ Route::middleware(['auth', 'role:designer'])->group(function () {
         ->name('objects.show');
 
     Route::get('/suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
+    Route::get('/supplier-network', [SupplierController::class, 'network'])->name('suppliers.network');
     Route::post('/suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
+    Route::get('/suppliers/search-by-inn', [SupplierController::class, 'searchByInn'])->name('suppliers.search_by_inn');
+    Route::post('/suppliers/{supplierId}/invite', [SupplierController::class, 'invite'])
+        ->whereNumber('supplierId')
+        ->name('suppliers.invite');
     Route::get('/suppliers/{supplierId}', [SupplierController::class, 'show'])
         ->whereNumber('supplierId')
         ->name('suppliers.show');
@@ -206,3 +218,4 @@ Route::middleware(['auth', 'role:designer|moderator'])->group(function () {
     Route::put('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile.update');
     Route::put('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password.update');
 });
+

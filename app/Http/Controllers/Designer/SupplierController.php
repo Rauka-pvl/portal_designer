@@ -1,40 +1,48 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Designer;
 
+use App\Http\Controllers\Controller;
+use App\Models\DesignerSupplierLink;
 use App\Models\Supplier;
+use App\Models\UserNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class SupplierController extends Controller
 {
+    public function network()
+    {
+        return view('designer.suppliers.network');
+    }
+
     public function index(Request $request)
     {
-        $userId = $request->user()->id;
+        $userId = (int) $request->user()->id;
 
-        $query = Supplier::query()
+        $ownedSupplierIds = Supplier::query()
             ->where('user_id', $userId)
-            ->where(function ($q) {
-                $q->where('is_confirmed_by_designer', true)
-                    ->orWhereNull('is_confirmed_by_designer');
-            });
+            ->pluck('id');
 
-        $suppliers = $query
+        $linkedSupplierIds = DesignerSupplierLink::query()
+            ->where('designer_user_id', $userId)
+            ->pluck('supplier_id');
+
+        $suppliers = Supplier::query()
+            ->whereIn('id', $ownedSupplierIds->merge($linkedSupplierIds)->unique()->values())
             ->orderByDesc('id')
             ->get();
 
-        $cities = Supplier::query()
-            ->where('user_id', $userId)
-            ->whereNotNull('city')
-            ->where('city', '!=', '')
-            ->distinct()
-            ->orderBy('city')
-            ->pluck('city');
+        $cities = $suppliers
+            ->pluck('city')
+            ->filter(fn ($v) => is_string($v) && trim($v) !== '')
+            ->map(fn ($v) => trim($v))
+            ->unique()
+            ->sort()
+            ->values();
 
-        $brands = Supplier::query()
-            ->where('user_id', $userId)
-            ->get(['brands'])
+        $brands = $suppliers
             ->flatMap(function (Supplier $supplier) {
                 return is_array($supplier->brands) ? $supplier->brands : [];
             })
@@ -44,15 +52,15 @@ class SupplierController extends Controller
             ->sort()
             ->values();
 
-        $spheres = Supplier::query()
-            ->where('user_id', $userId)
-            ->whereNotNull('sphere')
-            ->where('sphere', '!=', '')
-            ->distinct()
-            ->orderBy('sphere')
-            ->pluck('sphere');
+        $spheres = $suppliers
+            ->pluck('sphere')
+            ->filter(fn ($v) => is_string($v) && trim($v) !== '')
+            ->map(fn ($v) => trim($v))
+            ->unique()
+            ->sort()
+            ->values();
 
-        return view('suppliers.index', [
+        return view('designer.suppliers.index', [
             'suppliers' => $suppliers,
             'suppliersData' => $suppliers->map(fn (Supplier $s) => $this->payload($s))->values(),
             'cities' => $cities,
@@ -62,16 +70,98 @@ class SupplierController extends Controller
         ]);
     }
 
+    public function searchByInn(Request $request)
+    {
+        $data = $request->validate([
+            'inn' => ['required', 'string', 'max:32'],
+        ]);
+
+        $inn = trim((string) $data['inn']);
+        $supplier = Supplier::query()
+            ->where('inn', $inn)
+            ->where('profile_status', 'active')
+            ->first();
+
+        if (! $supplier) {
+            return response()->json([
+                'success' => false,
+                'message' => __('suppliers.not_found'),
+            ], 404);
+        }
+
+        $link = DesignerSupplierLink::query()
+            ->where('designer_user_id', (int) $request->user()->id)
+            ->where('supplier_id', (int) $supplier->id)
+            ->first();
+
+        return response()->json([
+            'success' => true,
+            'supplier' => $this->payload($supplier),
+            'link_status' => $link?->status,
+        ]);
+    }
+
+    public function invite(Request $request, int $supplierId)
+    {
+        $designerId = (int) $request->user()->id;
+
+        $supplier = Supplier::query()->findOrFail($supplierId);
+        if ((string) $supplier->profile_status !== 'active' || (int) ($supplier->account_user_id ?? 0) < 1) {
+            return response()->json([
+                'success' => false,
+                'message' => __('suppliers.invite_unavailable'),
+            ], 422);
+        }
+
+        $link = DesignerSupplierLink::query()->firstOrNew([
+            'designer_user_id' => $designerId,
+            'supplier_id' => (int) $supplier->id,
+        ]);
+        $link->status = 'pending';
+        $link->invited_at = now();
+        $link->accepted_at = null;
+        $link->rejected_at = null;
+        $link->save();
+
+        UserNotification::query()->create([
+            'user_id' => (int) $supplier->account_user_id,
+            'title' => __('notifications.supplier_invite_title'),
+            'comment' => __('notifications.supplier_invite_comment', ['name' => (string) $request->user()->name]),
+            'is_read' => false,
+            'related_supplier_id' => (int) $supplier->id,
+            'action_key' => 'supplier_invite',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => __('suppliers.invited'),
+            'link_status' => 'pending',
+        ]);
+    }
+
     public function show(Request $request, int $supplierId)
     {
-        $supplier = Supplier::where('user_id', $request->user()->id)->findOrFail($supplierId);
+        $userId = (int) $request->user()->id;
+        $isOwned = Supplier::query()
+            ->where('user_id', $userId)
+            ->whereKey($supplierId)
+            ->exists();
+        $isLinked = DesignerSupplierLink::query()
+            ->where('designer_user_id', $userId)
+            ->where('supplier_id', $supplierId)
+            ->exists();
+        if (! $isOwned && ! $isLinked) {
+            abort(404);
+        }
+
+        $supplier = Supplier::query()->findOrFail($supplierId);
         $payload = $this->payload($supplier);
 
         if ($request->expectsJson() || $request->wantsJson()) {
             return response()->json($payload);
         }
 
-        return view('suppliers.show', [
+        return view('designer.suppliers.show', [
             'supplier' => $supplier,
             'supplierData' => $payload,
             'sphereOptions' => $this->sphereOptions(),
@@ -83,10 +173,11 @@ class SupplierController extends Controller
     {
         $supplier = new Supplier;
         $supplier->user_id = $request->user()->id;
+        $supplier->profile_status = 'draft';
 
         $this->fillAndSave($request, $supplier);
 
-        // Автоматически отправляем на модерацию после создания
+        // ÃÂÃÂ²Ã‘â€šÃÂ¾ÃÂ¼ÃÂ°Ã‘â€šÃÂ¸Ã‘â€¡ÃÂµÃ‘ÂÃÂºÃÂ¸ ÃÂ¾Ã‘â€šÃÂ¿Ã‘â‚¬ÃÂ°ÃÂ²ÃÂ»Ã‘ÂÃÂµÃÂ¼ ÃÂ½ÃÂ° ÃÂ¼ÃÂ¾ÃÂ´ÃÂµÃ‘â‚¬ÃÂ°Ã‘â€ ÃÂ¸Ã‘Å½ ÃÂ¿ÃÂ¾Ã‘ÂÃÂ»ÃÂµ Ã‘ÂÃÂ¾ÃÂ·ÃÂ´ÃÂ°ÃÂ½ÃÂ¸Ã‘Â
         $supplier->moderation_status = 'pending';
         $supplier->moderation_reviewer_id = null;
         $supplier->moderation_reviewed_at = null;
@@ -262,6 +353,8 @@ class SupplierController extends Controller
 
         return [
             'id' => $supplier->id,
+            'account_user_id' => $supplier->account_user_id,
+            'profile_status' => $supplier->profile_status,
             'name' => $supplier->name,
             'recommend' => (bool) $supplier->recommend,
             'phone' => $supplier->phone,
@@ -306,3 +399,5 @@ class SupplierController extends Controller
         ];
     }
 }
+
+

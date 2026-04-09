@@ -16,13 +16,17 @@ use Illuminate\Validation\Rules\Password as PasswordRule;
  */
 Route::match(['get', 'post'], '/login', function (Request $request) {
     if (Auth::check()) {
-        return Auth::user()->role === 'moderator'
-            ? redirect()->route('moderator.index')
-            : redirect()->route('dashboard');
+        return match (Auth::user()->role) {
+            'moderator' => redirect()->route('moderator.index'),
+            'supplier' => redirect()->route('supplier.index'),
+            default => redirect()->route('dashboard'),
+        };
     }
 
     if ($request->isMethod('get')) {
-        return view('auth.login');
+        return view('auth.login', [
+            'authAsSupplier' => $request->query('as') === 'supplier',
+        ]);
     }
 
     $credentials = $request->validate([
@@ -43,8 +47,14 @@ Route::match(['get', 'post'], '/login', function (Request $request) {
 
     $request->session()->regenerate();
 
-    if (Auth::user()->role === 'moderator') {
+    $user = Auth::user();
+
+    if ($user->role === 'moderator') {
         return redirect()->route('moderator.index');
+    }
+
+    if ($user->role === 'supplier') {
+        return redirect()->intended(route('supplier.index'));
     }
 
     return redirect()->intended(route('dashboard'));
@@ -52,31 +62,41 @@ Route::match(['get', 'post'], '/login', function (Request $request) {
 
 Route::match(['get', 'post'], '/register', function (Request $request) {
     if (Auth::check()) {
-        return Auth::user()->role === 'moderator'
-            ? redirect()->route('moderator.index')
-            : redirect()->route('dashboard');
+        return match (Auth::user()->role) {
+            'moderator' => redirect()->route('moderator.index'),
+            'supplier' => redirect()->route('supplier.index'),
+            default => redirect()->route('dashboard'),
+        };
     }
 
     if ($request->isMethod('get')) {
-        return view('auth.register');
+        return view('auth.register', [
+            'authAsSupplier' => $request->query('as') === 'supplier',
+        ]);
     }
 
     $data = $request->validate([
         'name' => ['required', 'string', 'max:255'],
         'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
         'password' => ['required', 'confirmed', PasswordRule::defaults()],
+        'account_type' => ['nullable', 'in:supplier,designer'],
     ]);
+
+    $isSupplier = ($data['account_type'] ?? 'designer') === 'supplier';
 
     $user = User::create([
         'name' => $data['name'],
         'email' => $data['email'],
         'password' => Hash::make($data['password']),
+        'role' => $isSupplier ? 'supplier' : 'designer',
     ]);
 
     Auth::login($user);
     $request->session()->regenerate();
 
-    return redirect()->route('dashboard');
+    return $isSupplier
+        ? redirect()->route('supplier.index')
+        : redirect()->route('dashboard');
 })->name('register')->middleware('guest');
 
 Route::post('/logout', function (Request $request) {

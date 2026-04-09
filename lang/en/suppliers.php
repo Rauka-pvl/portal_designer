@@ -44,7 +44,7 @@ return [
     'cities_helper' => 'Add cities where the supplier operates',
     'city_placeholder' => 'Enter city name',
     'org_form' => 'Organization form',
-    'org_ooo' => 'LLC',
+    'org_too' => 'LLP',
     'org_ip' => 'Sole proprietor',
     'inn' => 'TIN',
     'inn_placeholder' => 'Enter TIN',
@@ -108,4 +108,7 @@ return [
     'added' => 'Supplier added',
     'updated' => 'Supplier updated',
     'deleted' => 'Supplier deleted',
+    'not_found' => 'Supplier with this TIN was not found.',
+    'invited' => 'Invitation sent to supplier.',
+    'invite_unavailable' => 'This supplier cannot be invited.',
 ];

@@ -33,6 +33,9 @@ class RoleMiddleware
             return redirect()->route('dashboard');
         }
 
+        if ($userRole === 'supplier') {
+            return redirect()->route('supplier.index');
+        }
         abort(403, 'У вас нет доступа');
     }
 

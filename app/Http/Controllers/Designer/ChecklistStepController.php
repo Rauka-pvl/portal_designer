@@ -1,11 +1,12 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Designer;
 
+use App\Http\Controllers\Controller;
 use App\Models\ProjectStageStep;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use App\Models\User;
 
 class ChecklistStepController extends Controller
 {
@@ -26,7 +27,7 @@ class ChecklistStepController extends Controller
             $responsible = User::query()->find((int) $step->responsible_id);
         }
 
-        return view('checklist-steps.show', [
+        return view('designer.checklist-steps.show', [
             'step' => $step,
             'project' => $step->stage?->project,
             'stage_type' => $step->stage?->stage_type,
@@ -56,4 +57,5 @@ class ChecklistStepController extends Controller
         return redirect()->route('checklist-steps.show', $step->id);
     }
 }
+
 

@@ -13,6 +13,8 @@ class Supplier extends Model
 
     protected $fillable = [
         'user_id',
+        'account_user_id',
+        'profile_status',
         'logo',
         'name',
         'recommend',
@@ -69,5 +71,10 @@ class Supplier extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function accountUser()
+    {
+        return $this->belongsTo(User::class, 'account_user_id');
     }
 }

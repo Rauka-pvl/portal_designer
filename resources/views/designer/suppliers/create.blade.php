@@ -16,9 +16,9 @@
         .ref-form input,
         .ref-form select,
         .ref-form textarea {
-            background: #ffffff;
-            border: 1px solid #7c8799;
-            color: #1b1b18;
+            background: #ffffff !important;
+            border: 1px solid #7c8799 !important;
+            color: #1b1b18 !important;
         }
         .dark .ref-card {
             background: #161615;
@@ -30,9 +30,9 @@
         .dark .ref-form input,
         .dark .ref-form select,
         .dark .ref-form textarea {
-            background: #0f0f0f;
-            border-color: #3E3E3A;
-            color: #EDEDEC;
+            background: #0f0f0f !important;
+            border-color: #3E3E3A !important;
+            color: #EDEDEC !important;
         }
     </style>
     <script>
@@ -53,7 +53,7 @@
             <button
                 id="theme-toggle"
                 type="button"
-                class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors"
+                class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#706f6c] dark:text-[#A1A09A] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors"
                 aria-label="Toggle theme"
                 title="Toggle theme"
             >
@@ -64,9 +64,12 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
                 </svg>
             </button>
-            <a href="{{ route('language.switch', 'kk') }}" class="px-2 py-1 text-xs rounded transition-colors {{ app()->getLocale() === 'kk' ? 'bg-[#1b1b18] dark:bg-[#eeeeec] text-white dark:text-[#1C1C1A]' : 'border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:text-[#f59e0b] hover:border-[#f59e0b]' }}">Қаз</a>
-            <a href="{{ route('language.switch', 'ru') }}" class="px-2 py-1 text-xs rounded transition-colors {{ app()->getLocale() === 'ru' ? 'bg-[#1b1b18] dark:bg-[#eeeeec] text-white dark:text-[#1C1C1A]' : 'border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:text-[#f59e0b] hover:border-[#f59e0b]' }}">RU</a>
-            <a href="{{ route('language.switch', 'en') }}" class="px-2 py-1 text-xs rounded transition-colors {{ app()->getLocale() === 'en' ? 'bg-[#1b1b18] dark:bg-[#eeeeec] text-white dark:text-[#1C1C1A]' : 'border border-[#94a3b8] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:text-[#f59e0b] hover:border-[#f59e0b]' }}">EN</a>
+            <a href="{{ route('language.switch', 'kk') }}"
+                class="px-2 py-1 text-xs rounded-sm transition-colors {{ app()->getLocale() === 'kk' ? 'bg-[#1b1b18] dark:bg-[#eeeeec] text-white dark:text-[#1C1C1A]' : 'border border-[#7c8799] dark:border-[#3E3E3A] text-[#706f6c] dark:text-[#A1A09A] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a]' }}">Қаз</a>
+            <a href="{{ route('language.switch', 'ru') }}"
+                class="px-2 py-1 text-xs rounded-sm transition-colors {{ app()->getLocale() === 'ru' ? 'bg-[#1b1b18] dark:bg-[#eeeeec] text-white dark:text-[#1C1C1A]' : 'border border-[#7c8799] dark:border-[#3E3E3A] text-[#706f6c] dark:text-[#A1A09A] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a]' }}">RU</a>
+            <a href="{{ route('language.switch', 'en') }}"
+                class="px-2 py-1 text-xs rounded-sm transition-colors {{ app()->getLocale() === 'en' ? 'bg-[#1b1b18] dark:bg-[#eeeeec] text-white dark:text-[#1C1C1A]' : 'border border-[#7c8799] dark:border-[#3E3E3A] text-[#706f6c] dark:text-[#A1A09A] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a]' }}">EN</a>
         </div>
         <div class="ref-card rounded-xl p-6">
             <h1 class="text-2xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]">{{ __('referrals.page_title') }}</h1>
@@ -99,11 +102,11 @@
                         <input name="website" value="{{ old('website') }}" class="w-full rounded-lg border border-[#94a3b8] px-3 py-2">
                     </div>
                     <div>
-                        <label class="block text-sm mb-1">{{ __('suppliers.telegram') }}</label>
+                        <label class="block text-sm mb-1">Telegram</label>
                         <input name="telegram" value="{{ old('telegram') }}" class="w-full rounded-lg border border-[#94a3b8] px-3 py-2">
                     </div>
                     <div>
-                        <label class="block text-sm mb-1">{{ __('suppliers.whatsapp') }}</label>
+                        <label class="block text-sm mb-1">Whatsapp</label>
                         <input name="whatsapp" value="{{ old('whatsapp') }}" class="w-full rounded-lg border border-[#94a3b8] px-3 py-2">
                     </div>
                     <div>

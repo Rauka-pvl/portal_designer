@@ -1,13 +1,14 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Designer;
 
+use App\Http\Controllers\Controller;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Models\UserNotification;
-use Illuminate\Http\Response;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
 
@@ -16,7 +17,7 @@ class ReferralSupplierController extends Controller
     public function create(Request $request)
     {
         if (! $request->hasValidSignature()) {
-            return response()->view('referrals.suppliers.invalid-signature', [], 403);
+            return response()->view('designer.suppliers.invalid-signature', [], 403);
         }
 
         $designerId = (int) $request->query('designer');
@@ -25,12 +26,13 @@ class ReferralSupplierController extends Controller
             ->where('role', 'designer')
             ->firstOrFail(['id', 'name']);
 
-        return view('referrals.suppliers.create', [
+        return view('designer.suppliers.create', [
             'designer' => $designer,
             'sphereOptions' => $this->sphereOptions(),
             'submitUrl' => URL::signedRoute('referrals.suppliers.store', ['designer' => $designerId]),
         ]);
-    }   
+    }
+
     private function sphereOptions(): array
     {
         $all = trans('supplier_spheres');
@@ -88,7 +90,7 @@ class ReferralSupplierController extends Controller
             'comment_bank' => ['nullable', 'string'],
         ]);
 
-        $supplier = new Supplier();
+        $supplier = new Supplier;
         $supplier->user_id = $designer->id;
         $supplier->name = $data['name'];
         $supplier->recommend = $request->boolean('recommend');
@@ -154,3 +156,5 @@ class ReferralSupplierController extends Controller
         }, $value), fn ($v) => $v !== '')));
     }
 }
+
+

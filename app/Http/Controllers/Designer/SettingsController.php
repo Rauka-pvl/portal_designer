@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Designer;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
@@ -14,7 +15,7 @@ class SettingsController extends Controller
     {
         $user = $request->user();
 
-        return view('profile.show', [
+        return view('designer.profile.show', [
             'user' => $user,
             'referralSupplierUrl' => ($user->role ?? null) === 'designer'
                 ? URL::signedRoute('referrals.suppliers.create', ['designer' => $user->id])
@@ -27,7 +28,7 @@ class SettingsController extends Controller
         $user = $request->user();
         $tab = $request->query('tab', 'profile');
 
-        return view('settings.index', [
+        return view('designer.settings.index', [
             'activeTab' => in_array($tab, ['profile', 'security'], true) ? $tab : 'profile',
             'user' => $user,
         ]);
@@ -100,3 +101,5 @@ class SettingsController extends Controller
             ->with('status', __('settings.password_saved'));
     }
 }
+
+
