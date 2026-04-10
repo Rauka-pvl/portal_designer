@@ -446,7 +446,7 @@
                             <label class="modal-label modal-label-required">{{ __('objects.city') }}</label>
                             <select name="city" required id="object_city" class="modal-input">
                                 <option value="">{{ __('objects.select_city') }}</option>
-                                @foreach (['Алматы', 'Астана', 'Шымкент', 'Караганда', 'Актобе', 'Тараз', 'Павлодар', 'Усть-Каменогорск', 'Семей', 'Атырау', 'Костанай', 'Кызылорда', 'Уральск', 'Петропавловск', 'Актау', 'Темиртау', 'Туркестан', 'Кокшетау', 'Талдыкорган', 'Экибастуз'] as $city)
+                                @foreach (trans('cities.passport') as $city)
                                     <option value="{{ $city }}">{{ $city }}</option>
                                 @endforeach
                             </select>

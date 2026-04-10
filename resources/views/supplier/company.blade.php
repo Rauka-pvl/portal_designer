@@ -1,6 +1,8 @@
 @extends('layouts.supplier')
 
-@section('title', __('supplier-portal.title'))
+@section('title', __('supplier-portal.page_company_title'))
+
+@section('header_title', __('supplier-portal.nav_company'))
 
 @section('content')
     <style>
@@ -174,6 +176,7 @@
         </div>
     </div>
 
+    <!-- Модальное окно для заполнения профиля -->
     @if ($showOnboardingModal)
         <div class="fixed inset-0 z-50 bg-black/55 backdrop-blur-[1px] flex items-center justify-center p-4">
             <div class="w-full max-w-2xl max-h-[90vh] rounded-xl border border-[#7c8799]/50 dark:border-[#3E3E3A] bg-white dark:bg-[#161615] shadow-2xl overflow-hidden flex flex-col">

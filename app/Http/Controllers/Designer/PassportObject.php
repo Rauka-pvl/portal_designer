@@ -12,11 +12,15 @@ use Illuminate\Validation\Rule;
 
 class PassportObject extends Controller
 {
-    private const KZ_CITIES = [
-        'ÃÂÃÂ»ÃÂ¼ÃÂ°Ã‘â€šÃ‘â€¹', 'ÃÂÃ‘ÂÃ‘â€šÃÂ°ÃÂ½ÃÂ°', 'ÃÂ¨Ã‘â€¹ÃÂ¼ÃÂºÃÂµÃÂ½Ã‘â€š', 'ÃÅ¡ÃÂ°Ã‘â‚¬ÃÂ°ÃÂ³ÃÂ°ÃÂ½ÃÂ´ÃÂ°', 'ÃÂÃÂºÃ‘â€šÃÂ¾ÃÂ±ÃÂµ', 'ÃÂ¢ÃÂ°Ã‘â‚¬ÃÂ°ÃÂ·', 'ÃÅ¸ÃÂ°ÃÂ²ÃÂ»ÃÂ¾ÃÂ´ÃÂ°Ã‘â‚¬', 'ÃÂ£Ã‘ÂÃ‘â€šÃ‘Å’-ÃÅ¡ÃÂ°ÃÂ¼ÃÂµÃÂ½ÃÂ¾ÃÂ³ÃÂ¾Ã‘â‚¬Ã‘ÂÃÂº',
-        'ÃÂ¡ÃÂµÃÂ¼ÃÂµÃÂ¹', 'ÃÂÃ‘â€šÃ‘â€¹Ã‘â‚¬ÃÂ°Ã‘Æ’', 'ÃÅ¡ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ½ÃÂ°ÃÂ¹', 'ÃÅ¡Ã‘â€¹ÃÂ·Ã‘â€¹ÃÂ»ÃÂ¾Ã‘â‚¬ÃÂ´ÃÂ°', 'ÃÂ£Ã‘â‚¬ÃÂ°ÃÂ»Ã‘Å’Ã‘ÂÃÂº', 'ÃÅ¸ÃÂµÃ‘â€šÃ‘â‚¬ÃÂ¾ÃÂ¿ÃÂ°ÃÂ²ÃÂ»ÃÂ¾ÃÂ²Ã‘ÂÃÂº', 'ÃÂÃÂºÃ‘â€šÃÂ°Ã‘Æ’', 'ÃÂ¢ÃÂµÃÂ¼ÃÂ¸Ã‘â‚¬Ã‘â€šÃÂ°Ã‘Æ’',
-        'ÃÂ¢Ã‘Æ’Ã‘â‚¬ÃÂºÃÂµÃ‘ÂÃ‘â€šÃÂ°ÃÂ½', 'ÃÅ¡ÃÂ¾ÃÂºÃ‘Ë†ÃÂµÃ‘â€šÃÂ°Ã‘Æ’', 'ÃÂ¢ÃÂ°ÃÂ»ÃÂ´Ã‘â€¹ÃÂºÃÂ¾Ã‘â‚¬ÃÂ³ÃÂ°ÃÂ½', 'ÃÂ­ÃÂºÃÂ¸ÃÂ±ÃÂ°Ã‘ÂÃ‘â€šÃ‘Æ’ÃÂ·',
-    ];
+    /**
+     * @return list<string>
+     */
+    private function passportCityNames(): array
+    {
+        $cities = trans('cities.passport');
+
+        return is_array($cities) ? array_values($cities) : [];
+    }
 
     private function objectForUserOrFail(Request $request, int $objectId): PassportObjectModel
     {
@@ -114,7 +118,7 @@ class PassportObject extends Controller
         $data = $request->validate([
             'object_id' => ['nullable', 'integer'],
             'client_id' => ['required', 'integer'],
-            'city' => ['required', 'string', Rule::in(self::KZ_CITIES)],
+            'city' => ['required', 'string', Rule::in($this->passportCityNames())],
             'address' => ['required', 'string', 'max:255'],
             'apartment' => ['nullable', 'string', 'max:50', 'required_if:type,apartment'],
             'apartment_floor' => ['nullable', 'string', 'max:50', 'required_if:type,apartment'],

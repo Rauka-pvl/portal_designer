@@ -31,8 +31,12 @@ Route::get('/', function () {
 });
 
 Route::middleware(['auth', 'role:supplier'])->group(function () {
-    Route::get('/supplier', [SupplierPortalController::class, 'index'])->name('supplier.index');
+    Route::get('/supplier', [SupplierPortalController::class, 'orders'])->name('supplier.index');
+    Route::get('/supplier/company', [SupplierPortalController::class, 'company'])->name('supplier.company');
     Route::post('/supplier/profile', [SupplierPortalController::class, 'saveProfile'])->name('supplier.profile.save');
+    Route::patch('/supplier/orders/{orderId}/status', [SupplierPortalController::class, 'updateOrderStatus'])
+        ->whereNumber('orderId')
+        ->name('supplier.orders.update_status');
 });
 
 Route::get('/language/{locale}', function (string $locale, Request $request) {

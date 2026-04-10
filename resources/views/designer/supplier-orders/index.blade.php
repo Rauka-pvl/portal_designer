@@ -259,6 +259,7 @@
                         <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="supplier_name">{{ __('supplier-orders.supplier') }}</th>
                         <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="project_name">{{ __('supplier-orders.project') }}</th>
                         <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="status">{{ __('supplier-orders.status') }}</th>
+                        <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="is_sent_to_supplier">{{ __('supplier-orders.send_status') }}</th>
                         <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="amount">{{ __('supplier-orders.amount') }}</th>
                         <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="planned_date">{{ __('supplier-orders.planned_date') }}</th>
                         <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="actual_date">{{ __('supplier-orders.actual_date') }}</th>
@@ -409,6 +410,13 @@
                         @endforeach
                     </select>
                 </div>
+                <div id="order-steps-wrap">
+                    <label class="modal-label">{{ __('supplier-orders.project_steps_for_supplier') }}</label>
+                    <p class="text-xs text-[#64748b] dark:text-[#A1A09A] mb-2">{{ __('supplier-orders.project_steps_hint') }}</p>
+                    <div id="order-steps-container" class="max-h-52 overflow-y-auto rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] p-3 space-y-3 bg-[#f8fafc] dark:bg-[#0a0a0a] text-sm min-h-[3rem]"></div>
+                    <p id="order-steps-loading" class="text-xs text-[#64748b] dark:text-[#A1A09A] mt-2 hidden">{{ __('supplier-orders.project_steps_loading') }}</p>
+                    <p id="order-steps-empty" class="text-xs text-[#64748b] dark:text-[#A1A09A] mt-2 hidden">{{ __('supplier-orders.project_steps_empty') }}</p>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
                         <label class="modal-label modal-label-required">{{ __('supplier-orders.planned_delivery_date') }}</label>
@@ -475,6 +483,56 @@
 <script>
 window.allOrders = @json($orders);
 let allOrders = window.allOrders;
+window.supplierOrderProjectJsonBase = @json(url('/projects'));
+
+async function refreshOrderProjectSteps(projectId, preselectedIds) {
+    const container = document.getElementById('order-steps-container');
+    const loading = document.getElementById('order-steps-loading');
+    const empty = document.getElementById('order-steps-empty');
+    if (!container) return;
+    if (!projectId) {
+        container.innerHTML = '';
+        loading?.classList.add('hidden');
+        empty?.classList.add('hidden');
+        return;
+    }
+    loading?.classList.remove('hidden');
+    empty?.classList.add('hidden');
+    container.innerHTML = '';
+    const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    try {
+        const r = await fetch(window.supplierOrderProjectJsonBase + '/' + encodeURIComponent(projectId), {
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': token },
+            credentials: 'same-origin',
+        });
+        if (!r.ok) throw new Error('fail');
+        const data = await r.json();
+        const stages = data.stages || [];
+        const pre = new Set((preselectedIds || []).map(function (x) { return parseInt(x, 10); }));
+        loading?.classList.add('hidden');
+        let hasSteps = false;
+        let html = '';
+        stages.forEach(function (st) {
+            const steps = (st.steps || []).filter(function (s) { return s.result_comment != null && s.result_comment != '' && s.id != null ; });
+            if (!steps.length) return;
+            hasSteps = true;
+            const stLabel = String(st.stage_type_label || st.stage_type || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+            html += '<div class="mb-3 last:mb-0"><div class="text-xs font-semibold text-[#64748b] dark:text-[#A1A09A] mb-2">' + stLabel + '</div><div class="space-y-2 pl-1">';
+            steps.forEach(function (step) {
+                const sid = parseInt(step.id, 10);
+                const title = String(step.title || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+                const checked = pre.has(sid) ? ' checked' : '';
+                html += '<label class="flex items-start gap-2 cursor-pointer"><input type="checkbox" class="order-step-cb mt-0.5 rounded border-[#7c8799] dark:border-[#3E3E3A]" value="' + sid + '"' + checked + '><span class="text-[#0f172a] dark:text-[#EDEDEC]">' + title + '</span></label>';
+            });
+            html += '</div></div>';
+        });
+        container.innerHTML = html;
+        if (!hasSteps) empty?.classList.remove('hidden');
+    } catch (err) {
+        loading?.classList.add('hidden');
+        container.innerHTML = '<p class="text-xs text-red-600 dark:text-red-400">{{ __('supplier-orders.error') }}</p>';
+    }
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     let currentPage = 1;
@@ -577,7 +635,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!tbody) return;
 
         if (paginated.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="11" class="px-4 py-8 text-center text-[#64748b] dark:text-[#A1A09A]">{{ __('supplier-orders.no_orders') }}</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="12" class="px-4 py-8 text-center text-[#64748b] dark:text-[#A1A09A]">{{ __('supplier-orders.no_orders') }}</td></tr>';
             renderPagination();
             return;
         }
@@ -595,6 +653,12 @@ document.addEventListener('DOMContentLoaded', function() {
                               order.status === 'advance_payment' ? '{{ __('supplier-orders.status_advance_payment') }}' :
                               order.status === 'full_payment' ? '{{ __('supplier-orders.status_full_payment') }}' :
                               '{{ __('supplier-orders.status_delivery_completed') }}';
+            const sendStatusClass = order.is_sent_to_supplier
+                ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200'
+                : 'bg-slate-100 text-slate-700 dark:bg-slate-900/20 dark:text-slate-300';
+            const sendStatusText = order.is_sent_to_supplier
+                ? '{{ __('supplier-orders.sent_to_supplier') }}'
+                : '{{ __('supplier-orders.not_sent_to_supplier') }}';
 
             const createdDate = new Date(order.created_date).toLocaleDateString('kk-KZ');
             console.log("createdDate", createdDate);
@@ -609,6 +673,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${order.project_name}</td>
                     <td class="px-4 py-3 text-sm">
                         <span class="order-status-badge px-2 py-1 rounded text-xs font-medium ${statusClass}">${statusText}</span>
+                    </td>
+                    <td class="px-4 py-3 text-sm">
+                        <span class="px-2 py-1 rounded text-xs font-medium ${sendStatusClass}">${sendStatusText}</span>
                     </td>
                     <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${parseInt(order.summa).toLocaleString('kk-KZ')} ₸</td>
                     <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${plannedDate}</td>
@@ -664,6 +731,12 @@ document.addEventListener('DOMContentLoaded', function() {
                               order.status === 'advance_payment' ? '{{ __('supplier-orders.status_advance_payment') }}' :
                               order.status === 'full_payment' ? '{{ __('supplier-orders.status_full_payment') }}' :
                               '{{ __('supplier-orders.status_delivery_completed') }}';
+            const sendStatusClass = order.is_sent_to_supplier
+                ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200'
+                : 'bg-slate-100 text-slate-700 dark:bg-slate-900/20 dark:text-slate-300';
+            const sendStatusText = order.is_sent_to_supplier
+                ? '{{ __('supplier-orders.sent_to_supplier') }}'
+                : '{{ __('supplier-orders.not_sent_to_supplier') }}';
 
             const createdDate = new Date(order.created_date).toLocaleDateString('kk-KZ');
             
@@ -680,7 +753,10 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <p>${order.project_name}</p>
                             </div>
                         </div>
-                        <span class="order-status-badge px-2 py-1 rounded text-xs font-medium ${statusClass}">${statusText}</span>
+                        <div class="flex flex-col items-end gap-1">
+                            <span class="order-status-badge px-2 py-1 rounded text-xs font-medium ${statusClass}">${statusText}</span>
+                            <span class="px-2 py-1 rounded text-xs font-medium ${sendStatusClass}">${sendStatusText}</span>
+                        </div>
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm">
                         <div>
@@ -863,6 +939,12 @@ document.addEventListener('DOMContentLoaded', function() {
         @if(isset($selectedSupplierId))
         document.getElementById('order_supplier_id').value = '{{ $selectedSupplierId }}';
         @endif
+        const pidNew = document.getElementById('order_project_id')?.value;
+        refreshOrderProjectSteps(pidNew || '', []);
+    });
+
+    document.getElementById('order_project_id')?.addEventListener('change', function () {
+        refreshOrderProjectSteps(this.value, []);
     });
 
     // Инициализация
@@ -897,6 +979,9 @@ function viewOrder(id) {
                           order.status === 'advance_payment' ? '{{ __('supplier-orders.status_advance_payment') }}' :
                           order.status === 'full_payment' ? '{{ __('supplier-orders.status_full_payment') }}' :
                           '{{ __('supplier-orders.status_delivery_completed') }}';
+        const sendStatusText = order.is_sent_to_supplier
+            ? '{{ __('supplier-orders.sent_to_supplier') }}'
+            : '{{ __('supplier-orders.not_sent_to_supplier') }}';
 
         const createdDate = new Date(order.created_date).toLocaleDateString('kk-KZ');
         const plannedDate = new Date(order.planned_date).toLocaleDateString('kk-KZ');
@@ -922,6 +1007,10 @@ function viewOrder(id) {
             <div>
                 <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('supplier-orders.status') }}</label>
                 <p class="text-[#0f172a] dark:text-[#EDEDEC]">${statusText}</p>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('supplier-orders.send_status') }}</label>
+                <p class="text-[#0f172a] dark:text-[#EDEDEC]">${sendStatusText}</p>
             </div>
             <div>
                 <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('supplier-orders.amount') }}</label>
@@ -1008,6 +1097,7 @@ function editOrder(id) {
             return `<div class="flex gap-2"><input type="url" name="links[]" value="${v}" placeholder="{{ __('supplier-orders.paste_link') }}" class="modal-input flex-1"><button type="button" onclick="this.parentElement.remove()" class="px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500">×</button></div>`;
         }).join('') + `<div class="flex gap-2"><input type="url" name="links[]" placeholder="{{ __('supplier-orders.paste_link') }}" class="modal-input flex-1"><button type="button" onclick="this.parentElement.remove()" class="px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500">×</button></div>` :
             `<input type="url" name="links[]" placeholder="{{ __('supplier-orders.paste_link') }}" class="modal-input">`;
+        refreshOrderProjectSteps(order.project_id, order.included_step_ids || []);
     }
 }
 
@@ -1039,6 +1129,10 @@ function closeOrderModal() {
     document.getElementById('send_to_supplier').value = '0';
     const linksContainer = document.getElementById('order-links-container');
     linksContainer.innerHTML = `<input type="url" name="links[]" placeholder="{{ __('supplier-orders.paste_link') }}" class="modal-input">`;
+    const sc = document.getElementById('order-steps-container');
+    if (sc) sc.innerHTML = '';
+    document.getElementById('order-steps-loading')?.classList.add('hidden');
+    document.getElementById('order-steps-empty')?.classList.add('hidden');
 }
 
 function addOrderLinkField() {
@@ -1064,8 +1158,18 @@ document.getElementById('order-form')?.addEventListener('submit', function(e) {
 
     const orderId = document.getElementById('order_id').value;
     const url = orderId ? '{{ url("supplier-orders") }}/' + orderId : '{{ route("supplier-orders.store") }}';
-    const method = orderId ? 'POST' : 'POST';
-    const formData = new FormData(form);
+    const formData = new FormData();
+    for (const pair of new FormData(form).entries()) {
+        if (pair[0] === 'included_step_ids[]') continue;
+        formData.append(pair[0], pair[1]);
+    }
+    formData.delete('included_step_ids[]');
+    const picked = document.querySelectorAll('#order-steps-container input.order-step-cb:checked');
+    if (picked.length === 0) {
+        formData.append('included_step_ids[]', '');
+    } else {
+        picked.forEach(function (cb) { formData.append('included_step_ids[]', cb.value); });
+    }
     if (orderId) formData.append('_method', 'PUT');
 
     const token = document.querySelector('meta[name="csrf-token"]')?.content || form.querySelector('input[name="_token"]')?.value;

@@ -11,6 +11,7 @@ use App\Models\UserSupplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class SupplierOrderController extends Controller
 {
@@ -40,10 +41,12 @@ class SupplierOrderController extends Controller
             ->orderByDesc('id')
             ->get();
 
+        $stepsByOrder = Supplier_orders::includedStepsPayloadForMany($orders);
+
         return view('designer.supplier-orders.index', [
             'projects' => $projects,
             'suppliers' => $suppliers,
-            'orders' => $orders->map(fn (Supplier_orders $order) => $this->payload($order))->values(),
+            'orders' => $orders->map(fn (Supplier_orders $order) => $this->payload($order, $stepsByOrder[(int) $order->id] ?? []))->values(),
             'selectedProjectId' => $request->query('project_id'),
             'selectedSupplierId' => $request->query('supplier_id'),
             'categoryOptions' => $this->categoryOptions(),
@@ -67,7 +70,7 @@ class SupplierOrderController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('supplier-orders.created'),
-            'order' => $this->payload($order->load(['project:id,name', 'supplier:id,name'])),
+            'order' => $this->payload($order->load(['project:id,name', 'supplier:id,name']), null),
         ]);
     }
 
@@ -96,7 +99,7 @@ class SupplierOrderController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('supplier-orders.updated'),
-            'order' => $this->payload($order->load(['project:id,name', 'supplier:id,name'])),
+            'order' => $this->payload($order->load(['project:id,name', 'supplier:id,name']), null),
         ]);
     }
 
@@ -106,7 +109,7 @@ class SupplierOrderController extends Controller
             ->where('user_id', $request->user()->id)
             ->with(['project:id,name', 'supplier:id,name'])
             ->findOrFail($orderId);
-        $payload = $this->payload($order);
+        $payload = $this->payload($order, null);
 
         if ($request->expectsJson() || $request->wantsJson()) {
             return response()->json($payload);
@@ -162,7 +165,7 @@ class SupplierOrderController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('supplier-orders.updated'),
-            'order' => $this->payload($order->load(['project:id,name', 'supplier:id,name'])),
+            'order' => $this->payload($order->load(['project:id,name', 'supplier:id,name']), null),
         ]);
     }
 
@@ -202,6 +205,20 @@ class SupplierOrderController extends Controller
     {
         $userId = (int) $request->user()->id;
 
+        if ($request->has('included_step_ids')) {
+            $raw = $request->input('included_step_ids');
+            if (is_array($raw)) {
+                $filtered = array_values(array_filter($raw, function ($v) {
+                    if ($v === null || $v === '') {
+                        return false;
+                    }
+
+                    return is_numeric($v);
+                }));
+                $request->merge(['included_step_ids' => $filtered]);
+            }
+        }
+
         $data = $request->validate([
             'project_id' => ['required', Rule::exists('projects', 'id')->where(fn ($q) => $q->where('user_id', $userId))],
             'supplier_id' => ['required', 'integer', Rule::exists('suppliers', 'id')],
@@ -224,7 +241,20 @@ class SupplierOrderController extends Controller
             'files' => ['nullable', 'array'],
             'files.*' => ['nullable', 'file', 'max:10240'],
             'comment' => ['nullable', 'string'],
+            'included_step_ids' => ['sometimes', 'nullable', 'array'],
+            'included_step_ids.*' => ['nullable', 'integer', 'min:1'],
         ]);
+
+        $projectId = (int) $data['project_id'];
+        $stepIds = array_key_exists('included_step_ids', $data)
+            ? Supplier_orders::normalizeStepIds($data['included_step_ids'] ?? [])
+            : Supplier_orders::normalizeStepIds($order->included_step_ids);
+
+        if ($stepIds !== [] && Supplier_orders::countStepsInProject($projectId, $stepIds) !== count($stepIds)) {
+            throw ValidationException::withMessages([
+                'included_step_ids' => [__('supplier-orders.included_steps_invalid')],
+            ]);
+        }
 
         $links = array_values(array_filter(array_map(fn ($v) => trim((string) $v), (array) ($data['links'] ?? []))));
         $existingFiles = array_values(array_filter(array_map(fn ($v) => trim((string) $v), (array) ($data['existing_files'] ?? []))));
@@ -261,7 +291,10 @@ class SupplierOrderController extends Controller
             }
         }
 
-        $order->project_id = (int) $data['project_id'];
+        $order->project_id = $projectId;
+        if (array_key_exists('included_step_ids', $data) || ! $order->exists) {
+            $order->included_step_ids = $stepIds;
+        }
         $order->supplier_id = $supplierId;
         $order->status = (string) ($data['status'] ?? 'order_created');
         $order->summa = (int) $data['summa'];
@@ -289,6 +322,9 @@ class SupplierOrderController extends Controller
             }
 
             $order->status = 'order_sent';
+            $order->is_sent_to_supplier = true;
+        } else {
+            $order->is_sent_to_supplier = false;
         }
 
         $order->save();
@@ -344,19 +380,26 @@ class SupplierOrderController extends Controller
         return $all;
     }
 
-    private function payload(Supplier_orders $order): array
+    /**
+     * @param  list<array<string, mixed>>|null  $includedSteps  из includedStepsPayloadForMany() или null = один запрос
+     */
+    private function payload(Supplier_orders $order, ?array $includedSteps = null): array
     {
         $status = (string) $order->status;
+        $includedSteps ??= $order->includedStepsPayload();
 
         return [
             'id' => (int) $order->id,
             'number' => (string) $order->id,
             'created_date' => optional($order->created_at)->format('Y-m-d'),
             'project_id' => (int) $order->project_id,
+            'included_step_ids' => Supplier_orders::normalizeStepIds($order->included_step_ids),
+            'included_steps' => $includedSteps,
             'project_name' => (string) ($order->project?->name ?? '-'),
             'supplier_id' => (int) $order->supplier_id,
             'supplier_name' => (string) ($order->supplier?->name ?? '-'),
             'status' => $status,
+            'is_sent_to_supplier' => (bool) $order->is_sent_to_supplier,
             'amount' => (int) $order->summa,
             'summa' => (int) $order->summa,
             'category' => (string) ($order->category ?? ''),

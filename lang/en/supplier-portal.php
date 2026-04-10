@@ -2,6 +2,15 @@
 
 return [
     'title' => 'Supplier account',
+    'sidebar_brand' => 'SUPPLIER',
+    'nav_orders' => 'Orders',
+    'nav_company' => 'Company',
+    'page_orders_title' => 'Orders',
+    'page_company_title' => 'Company profile',
+    'orders_intro' => 'Orders from designers: table, list, and funnel by status. Drag cards between columns to update the stage.',
+    'orders_need_company' => 'Create your company profile first to see orders.',
+    'nav_theme' => 'Theme',
+    'open_menu' => 'Open menu',
     'welcome' => 'Hello, :name',
     'subtitle' => 'Your company profile on the portal appears here.',
     'profile_status' => 'Profile status',

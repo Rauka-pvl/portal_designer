@@ -427,15 +427,24 @@ class ProjectController extends Controller
                 ->values(),
             'comment' => $project->comment,
             'stages' => $project->stages->map(function (ProjectStages $stage) {
+                $type = (string) $stage->stage_type;
+                $labelKey = 'projects.stage_'.$type;
+                $stageLabel = $type !== '' ? (string) __($labelKey) : '';
+                if ($stageLabel === $labelKey) {
+                    $stageLabel = $type;
+                }
+
                 return [
                     'id' => $stage->id,
                     'stage_type' => $stage->stage_type,
+                    'stage_type_label' => $stageLabel,
                     'template_id' => $stage->template_id,
                     'deadline' => $stage->deadline,
                     'responsible_id' => $stage->responsible_id,
                     'assign_task' => (bool) $stage->assign_task,
                     'steps' => $stage->steps->sortBy('order')->map(function (ProjectStageStep $step) {
                         return [
+                            'id' => $step->id,
                             'title' => $step->title,
                             'deadline' => $step->deadline,
                             'responsible_id' => $step->responsible_id,

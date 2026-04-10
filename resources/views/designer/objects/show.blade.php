@@ -164,7 +164,7 @@
                 <div>
                     <div class="field-label mb-2">{{ __('objects.city') }}</div>
                     <select id="object_city" name="city" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input" disabled required>
-                        @foreach (['Алматы', 'Астана', 'Шымкент', 'Караганда', 'Актобе', 'Тараз', 'Павлодар', 'Усть-Каменогорск', 'Семей', 'Атырау', 'Костанай', 'Кызылорда', 'Уральск', 'Петропавловск', 'Актау', 'Темиртау', 'Туркестан', 'Кокшетау', 'Талдыкорган', 'Экибастуз'] as $city)
+                        @foreach (trans('cities.passport') as $city)
                             <option value="{{ $city }}" @selected($object->city === $city)>{{ $city }}</option>
                         @endforeach
                     </select>

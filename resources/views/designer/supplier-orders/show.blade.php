@@ -107,12 +107,40 @@
                 @foreach (($o['files'] ?? []) as $filePath)
                     <input type="hidden" name="existing_files[]" value="{{ $filePath }}">
                 @endforeach
+                @foreach (($o['included_step_ids'] ?? []) as $stepId)
+                    <input type="hidden" name="included_step_ids[]" value="{{ (int) $stepId }}">
+                @endforeach
             </div>
             <div class="mt-6 flex gap-3">
                 <button id="btn-save" type="submit" class="btn hidden">{{ __('supplier-orders.save') }}</button>
                 <button id="btn-cancel" type="button" class="btn hidden">{{ __('supplier-orders.cancel') }}</button>
             </div>
         </form>
+    </div>
+
+    <div class="panel mt-6">
+        <h2 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-4">{{ __('supplier-orders.project_steps_section') }}</h2>
+        @php $incSteps = $o['included_steps'] ?? []; @endphp
+        @if (count($incSteps) === 0)
+            <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">{{ __('supplier-orders.project_steps_empty') }}</p>
+        @else
+            <div class="space-y-4">
+                @foreach ($incSteps as $step)
+                    <div class="border-l-2 border-[#f59e0b]/60 pl-3">
+                        <p class="text-xs font-medium text-[#64748b] dark:text-[#A1A09A]">{{ $step['stage_type_label'] ?? ($step['stage_type'] ?? '') }}</p>
+                        <p class="text-sm font-medium text-[#0f172a] dark:text-[#EDEDEC] mt-0.5">{{ $step['title'] ?? '' }}</p>
+                        @if (! empty($step['result_comment']))
+                            <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-1 whitespace-pre-wrap">{{ $step['result_comment'] }}</p>
+                        @endif
+                        @if (! empty($step['link']))
+                            <p class="text-sm mt-1">
+                                <a href="{{ $step['link'] }}" target="_blank" rel="noopener noreferrer" class="text-[#f59e0b] hover:underline">{{ __('supplier-orders.step_link') }}</a>
+                            </p>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        @endif
     </div>
 @endsection
 

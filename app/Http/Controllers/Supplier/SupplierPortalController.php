@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Supplier;
 
 use App\Http\Controllers\Controller;
 use App\Models\Supplier;
+use App\Models\Supplier_orders;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -12,14 +14,87 @@ use Illuminate\View\View;
 
 class SupplierPortalController extends Controller
 {
-    public function index(Request $request): View
+    private const ORDER_STATUSES = [
+        'order_created',
+        'order_sent',
+        'order_confirmed',
+        'advance_payment',
+        'full_payment',
+        'delivery_completed',
+    ];
+
+    public function orders(Request $request): View
     {
         $supplier = Supplier::query()
             ->where('user_id', (int) $request->user()->id)
             ->first();
 
-        return view('supplier.index', [
+        $orders = collect();
+        if ($supplier) {
+            $orderModels = Supplier_orders::query()
+                ->where('supplier_id', $supplier->id)
+                ->where('is_sent_to_supplier', true)
+                ->with([
+                    'project:id,name',
+                    'designer:id,name,email',
+                    'supplier:id,name',
+                ])
+                ->orderByDesc('id')
+                ->get();
+
+            $stepsByOrder = Supplier_orders::includedStepsPayloadForMany($orderModels);
+
+            $orders = $orderModels->map(fn (Supplier_orders $order) => $this->orderPayload(
+                $order,
+                $stepsByOrder[(int) $order->id] ?? []
+            ));
+        }
+
+        $projects = $orders
+            ->map(fn (array $o) => ['id' => $o['project_id'], 'name' => $o['project_name']])
+            ->unique('id')
+            ->values();
+
+        return view('supplier.orders', [
             'supplier' => $supplier,
+            'orders' => $orders->values(),
+            'filterProjects' => $projects,
+        ]);
+    }
+
+    public function company(Request $request): View
+    {
+        $supplier = Supplier::query()
+            ->where('user_id', (int) $request->user()->id)
+            ->first();
+
+        return view('supplier.company', [
+            'supplier' => $supplier,
+        ]);
+    }
+
+    public function updateOrderStatus(Request $request, int $orderId): JsonResponse
+    {
+        $data = $request->validate([
+            'status' => ['required', Rule::in(self::ORDER_STATUSES)],
+        ]);
+
+        $supplier = Supplier::query()
+            ->where('user_id', (int) $request->user()->id)
+            ->firstOrFail();
+
+        $order = Supplier_orders::query()
+            ->where('supplier_id', $supplier->id)
+            ->with(['project:id,name', 'designer:id,name,email', 'supplier:id,name'])
+            ->findOrFail($orderId);
+
+        $order->status = $data['status'];
+        $order->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => __('supplier-orders.updated'),
+            'order' => $this->orderPayload($order, null),
         ]);
     }
 
@@ -111,8 +186,53 @@ class SupplierPortalController extends Controller
         $supplier->save();
 
         return redirect()
-            ->route('supplier.index')
+            ->route('supplier.company')
             ->with('status', __('supplier-portal.submitted_for_review'));
+    }
+
+    /**
+     * @param  list<array<string, mixed>>|null  $includedSteps
+     */
+    private function orderPayload(Supplier_orders $order, ?array $includedSteps = null): array
+    {
+        $includedSteps ??= $order->includedStepsPayload();
+
+        return [
+            'id' => (int) $order->id,
+            'number' => (string) $order->id,
+            'created_date' => optional($order->created_at)->format('Y-m-d'),
+            'project_id' => (int) $order->project_id,
+            'project_name' => (string) ($order->project?->name ?? '-'),
+            'supplier_id' => (int) $order->supplier_id,
+            'supplier_name' => (string) ($order->supplier?->name ?? '-'),
+            'designer_name' => (string) ($order->designer?->name ?? '-'),
+            'designer_email' => (string) ($order->designer?->email ?? ''),
+            'status' => (string) $order->status,
+            'is_sent_to_supplier' => (bool) $order->is_sent_to_supplier,
+            'amount' => (int) $order->summa,
+            'summa' => (int) $order->summa,
+            'category' => (string) ($order->category ?? ''),
+            'mark' => (string) ($order->mark ?? ''),
+            'room' => (string) ($order->room ?? ''),
+            'planned_date' => optional($order->date_planned)->format('Y-m-d'),
+            'date_planned' => optional($order->date_planned)->format('Y-m-d'),
+            'actual_date' => optional($order->date_actual)->format('Y-m-d'),
+            'date_actual' => optional($order->date_actual)->format('Y-m-d'),
+            'prepayment_date' => optional($order->prepayment_date)->format('Y-m-d'),
+            'payment_date' => optional($order->payment_date)->format('Y-m-d'),
+            'prepayment_amount' => $order->prepayment_amount !== null ? (int) $order->prepayment_amount : null,
+            'payment_amount' => $order->payment_amount !== null ? (int) $order->payment_amount : null,
+            'links' => is_array($order->links) ? $order->links : [],
+            'files' => is_array($order->files) ? $order->files : [],
+            'file_urls' => collect(is_array($order->files) ? $order->files : [])
+                ->map(fn ($f) => is_string($f) ? asset('storage/'.ltrim($f, '/')) : null)
+                ->filter()
+                ->values(),
+            'product_service' => (string) ($order->comment ?? ''),
+            'comment' => (string) ($order->comment ?? ''),
+            'included_step_ids' => Supplier_orders::normalizeStepIds($order->included_step_ids),
+            'included_steps' => $includedSteps,
+        ];
     }
 
     private function cleanStringArray(mixed $value): array
