@@ -10,6 +10,7 @@ use App\Http\Controllers\Designer\ReferralSupplierController;
 use App\Http\Controllers\Designer\SettingsController;
 use App\Http\Controllers\Designer\SupplierController;
 use App\Http\Controllers\Designer\SupplierOrderController;
+use App\Http\Controllers\SupplierOrderChatController;
 use App\Http\Controllers\Moderator\ModeratorController;
 use App\Http\Controllers\Supplier\SupplierPortalController;
 use Illuminate\Http\Request;
@@ -116,12 +117,7 @@ Route::middleware(['auth', 'role:designer'])->group(function () {
         ->name('objects.show');
 
     Route::get('/suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
-    Route::get('/supplier-network', [SupplierController::class, 'network'])->name('suppliers.network');
     Route::post('/suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
-    Route::get('/suppliers/search-by-inn', [SupplierController::class, 'searchByInn'])->name('suppliers.search_by_inn');
-    Route::post('/suppliers/{supplierId}/invite', [SupplierController::class, 'invite'])
-        ->whereNumber('supplierId')
-        ->name('suppliers.invite');
     Route::get('/suppliers/{supplierId}', [SupplierController::class, 'show'])
         ->whereNumber('supplierId')
         ->name('suppliers.show');
@@ -222,4 +218,20 @@ Route::middleware(['auth', 'role:designer|moderator'])->group(function () {
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::put('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile.update');
     Route::put('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password.update');
+});
+
+Route::middleware(['auth', 'role:designer|supplier'])->group(function () {
+    Route::get('/supplier-orders/{orderId}/chat/messages', [SupplierOrderChatController::class, 'messages'])
+        ->whereNumber('orderId')
+        ->name('supplier-orders.chat.messages');
+    Route::post('/supplier-orders/{orderId}/chat/messages', [SupplierOrderChatController::class, 'store'])
+        ->whereNumber('orderId')
+        ->name('supplier-orders.chat.store');
+    Route::post('/supplier-orders/{orderId}/chat/read', [SupplierOrderChatController::class, 'markRead'])
+        ->whereNumber('orderId')
+        ->name('supplier-orders.chat.read');
+    Route::get('/supplier-orders/chat/unread-map', [SupplierOrderChatController::class, 'unreadMap'])
+        ->name('supplier-orders.chat.unread_map');
+    Route::get('/chat/unread-count', [SupplierOrderChatController::class, 'unreadCount'])
+        ->name('chat.unread_count');
 });

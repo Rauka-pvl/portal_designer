@@ -23,13 +23,13 @@ class ClientController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        // Ãâ€ÃÂ»Ã‘Â Ã‘ÂÃÂ¾ÃÂ²ÃÂ¼ÃÂµÃ‘ÂÃ‘â€šÃÂ¸ÃÂ¼ÃÂ¾Ã‘ÂÃ‘â€šÃÂ¸ Ã‘Â Ã‘â€žÃ‘â‚¬ÃÂ¾ÃÂ½Ã‘â€šÃÂµÃÂ½ÃÂ´ÃÂ¾ÃÂ¼ (ÃÂ² ÃÂ¿Ã‘â‚¬ÃÂµÃÂ´Ã‘ÂÃ‘â€šÃÂ°ÃÂ²ÃÂ»ÃÂµÃÂ½ÃÂ¸ÃÂ¸ ÃÂ¾ÃÂ¶ÃÂ¸ÃÂ´ÃÂ°Ã‘Å½Ã‘â€šÃ‘ÂÃ‘Â ÃÂ´ÃÂ¾ÃÂ¿ÃÂ¾ÃÂ»ÃÂ½ÃÂ¸Ã‘â€šÃÂµÃÂ»Ã‘Å’ÃÂ½Ã‘â€¹ÃÂµ ÃÂ¿ÃÂ¾ÃÂ»Ã‘Â)
+        // Для совместимости с фронтендом (в представлении ожидаются дополнительные поля)
         $clients->each(function (Client $client) {
             $client->count_objects = (int) ($client->count_objects ?? 0);
             $client->sum_repair_budget_planned = (float) ($client->sum_repair_budget_planned ?? 0);
 
-            // ÃÂ§Ã‘â€šÃÂ¾ÃÂ±Ã‘â€¹ JS-ÃÂ¼ÃÂ¾ÃÂ´ÃÂ°ÃÂ»ÃÂºÃÂ° "ÃÅ¸Ã‘â‚¬ÃÂ¾Ã‘ÂÃÂ¼ÃÂ¾Ã‘â€šÃ‘â‚¬" ÃÂ¿ÃÂ¾ÃÂºÃÂ°ÃÂ·Ã‘â€¹ÃÂ²ÃÂ°ÃÂ»ÃÂ° Ãâ€™ÃÂ¡Ãâ€¢ Ã‘â€žÃÂ°ÃÂ¹ÃÂ»Ã‘â€¹,
-            // ÃÂ´ÃÂµÃÂºÃÂ¾ÃÂ´ÃÂ¸Ã‘â‚¬Ã‘Æ’ÃÂµÃÂ¼ file_paths ÃÂ¸ÃÂ· JSON ÃÂ² ÃÂ¼ÃÂ°Ã‘ÂÃ‘ÂÃÂ¸ÃÂ² ÃÂ¿Ã‘â‚¬Ã‘ÂÃÂ¼ÃÂ¾ ÃÂ½ÃÂ° Ã‘ÂÃ‘â€šÃÂ°ÃÂ¿ÃÂµ index.
+            // Чтобы JS-модалка "Просмотр" показывала ВСЕ файлы,
+            // декодируем file_paths из JSON в массив прямо на этапе index.
             $decoded = [];
             if (! empty($client->file_paths)) {
                 $tmp = json_decode((string) $client->file_paths, true);
@@ -49,7 +49,7 @@ class ClientController extends Controller
     }
 
     /**
-     * Ãâ€™ÃÂ¾ÃÂ·ÃÂ²Ã‘â‚¬ÃÂ°Ã‘â€°ÃÂ°ÃÂµÃ‘â€š Ã‘ÂÃÂ¿ÃÂ¸Ã‘ÂÃÂ¾ÃÂº ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ¾ÃÂ² ÃÂ´ÃÂ»Ã‘Â ÃÂ¶ÃÂ¸ÃÂ²ÃÂ¾ÃÂ³ÃÂ¾ ÃÂ¿ÃÂ¾ÃÂ¸Ã‘ÂÃÂºÃÂ° (AJAX).
+     * Возвращает список клиентов для живого поиска (AJAX).
      */
     public function search(Request $request)
     {
@@ -88,7 +88,7 @@ class ClientController extends Controller
     }
 
     /**
-     * ÃÂ¡Ã‘â€šÃ‘â‚¬ÃÂ°ÃÂ½ÃÂ¸Ã‘â€ ÃÂ° "ÃÂ¿ÃÂ¾ÃÂ´Ã‘â‚¬ÃÂ¾ÃÂ±ÃÂ½ÃÂµÃÂµ" (CRUD ÃÂ½ÃÂ° ÃÂ¾Ã‘â€šÃÂ´ÃÂµÃÂ»Ã‘Å’ÃÂ½ÃÂ¾ÃÂ¹ Ã‘ÂÃ‘â€šÃ‘â‚¬ÃÂ°ÃÂ½ÃÂ¸Ã‘â€ ÃÂµ).
+     * Страница "подробнее" (CRUD на отдельной странице).
      */
     public function show(Request $request, int $clientId)
     {
@@ -100,12 +100,12 @@ class ClientController extends Controller
     }
 
     /**
-     * ÃÂ¡ÃÂ¾ÃÂ·ÃÂ´ÃÂ°ÃÂ½ÃÂ¸ÃÂµ / ÃÂ¾ÃÂ±ÃÂ½ÃÂ¾ÃÂ²ÃÂ»ÃÂµÃÂ½ÃÂ¸ÃÂµ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ°.
+     * Создание / обновление клиента.
      */
     public function save(Request $request)
     {
-        // Ãâ€™ Ã‘â€žÃÂ¾Ã‘â‚¬ÃÂ¼ÃÂµ Ã‘ÂÃÂºÃ‘â‚¬Ã‘â€¹Ã‘â€šÃÂ¾ÃÂµ `client_id` ÃÂ¼ÃÂ¾ÃÂ¶ÃÂµÃ‘â€š ÃÂ¿Ã‘â‚¬ÃÂ¸Ã‘â€¦ÃÂ¾ÃÂ´ÃÂ¸Ã‘â€šÃ‘Å’ ÃÂºÃÂ°ÃÂº ÃÂ¿Ã‘Æ’Ã‘ÂÃ‘â€šÃÂ°Ã‘Â Ã‘ÂÃ‘â€šÃ‘â‚¬ÃÂ¾ÃÂºÃÂ°.
-        // ÃÅ¸Ã‘â‚¬ÃÂ¸ÃÂ²ÃÂ¾ÃÂ´ÃÂ¸ÃÂ¼ ÃÂº `null`, Ã‘â€¡Ã‘â€šÃÂ¾ÃÂ±Ã‘â€¹ ÃÂ²ÃÂ°ÃÂ»ÃÂ¸ÃÂ´ÃÂ°Ã‘â€šÃÂ¾Ã‘â‚¬ ÃÂºÃÂ¾Ã‘â‚¬Ã‘â‚¬ÃÂµÃÂºÃ‘â€šÃÂ½ÃÂ¾ ÃÂ¿Ã‘â‚¬ÃÂ¸ÃÂ¼ÃÂµÃÂ½Ã‘ÂÃÂ» `nullable`.
+        // В форме скрытое `client_id` может приходить как пустая строка.
+        // Приводим к `null`, чтобы валидатор корректно применял `nullable`.
         if ($request->has('client_id') && $request->input('client_id') === '') {
             $request->merge(['client_id' => null]);
         }
@@ -119,7 +119,7 @@ class ClientController extends Controller
             'status' => ['required', Rule::in(['new', 'in_work', 'not_working'])],
             'comment' => ['nullable', 'string'],
             'link' => ['nullable', 'url', 'max:255'],
-            // Ãâ€™ Ã‘â€šÃÂ°ÃÂ±ÃÂ»ÃÂ¸Ã‘â€ ÃÂµ ÃÂ½ÃÂµÃ‘â€š ÃÂ¾Ã‘â€šÃÂ´ÃÂµÃÂ»Ã‘Å’ÃÂ½ÃÂ¾ÃÂ¹ Ã‘ÂÃ‘Æ’Ã‘â€°ÃÂ½ÃÂ¾Ã‘ÂÃ‘â€šÃÂ¸ ÃÂ´ÃÂ»Ã‘Â Ã‘â€žÃÂ°ÃÂ¹ÃÂ»ÃÂ¾ÃÂ², ÃÂ¿ÃÂ¾Ã‘ÂÃ‘â€šÃÂ¾ÃÂ¼Ã‘Æ’ Ã‘ÂÃÂ¾Ã‘â€¦Ã‘â‚¬ÃÂ°ÃÂ½Ã‘ÂÃÂµÃÂ¼ ÃÂ¾ÃÂ¿Ã‘â€ ÃÂ¸ÃÂ¾ÃÂ½ÃÂ°ÃÂ»Ã‘Å’ÃÂ½ÃÂ¾ Ã‘â€šÃÂ¾ÃÂ»Ã‘Å’ÃÂºÃÂ¾ file_path.
+            // В таблице нет отдельной сущности для файлов, поэтому сохраняем опционально только file_path.
             'files' => ['nullable'],
         ]);
 
@@ -136,8 +136,8 @@ class ClientController extends Controller
             $client->user_id = $userId;
         }
 
-        // Ãâ€”ÃÂ°ÃÂ³Ã‘â‚¬Ã‘Æ’ÃÂ¶ÃÂ°ÃÂµÃÂ¼ ÃÂ½ÃÂµÃ‘ÂÃÂºÃÂ¾ÃÂ»Ã‘Å’ÃÂºÃÂ¾ Ã‘â€žÃÂ°ÃÂ¹ÃÂ»ÃÂ¾ÃÂ² ÃÂ¸ Ã‘ÂÃÂ¾Ã‘â€¦Ã‘â‚¬ÃÂ°ÃÂ½Ã‘ÂÃÂµÃÂ¼ ÃÂ¸Ã‘â€¦ ÃÂ¿Ã‘Æ’Ã‘â€šÃÂ¸.
-        // file_path ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ²ÃÂ»Ã‘ÂÃÂµÃÂ¼ ÃÂ´ÃÂ»Ã‘Â Ã‘ÂÃÂ¾ÃÂ²ÃÂ¼ÃÂµÃ‘ÂÃ‘â€šÃÂ¸ÃÂ¼ÃÂ¾Ã‘ÂÃ‘â€šÃÂ¸ (ÃÂ¿ÃÂµÃ‘â‚¬ÃÂ²Ã‘â€¹ÃÂ¹ Ã‘â€žÃÂ°ÃÂ¹ÃÂ»), file_paths Ã¢â‚¬â€ ÃÂ´ÃÂ»Ã‘Â Ã‘ÂÃÂ¿ÃÂ¸Ã‘ÂÃÂºÃÂ°.
+        // Загружаем несколько файлов и сохраняем их пути.
+        // file_path оставляем для совместимости (первый файл), file_paths — для списка.
         if ($request->hasFile('files')) {
             $files = $request->file('files');
             $uploaded = is_array($files) ? $files : [$files];
@@ -151,7 +151,7 @@ class ClientController extends Controller
             }
 
             if (! empty($paths)) {
-                // Ãâ€ÃÂ¾ÃÂ±ÃÂ°ÃÂ²ÃÂ»Ã‘ÂÃÂµÃÂ¼ ÃÂº Ã‘Æ’ÃÂ¶ÃÂµ Ã‘ÂÃ‘Æ’Ã‘â€°ÃÂµÃ‘ÂÃ‘â€šÃÂ²Ã‘Æ’Ã‘Å½Ã‘â€°ÃÂ¸ÃÂ¼ (ÃÂµÃ‘ÂÃÂ»ÃÂ¸ ÃÂ¾ÃÂ½ÃÂ¸ ÃÂ±Ã‘â€¹ÃÂ»ÃÂ¸).
+                // Добавляем к уже существующим (если они были).
                 $existing = [];
                 if (! empty($client->file_paths)) {
                     $decoded = json_decode((string) $client->file_paths, true);
@@ -164,7 +164,7 @@ class ClientController extends Controller
 
                 $merged = array_values(array_unique(array_merge($existing, $paths)));
                 $client->file_paths = json_encode($merged, JSON_UNESCAPED_SLASHES);
-                $client->file_path = $merged[0] ?? null; // Ã‘ÂÃÂ¾ÃÂ²ÃÂ¼ÃÂµÃ‘ÂÃ‘â€šÃÂ¸ÃÂ¼ÃÂ¾Ã‘ÂÃ‘â€šÃ‘Å’ Ã‘ÂÃÂ¾ Ã‘ÂÃ‘â€šÃÂ°Ã‘â‚¬Ã‘â€¹ÃÂ¼ ÃÂ¿ÃÂ¾ÃÂ»ÃÂµÃÂ¼
+                $client->file_path = $merged[0] ?? null; // совместимость со старым полем
             }
         }
 
@@ -179,7 +179,7 @@ class ClientController extends Controller
 
         $message = $isUpdate ? __('clients.saved') : __('clients.added');
 
-        // Ãâ€ÃÂ»Ã‘Â AJAX (index/live-search) ÃÂ²ÃÂ¾ÃÂ·ÃÂ²Ã‘â‚¬ÃÂ°Ã‘â€°ÃÂ°ÃÂµÃÂ¼ JSON, ÃÂ´ÃÂ»Ã‘Â ÃÂ¾ÃÂ±Ã‘â€¹Ã‘â€¡ÃÂ½ÃÂ¾ÃÂ¹ Ã‘â€žÃÂ¾Ã‘â‚¬ÃÂ¼Ã‘â€¹ (Ã‘ÂÃ‘â€šÃ‘â‚¬ÃÂ°ÃÂ½ÃÂ¸Ã‘â€ ÃÂ° details) Ã¢â‚¬â€ redirect.
+        // Для AJAX (index/live-search) возвращаем JSON, для обычной формы (страница details) — redirect.
         if ($request->expectsJson() || $request->wantsJson()) {
             return response()->json([
                 'success' => true,
@@ -194,7 +194,7 @@ class ClientController extends Controller
     }
 
     /**
-     * ÃÂ¡ÃÂ¼ÃÂµÃÂ½ÃÂ° Ã‘ÂÃ‘â€šÃÂ°Ã‘â€šÃ‘Æ’Ã‘ÂÃÂ° ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ° (ÃÂ´ÃÂ»Ã‘Â drag&drop ÃÂ¸ ÃÂºÃÂ½ÃÂ¾ÃÂ¿ÃÂ¾ÃÂº).
+     * Смена статуса клиента (для drag&drop и кнопок).
      */
     public function updateStatus(Request $request, int $clientId)
     {
@@ -213,7 +213,7 @@ class ClientController extends Controller
     }
 
     /**
-     * ÃÂ£ÃÂ´ÃÂ°ÃÂ»ÃÂµÃÂ½ÃÂ¸ÃÂµ ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ° (AJAX).
+     * Удаление клиента (AJAX).
      */
     public function destroy(Request $request, int $clientId)
     {
@@ -226,7 +226,7 @@ class ClientController extends Controller
     }
 
     /**
-     * ÃÂ£ÃÂ´ÃÂ°ÃÂ»ÃÂµÃÂ½ÃÂ¸ÃÂµ ÃÂ¾ÃÂ´ÃÂ½ÃÂ¾ÃÂ³ÃÂ¾ Ã‘â€žÃÂ°ÃÂ¹ÃÂ»ÃÂ° ÃÂºÃÂ»ÃÂ¸ÃÂµÃÂ½Ã‘â€šÃÂ° ÃÂ¿ÃÂ¾ ÃÂ¸ÃÂ½ÃÂ´ÃÂµÃÂºÃ‘ÂÃ‘Æ’ ÃÂ² ÃÂ¼ÃÂ°Ã‘ÂÃ‘ÂÃÂ¸ÃÂ²ÃÂµ file_paths.
+     * Удаление одного файла клиента по индексу в массиве file_paths.
      */
     public function deleteFile(Request $request, int $clientId, int $fileIndex)
     {
@@ -259,7 +259,7 @@ class ClientController extends Controller
 
         if (! empty($filePaths)) {
             $client->file_paths = json_encode(array_values($filePaths), JSON_UNESCAPED_SLASHES);
-            $client->file_path = $filePaths[0] ?? null; // Ã‘ÂÃÂ¾ÃÂ²ÃÂ¼ÃÂµÃ‘ÂÃ‘â€šÃÂ¸ÃÂ¼ÃÂ¾Ã‘ÂÃ‘â€šÃ‘Å’
+            $client->file_path = $filePaths[0] ?? null; // совместимость
         } else {
             $client->file_paths = null;
             $client->file_path = null;
@@ -286,7 +286,7 @@ class ClientController extends Controller
             $filePaths = [$client->file_path];
         }
 
-        // Ãâ€¢Ã‘ÂÃÂ»ÃÂ¸ ÃÂ°ÃÂ³Ã‘â‚¬ÃÂµÃÂ³ÃÂ°Ã‘â€šÃ‘â€¹ ÃÂ½ÃÂµ ÃÂ±Ã‘â€¹ÃÂ»ÃÂ¸ ÃÂ¿ÃÂ¾ÃÂ´ÃÂ³Ã‘â‚¬Ã‘Æ’ÃÂ¶ÃÂµÃÂ½Ã‘â€¹ ÃÂ·ÃÂ°Ã‘â‚¬ÃÂ°ÃÂ½ÃÂµÃÂµ, Ã‘ÂÃ‘â€¡ÃÂ¸Ã‘â€šÃÂ°ÃÂµÃÂ¼ ÃÂ¸Ã‘â€¦ Ã‘â€¡ÃÂµÃ‘â‚¬ÃÂµÃÂ· Ã‘ÂÃÂ²Ã‘ÂÃÂ·Ã‘Å’.
+        // Если агрегаты не были подгружены заранее, считаем их через связь.
         $countObjects = isset($client->count_objects)
             ? (int) $client->count_objects
             : $client->objects()->count();
@@ -310,5 +310,3 @@ class ClientController extends Controller
         ];
     }
 }
-
-

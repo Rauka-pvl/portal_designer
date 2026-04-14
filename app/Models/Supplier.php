@@ -45,7 +45,6 @@ class Supplier extends Model
         'checking_account',
         'corr_account',
         'comment_bank',
-        'is_favorite',
 
         // Moderation
         'moderation_status',
@@ -59,7 +58,6 @@ class Supplier extends Model
     protected $casts = [
         'recommend' => 'boolean',
         'address_match' => 'boolean',
-        'is_favorite' => 'boolean',
         'is_confirmed_by_designer' => 'boolean',
         'is_referral_submitted' => 'boolean',
         'moderation_reviewed_at' => 'datetime',

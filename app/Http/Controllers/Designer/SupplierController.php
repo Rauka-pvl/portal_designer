@@ -3,36 +3,34 @@
 namespace App\Http\Controllers\Designer;
 
 use App\Http\Controllers\Controller;
+use App\Models\DesignerFavoriteSupplier;
 use App\Models\Supplier;
-use App\Models\UserNotification;
-use App\Models\UserSupplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class SupplierController extends Controller
 {
-    public function network()
-    {
-        return view('designer.suppliers.network');
-    }
-
     public function index(Request $request)
     {
         $userId = (int) $request->user()->id;
 
-        $ownedSupplierIds = Supplier::query()
-            ->where('user_id', $userId)
-            ->pluck('id');
-
-        $linkedSupplierIds = UserSupplier::query()
-            ->where('designer_user_id', $userId)
-            ->pluck('supplier_id');
-
         $suppliers = Supplier::query()
-            ->whereIn('id', $ownedSupplierIds->merge($linkedSupplierIds)->unique()->values())
+            ->where(function ($q) use ($userId) {
+                $q->where(function ($q2) {
+                    $q2->where('profile_status', 'active')
+                        ->where('moderation_status', 'approved');
+                });
+                $q->orWhere('user_id', $userId);
+            })
             ->orderByDesc('id')
             ->get();
+
+        $favoriteLookup = $this->favoriteLookupForDesigner($userId);
+
+        $suppliers->each(function (Supplier $supplier) use ($favoriteLookup): void {
+            $supplier->setAttribute('is_favorite', (bool) ($favoriteLookup[(int) $supplier->id] ?? false));
+        });
 
         $cities = $suppliers
             ->pluck('city')
@@ -62,7 +60,7 @@ class SupplierController extends Controller
 
         return view('designer.suppliers.index', [
             'suppliers' => $suppliers,
-            'suppliersData' => $suppliers->map(fn (Supplier $s) => $this->payload($s))->values(),
+            'suppliersData' => $suppliers->map(fn (Supplier $s) => $this->payloadForDesigner($s, $userId, $favoriteLookup))->values(),
             'cities' => $cities,
             'brands' => $brands,
             'spheres' => $spheres,
@@ -70,107 +68,35 @@ class SupplierController extends Controller
         ]);
     }
 
-    public function searchByInn(Request $request)
-    {
-        $data = $request->validate([
-            'inn' => ['required', 'string', 'max:32'],
-        ]);
-
-        $inn = trim((string) $data['inn']);
-        $supplier = Supplier::query()
-            ->where('inn', $inn)
-            ->where('profile_status', 'active')
-            ->where('moderation_status', 'approved')
-            ->first();
-
-        if (! $supplier) {
-            return response()->json([
-                'success' => false,
-                'message' => __('suppliers.not_found'),
-            ], 404);
-        }
-
-        $link = UserSupplier::query()
-            ->where('designer_user_id', (int) $request->user()->id)
-            ->where('supplier_id', (int) $supplier->id)
-            ->first();
-
-        return response()->json([
-            'success' => true,
-            'supplier' => $this->payload($supplier),
-            'link_status' => $link?->status,
-        ]);
-    }
-
-    public function invite(Request $request, int $supplierId)
-    {
-        $designerId = (int) $request->user()->id;
-
-        $supplier = Supplier::query()->findOrFail($supplierId);
-        if ((string) $supplier->profile_status !== 'active' || (int) ($supplier->user_id ?? 0) < 1) {
-            return response()->json([
-                'success' => false,
-                'message' => __('suppliers.invite_unavailable'),
-            ], 422);
-        }
-
-        $link = UserSupplier::query()->firstOrNew([
-            'designer_user_id' => $designerId,
-            'supplier_id' => (int) $supplier->id,
-        ]);
-        $alreadyModerated = (string) ($supplier->moderation_status ?? '') === 'approved';
-
-        $link->status = $alreadyModerated ? 'accepted' : 'pending';
-        $link->invited_at = now();
-        $link->accepted_at = $alreadyModerated ? now() : null;
-        $link->rejected_at = null;
-        $link->save();
-
-        if (! $alreadyModerated) {
-            UserNotification::query()->create([
-                'user_id' => (int) $supplier->user_id,
-                'title' => __('notifications.supplier_invite_title'),
-                'comment' => __('notifications.supplier_invite_comment', ['name' => (string) $request->user()->name]),
-                'is_read' => false,
-                'related_supplier_id' => (int) $supplier->id,
-                'action_key' => 'supplier_invite',
-            ]);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => $alreadyModerated ? __('suppliers.added') : __('suppliers.invited'),
-            'link_status' => $link->status,
-        ]);
-    }
-
     public function show(Request $request, int $supplierId)
     {
         $userId = (int) $request->user()->id;
-        $isOwned = Supplier::query()
-            ->where('user_id', $userId)
-            ->whereKey($supplierId)
-            ->exists();
-        $isLinked = UserSupplier::query()
-            ->where('designer_user_id', $userId)
-            ->where('supplier_id', $supplierId)
-            ->exists();
-        if (! $isOwned && ! $isLinked) {
+        $supplier = Supplier::query()->findOrFail($supplierId);
+
+        $isOwned = (int) ($supplier->user_id ?? 0) === $userId;
+        $isPublicApproved = (string) $supplier->profile_status === 'active'
+            && (string) $supplier->moderation_status === 'approved';
+
+        if (! $isOwned && ! $isPublicApproved) {
             abort(404);
         }
 
-        $supplier = Supplier::query()->findOrFail($supplierId);
-        $payload = $this->payload($supplier);
+        $favoriteLookup = $this->favoriteLookupForDesigner($userId);
+
+        $supplier->setAttribute('is_favorite', (bool) ($favoriteLookup[(int) $supplier->id] ?? false));
+        $payload = $this->payloadForDesigner($supplier, $userId, $favoriteLookup);
 
         if ($request->expectsJson() || $request->wantsJson()) {
             return response()->json($payload);
         }
 
+        $isReadOnly = $request->boolean('readonly') || ! $isOwned;
+
         return view('designer.suppliers.show', [
             'supplier' => $supplier,
             'supplierData' => $payload,
             'sphereOptions' => $this->sphereOptions(),
-            'isReadOnly' => $request->boolean('readonly'),
+            'isReadOnly' => $isReadOnly,
         ]);
     }
 
@@ -182,7 +108,7 @@ class SupplierController extends Controller
 
         $this->fillAndSave($request, $supplier);
 
-        // ÃÂÃÂ²Ã‘â€šÃÂ¾ÃÂ¼ÃÂ°Ã‘â€šÃÂ¸Ã‘â€¡ÃÂµÃ‘ÂÃÂºÃÂ¸ ÃÂ¾Ã‘â€šÃÂ¿Ã‘â‚¬ÃÂ°ÃÂ²ÃÂ»Ã‘ÂÃÂµÃÂ¼ ÃÂ½ÃÂ° ÃÂ¼ÃÂ¾ÃÂ´ÃÂµÃ‘â‚¬ÃÂ°Ã‘â€ ÃÂ¸Ã‘Å½ ÃÂ¿ÃÂ¾Ã‘ÂÃÂ»ÃÂµ Ã‘ÂÃÂ¾ÃÂ·ÃÂ´ÃÂ°ÃÂ½ÃÂ¸Ã‘Â
+        // Автоматически отправляем на модерацию после создания
         $supplier->moderation_status = 'pending';
         $supplier->moderation_reviewer_id = null;
         $supplier->moderation_reviewed_at = null;
@@ -191,7 +117,11 @@ class SupplierController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('suppliers.added'),
-            'supplier' => $this->payload($supplier),
+            'supplier' => $this->payloadForDesigner(
+                $supplier,
+                (int) $request->user()->id,
+                $this->favoriteLookupForDesigner((int) $request->user()->id)
+            ),
         ]);
     }
 
@@ -208,7 +138,11 @@ class SupplierController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('suppliers.updated'),
-            'supplier' => $this->payload($supplier),
+            'supplier' => $this->payloadForDesigner(
+                $supplier,
+                (int) $request->user()->id,
+                $this->favoriteLookupForDesigner((int) $request->user()->id)
+            ),
         ]);
     }
 
@@ -231,13 +165,41 @@ class SupplierController extends Controller
 
     public function toggleFavorite(Request $request, int $supplierId)
     {
-        $supplier = Supplier::where('user_id', $request->user()->id)->findOrFail($supplierId);
-        $supplier->is_favorite = ! (bool) $supplier->is_favorite;
-        $supplier->save();
+        $userId = (int) $request->user()->id;
+
+        $supplierAllowed = Supplier::query()
+            ->whereKey($supplierId)
+            ->where(function ($q) use ($userId) {
+                $q->where('user_id', $userId)
+                    ->orWhere(function ($q2) {
+                        $q2->where('profile_status', 'active')
+                            ->where('moderation_status', 'approved');
+                    });
+            })
+            ->exists();
+        if (! $supplierAllowed) {
+            abort(404);
+        }
+
+        $favorite = DesignerFavoriteSupplier::query()
+            ->where('designer_user_id', $userId)
+            ->where('supplier_id', $supplierId)
+            ->first();
+
+        if ($favorite) {
+            $favorite->delete();
+            $isFavorite = false;
+        } else {
+            DesignerFavoriteSupplier::query()->create([
+                'designer_user_id' => $userId,
+                'supplier_id' => $supplierId,
+            ]);
+            $isFavorite = true;
+        }
 
         return response()->json([
             'success' => true,
-            'is_favorite' => (bool) $supplier->is_favorite,
+            'is_favorite' => $isFavorite,
         ]);
     }
 
@@ -347,6 +309,27 @@ class SupplierController extends Controller
         return $all;
     }
 
+    private function favoriteLookupForDesigner(int $designerUserId): array
+    {
+        return DesignerFavoriteSupplier::query()
+            ->where('designer_user_id', $designerUserId)
+            ->pluck('supplier_id')
+            ->mapWithKeys(fn ($id) => [(int) $id => true])
+            ->all();
+    }
+
+    private function payloadForDesigner(Supplier $supplier, int $designerUserId, array $favoriteLookup): array
+    {
+        $base = $this->payload($supplier);
+        $isOwner = (int) ($supplier->user_id ?? 0) === $designerUserId;
+
+        $base['is_owned_by_designer'] = $isOwner;
+        $base['designer_can_place_order'] = true;
+        $base['is_favorite'] = (bool) ($favoriteLookup[(int) $supplier->id] ?? false);
+
+        return $base;
+    }
+
     private function payload(Supplier $supplier): array
     {
         $sphere = $supplier->sphere;
@@ -398,7 +381,7 @@ class SupplierController extends Controller
             'checking_account' => $supplier->checking_account,
             'corr_account' => $supplier->corr_account,
             'comment_bank' => $supplier->comment_bank,
-            'is_favorite' => (bool) $supplier->is_favorite,
+            'is_favorite' => (bool) ($supplier->is_favorite ?? false),
             'logo' => $supplier->logo,
             'logo_url' => $supplier->logo ? asset('storage/'.$supplier->logo) : null,
         ];

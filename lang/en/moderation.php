@@ -59,4 +59,5 @@ return [
     'save_decision' => 'Save',
     'history_empty' => 'No records match the filters.',
     'object_decision_done_hint' => 'This object is not awaiting duplicate review. To change approval, use moderation history.',
+    'status' => 'Moderation Status',
 ];

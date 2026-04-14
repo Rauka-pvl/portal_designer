@@ -12,8 +12,8 @@ use Illuminate\Validation\Rules\Password as PasswordRule;
 /**
  * AUTH
  *
- * Ð”ÐµÐ»Ð°ÐµÐ¼ "match"-Ñ€Ð¾ÑƒÑ‚Ñ‹ Ñ Ð¾Ð´Ð¸Ð½Ð°ÐºÐ¾Ð²Ñ‹Ð¼ Ð¸Ð¼ÐµÐ½ÐµÐ¼ (`login`/`register`),
- * Ñ‡Ñ‚Ð¾Ð±Ñ‹ Ð²Ð°ÑˆÐ¸ Ñ„Ð¾Ñ€Ð¼Ñ‹ Ð² Blade (action="{{ route('login') }}") Ñ€Ð°Ð±Ð¾Ñ‚Ð°Ð»Ð¸ Ð¸ Ð´Ð»Ñ GET, Ð¸ Ð´Ð»Ñ POST.
+ * Делаем "match"-роуты с одинаковым именем (`login`/`register`),
+ * чтобы ваши формы в Blade (action="{{ route('login') }}") работали и для GET, и для POST.
  */
 Route::match(['get', 'post'], '/login', function (Request $request) {
     if (Auth::check()) {
@@ -135,7 +135,7 @@ Route::post('/password/email', function (Request $request) {
 })->name('password.email')->middleware('guest');
 
 Route::get('/password/reset/{token}', function (string $token, Request $request) {
-    // ÐŸÐµÑ€ÐµÐ´Ð°ÐµÐ¼ Ð²ÐµÑÑŒ $request, Ñ‡Ñ‚Ð¾Ð±Ñ‹ Ð² reset-vieÐ²Ðµ Ñ€Ð°Ð±Ð¾Ñ‚Ð°Ð» $request->email
+    // Передаем весь $request, чтобы в reset-view работал $request->email
     $request->merge(['token' => $token]);
 
     return view('auth.reset-password', ['request' => $request]);

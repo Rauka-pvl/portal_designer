@@ -36,6 +36,40 @@
                 ->where('is_read', false)
                 ->count()
             : 0;
+        $unreadChatMessages = 0;
+        if (! $isModerator && auth()->check()) {
+            $uid = (int) auth()->id();
+            $role = (string) (auth()->user()->role ?? '');
+            $orderIds = collect();
+            if ($role === 'designer') {
+                $orderIds = \App\Models\Supplier_orders::query()
+                    ->where('user_id', $uid)
+                    ->pluck('id');
+            } elseif ($role === 'supplier') {
+                $supplierId = (int) \App\Models\Supplier::query()
+                    ->where('user_id', $uid)
+                    ->value('id');
+                if ($supplierId > 0) {
+                    $orderIds = \App\Models\Supplier_orders::query()
+                        ->where('supplier_id', $supplierId)
+                        ->where('is_sent_to_supplier', true)
+                        ->pluck('id');
+                }
+            }
+            if (
+                $orderIds->isNotEmpty()
+                && \Illuminate\Support\Facades\Schema::hasTable('supplier_order_messages')
+                && \Illuminate\Support\Facades\Schema::hasColumn('supplier_order_messages', 'read_by_designer_at')
+                && \Illuminate\Support\Facades\Schema::hasColumn('supplier_order_messages', 'read_by_supplier_at')
+            ) {
+                $readColumn = $role === 'supplier' ? 'read_by_supplier_at' : 'read_by_designer_at';
+                $unreadChatMessages = (int) \Illuminate\Support\Facades\DB::table('supplier_order_messages as m')
+                    ->whereIn('m.supplier_order_id', $orderIds->all())
+                    ->where('m.sender_user_id', '!=', $uid)
+                    ->whereNull('m.'.$readColumn)
+                    ->count();
+            }
+        }
     @endphp
 
     @include('layouts.partials.app-toasts')
@@ -145,12 +179,19 @@
 
                     @if (Route::has('supplier-orders.index'))
                         <a href="{{ route('supplier-orders.index') }}"
-                            class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                            </svg>
-                            <span>{{ __('supplier-orders.supplier_orders') }}</span>
+                            class="flex items-center justify-between gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1">
+                            <span class="flex items-center gap-3">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                                </svg>
+                                <span>{{ __('supplier-orders.supplier_orders') }}</span>
+                            </span>
+                            @if ($unreadChatMessages > 0)
+                                <span class="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs bg-[#f59e0b] text-white">
+                                    {{ $unreadChatMessages > 99 ? '99+' : $unreadChatMessages }}
+                                </span>
+                            @endif
                         </a>
                     @endif
 
@@ -162,15 +203,6 @@
                                     d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                             </svg>
                             <span>{{ __('suppliers.suppliers') }}</span>
-                        </a>
-                    @endif
-                    @if (Route::has('suppliers.network'))
-                        <a href="{{ route('suppliers.network') }}"
-                            class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11h8m-8 4h5m5 4H6a2 2 0 01-2-2V7a2 2 0 012-2h7l5 5v7a2 2 0 01-2 2z" />
-                            </svg>
-                            <span>Поиск по ИИН</span>
                         </a>
                     @endif
 

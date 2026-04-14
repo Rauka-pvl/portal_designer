@@ -8,6 +8,8 @@ use App\Models\Supplier_orders;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -42,11 +44,16 @@ class SupplierPortalController extends Controller
                 ->orderByDesc('id')
                 ->get();
 
+            $unreadByOrder = $this->chatUnreadMapForSupplier(
+                (int) $request->user()->id,
+                $orderModels->pluck('id')->map(fn ($id) => (int) $id)->all()
+            );
             $stepsByOrder = Supplier_orders::includedStepsPayloadForMany($orderModels);
 
             $orders = $orderModels->map(fn (Supplier_orders $order) => $this->orderPayload(
                 $order,
-                $stepsByOrder[(int) $order->id] ?? []
+                $stepsByOrder[(int) $order->id] ?? [],
+                $unreadByOrder[(int) $order->id] ?? 0
             ));
         }
 
@@ -193,7 +200,7 @@ class SupplierPortalController extends Controller
     /**
      * @param  list<array<string, mixed>>|null  $includedSteps
      */
-    private function orderPayload(Supplier_orders $order, ?array $includedSteps = null): array
+    private function orderPayload(Supplier_orders $order, ?array $includedSteps = null, int $unreadChatCount = 0): array
     {
         $includedSteps ??= $order->includedStepsPayload();
 
@@ -232,7 +239,38 @@ class SupplierPortalController extends Controller
             'comment' => (string) ($order->comment ?? ''),
             'included_step_ids' => Supplier_orders::normalizeStepIds($order->included_step_ids),
             'included_steps' => $includedSteps,
+            'unread_chat_count' => max(0, $unreadChatCount),
         ];
+    }
+
+    /**
+     * @param  list<int>  $orderIds
+     * @return array<int, int>
+     */
+    private function chatUnreadMapForSupplier(int $supplierUserId, array $orderIds): array
+    {
+        if (
+            $orderIds === []
+            || ! Schema::hasTable('supplier_order_messages')
+            || ! Schema::hasColumn('supplier_order_messages', 'read_by_supplier_at')
+        ) {
+            return [];
+        }
+
+        $rows = DB::table('supplier_order_messages as m')
+            ->whereIn('m.supplier_order_id', $orderIds)
+            ->where('m.sender_user_id', '!=', $supplierUserId)
+            ->whereNull('m.read_by_supplier_at')
+            ->select('m.supplier_order_id', DB::raw('COUNT(*) as unread_count'))
+            ->groupBy('m.supplier_order_id')
+            ->get();
+
+        $map = [];
+        foreach ($rows as $row) {
+            $map[(int) $row->supplier_order_id] = (int) $row->unread_count;
+        }
+
+        return $map;
     }
 
     private function cleanStringArray(mixed $value): array

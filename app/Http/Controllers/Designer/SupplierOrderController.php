@@ -7,8 +7,9 @@ use App\Models\Project;
 use App\Models\Supplier;
 use App\Models\Supplier_orders;
 use App\Models\UserNotification;
-use App\Models\UserSupplier;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -41,12 +42,18 @@ class SupplierOrderController extends Controller
             ->orderByDesc('id')
             ->get();
 
+        $unreadByOrder = $this->chatUnreadMapForDesigner($userId, $orders->pluck('id')->map(fn ($id) => (int) $id)->all());
+
         $stepsByOrder = Supplier_orders::includedStepsPayloadForMany($orders);
 
         return view('designer.supplier-orders.index', [
             'projects' => $projects,
             'suppliers' => $suppliers,
-            'orders' => $orders->map(fn (Supplier_orders $order) => $this->payload($order, $stepsByOrder[(int) $order->id] ?? []))->values(),
+            'orders' => $orders->map(fn (Supplier_orders $order) => $this->payload(
+                $order,
+                $stepsByOrder[(int) $order->id] ?? [],
+                $unreadByOrder[(int) $order->id] ?? 0
+            ))->values(),
             'selectedProjectId' => $request->query('project_id'),
             'selectedSupplierId' => $request->query('supplier_id'),
             'categoryOptions' => $this->categoryOptions(),
@@ -117,7 +124,7 @@ class SupplierOrderController extends Controller
 
         return view('designer.supplier-orders.show', [
             'order' => $order,
-            'orderData' => $payload,
+            'orderData' => $this->payload($order, null, $this->chatUnreadMapForDesigner((int) $request->user()->id, [(int) $order->id])[(int) $order->id] ?? 0),
             'projects' => Project::query()->where('user_id', $request->user()->id)->orderBy('name')->get(['id', 'name']),
             'suppliers' => $this->availableSuppliers((int) $request->user()->id),
             'categoryOptions' => $this->categoryOptions(),
@@ -169,9 +176,6 @@ class SupplierOrderController extends Controller
         ]);
     }
 
-    /**
-     * ÃƒÂÃ…Â¸ÃƒÂÃ‚Â¾Ãƒâ€˜Ã‚ÂÃƒâ€˜Ã¢â‚¬Å¡ÃƒÂÃ‚Â°ÃƒÂÃ‚Â²Ãƒâ€˜Ã¢â‚¬Â°ÃƒÂÃ‚Â¸ÃƒÂÃ‚Âº Ãƒâ€˜Ã‚Â pending/rejected ÃƒÂÃ‚Â¼ÃƒÂÃ‚Â¾ÃƒÂÃ‚Â´ÃƒÂÃ‚ÂµÃƒâ€˜Ã¢â€šÂ¬ÃƒÂÃ‚Â°Ãƒâ€˜Ã¢â‚¬Â ÃƒÂÃ‚Â¸ÃƒÂÃ‚ÂµÃƒÂÃ‚Â¹ ÃƒÂÃ‚Â½ÃƒÂÃ‚ÂµÃƒÂÃ‚Â»Ãƒâ€˜Ã…â€™ÃƒÂÃ‚Â·Ãƒâ€˜Ã‚Â ÃƒÂÃ‚Â²Ãƒâ€˜Ã¢â‚¬Â¹ÃƒÂÃ‚Â±ÃƒÂÃ‚Â¸Ãƒâ€˜Ã¢â€šÂ¬ÃƒÂÃ‚Â°Ãƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã…â€™ ÃƒÂÃ‚Â² ÃƒÂÃ‚Â¿ÃƒÂÃ‚Â¾Ãƒâ€˜Ã‚ÂÃƒâ€˜Ã¢â‚¬Å¡ÃƒÂÃ‚Â°ÃƒÂÃ‚Â²ÃƒÂÃ‚ÂºÃƒÂÃ‚Âµ.
-     */
     private function supplierModerationErrorMessage(Request $request, int $userId): ?string
     {
         $supplierId = (int) $request->input('supplier_id');
@@ -264,11 +268,9 @@ class SupplierOrderController extends Controller
             ->whereKey($supplierId)
             ->where(function ($q) use ($userId) {
                 $q->where('user_id', $userId)
-                    ->orWhereIn('id', function ($sub) use ($userId) {
-                        $sub->select('supplier_id')
-                            ->from('user_suppliers')
-                            ->where('designer_user_id', $userId)
-                            ->where('status', 'accepted');
+                    ->orWhere(function ($q2) {
+                        $q2->where('profile_status', 'active')
+                            ->where('moderation_status', 'approved');
                     });
             })
             ->exists();
@@ -312,15 +314,6 @@ class SupplierOrderController extends Controller
         $order->comment = $data['comment'] ?? null;
 
         if ($request->boolean('send_to_supplier')) {
-            $link = UserSupplier::query()
-                ->where('designer_user_id', $userId)
-                ->where('supplier_id', $supplierId)
-                ->where('status', 'accepted')
-                ->first();
-            if (! $link) {
-                abort(422, __('supplier-orders.supplier_invite_required'));
-            }
-
             $order->status = 'order_sent';
             $order->is_sent_to_supplier = true;
         } else {
@@ -346,16 +339,14 @@ class SupplierOrderController extends Controller
 
     private function availableSuppliers(int $designerId)
     {
-        $ownedIds = Supplier::query()
-            ->where('user_id', $designerId)
-            ->pluck('id');
-        $linkedIds = UserSupplier::query()
-            ->where('designer_user_id', $designerId)
-            ->where('status', 'accepted')
-            ->pluck('supplier_id');
-
         return Supplier::query()
-            ->whereIn('id', $ownedIds->merge($linkedIds)->unique()->values())
+            ->where(function ($q) use ($designerId) {
+                $q->where('user_id', $designerId)
+                    ->orWhere(function ($q2) {
+                        $q2->where('profile_status', 'active')
+                            ->where('moderation_status', 'approved');
+                    });
+            })
             ->orderBy('name')
             ->get(['id', 'name']);
     }
@@ -383,7 +374,7 @@ class SupplierOrderController extends Controller
     /**
      * @param  list<array<string, mixed>>|null  $includedSteps  из includedStepsPayloadForMany() или null = один запрос
      */
-    private function payload(Supplier_orders $order, ?array $includedSteps = null): array
+    private function payload(Supplier_orders $order, ?array $includedSteps = null, int $unreadChatCount = 0): array
     {
         $status = (string) $order->status;
         $includedSteps ??= $order->includedStepsPayload();
@@ -421,6 +412,37 @@ class SupplierOrderController extends Controller
                 ->values(),
             'product_service' => (string) ($order->comment ?? ''),
             'comment' => (string) ($order->comment ?? ''),
+            'unread_chat_count' => max(0, $unreadChatCount),
         ];
+    }
+
+    /**
+     * @param  list<int>  $orderIds
+     * @return array<int, int>
+     */
+    private function chatUnreadMapForDesigner(int $designerUserId, array $orderIds): array
+    {
+        if (
+            $orderIds === []
+            || ! Schema::hasTable('supplier_order_messages')
+            || ! Schema::hasColumn('supplier_order_messages', 'read_by_designer_at')
+        ) {
+            return [];
+        }
+
+        $rows = DB::table('supplier_order_messages as m')
+            ->whereIn('m.supplier_order_id', $orderIds)
+            ->where('m.sender_user_id', '!=', $designerUserId)
+            ->whereNull('m.read_by_designer_at')
+            ->select('m.supplier_order_id', DB::raw('COUNT(*) as unread_count'))
+            ->groupBy('m.supplier_order_id')
+            ->get();
+
+        $map = [];
+        foreach ($rows as $row) {
+            $map[(int) $row->supplier_order_id] = (int) $row->unread_count;
+        }
+
+        return $map;
     }
 }

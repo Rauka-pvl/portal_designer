@@ -449,7 +449,7 @@
         <input type="hidden" name="sort_by" id="sort_by_input" value="{{ request('sort_by', '') }}">
         <input type="hidden" name="sort_dir" id="sort_dir_input" value="{{ request('sort_dir', 'asc') }}">
         <div class="flex-1 min-w-[200px]">
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('suppliers.search') }}"
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="{{ __('suppliers.search_placeholder') }}"
                 class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
         </div>
         <div class="w-full md:w-44">
@@ -1410,7 +1410,7 @@
 
                 let data = (window.allSuppliers || []).filter((s) => {
                     const hay = [
-                        s.name, s.phone, s.email, s.website, s.city, s.sphere, s.sphere_display, s.address, s.comment, s.brand_display
+                        s.name, s.phone, s.email, s.website, s.city, s.sphere, s.sphere_display, s.address, s.comment, s.brand_display, s.inn
                     ].filter(Boolean).join(' ').toLowerCase();
                     const bySearch = !search || hay.includes(search);
                     const byType = tf === 'all' || (tf === 'recommended' && !!s.recommend) || (tf === 'favorites' && !!s.is_favorite);
@@ -1432,6 +1432,88 @@
                 }
 
                 return data;
+            }
+
+            function tableActionsCell(s) {
+                if (!s.is_owned_by_designer) {
+                    return `<div class="flex items-center gap-2">
+                        <button type="button" title="{{ __('suppliers.view') }}" onclick="viewSupplier(${s.id})"
+                            class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                        </button>
+                        <button type="button" title="{{ __('suppliers.add_order') }}" onclick="addOrderFromSupplier(${s.id})"
+                            class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                        </button>
+                        <button type="button" title="${s.is_favorite ? '{{ __('suppliers.remove_favorite') }}' : '{{ __('suppliers.add_favorite') }}'}" onclick="toggleFavorite(${s.id}, this)"
+                            class="p-1.5 rounded favorite-btn ${s.is_favorite ? 'active' : ''}">
+                            <svg class="w-4 h-4" fill="${s.is_favorite ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                            </svg>
+                        </button>
+                    </div>`;
+                }
+                return `<div class="flex items-center gap-2">
+                                    <button type="button" title="{{ __('suppliers.view') }}" onclick="viewSupplier(${s.id})"
+                                        class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </button>
+                                    <button type="button" title="{{ __('suppliers.edit') }}" onclick="editSupplier(${s.id})"
+                                        class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] dark:hover:text-[#f59e0b] transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                    </button>
+                                    <button type="button" title="{{ __('suppliers.add_order') }}" onclick="addOrderFromSupplier(${s.id})"
+                                        class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 4v16m8-8H4" />
+                                        </svg>
+                                    </button>
+                                    <button type="button" title="{{ __('suppliers.delete') }}" onclick="deleteSupplier(${s.id})"
+                                        class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                    <button type="button" title="${s.is_favorite ? '{{ __('suppliers.remove_favorite') }}' : '{{ __('suppliers.add_favorite') }}'}" onclick="toggleFavorite(${s.id}, this)"
+                                        class="p-1.5 rounded favorite-btn ${s.is_favorite ? 'active' : ''}">
+                                        <svg class="w-4 h-4" fill="${s.is_favorite ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                                        </svg>
+                                    </button>
+                                </div>`;
+            }
+
+            function listActionsBlock(s) {
+                if (!s.is_owned_by_designer) {
+                    return `<div class="flex items-center gap-2 flex-wrap">
+                        <button type="button" onclick="viewSupplier(${s.id})" class="filter-btn">{{ __('suppliers.view') }}</button>
+                        <button type="button" onclick="addOrderFromSupplier(${s.id})" class="filter-btn">{{ __('suppliers.add_order') }}</button>
+                        <button type="button" onclick="toggleFavorite(${s.id}, this)" class="filter-btn">${s.is_favorite ? '{{ __('suppliers.remove_favorite') }}' : '{{ __('suppliers.add_favorite') }}'}</button>
+                    </div>`;
+                }
+                return `<div class="flex items-center gap-2 flex-wrap">
+                                <button type="button" onclick="viewSupplier(${s.id})" class="filter-btn">{{ __('suppliers.view') }}</button>
+                                <button type="button" onclick="editSupplier(${s.id})" class="filter-btn">{{ __('suppliers.edit') }}</button>
+                                <button type="button" onclick="deleteSupplier(${s.id})" class="filter-btn text-red-500 hover:text-red-600">{{ __('suppliers.delete') }}</button>
+                                <button type="button" onclick="addOrderFromSupplier(${s.id})" class="filter-btn">{{ __('suppliers.add_order') }}</button>
+                            </div>`;
             }
 
             function renderPagination(container, total, onChange) {
@@ -1464,7 +1546,7 @@
                 if (currentPage > totalPages) currentPage = 1;
                 const paged = data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
                 if (!paged.length) {
-                    tableBody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.no_suppliers') }}</td></tr>`;
+                    tableBody.innerHTML = `<tr><td colspan="8" class="px-4 py-8 text-center text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.no_suppliers') }}</td></tr>`;
                 } else {
                     tableBody.innerHTML = paged.map((s) => `
                         <tr class="hover:bg-[#f8fafc] dark:hover:bg-[#0a0a0a]" data-supplier-id="${s.id}">
@@ -1492,45 +1574,7 @@
                                 })()}
                             </td>
                             <td class="px-4 py-3 text-sm">
-                                <div class="flex items-center gap-2">
-                                    <button type="button" title="{{ __('suppliers.view') }}" onclick="viewSupplier(${s.id})"
-                                        class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] transition-colors">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                        </svg>
-                                    </button>
-                                    <button type="button" title="{{ __('suppliers.edit') }}" onclick="editSupplier(${s.id})"
-                                        class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] dark:hover:text-[#f59e0b] transition-colors">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
-                                    </button>
-                                    <button type="button" title="{{ __('suppliers.delete') }}" onclick="deleteSupplier(${s.id})"
-                                        class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-red-600 dark:hover:text-red-400 transition-colors">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                    </button>
-                                    <button type="button" title="{{ __('suppliers.add_order') }}" onclick="addOrderFromSupplier(${s.id})"
-                                        class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] transition-colors">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M12 4v16m8-8H4" />
-                                        </svg>
-                                    </button>
-                                    <button type="button" title="${s.is_favorite ? '{{ __('suppliers.remove_favorite') }}' : '{{ __('suppliers.add_favorite') }}'}" onclick="toggleFavorite(${s.id}, this)"
-                                        class="p-1.5 rounded favorite-btn ${s.is_favorite ? 'active' : ''}">
-                                        <svg class="w-4 h-4" fill="${s.is_favorite ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                                        </svg>
-                                    </button>
-                                </div>
+                                ${tableActionsCell(s)}
                             </td>
                         </tr>
                     `).join('');
@@ -1564,12 +1608,7 @@
                                 <div><span class="text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.sphere') }}:</span> <span class="text-[#0f172a] dark:text-[#EDEDEC] font-medium ml-2">${escapeHtml(s.sphere_display || s.sphere || '-')}</span></div>
                                 <div><span class="text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.brand') }}:</span> <span class="text-[#0f172a] dark:text-[#EDEDEC] font-medium ml-2">${escapeHtml(s.brand_display || '-')}</span></div>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <button type="button" onclick="viewSupplier(${s.id})" class="filter-btn">{{ __('suppliers.view') }}</button>
-                                <button type="button" onclick="editSupplier(${s.id})" class="filter-btn">{{ __('suppliers.edit') }}</button>
-                                <button type="button" onclick="deleteSupplier(${s.id})" class="filter-btn text-red-500 hover:text-red-600">{{ __('suppliers.delete') }}</button>
-                                <button type="button" onclick="addOrderFromSupplier(${s.id})" class="filter-btn">{{ __('suppliers.add_order') }}</button>
-                            </div>
+                            ${listActionsBlock(s)}
                         </div>
                     `).join('');
                 }
@@ -1595,10 +1634,13 @@
                 currentPage = 1;
                 renderActiveTab();
             });
-            [searchInput, typeFilter, cityFilter, sphereFilter, brandFilter].forEach((el) => {
+            searchInput?.addEventListener('input', () => {
+                currentPage = 1;
+                renderActiveTab();
+            });
+            [typeFilter, cityFilter, sphereFilter, brandFilter].forEach((el) => {
                 if (!el) return;
-                const evt = el === searchInput ? 'input' : 'change';
-                el.addEventListener(evt, () => {
+                el.addEventListener('change', () => {
                     currentPage = 1;
                     renderActiveTab();
                 });
@@ -1774,12 +1816,18 @@
 
         async function viewSupplier(id) {
             try {
-                const r = await fetch('{{ url('suppliers') }}/' + id, {
-                    headers: {
-                        'Accept': 'application/json'
+                let s = (window.allSuppliers || []).find((x) => parseInt(x.id, 10) === parseInt(id, 10));
+                if (!s) {
+                    const r = await fetch('{{ url('suppliers') }}/' + id, {
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    if (!r.ok) {
+                        return;
                     }
-                });
-                const s = await r.json();
+                    s = await r.json();
+                }
                 const content = document.getElementById('view-supplier-content');
                 const brands = Array.isArray(s.brands) ? s.brands.join(', ') : (s.brands || '-');
                 const cities = Array.isArray(s.cities_presence) ? s.cities_presence.join(', ') : (s.cities_presence ||

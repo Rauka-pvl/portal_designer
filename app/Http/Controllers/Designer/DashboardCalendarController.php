@@ -103,7 +103,7 @@ class DashboardCalendarController extends Controller
                 'date' => $order->date_planned?->toDateString(),
                 'time' => '16:00',
                 'done' => $done,
-                'title' => "{$supplier->name} Ã¢â‚¬â€ ÃÂ¿ÃÂ»ÃÂ°ÃÂ½ ÃÂ¿ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ²ÃÂºÃÂ¸",
+                'title' => "{$supplier->name} — план поставки",
                 'subtitle' => $project->name,
                 'status' => $done ? 'done' : 'planned',
                 'project_id' => (int) $project->id,
@@ -140,7 +140,7 @@ class DashboardCalendarController extends Controller
                 'date' => $order->date_actual?->toDateString(),
                 'time' => '12:00',
                 'done' => $done,
-                'title' => "{$supplier->name} Ã¢â‚¬â€ ÃÂ¿ÃÂ¾Ã‘ÂÃ‘â€šÃÂ°ÃÂ²ÃÂºÃÂ° (Ã‘â€žÃÂ°ÃÂºÃ‘â€š)",
+                'title' => "{$supplier->name} — поставка (факт)",
                 'subtitle' => $project->name,
                 'status' => $done ? 'done' : 'planned',
                 'project_id' => (int) $project->id,
@@ -178,7 +178,7 @@ class DashboardCalendarController extends Controller
                 'date' => $order->prepayment_date?->toDateString(),
                 'time' => '11:00',
                 'done' => $done,
-                'title' => "{$supplier->name} Ã¢â‚¬â€ ÃÂ°ÃÂ²ÃÂ°ÃÂ½Ã‘Â",
+                'title' => "{$supplier->name} — аванс",
                 'subtitle' => $project->name,
                 'status' => $done ? 'done' : 'planned',
                 'project_id' => (int) $project->id,
@@ -216,7 +216,7 @@ class DashboardCalendarController extends Controller
                 'date' => $order->payment_date?->toDateString(),
                 'time' => '14:00',
                 'done' => $done,
-                'title' => "{$supplier->name} Ã¢â‚¬â€ ÃÂ´ÃÂ¾ÃÂ¿ÃÂ»ÃÂ°Ã‘â€šÃÂ°",
+                'title' => "{$supplier->name} — доплата",
                 'subtitle' => $project->name,
                 'status' => $done ? 'done' : 'planned',
                 'project_id' => (int) $project->id,
@@ -230,7 +230,7 @@ class DashboardCalendarController extends Controller
             ];
         }
 
-        // ÃÂ¡ÃÂ¾Ã‘â‚¬Ã‘â€šÃÂ¸Ã‘â‚¬ÃÂ¾ÃÂ²ÃÂºÃÂ°: ÃÂ´ÃÂ°Ã‘â€šÃÂ°, ÃÂ·ÃÂ°Ã‘â€šÃÂµÃÂ¼ Ã‘â€¡ÃÂ°Ã‘Â (ÃÂµÃ‘ÂÃÂ»ÃÂ¸ ÃÂµÃ‘ÂÃ‘â€šÃ‘Å’)
+        // Сортировка: дата, затем час (если есть)
         usort($events, function ($a, $b) {
             $da = (string) ($a['date'] ?? '');
             $db = (string) ($b['date'] ?? '');
@@ -238,6 +238,7 @@ class DashboardCalendarController extends Controller
             if ($da === $db) {
                 $ta = (string) ($a['time'] ?? '');
                 $tb = (string) ($b['time'] ?? '');
+
                 return strcmp($ta, $tb);
             }
 
@@ -251,6 +252,3 @@ class DashboardCalendarController extends Controller
         ]);
     }
 }
-
-
-

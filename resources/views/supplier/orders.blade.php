@@ -76,6 +76,28 @@
     .dark .supplier-funnel-column.drag-over { background: #1D0002; }
     .dark .supplier-funnel-card { background: #161615; border-color: #3E3E3A; }
     .dark .supplier-so-pagination button { background: #161615; border-color: #3E3E3A; color: #A1A09A; }
+    .supplier-chat-badge {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        min-width: 16px;
+        height: 16px;
+        border-radius: 999px;
+        background: #ef4444;
+        color: #fff;
+        font-size: 10px;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 4px;
+        border: 1px solid #fff;
+    }
+    .dark .supplier-chat-badge { border-color: #161615; }
+    .supplier-chat-mine { background: #fef3c7; color: #92400e; }
+    .supplier-chat-other { background: #f1f5f9; color: #334155; }
+    .dark .supplier-chat-mine { background: #1D0002; color: #f59e0b; }
+    .dark .supplier-chat-other { background: #0a0a0a; color: #EDEDEC; }
 </style>
 @endpush
 
@@ -191,6 +213,31 @@
                 <div id="supplier-so-view-content" class="flex-1 overflow-y-auto p-5 space-y-4"></div>
             </div>
         </div>
+        <div id="supplier-so-chat-modal" class="fixed inset-0 bg-black/50 z-50 hidden" onmousedown="if(event.target === this) supplierSoCloseChat()">
+            <div class="absolute right-0 top-0 h-full w-full max-w-lg bg-white dark:bg-[#161615] border-l border-[#7c8799] dark:border-[#3E3E3A] shadow-2xl flex flex-col supplier-so-chat-panel translate-x-full transition-transform duration-300">
+                <div class="flex items-center justify-between px-5 py-4 border-b border-[#7c8799] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a]">
+                    <div>
+                        <h2 class="text-lg font-semibold text-[#0f172a] dark:text-[#EDEDEC]">{{ __('supplier-orders.chat_title') }}</h2>
+                        <p id="supplier-so-chat-subtitle" class="text-sm text-[#64748b] dark:text-[#A1A09A]"></p>
+                    </div>
+                    <button type="button" onclick="supplierSoCloseChat()" class="p-2 rounded-lg text-[#64748b] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a]">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <div class="px-5 py-3 border-b border-[#7c8799] dark:border-[#3E3E3A] flex items-center justify-between gap-2">
+                    <p class="text-xs text-[#64748b] dark:text-[#A1A09A]">{{ __('supplier-orders.chat_hint_manual_refresh') }}</p>
+                    <button type="button" onclick="supplierSoRefreshChatMessages()" class="px-3 py-1.5 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-sm text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b]">{{ __('supplier-orders.chat_refresh') }}</button>
+                </div>
+                <div id="supplier-so-chat-messages" class="flex-1 overflow-y-auto p-5 space-y-3"></div>
+                <form id="supplier-so-chat-form" class="border-t border-[#7c8799] dark:border-[#3E3E3A] p-4">
+                    <input type="hidden" id="supplier-so-chat-order-id" value="">
+                    <div class="flex items-end gap-2">
+                        <textarea id="supplier-so-chat-input" rows="2" maxlength="5000" class="flex-1 px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#0a0a0a] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]" placeholder="{{ __('supplier-orders.chat_placeholder') }}"></textarea>
+                        <button type="submit" class="px-4 py-2 rounded-lg border border-[#f59e0b] text-[#f59e0b] hover:bg-[#f59e0b]/10">{{ __('supplier-orders.chat_send') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
         @push('scripts')
         @php
@@ -214,6 +261,8 @@
 window.supplierSoOrders = @json($orders);
 window.supplierSoDateLocale = @json($supplierSoDateLocale);
 window.supplierSoStatusUrl = @json(url('/supplier/orders'));
+window.supplierSoChatBaseUrl = @json(url('/supplier-orders'));
+window.supplierSoChatUnreadMapUrl = @json(route('supplier-orders.chat.unread_map'));
 window.supplierSoLabels = @json($supplierSoLabels);
 
 (function() {
@@ -301,6 +350,23 @@ window.supplierSoLabels = @json($supplierSoLabels);
         try { return new Date(iso).toLocaleDateString(dateLocale); } catch (_) { return iso; }
     }
 
+    function getChatBtnHtml(order, compact = false) {
+        const unread = Math.max(0, parseInt(order.unread_chat_count || 0, 10));
+        const badge = unread > 0 ? `<span class="supplier-chat-badge">${unread > 99 ? '99+' : unread}</span>` : '';
+        if (compact) {
+            return `<button type="button" onclick="supplierSoOpenChat(${order.id})" class="relative p-1.5 rounded text-[#64748b] hover:text-[#f59e0b] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a]" title="{{ __('supplier-orders.chat_open') }}">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h8m-8 4h5m-7 7l-3-3a2 2 0 01-.586-1.414V6a2 2 0 012-2h16a2 2 0 012 2v10a2 2 0 01-2 2H8z"/></svg>
+                ${badge}
+            </button>`;
+        }
+        return `<button type="button" onclick="supplierSoOpenChat(${order.id})" class="relative supplier-so-tab-btn">{{ __('supplier-orders.chat_open') }}${unread > 0 ? ` <span class="ml-1 inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-full text-[10px] bg-red-500 text-white">${unread > 99 ? '99+' : unread}</span>` : ''}</button>`;
+    }
+
+    function setOrderUnread(orderId, count) {
+        const idx = allOrders.findIndex(o => String(o.id) === String(orderId));
+        if (idx >= 0) allOrders[idx].unread_chat_count = Math.max(0, parseInt(count || 0, 10));
+    }
+
     function renderTable() {
         const tbody = document.getElementById('supplier-so-tbody');
         const pag = document.getElementById('supplier-so-pagination');
@@ -343,6 +409,7 @@ window.supplierSoLabels = @json($supplierSoLabels);
                     <button type="button" onclick="supplierSoView(${o.id})" class="p-1.5 rounded text-[#64748b] hover:text-[#f59e0b] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a]" title="{{ __('supplier-orders.view') }}">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                     </button>
+                    ${getChatBtnHtml(o, true)}
                 </td>
             </tr>`;
         }).join('');
@@ -415,7 +482,10 @@ window.supplierSoLabels = @json($supplierSoLabels);
                     <div><span class="text-[#64748b]">{{ __('supplier-orders.actual_date') }}:</span> <span class="font-medium">${o.date_actual ? fmtDate(o.date_actual) : '—'}</span></div>
                 </div>
                 ${o.comment ? `<p class="text-sm mt-3 text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(o.comment)}</p>` : ''}
-                <button type="button" onclick="supplierSoView(${o.id})" class="mt-4 supplier-so-tab-btn">{{ __('supplier-orders.view') }}</button>
+                <div class="mt-4 flex items-center gap-2">
+                    <button type="button" onclick="supplierSoView(${o.id})" class="supplier-so-tab-btn">{{ __('supplier-orders.view') }}</button>
+                    ${getChatBtnHtml(o)}
+                </div>
             </div>`;
         }).join('');
     }
@@ -434,7 +504,10 @@ window.supplierSoLabels = @json($supplierSoLabels);
                     <h4 class="font-medium text-sm text-[#0f172a] dark:text-[#EDEDEC] mb-1">#${o.id}</h4>
                     <p class="text-xs text-[#64748b]">${escapeHtml(o.designer_name || '—')}</p>
                     <p class="text-xs text-[#64748b] mt-0.5">${escapeHtml(o.project_name || '—')}</p>
-                    <button type="button" onclick="event.stopPropagation(); supplierSoView(${o.id})" class="mt-2 text-xs px-2 py-1 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-[#f59e0b]">{{ __('supplier-orders.view') }}</button>
+                    <div class="mt-2 flex items-center gap-2">
+                        <button type="button" onclick="event.stopPropagation(); supplierSoView(${o.id})" class="text-xs px-2 py-1 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-[#f59e0b]">{{ __('supplier-orders.view') }}</button>
+                        <button type="button" onclick="event.stopPropagation(); supplierSoOpenChat(${o.id})" class="relative text-xs px-2 py-1 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b]">{{ __('supplier-orders.chat_open') }}${o.unread_chat_count > 0 ? ` <span class="ml-1 inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-full text-[10px] bg-red-500 text-white">${o.unread_chat_count > 99 ? '99+' : o.unread_chat_count}</span>` : ''}</button>
+                    </div>
                 </div>
             `).join('');
         });
@@ -506,6 +579,116 @@ window.supplierSoLabels = @json($supplierSoLabels);
     });
 
     renderTable();
+
+    async function refreshUnreadMap() {
+        try {
+            const r = await fetch(window.supplierSoChatUnreadMapUrl, { headers: { 'Accept': 'application/json' } });
+            const data = await r.json();
+            if (!r.ok || !data.success) return;
+            const map = data.unread || {};
+            allOrders.forEach((o) => {
+                o.unread_chat_count = parseInt(map[o.id] || 0, 10);
+            });
+            if (currentTab === 'table') renderTable();
+            if (currentTab === 'list') renderList();
+            if (currentTab === 'funnel') renderFunnel();
+        } catch (_) {}
+    }
+
+    function renderChatMessages(items) {
+        const wrap = document.getElementById('supplier-so-chat-messages');
+        if (!wrap) return;
+        if (!Array.isArray(items) || items.length === 0) {
+            wrap.innerHTML = `<p class="text-sm text-[#64748b] dark:text-[#A1A09A]">{{ __('supplier-orders.chat_empty') }}</p>`;
+            return;
+        }
+        wrap.innerHTML = items.map((m) => {
+            const mine = !!m.is_mine;
+            const alignClass = mine ? 'justify-end' : 'justify-start';
+            const bubbleClass = mine ? 'supplier-chat-mine' : 'supplier-chat-other';
+            const sender = mine ? '{{ __('supplier-orders.chat_you') }}' : (m.sender_name || '-');
+            const ts = m.created_at ? new Date(m.created_at).toLocaleString(dateLocale) : '';
+            const safe = escapeHtml(m.message || '');
+            return `<div class="flex ${alignClass}">
+                <div class="max-w-[80%] rounded-xl px-3 py-2 ${bubbleClass}">
+                    <div class="text-xs opacity-80 mb-1">${sender}</div>
+                    <div class="text-sm whitespace-pre-wrap break-words">${safe}</div>
+                    <div class="text-[10px] opacity-70 mt-1">${ts}</div>
+                </div>
+            </div>`;
+        }).join('');
+        wrap.scrollTop = wrap.scrollHeight;
+    }
+
+    window.supplierSoOpenChat = async function(orderId) {
+        const ord = allOrders.find(o => String(o.id) === String(orderId));
+        document.getElementById('supplier-so-chat-order-id').value = String(orderId);
+        document.getElementById('supplier-so-chat-subtitle').textContent = ord
+            ? `#${ord.number || ord.id} • ${ord.designer_name || '—'}`
+            : `#${orderId}`;
+        const modal = document.getElementById('supplier-so-chat-modal');
+        const panel = modal.querySelector('.supplier-so-chat-panel');
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => { panel.classList.remove('translate-x-full'); });
+        await window.supplierSoRefreshChatMessages();
+    };
+
+    window.supplierSoCloseChat = function() {
+        const modal = document.getElementById('supplier-so-chat-modal');
+        const panel = modal.querySelector('.supplier-so-chat-panel');
+        panel.classList.add('translate-x-full');
+        setTimeout(() => modal.classList.add('hidden'), 280);
+    };
+
+    window.supplierSoRefreshChatMessages = async function() {
+        const orderId = parseInt(document.getElementById('supplier-so-chat-order-id')?.value || '0', 10);
+        if (!orderId) return;
+        const wrap = document.getElementById('supplier-so-chat-messages');
+        if (wrap) wrap.innerHTML = `<p class="text-sm text-[#64748b] dark:text-[#A1A09A]">{{ __('supplier-orders.chat_loading') }}</p>`;
+        try {
+            const r = await fetch(`${window.supplierSoChatBaseUrl}/${orderId}/chat/messages`, { headers: { 'Accept': 'application/json' } });
+            const data = await r.json();
+            if (!r.ok || !data.success) throw new Error('chat_load_failed');
+            renderChatMessages(data.messages || []);
+            await fetch(`${window.supplierSoChatBaseUrl}/${orderId}/chat/read`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                    'Accept': 'application/json',
+                },
+            });
+            setOrderUnread(orderId, 0);
+            await refreshUnreadMap();
+        } catch (_) {
+            if (wrap) wrap.innerHTML = `<p class="text-sm text-red-500">{{ __('supplier-orders.error') }}</p>`;
+        }
+    };
+
+    document.getElementById('supplier-so-chat-form')?.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const orderId = parseInt(document.getElementById('supplier-so-chat-order-id')?.value || '0', 10);
+        const input = document.getElementById('supplier-so-chat-input');
+        const message = (input?.value || '').trim();
+        if (!orderId || !message) return;
+        try {
+            const r = await fetch(`${window.supplierSoChatBaseUrl}/${orderId}/chat/messages`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message }),
+            });
+            const data = await r.json();
+            if (!r.ok || !data.success) throw new Error('chat_send_failed');
+            input.value = '';
+            await window.supplierSoRefreshChatMessages();
+        } catch (_) {
+            projectAlert('error', '{{ __("supplier-orders.error") }}', '', 3000);
+        }
+    });
+    refreshUnreadMap();
 
     window.supplierSoView = function(id) {
         const o = allOrders.find(x => x.id === id);

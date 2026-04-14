@@ -92,6 +92,7 @@ return [
     'table' => 'Table',
     'list' => 'List',
     'search' => 'Search',
+    'search_placeholder' => 'Name, phone, TIN/BIN…',
     'all_cities' => 'All Cities',
     'all_spheres' => 'All Spheres',
     'all_brands' => 'All Brands',
@@ -109,6 +110,4 @@ return [
     'updated' => 'Supplier updated',
     'deleted' => 'Supplier deleted',
     'not_found' => 'Supplier with this TIN was not found.',
-    'invited' => 'Invitation sent to supplier.',
-    'invite_unavailable' => 'This supplier cannot be invited.',
 ];
