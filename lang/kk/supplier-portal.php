@@ -3,6 +3,7 @@
 return [
     'title' => 'Жеткізуші кабинеті',
     'sidebar_brand' => 'ЖЕТКІЗУШІ',
+    'nav_dashboard' => 'Басқару панелі',
     'nav_orders' => 'Тапсырыстар',
     'nav_company' => 'Компания',
     'page_orders_title' => 'Тапсырыстар',
@@ -20,4 +21,14 @@ return [
     'fill_profile_hint' => 'Жібергеннен кейін профиль модератор тексеруіне өтеді.',
     'submit_profile' => 'Тексеруге жіберу',
     'submitted_for_review' => 'Профиль модератор тексеруіне жіберілді.',
+    'waiting_moderation_title' => 'Профиль модерацияда',
+    'waiting_moderation_hint' => 'Компания деректері толтырылған. Модератор тексергеннен кейін профиль порталға қолжетімді болады.',
+    'moderation_comment' => 'Модератор пікірі',
+    'company_data_title' => 'Компания деректері',
+    'calendar_delivery_planned' => 'Жоспарланған жеткізу',
+    'calendar_delivery_actual' => 'Нақты жеткізу',
+    'calendar_prepayment' => 'Аванс',
+    'calendar_balance_payment' => 'Қосымша төлем',
+    'planned_deliveries' => 'Жоспарланған жеткізулер',
+    'overdue_deliveries' => 'Мерзімі өткен жеткізулер',
 ];

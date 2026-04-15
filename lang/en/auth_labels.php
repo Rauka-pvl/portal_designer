@@ -31,4 +31,8 @@ return [
     'register_designer' => 'Designer registration',
     'supplier_mode_hint' => 'Sign in to your supplier company account',
     'login_designer' => 'Designer sign in',
+    'force_password_change' => 'Change temporary password',
+    'force_password_change_description' => 'For the first sign-in, set a new password. After saving, you will enter the supplier account.',
+    'save_new_password' => 'Save new password',
+    'password_updated_successfully' => 'Password updated successfully.',
 ];

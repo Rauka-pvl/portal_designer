@@ -27,7 +27,7 @@ return [
     'phone_helper' => 'Казахстан: +7 700 123 45 67',
     'email' => 'E-mail',
     'email_placeholder' => 'Введите электронную почту',
-    'email_helper' => 'user@mail.kz',
+    'email_helper' => 'На этот email будет создан отдельный аккаунт поставщика',
     'telegram_placeholder' => 'Добавьте Telegram поставщика',
     'whatsapp_placeholder' => 'Добавьте WhatsApp поставщика',
 
@@ -122,4 +122,12 @@ return [
     'updated' => 'Поставщик обновлён',
     'deleted' => 'Поставщик удалён',
     'not_found' => 'Поставщик с таким ИИН не найден.',
+    'email_exists' => 'Пользователь с таким email уже существует. Укажите другой email.',
+    'credentials_title' => 'Данные для входа поставщика',
+    'credentials_subtitle' => 'Сохраните временный пароль и передайте его поставщику. После первого входа он должен будет сменить пароль.',
+    'temporary_password' => 'Временный пароль',
+    'copy_password' => 'Скопировать пароль',
+    'copied' => 'Скопировано',
+    'login_email' => 'Email для входа',
+    'approved_locked' => 'После одобрения модератором поставщика нельзя редактировать или удалять.',
 ];

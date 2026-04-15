@@ -50,6 +50,10 @@ Route::match(['get', 'post'], '/login', function (Request $request) {
 
     $user = Auth::user();
 
+    if ($user->must_change_password) {
+        return redirect()->route('supplier.force-password.edit');
+    }
+
     if ($user->role === 'moderator') {
         return redirect()->route('moderator.index');
     }
@@ -119,6 +123,30 @@ Route::post('/logout', function (Request $request) {
 
     return redirect()->route('login');
 })->name('logout')->middleware('auth');
+
+Route::middleware(['auth', 'role:supplier'])->group(function () {
+    Route::get('/supplier/force-password', function (Request $request) {
+        return view('auth.force-password-change', [
+            'user' => $request->user(),
+        ]);
+    })->name('supplier.force-password.edit');
+
+    Route::post('/supplier/force-password', function (Request $request) {
+        $data = $request->validate([
+            'password' => ['required', 'confirmed', PasswordRule::defaults()],
+        ]);
+
+        $user = $request->user();
+        $user->password = Hash::make($data['password']);
+        $user->must_change_password = false;
+        $user->password_changed_at = now();
+        $user->save();
+
+        return redirect()
+            ->route('supplier.index')
+            ->with('status', __('auth_labels.password_updated_successfully'));
+    })->name('supplier.force-password.update');
+});
 
 Route::get('/forgot-password', function () {
     return view('auth.forgot-password');

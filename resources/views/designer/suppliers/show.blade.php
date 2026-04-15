@@ -45,6 +45,7 @@
     @php
         $s = $supplierData;
         $isReadOnly = (bool) ($isReadOnly ?? false);
+        $canManage = (bool) ($s['designer_can_manage'] ?? ! $isReadOnly);
         $name = trim((string) ($s['name'] ?? ''));
         $initials = collect(preg_split('/\s+/', $name))->filter()->take(2)->map(fn ($p) => mb_strtoupper(mb_substr($p, 0, 1)))->implode('');
         $initials = $initials !== '' ? $initials : 'S';
@@ -77,7 +78,7 @@
                 </div>
             </div>
             <div class="flex gap-3">
-                @if (! $isReadOnly)
+                @if ($canManage)
                     <button id="btn-edit" type="button" class="btn">{{ __('suppliers.edit') }}</button>
                     <form method="POST" action="{{ route('suppliers.destroy', $s['id']) }}" onsubmit="return confirm('{{ __('suppliers.delete') }}?')">
                         @csrf
@@ -148,7 +149,7 @@
                 <input type="hidden" name="corr_account" value="{{ $s['corr_account'] ?? '' }}">
                 <input type="hidden" name="comment_bank" value="{{ $s['comment_bank'] ?? '' }}">
             </div>
-            @if (! $isReadOnly)
+            @if ($canManage)
                 <div class="mt-6 flex gap-3">
                     <button id="btn-save" type="submit" class="btn hidden">{{ __('suppliers.save') }}</button>
                     <button id="btn-cancel" type="button" class="btn hidden">{{ __('suppliers.cancel') }}</button>
@@ -158,7 +159,7 @@
     </div>
 @endsection
 
-@if (! $isReadOnly)
+@if ($canManage)
     @section('scripts')
         <script>
             (function() {

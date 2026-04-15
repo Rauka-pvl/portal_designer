@@ -3,6 +3,7 @@
 return [
     'title' => 'Кабинет поставщика',
     'sidebar_brand' => 'ПОСТАВЩИКА',
+    'nav_dashboard' => 'Панель управления',
     'nav_orders' => 'Заказы',
     'nav_company' => 'Компания',
     'page_orders_title' => 'Заказы',
@@ -20,4 +21,14 @@ return [
     'fill_profile_hint' => 'После отправки профиль уйдет модератору на проверку.',
     'submit_profile' => 'Отправить на проверку',
     'submitted_for_review' => 'Профиль отправлен модератору на проверку.',
+    'waiting_moderation_title' => 'Профиль отправлен на модерацию',
+    'waiting_moderation_hint' => 'Данные компании уже заполнены. После проверки модератором профиль станет доступен на портале.',
+    'moderation_comment' => 'Комментарий модератора',
+    'company_data_title' => 'Данные компании',
+    'calendar_delivery_planned' => 'Поставка по плану',
+    'calendar_delivery_actual' => 'Поставка по факту',
+    'calendar_prepayment' => 'Аванс',
+    'calendar_balance_payment' => 'Доплата',
+    'planned_deliveries' => 'Плановые поставки',
+    'overdue_deliveries' => 'Просроченные поставки',
 ];

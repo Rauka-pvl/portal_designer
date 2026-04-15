@@ -3,6 +3,7 @@
 return [
     'title' => 'Supplier account',
     'sidebar_brand' => 'SUPPLIER',
+    'nav_dashboard' => 'Dashboard',
     'nav_orders' => 'Orders',
     'nav_company' => 'Company',
     'page_orders_title' => 'Orders',
@@ -20,4 +21,14 @@ return [
     'fill_profile_hint' => 'After submission, your profile will be sent to moderator review.',
     'submit_profile' => 'Submit for review',
     'submitted_for_review' => 'Profile has been sent to moderator review.',
+    'waiting_moderation_title' => 'Profile is under moderation',
+    'waiting_moderation_hint' => 'The company data is already filled in. Once the moderator reviews it, the profile will become available on the portal.',
+    'moderation_comment' => 'Moderator comment',
+    'company_data_title' => 'Company details',
+    'calendar_delivery_planned' => 'Planned delivery',
+    'calendar_delivery_actual' => 'Actual delivery',
+    'calendar_prepayment' => 'Prepayment',
+    'calendar_balance_payment' => 'Balance payment',
+    'planned_deliveries' => 'Planned deliveries',
+    'overdue_deliveries' => 'Overdue deliveries',
 ];

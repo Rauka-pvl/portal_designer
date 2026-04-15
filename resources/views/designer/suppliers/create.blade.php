@@ -95,7 +95,7 @@
                     </div>
                     <div>
                         <label class="block text-sm mb-1">{{ __('suppliers.email') }}</label>
-                        <input name="email" type="email" value="{{ old('email') }}" class="w-full rounded-lg border border-[#94a3b8] px-3 py-2">
+                        <input name="email" type="email" value="{{ old('email') }}" required class="w-full rounded-lg border border-[#94a3b8] px-3 py-2">
                     </div>
                     <div>
                         <label class="block text-sm mb-1">{{ __('suppliers.website') }}</label>
@@ -163,7 +163,7 @@
                     </div>
                     <div>
                         <label class="block text-sm mb-1">{{ __('suppliers.inn') }}</label>
-                        <input name="inn" value="{{ old('inn') }}" class="w-full rounded-lg border border-[#94a3b8] px-3 py-2">
+                        <input name="inn" value="{{ old('inn') }}" required class="w-full rounded-lg border border-[#94a3b8] px-3 py-2">
                     </div>
                     <div><label class="block text-sm mb-1">{{ __('suppliers.kpp') }}</label><input name="kpp" value="{{ old('kpp') }}" class="w-full rounded-lg border border-[#94a3b8] px-3 py-2"></div>
                     <div><label class="block text-sm mb-1">{{ __('suppliers.ogrn') }}</label><input name="ogrn" value="{{ old('ogrn') }}" class="w-full rounded-lg border border-[#94a3b8] px-3 py-2"></div>

@@ -31,4 +31,8 @@ return [
     'supplier_mode_hint' => 'Жеткізуші компания аккаунтына кіру',
     'login_designer' => 'Дизайнерлерге кіру',
     'register_designer' => 'Дизайнер тіркелуі',
+    'force_password_change' => 'Уақытша құпия сөзді ауыстыру',
+    'force_password_change_description' => 'Алғашқы кіру үшін жаңа құпия сөз орнатыңыз. Сақтағаннан кейін жеткізуші кабинетіне өтесіз.',
+    'save_new_password' => 'Жаңа құпия сөзді сақтау',
+    'password_updated_successfully' => 'Құпия сөз сәтті жаңартылды.',
 ];

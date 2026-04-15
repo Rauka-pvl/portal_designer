@@ -19,9 +19,9 @@ class ModeratorController extends Controller
         $pendingSuppliers = Supplier::query()
             ->where('moderation_status', 'pending')
             ->orderByDesc('id')
-            ->with(['user:id,name'])
+            ->with(['createdBy:id,name'])
             ->limit(50)
-            ->get(['id', 'name', 'user_id', 'city', 'address', 'moderation_status', 'moderation_comment']);
+            ->get(['id', 'name', 'user_id', 'created_by_user_id', 'city', 'address', 'moderation_status', 'moderation_comment']);
 
         $pendingObjects = PassportObject::query()
             ->where('moderation_status', 'pending')
@@ -75,7 +75,7 @@ class ModeratorController extends Controller
         if (in_array($type, ['all', 'suppliers'], true)) {
             $suppliersQuery = Supplier::query()
                 ->whereIn('moderation_status', ['approved', 'rejected'])
-                ->with('user:id,name');
+                ->with('createdBy:id,name');
 
             if ($q !== '') {
                 $like = '%'.$q.'%';
@@ -95,7 +95,7 @@ class ModeratorController extends Controller
                 'id' => $s->id,
                 'label' => $s->name,
                 'line2' => trim((string) (($s->city ?? '').' '.($s->address ?? ''))),
-                'designer' => $s->user?->name,
+                'designer' => $s->createdBy?->name,
                 'status' => (string) $s->moderation_status,
                 'reviewed_at' => $s->moderation_reviewed_at,
                 'comment' => $s->moderation_comment,
@@ -204,7 +204,7 @@ class ModeratorController extends Controller
                 'moderation_reviewed_at' => now(),
             ]);
 
-        $supplier = Supplier::query()->whereKey($supplierId)->first(['id', 'user_id', 'name']);
+        $supplier = Supplier::query()->whereKey($supplierId)->first(['id', 'user_id', 'created_by_user_id', 'name']);
         if ($supplier) {
             $this->createSupplierNotification($supplier, (string) $data['decision'], $comment);
         }
@@ -268,7 +268,7 @@ class ModeratorController extends Controller
     {
         $supplier = Supplier::query()
             ->where('id', $supplierId)
-            ->with('user:id,name')
+            ->with('createdBy:id,name')
             ->findOrFail($supplierId);
 
         return view('moderator.suppliers.show', [
@@ -295,7 +295,7 @@ class ModeratorController extends Controller
                 'moderation_reviewed_at' => now(),
             ]);
 
-        $supplier = Supplier::query()->whereKey($supplierId)->first(['id', 'user_id', 'name']);
+        $supplier = Supplier::query()->whereKey($supplierId)->first(['id', 'user_id', 'created_by_user_id', 'name']);
         if ($supplier) {
             $this->createSupplierNotification($supplier, (string) $data['decision'], $data['comment'] ?? null);
         }
@@ -358,7 +358,7 @@ class ModeratorController extends Controller
 
     private function createSupplierNotification(Supplier $supplier, string $decision, ?string $comment): void
     {
-        $targetUserId = (int) $supplier->user_id;
+        $targetUserId = (int) ($supplier->created_by_user_id ?: $supplier->user_id);
         if ($targetUserId < 1) {
             return;
         }

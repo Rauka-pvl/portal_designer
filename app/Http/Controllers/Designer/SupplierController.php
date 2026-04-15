@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Designer;
 use App\Http\Controllers\Controller;
 use App\Models\DesignerFavoriteSupplier;
 use App\Models\Supplier;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class SupplierController extends Controller
@@ -15,14 +18,7 @@ class SupplierController extends Controller
     {
         $userId = (int) $request->user()->id;
 
-        $suppliers = Supplier::query()
-            ->where(function ($q) use ($userId) {
-                $q->where(function ($q2) {
-                    $q2->where('profile_status', 'active')
-                        ->where('moderation_status', 'approved');
-                });
-                $q->orWhere('user_id', $userId);
-            })
+        $suppliers = $this->visibleToDesignerQuery($userId)
             ->orderByDesc('id')
             ->get();
 
@@ -73,7 +69,8 @@ class SupplierController extends Controller
         $userId = (int) $request->user()->id;
         $supplier = Supplier::query()->findOrFail($supplierId);
 
-        $isOwned = (int) ($supplier->user_id ?? 0) === $userId;
+        $isOwned = $this->isOwnedByDesigner($supplier, $userId);
+        $canManage = $isOwned && ! $this->isLockedAfterModerationApproval($supplier);
         $isPublicApproved = (string) $supplier->profile_status === 'active'
             && (string) $supplier->moderation_status === 'approved';
 
@@ -90,7 +87,7 @@ class SupplierController extends Controller
             return response()->json($payload);
         }
 
-        $isReadOnly = $request->boolean('readonly') || ! $isOwned;
+        $isReadOnly = $request->boolean('readonly') || ! $canManage;
 
         return view('designer.suppliers.show', [
             'supplier' => $supplier,
@@ -102,11 +99,23 @@ class SupplierController extends Controller
 
     public function store(Request $request)
     {
+        $data = $this->validateSupplierData($request);
+        $temporaryPassword = $this->generateTemporaryPassword();
+        $supplierUser = User::query()->create([
+            'role' => 'supplier',
+            'name' => trim((string) $data['name']),
+            'email' => trim((string) $data['email']),
+            'password' => Hash::make($temporaryPassword),
+            'must_change_password' => true,
+            'password_changed_at' => null,
+        ]);
+
         $supplier = new Supplier;
-        $supplier->user_id = $request->user()->id;
+        $supplier->user_id = (int) $supplierUser->id;
+        $supplier->created_by_user_id = (int) $request->user()->id;
         $supplier->profile_status = 'draft';
 
-        $this->fillAndSave($request, $supplier);
+        $this->fillAndSave($request, $supplier, $data);
 
         // Автоматически отправляем на модерацию после создания
         $supplier->moderation_status = 'pending';
@@ -117,6 +126,8 @@ class SupplierController extends Controller
         return response()->json([
             'success' => true,
             'message' => __('suppliers.added'),
+            'temporary_password' => $temporaryPassword,
+            'supplier_login_email' => $supplierUser->email,
             'supplier' => $this->payloadForDesigner(
                 $supplier,
                 (int) $request->user()->id,
@@ -127,9 +138,21 @@ class SupplierController extends Controller
 
     public function update(Request $request, int $supplierId)
     {
-        $supplier = Supplier::where('user_id', $request->user()->id)->findOrFail($supplierId);
+        $userId = (int) $request->user()->id;
+        $supplier = $this->ownedByDesignerQuery($userId)->findOrFail($supplierId);
+        if ($this->isLockedAfterModerationApproval($supplier)) {
+            return $this->lockedSupplierResponse($request);
+        }
+        $data = $this->validateSupplierData($request, $supplier);
 
-        $this->fillAndSave($request, $supplier);
+        $supplierUser = $supplier->user;
+        if ($supplierUser && (string) $supplierUser->role === 'supplier') {
+            $supplierUser->name = trim((string) $data['name']);
+            $supplierUser->email = trim((string) $data['email']);
+            $supplierUser->save();
+        }
+
+        $this->fillAndSave($request, $supplier, $data);
 
         if (! ($request->expectsJson() || $request->wantsJson())) {
             return redirect()->route('suppliers.show', $supplier->id)->with('status', __('suppliers.updated'));
@@ -140,15 +163,18 @@ class SupplierController extends Controller
             'message' => __('suppliers.updated'),
             'supplier' => $this->payloadForDesigner(
                 $supplier,
-                (int) $request->user()->id,
-                $this->favoriteLookupForDesigner((int) $request->user()->id)
+                $userId,
+                $this->favoriteLookupForDesigner($userId)
             ),
         ]);
     }
 
     public function destroy(Request $request, int $supplierId)
     {
-        $supplier = Supplier::where('user_id', $request->user()->id)->findOrFail($supplierId);
+        $supplier = $this->ownedByDesignerQuery((int) $request->user()->id)->findOrFail($supplierId);
+        if ($this->isLockedAfterModerationApproval($supplier)) {
+            return $this->lockedSupplierResponse($request);
+        }
         if (! empty($supplier->logo)) {
             Storage::disk('public')->delete($supplier->logo);
         }
@@ -167,15 +193,8 @@ class SupplierController extends Controller
     {
         $userId = (int) $request->user()->id;
 
-        $supplierAllowed = Supplier::query()
+        $supplierAllowed = $this->visibleToDesignerQuery($userId)
             ->whereKey($supplierId)
-            ->where(function ($q) use ($userId) {
-                $q->where('user_id', $userId)
-                    ->orWhere(function ($q2) {
-                        $q2->where('profile_status', 'active')
-                            ->where('moderation_status', 'approved');
-                    });
-            })
             ->exists();
         if (! $supplierAllowed) {
             abort(404);
@@ -203,45 +222,8 @@ class SupplierController extends Controller
         ]);
     }
 
-    private function fillAndSave(Request $request, Supplier $supplier): void
+    private function fillAndSave(Request $request, Supplier $supplier, array $data): void
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'recommend' => ['nullable', 'boolean'],
-            'phone' => ['nullable', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255'],
-            'telegram' => ['nullable', 'string', 'max:255'],
-            'whatsapp' => ['nullable', 'string', 'max:255'],
-            'website' => ['nullable', 'url', 'max:255'],
-            'city' => ['nullable', 'string', 'max:255'],
-            'address' => ['nullable', 'string', 'max:500'],
-            'sphere' => ['nullable', 'string', 'max:255'],
-            'work_terms_type' => ['nullable', Rule::in(['percent', 'amount'])],
-            'work_terms_value' => ['nullable', 'string', 'max:255'],
-            'brands' => ['nullable', 'array'],
-            'brands.*' => ['nullable', 'string', 'max:255'],
-            'cities_presence' => ['nullable', 'array'],
-            'cities_presence.*' => ['nullable', 'string', 'max:255'],
-            'comment_main' => ['nullable', 'string'],
-            'org_form' => ['nullable', Rule::in(['ooo', 'ip'])],
-            'inn' => ['nullable', 'string', 'max:255'],
-            'kpp' => ['nullable', 'string', 'max:255'],
-            'ogrn' => ['nullable', 'string', 'max:255'],
-            'okpo' => ['nullable', 'string', 'max:255'],
-            'legal_address' => ['nullable', 'string', 'max:1000'],
-            'actual_address' => ['nullable', 'string', 'max:1000'],
-            'address_match' => ['nullable', 'boolean'],
-            'director' => ['nullable', 'string', 'max:255'],
-            'accountant' => ['nullable', 'string', 'max:255'],
-            'bik' => ['nullable', 'string', 'max:255'],
-            'bank' => ['nullable', 'string', 'max:255'],
-            'checking_account' => ['nullable', 'string', 'max:255'],
-            'corr_account' => ['nullable', 'string', 'max:255'],
-            'comment_bank' => ['nullable', 'string'],
-            'logo' => ['nullable', 'image', 'max:1024'],
-            'remove_logo' => ['nullable', 'boolean'],
-        ]);
-
         if ($request->boolean('remove_logo') && ! empty($supplier->logo)) {
             Storage::disk('public')->delete($supplier->logo);
             $supplier->logo = null;
@@ -288,6 +270,51 @@ class SupplierController extends Controller
         $supplier->save();
     }
 
+    private function validateSupplierData(Request $request, ?Supplier $supplier = null): array
+    {
+        $currentSupplierUserId = null;
+        if ($supplier && $supplier->user && (string) $supplier->user->role === 'supplier') {
+            $currentSupplierUserId = (int) $supplier->user_id;
+        }
+
+        return $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'recommend' => ['nullable', 'boolean'],
+            'phone' => ['nullable', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($currentSupplierUserId)],
+            'telegram' => ['nullable', 'string', 'max:255'],
+            'whatsapp' => ['nullable', 'string', 'max:255'],
+            'website' => ['nullable', 'url', 'max:255'],
+            'city' => ['nullable', 'string', 'max:255'],
+            'address' => ['nullable', 'string', 'max:500'],
+            'sphere' => ['nullable', 'string', 'max:255'],
+            'work_terms_type' => ['nullable', Rule::in(['percent', 'amount'])],
+            'work_terms_value' => ['nullable', 'string', 'max:255'],
+            'brands' => ['nullable', 'array'],
+            'brands.*' => ['nullable', 'string', 'max:255'],
+            'cities_presence' => ['nullable', 'array'],
+            'cities_presence.*' => ['nullable', 'string', 'max:255'],
+            'comment_main' => ['nullable', 'string'],
+            'org_form' => ['nullable', Rule::in(['ooo', 'ip'])],
+            'inn' => ['required', 'string', 'max:255'],
+            'kpp' => ['nullable', 'string', 'max:255'],
+            'ogrn' => ['nullable', 'string', 'max:255'],
+            'okpo' => ['nullable', 'string', 'max:255'],
+            'legal_address' => ['nullable', 'string', 'max:1000'],
+            'actual_address' => ['nullable', 'string', 'max:1000'],
+            'address_match' => ['nullable', 'boolean'],
+            'director' => ['nullable', 'string', 'max:255'],
+            'accountant' => ['nullable', 'string', 'max:255'],
+            'bik' => ['nullable', 'string', 'max:255'],
+            'bank' => ['nullable', 'string', 'max:255'],
+            'checking_account' => ['nullable', 'string', 'max:255'],
+            'corr_account' => ['nullable', 'string', 'max:255'],
+            'comment_bank' => ['nullable', 'string'],
+            'logo' => ['nullable', 'image', 'max:1024'],
+            'remove_logo' => ['nullable', 'boolean'],
+        ]);
+    }
+
     private function cleanStringArray(mixed $value): array
     {
         if (! is_array($value)) {
@@ -321,9 +348,11 @@ class SupplierController extends Controller
     private function payloadForDesigner(Supplier $supplier, int $designerUserId, array $favoriteLookup): array
     {
         $base = $this->payload($supplier);
-        $isOwner = (int) ($supplier->user_id ?? 0) === $designerUserId;
+        $isOwner = $this->isOwnedByDesigner($supplier, $designerUserId);
+        $canManage = $isOwner && ! $this->isLockedAfterModerationApproval($supplier);
 
         $base['is_owned_by_designer'] = $isOwner;
+        $base['designer_can_manage'] = $canManage;
         $base['designer_can_place_order'] = true;
         $base['is_favorite'] = (bool) ($favoriteLookup[(int) $supplier->id] ?? false);
 
@@ -342,6 +371,7 @@ class SupplierController extends Controller
         return [
             'id' => $supplier->id,
             'user_id' => $supplier->user_id,
+            'created_by_user_id' => $supplier->created_by_user_id,
             'profile_status' => $supplier->profile_status,
             'name' => $supplier->name,
             'recommend' => (bool) $supplier->recommend,
@@ -385,5 +415,68 @@ class SupplierController extends Controller
             'logo' => $supplier->logo,
             'logo_url' => $supplier->logo ? asset('storage/'.$supplier->logo) : null,
         ];
+    }
+
+    private function visibleToDesignerQuery(int $designerUserId)
+    {
+        return Supplier::query()->where(function ($q) use ($designerUserId) {
+            $q->where(function ($q2) {
+                $q2->where('profile_status', 'active')
+                    ->where('moderation_status', 'approved');
+            })->orWhere(function ($q2) use ($designerUserId) {
+                $q2->where('created_by_user_id', $designerUserId)
+                    ->orWhere(function ($legacy) use ($designerUserId) {
+                        $legacy->whereNull('created_by_user_id')
+                            ->where('user_id', $designerUserId);
+                    });
+            });
+        });
+    }
+
+    private function ownedByDesignerQuery(int $designerUserId)
+    {
+        return Supplier::query()->where(function ($q) use ($designerUserId) {
+            $q->where('created_by_user_id', $designerUserId)
+                ->orWhere(function ($legacy) use ($designerUserId) {
+                    $legacy->whereNull('created_by_user_id')
+                        ->where('user_id', $designerUserId);
+                });
+        });
+    }
+
+    private function isOwnedByDesigner(Supplier $supplier, int $designerUserId): bool
+    {
+        if ((int) ($supplier->created_by_user_id ?? 0) === $designerUserId) {
+            return true;
+        }
+
+        return (int) ($supplier->created_by_user_id ?? 0) < 1
+            && (int) ($supplier->user_id ?? 0) === $designerUserId;
+    }
+
+    private function isLockedAfterModerationApproval(Supplier $supplier): bool
+    {
+        return (string) ($supplier->moderation_status ?? '') === 'approved';
+    }
+
+    private function lockedSupplierResponse(Request $request)
+    {
+        $message = __('suppliers.approved_locked');
+
+        if ($request->expectsJson() || $request->wantsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => $message,
+            ], 422);
+        }
+
+        return redirect()->back()->withErrors([
+            'supplier' => $message,
+        ]);
+    }
+
+    private function generateTemporaryPassword(): string
+    {
+        return Str::password(length: 12, letters: true, numbers: true, symbols: false, spaces: false);
     }
 }

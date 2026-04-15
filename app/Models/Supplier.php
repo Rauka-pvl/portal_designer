@@ -13,6 +13,7 @@ class Supplier extends Model
 
     protected $fillable = [
         'user_id',
+        'created_by_user_id',
         'profile_status',
         'logo',
         'name',
@@ -73,5 +74,10 @@ class Supplier extends Model
     public function accountUser()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by_user_id');
     }
 }

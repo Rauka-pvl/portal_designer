@@ -184,7 +184,13 @@ class SupplierOrderController extends Controller
         }
 
         $supplier = Supplier::query()
-            ->where('user_id', $userId)
+            ->where(function ($q) use ($userId) {
+                $q->where('created_by_user_id', $userId)
+                    ->orWhere(function ($legacy) use ($userId) {
+                        $legacy->whereNull('created_by_user_id')
+                            ->where('user_id', $userId);
+                    });
+            })
             ->whereKey($supplierId)
             ->first(['id', 'moderation_status']);
 
@@ -267,7 +273,11 @@ class SupplierOrderController extends Controller
         $supplierAllowed = Supplier::query()
             ->whereKey($supplierId)
             ->where(function ($q) use ($userId) {
-                $q->where('user_id', $userId)
+                $q->where('created_by_user_id', $userId)
+                    ->orWhere(function ($legacy) use ($userId) {
+                        $legacy->whereNull('created_by_user_id')
+                            ->where('user_id', $userId);
+                    })
                     ->orWhere(function ($q2) {
                         $q2->where('profile_status', 'active')
                             ->where('moderation_status', 'approved');
@@ -341,7 +351,11 @@ class SupplierOrderController extends Controller
     {
         return Supplier::query()
             ->where(function ($q) use ($designerId) {
-                $q->where('user_id', $designerId)
+                $q->where('created_by_user_id', $designerId)
+                    ->orWhere(function ($legacy) use ($designerId) {
+                        $legacy->whereNull('created_by_user_id')
+                            ->where('user_id', $designerId);
+                    })
                     ->orWhere(function ($q2) {
                         $q2->where('profile_status', 'active')
                             ->where('moderation_status', 'approved');

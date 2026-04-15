@@ -27,9 +27,7 @@ class SupplierPortalController extends Controller
 
     public function orders(Request $request): View
     {
-        $supplier = Supplier::query()
-            ->where('user_id', (int) $request->user()->id)
-            ->first();
+        $supplier = $this->resolveSupplierForUser((int) $request->user()->id);
 
         $orders = collect();
         if ($supplier) {
@@ -71,9 +69,7 @@ class SupplierPortalController extends Controller
 
     public function company(Request $request): View
     {
-        $supplier = Supplier::query()
-            ->where('user_id', (int) $request->user()->id)
-            ->first();
+        $supplier = $this->resolveSupplierForUser((int) $request->user()->id);
 
         return view('supplier.company', [
             'supplier' => $supplier,
@@ -86,9 +82,7 @@ class SupplierPortalController extends Controller
             'status' => ['required', Rule::in(self::ORDER_STATUSES)],
         ]);
 
-        $supplier = Supplier::query()
-            ->where('user_id', (int) $request->user()->id)
-            ->firstOrFail();
+        $supplier = $this->resolveSupplierForUser((int) $request->user()->id, true);
 
         $order = Supplier_orders::query()
             ->where('supplier_id', $supplier->id)
@@ -109,9 +103,10 @@ class SupplierPortalController extends Controller
     {
         $user = $request->user();
 
-        $supplier = Supplier::query()->firstOrNew([
-            'user_id' => (int) $user->id,
-        ]);
+        $supplier = $this->resolveSupplierForUser((int) $user->id)
+            ?? Supplier::query()->firstOrNew([
+                'user_id' => (int) $user->id,
+            ]);
 
         $data = $request->validate([
             'recommend' => ['nullable', 'boolean'],
@@ -282,5 +277,22 @@ class SupplierPortalController extends Controller
         return array_values(array_unique(array_filter(array_map(function ($item) {
             return is_string($item) ? trim($item) : '';
         }, $value), fn ($v) => $v !== '')));
+    }
+
+    private function resolveSupplierForUser(int $userId, bool $fail = false): ?Supplier
+    {
+        $supplier = Supplier::query()
+            ->where('user_id', $userId)
+            ->first();
+
+        if ($supplier) {
+            return $supplier;
+        }
+
+        if ($fail) {
+            abort(404);
+        }
+
+        return null;
     }
 }

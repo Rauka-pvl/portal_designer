@@ -845,8 +845,8 @@
                                         <p class="modal-helper">{{ __('suppliers.phone_helper') }}</p>
                                     </div>
                                     <div>
-                                        <label class="modal-label">{{ __('suppliers.email') }}</label>
-                                        <input type="email" name="email" class="modal-input"
+                                        <label class="modal-label modal-label-required">{{ __('suppliers.email') }}</label>
+                                        <input type="email" name="email" required class="modal-input"
                                             placeholder="{{ __('suppliers.email_placeholder') }}">
                                         <p class="modal-helper">{{ __('suppliers.email_helper') }}</p>
                                     </div>
@@ -995,7 +995,7 @@
                                 <div>
                                     <label class="modal-label">{{ __('suppliers.inn') }}</label>
                                     <input type="text" name="inn" id="supplier-inn" class="modal-input"
-                                        placeholder="000000000000" maxlength="12" inputmode="numeric" pattern="[0-9]*"
+                                        required placeholder="000000000000" maxlength="12" inputmode="numeric" pattern="[0-9]*"
                                         oninput="this.value=this.value.replace(/\D/g,'')">
                                 </div>
 
@@ -1122,6 +1122,53 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div id="supplier-credentials-modal"
+        class="fixed inset-0 bg-black/50 z-[55] hidden flex items-center justify-center modal-overlay p-4"
+        onmousedown="if(event.target === this) closeSupplierCredentialsModal()">
+        <div class="bg-white dark:bg-[#161615] rounded-xl max-w-lg w-full mx-auto overflow-hidden flex flex-col border border-[#7c8799] dark:border-[#3E3E3A] modal-content"
+            onclick="event.stopPropagation()">
+            <div class="flex items-start justify-between px-6 pt-6 pb-4 border-b border-[#7c8799] dark:border-[#3E3E3A]">
+                <div>
+                    <h3 class="text-xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]">{{ __('suppliers.credentials_title') }}</h3>
+                    <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-1">{{ __('suppliers.credentials_subtitle') }}</p>
+                </div>
+                <button type="button" onclick="closeSupplierCredentialsModal()"
+                    class="p-2 rounded-lg text-[#64748b] dark:text-[#A1A09A] hover:bg-[#e5e7eb] dark:hover:bg-[#3E3E3A] hover:text-[#0f172a] dark:hover:text-[#EDEDEC] transition-all duration-200 hover:scale-110">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="px-6 py-5 space-y-4">
+                <div>
+                    <label class="modal-label">{{ __('suppliers.login_email') }}</label>
+                    <input type="text" id="supplier-credentials-email" readonly
+                        class="modal-input bg-[#f8fafc] dark:bg-[#0a0a0a]">
+                </div>
+                <div>
+                    <label class="modal-label">{{ __('suppliers.temporary_password') }}</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="supplier-credentials-password" readonly
+                            class="modal-input bg-[#f8fafc] dark:bg-[#0a0a0a] flex-1">
+                        <button type="button" id="supplier-credentials-copy-btn"
+                            class="px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-sm font-medium text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors inline-flex items-center gap-2 whitespace-nowrap">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 10h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            <span id="supplier-credentials-copy-text">{{ __('suppliers.copy_password') }}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-[#7c8799] dark:border-[#3E3E3A] flex justify-end">
+                <button type="button" onclick="closeSupplierCredentialsModal()" class="add-btn">
+                    {{ __('suppliers.close') }}
+                </button>
+            </div>
         </div>
     </div>
 
@@ -1435,7 +1482,7 @@
             }
 
             function tableActionsCell(s) {
-                if (!s.is_owned_by_designer) {
+                if (!s.is_owned_by_designer || !s.designer_can_manage) {
                     return `<div class="flex items-center gap-2">
                         <button type="button" title="{{ __('suppliers.view') }}" onclick="viewSupplier(${s.id})"
                             class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] transition-colors">
@@ -1501,7 +1548,7 @@
             }
 
             function listActionsBlock(s) {
-                if (!s.is_owned_by_designer) {
+                if (!s.is_owned_by_designer || !s.designer_can_manage) {
                     return `<div class="flex items-center gap-2 flex-wrap">
                         <button type="button" onclick="viewSupplier(${s.id})" class="filter-btn">{{ __('suppliers.view') }}</button>
                         <button type="button" onclick="addOrderFromSupplier(${s.id})" class="filter-btn">{{ __('suppliers.add_order') }}</button>
@@ -2035,6 +2082,47 @@
             }, 280);
         }
 
+        function openSupplierCredentialsModal(email, password) {
+            const modal = document.getElementById('supplier-credentials-modal');
+            const emailInput = document.getElementById('supplier-credentials-email');
+            const passwordInput = document.getElementById('supplier-credentials-password');
+            const copyText = document.getElementById('supplier-credentials-copy-text');
+            const copyBtn = document.getElementById('supplier-credentials-copy-btn');
+
+            if (emailInput) emailInput.value = email || '';
+            if (passwordInput) passwordInput.value = password || '';
+            if (copyText) copyText.textContent = '{{ __('suppliers.copy_password') }}';
+            if (copyBtn) copyBtn.disabled = false;
+
+            modal?.classList.remove('hidden');
+            modal?.classList.add('flex');
+        }
+
+        function closeSupplierCredentialsModal() {
+            const modal = document.getElementById('supplier-credentials-modal');
+            modal?.classList.remove('flex');
+            modal?.classList.add('hidden');
+        }
+
+        document.getElementById('supplier-credentials-copy-btn')?.addEventListener('click', async function() {
+            const input = document.getElementById('supplier-credentials-password');
+            const copyText = document.getElementById('supplier-credentials-copy-text');
+            const value = input?.value || '';
+            if (!value) return;
+
+            try {
+                await navigator.clipboard.writeText(value);
+                if (copyText) copyText.textContent = '{{ __('suppliers.copied') }}';
+            } catch (e) {
+                if (input) {
+                    input.focus();
+                    input.select();
+                    document.execCommand('copy');
+                }
+                if (copyText) copyText.textContent = '{{ __('suppliers.copied') }}';
+            }
+        });
+
         // Обработка формы поставщика
         document.getElementById('supplier-form')?.addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -2072,6 +2160,7 @@
                 const data = await r.json().catch(() => ({}));
                 if (r.ok && data?.supplier) {
                     const s = data.supplier;
+                    const isCreate = !id;
                     const list = window.allSuppliers || [];
                     const i = list.findIndex((x) => parseInt(x.id, 10) === parseInt(s.id, 10));
                     if (i >= 0) list[i] = s;
@@ -2079,6 +2168,9 @@
                     window.allSuppliers = list;
                     closeSupplierModal();
                     window.renderSuppliersActiveTab?.();
+                    if (isCreate && data.temporary_password) {
+                        openSupplierCredentialsModal(data.supplier_login_email || s.email || '', data.temporary_password);
+                    }
                     projectAlert('success', data.message || '{{ __('suppliers.updated') }}', '', 2400);
                 } else {
                     projectAlert('error', data.message || '{{ __('objects.error') }}', '', 3200);

@@ -12,7 +12,9 @@ use App\Http\Controllers\Designer\SupplierController;
 use App\Http\Controllers\Designer\SupplierOrderController;
 use App\Http\Controllers\SupplierOrderChatController;
 use App\Http\Controllers\Moderator\ModeratorController;
+use App\Http\Controllers\Supplier\CalendarController as SupplierCalendarController;
 use App\Http\Controllers\Supplier\SupplierPortalController;
+use App\Http\Controllers\Supplier\SettingsController as SupplierSettingsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -31,10 +33,16 @@ Route::get('/', function () {
     };
 });
 
-Route::middleware(['auth', 'role:supplier'])->group(function () {
-    Route::get('/supplier', [SupplierPortalController::class, 'orders'])->name('supplier.index');
+Route::middleware(['auth', 'role:supplier', 'password.changed'])->group(function () {
+    Route::get('/supplier', [SupplierCalendarController::class, 'index'])->name('supplier.index');
+    Route::get('/supplier/orders', [SupplierPortalController::class, 'orders'])->name('supplier.orders');
+    Route::get('/supplier/calendar/events', [SupplierCalendarController::class, 'events'])->name('supplier.calendar.events');
     Route::get('/supplier/company', [SupplierPortalController::class, 'company'])->name('supplier.company');
     Route::post('/supplier/profile', [SupplierPortalController::class, 'saveProfile'])->name('supplier.profile.save');
+    Route::get('/supplier/profile/view', [SupplierSettingsController::class, 'profile'])->name('supplier.profile.show');
+    Route::get('/supplier/settings', [SupplierSettingsController::class, 'index'])->name('supplier.settings.index');
+    Route::put('/supplier/settings/profile', [SupplierSettingsController::class, 'updateProfile'])->name('supplier.settings.profile.update');
+    Route::put('/supplier/settings/password', [SupplierSettingsController::class, 'updatePassword'])->name('supplier.settings.password.update');
     Route::patch('/supplier/orders/{orderId}/status', [SupplierPortalController::class, 'updateOrderStatus'])
         ->whereNumber('orderId')
         ->name('supplier.orders.update_status');
@@ -220,7 +228,7 @@ Route::middleware(['auth', 'role:designer|moderator'])->group(function () {
     Route::put('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password.update');
 });
 
-Route::middleware(['auth', 'role:designer|supplier'])->group(function () {
+Route::middleware(['auth', 'role:designer|supplier', 'password.changed'])->group(function () {
     Route::get('/supplier-orders/{orderId}/chat/messages', [SupplierOrderChatController::class, 'messages'])
         ->whereNumber('orderId')
         ->name('supplier-orders.chat.messages');

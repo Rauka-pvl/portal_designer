@@ -31,4 +31,8 @@ return [
     'supplier_mode_hint' => 'Вход в кабинет компании-поставщика',
     'login_designer' => 'Вход для дизайнеров',
     'register_designer' => 'Регистрация дизайнера',
+    'force_password_change' => 'Смена временного пароля',
+    'force_password_change_description' => 'Для первого входа нужно задать новый пароль. После сохранения вы попадете в кабинет поставщика.',
+    'save_new_password' => 'Сохранить новый пароль',
+    'password_updated_successfully' => 'Пароль успешно обновлен.',
 ];

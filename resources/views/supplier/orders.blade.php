@@ -1,8 +1,8 @@
 @extends('layouts.supplier')
 
-@section('title', __('supplier-portal.page_orders_title'))
+@section('title', __('supplier-portal.nav_orders'))
 
-@section('header_title', __('supplier-portal.page_orders_title'))
+@section('header_title', __('supplier-portal.nav_orders'))
 
 @push('styles')
 <style>

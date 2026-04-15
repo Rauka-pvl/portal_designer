@@ -9,6 +9,8 @@ use App\Models\UserNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
 
@@ -59,7 +61,7 @@ class ReferralSupplierController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'recommend' => ['nullable', 'boolean'],
             'phone' => ['nullable', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'max:255'],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
             'telegram' => ['nullable', 'string', 'max:255'],
             'whatsapp' => ['nullable', 'string', 'max:255'],
             'website' => ['nullable', 'url', 'max:255'],
@@ -74,7 +76,7 @@ class ReferralSupplierController extends Controller
             'cities_presence.*' => ['nullable', 'string', 'max:255'],
             'comment_main' => ['nullable', 'string'],
             'org_form' => ['nullable', Rule::in(['ooo', 'ip'])],
-            'inn' => ['nullable', 'string', 'max:255'],
+            'inn' => ['required', 'string', 'max:255'],
             'kpp' => ['nullable', 'string', 'max:255'],
             'ogrn' => ['nullable', 'string', 'max:255'],
             'okpo' => ['nullable', 'string', 'max:255'],
@@ -90,8 +92,19 @@ class ReferralSupplierController extends Controller
             'comment_bank' => ['nullable', 'string'],
         ]);
 
+        $temporaryPassword = Str::password(length: 12, letters: true, numbers: true, symbols: false, spaces: false);
+        $supplierUser = User::query()->create([
+            'role' => 'supplier',
+            'name' => trim((string) $data['name']),
+            'email' => trim((string) $data['email']),
+            'password' => Hash::make($temporaryPassword),
+            'must_change_password' => true,
+            'password_changed_at' => null,
+        ]);
+
         $supplier = new Supplier;
-        $supplier->user_id = $designer->id;
+        $supplier->user_id = (int) $supplierUser->id;
+        $supplier->created_by_user_id = $designer->id;
         $supplier->name = $data['name'];
         $supplier->recommend = $request->boolean('recommend');
         $supplier->phone = $data['phone'] ?? null;
@@ -134,7 +147,7 @@ class ReferralSupplierController extends Controller
         UserNotification::query()->create([
             'user_id' => $designer->id,
             'title' => __('notifications.referral_supplier_title'),
-            'comment' => __('notifications.referral_supplier_comment', ['name' => $supplier->name]),
+            'comment' => __('notifications.referral_supplier_comment', ['name' => $supplier->name])."\n".__('suppliers.temporary_password').': '.$temporaryPassword,
             'is_read' => false,
             'related_supplier_id' => $supplier->id,
             'action_key' => 'confirm_referral_supplier',

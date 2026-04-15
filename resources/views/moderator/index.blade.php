@@ -33,7 +33,7 @@
                                         {{ $s->city ?? '' }} {{ $s->address ?? '' }}
                                     </div>
                                     <div class="text-xs text-[#64748b] dark:text-[#A1A09A] mt-1">
-                                        {{ __('moderation.designer') }}: {{ $s->user?->name ?? '-' }}
+                                        {{ __('moderation.designer') }}: {{ $s->createdBy?->name ?? '-' }}
                                     </div>
                                 </div>
                                 <a href="{{ route('moderator.suppliers.show', $s->id) }}" class="px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors text-sm whitespace-nowrap">

@@ -34,7 +34,7 @@
         <div>
             <h1 class="text-2xl font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ $supplier->name ?? '-' }}</h1>
             <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-1">
-                {{ __('moderation.designer') }}: {{ $supplier->user?->name ?? '-' }}
+                {{ __('moderation.designer') }}: {{ $supplier->createdBy?->name ?? '-' }}
             </p>
         </div>
         <div class="flex gap-3">
