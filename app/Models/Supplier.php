@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Crypt;
 
 class Supplier extends Model
 {
@@ -15,6 +16,7 @@ class Supplier extends Model
         'user_id',
         'created_by_user_id',
         'profile_status',
+        'temporary_password_encrypted',
         'logo',
         'name',
         'recommend',
@@ -79,5 +81,24 @@ class Supplier extends Model
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by_user_id');
+    }
+
+    public function setTemporaryPassword(string $password): void
+    {
+        $this->temporary_password_encrypted = Crypt::encryptString($password);
+    }
+
+    public function getTemporaryPasswordForModeratorAttribute(): ?string
+    {
+        $encrypted = $this->temporary_password_encrypted;
+        if (! is_string($encrypted) || trim($encrypted) === '') {
+            return null;
+        }
+
+        try {
+            return Crypt::decryptString($encrypted);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }

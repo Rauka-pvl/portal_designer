@@ -9,9 +9,10 @@ use App\Models\UserNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class ReferralSupplierController extends Controller
@@ -93,61 +94,67 @@ class ReferralSupplierController extends Controller
         ]);
 
         $temporaryPassword = Str::password(length: 12, letters: true, numbers: true, symbols: false, spaces: false);
-        $supplierUser = User::query()->create([
-            'role' => 'supplier',
-            'name' => trim((string) $data['name']),
-            'email' => trim((string) $data['email']),
-            'password' => Hash::make($temporaryPassword),
-            'must_change_password' => true,
-            'password_changed_at' => null,
-        ]);
 
-        $supplier = new Supplier;
-        $supplier->user_id = (int) $supplierUser->id;
-        $supplier->created_by_user_id = $designer->id;
-        $supplier->name = $data['name'];
-        $supplier->recommend = $request->boolean('recommend');
-        $supplier->phone = $data['phone'] ?? null;
-        $supplier->email = $data['email'] ?? null;
-        $supplier->telegram = $data['telegram'] ?? null;
-        $supplier->whatsapp = $data['whatsapp'] ?? null;
-        $supplier->website = $data['website'] ?? null;
-        $supplier->city = $data['city'] ?? null;
-        $supplier->address = $data['address'] ?? null;
-        $supplier->sphere = $data['sphere'] ?? null;
-        $supplier->work_terms_type = $data['work_terms_type'] ?? null;
-        $supplier->work_terms_value = $data['work_terms_value'] ?? null;
-        $supplier->brands = $this->cleanStringArray($request->input('brands', []));
-        $supplier->cities_presence = $this->cleanStringArray($request->input('cities_presence', []));
-        $supplier->comment = $data['comment_main'] ?? null;
-        $supplier->org_form = $data['org_form'] ?? 'ooo';
-        $supplier->inn = $data['inn'] ?? null;
-        $supplier->kpp = $data['kpp'] ?? null;
-        $supplier->ogrn = $data['ogrn'] ?? null;
-        $supplier->okpo = $data['okpo'] ?? null;
-        $supplier->legal_address = $data['legal_address'] ?? null;
-        $supplier->actual_address = $data['actual_address'] ?? null;
-        $supplier->address_match = $request->boolean('address_match');
-        $supplier->director = $data['director'] ?? null;
-        $supplier->accountant = $data['accountant'] ?? null;
-        $supplier->bik = $data['bik'] ?? null;
-        $supplier->bank = $data['bank'] ?? null;
-        $supplier->checking_account = $data['checking_account'] ?? null;
-        $supplier->corr_account = $data['corr_account'] ?? null;
-        $supplier->comment_bank = $data['comment_bank'] ?? null;
+        $supplier = DB::transaction(function () use ($data, $designer, $request, $temporaryPassword) {
+            $supplierUser = User::query()->create([
+                'role' => 'supplier',
+                'name' => trim((string) $data['name']),
+                'email' => trim((string) $data['email']),
+                'password' => Hash::make($temporaryPassword),
+                'must_change_password' => true,
+                'password_changed_at' => null,
+            ]);
 
-        $supplier->is_referral_submitted = true;
-        $supplier->is_confirmed_by_designer = false;
-        $supplier->moderation_status = 'pending';
-        $supplier->moderation_comment = null;
-        $supplier->moderation_reviewer_id = null;
-        $supplier->moderation_reviewed_at = null;
-        $supplier->save();
+            $supplier = new Supplier;
+            $supplier->user_id = (int) $supplierUser->id;
+            $supplier->created_by_user_id = $designer->id;
+            $supplier->setTemporaryPassword($temporaryPassword);
+            $supplier->name = $data['name'];
+            $supplier->recommend = $request->boolean('recommend');
+            $supplier->phone = $data['phone'] ?? null;
+            $supplier->email = $data['email'] ?? null;
+            $supplier->telegram = $data['telegram'] ?? null;
+            $supplier->whatsapp = $data['whatsapp'] ?? null;
+            $supplier->website = $data['website'] ?? null;
+            $supplier->city = $data['city'] ?? null;
+            $supplier->address = $data['address'] ?? null;
+            $supplier->sphere = $data['sphere'] ?? null;
+            $supplier->work_terms_type = $data['work_terms_type'] ?? null;
+            $supplier->work_terms_value = $data['work_terms_value'] ?? null;
+            $supplier->brands = $this->cleanStringArray($request->input('brands', []));
+            $supplier->cities_presence = $this->cleanStringArray($request->input('cities_presence', []));
+            $supplier->comment = $data['comment_main'] ?? null;
+            $supplier->org_form = $data['org_form'] ?? 'ooo';
+            $supplier->inn = $data['inn'] ?? null;
+            $supplier->kpp = $data['kpp'] ?? null;
+            $supplier->ogrn = $data['ogrn'] ?? null;
+            $supplier->okpo = $data['okpo'] ?? null;
+            $supplier->legal_address = $data['legal_address'] ?? null;
+            $supplier->actual_address = $data['actual_address'] ?? null;
+            $supplier->address_match = $request->boolean('address_match');
+            $supplier->director = $data['director'] ?? null;
+            $supplier->accountant = $data['accountant'] ?? null;
+            $supplier->bik = $data['bik'] ?? null;
+            $supplier->bank = $data['bank'] ?? null;
+            $supplier->checking_account = $data['checking_account'] ?? null;
+            $supplier->corr_account = $data['corr_account'] ?? null;
+            $supplier->comment_bank = $data['comment_bank'] ?? null;
+
+            $supplier->is_referral_submitted = true;
+            $supplier->is_confirmed_by_designer = false;
+            $supplier->moderation_status = 'pending';
+            $supplier->moderation_comment = null;
+            $supplier->moderation_reviewer_id = null;
+            $supplier->moderation_reviewed_at = null;
+            $supplier->save();
+
+            return $supplier;
+        });
 
         UserNotification::query()->create([
             'user_id' => $designer->id,
             'title' => __('notifications.referral_supplier_title'),
-            'comment' => __('notifications.referral_supplier_comment', ['name' => $supplier->name])."\n".__('suppliers.temporary_password').': '.$temporaryPassword,
+            'comment' => __('notifications.referral_supplier_comment', ['name' => $supplier->name]),
             'is_read' => false,
             'related_supplier_id' => $supplier->id,
             'action_key' => 'confirm_referral_supplier',

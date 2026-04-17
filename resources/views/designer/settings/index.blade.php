@@ -120,6 +120,7 @@
 @section('content')
     @php
         $activeTab = $activeTab ?? 'profile';
+        $profile = $profile ?? null;
     @endphp
 
     @if (session('status'))
@@ -185,13 +186,13 @@
                         <input type="text" name="name" required value="{{ old('name', $user->name) }}" class="settings-input">
 
                         <label class="settings-label">{{ __('settings.short_description') }}</label>
-                        <input type="text" name="short_description" value="{{ old('short_description', $user->short_description) }}" class="settings-input">
+                        <input type="text" name="short_description" value="{{ old('short_description', $profile?->short_description) }}" class="settings-input">
 
                         <label class="settings-label">{{ __('settings.about_designer') }}</label>
-                        <textarea name="about_designer" class="settings-textarea">{{ old('about_designer', $user->about_designer) }}</textarea>
+                        <textarea name="about_designer" class="settings-textarea">{{ old('about_designer', $profile?->about_designer) }}</textarea>
 
                         <label class="settings-label">{{ __('settings.city') }}</label>
-                        <input type="text" name="city" value="{{ old('city', $user->city) }}" class="settings-input">
+                        <input type="text" name="city" value="{{ old('city', $profile?->city) }}" class="settings-input">
                     </div>
 
                     <div class="settings-divider"></div>
@@ -213,7 +214,7 @@
                                 @endphp
                                 @foreach ($contacts as [$field, $label])
                                     <label class="settings-label">{{ __('settings.' . $label) }}</label>
-                                    <input type="{{ $field === 'email' ? 'email' : 'text' }}" name="{{ $field }}" value="{{ old($field, $user->{$field}) }}" class="settings-input">
+                                    <input type="{{ $field === 'email' ? 'email' : 'text' }}" name="{{ $field }}" value="{{ old($field, $field === 'email' ? $user->email : $profile?->{$field}) }}" class="settings-input">
                                 @endforeach
                             </div>
                         </div>
@@ -223,22 +224,22 @@
                             <div class="settings-divider"></div>
                             <div class="settings-grid">
                                 <label class="settings-label">{{ __('settings.experience') }}</label>
-                                <input type="text" name="experience" value="{{ old('experience', $user->experience) }}" class="settings-input">
+                                <input type="text" name="experience" value="{{ old('experience', $profile?->experience) }}" class="settings-input">
 
                                 <label class="settings-label">{{ __('settings.price_per_m2') }}</label>
-                                <input type="number" step="0.01" min="0" name="price_per_m2" value="{{ old('price_per_m2', $user->price_per_m2) }}" class="settings-input">
+                                <input type="number" step="0.01" min="0" name="price_per_m2" value="{{ old('price_per_m2', $profile?->price_per_m2) }}" class="settings-input">
 
                                 <label class="settings-label">{{ __('settings.education') }}</label>
-                                <input type="text" name="education" value="{{ old('education', $user->education) }}" class="settings-input">
+                                <input type="text" name="education" value="{{ old('education', $profile?->education) }}" class="settings-input">
 
                                 <label class="settings-label">{{ __('settings.awards') }}</label>
-                                <input type="text" name="awards" value="{{ old('awards', $user->awards) }}" class="settings-input">
+                                <input type="text" name="awards" value="{{ old('awards', $profile?->awards) }}" class="settings-input">
 
                                 <label class="settings-label">{{ __('settings.specialization') }}</label>
-                                <input type="text" name="specialization" value="{{ old('specialization', $user->specialization) }}" class="settings-input">
+                                <input type="text" name="specialization" value="{{ old('specialization', $profile?->specialization) }}" class="settings-input">
 
                                 <label class="settings-label">{{ __('settings.styles') }}</label>
-                                <input type="text" name="styles" value="{{ old('styles', $user->styles) }}" class="settings-input">
+                                <input type="text" name="styles" value="{{ old('styles', $profile?->styles) }}" class="settings-input">
                             </div>
                         </div>
                     </div>

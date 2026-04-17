@@ -7,6 +7,7 @@ use App\Models\DesignerFavoriteSupplier;
 use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -101,33 +102,36 @@ class SupplierController extends Controller
     {
         $data = $this->validateSupplierData($request);
         $temporaryPassword = $this->generateTemporaryPassword();
-        $supplierUser = User::query()->create([
-            'role' => 'supplier',
-            'name' => trim((string) $data['name']),
-            'email' => trim((string) $data['email']),
-            'password' => Hash::make($temporaryPassword),
-            'must_change_password' => true,
-            'password_changed_at' => null,
-        ]);
+        $supplier = DB::transaction(function () use ($data, $request, $temporaryPassword) {
+            $supplierUser = User::query()->create([
+                'role' => 'supplier',
+                'name' => trim((string) $data['name']),
+                'email' => trim((string) $data['email']),
+                'password' => Hash::make($temporaryPassword),
+                'must_change_password' => true,
+                'password_changed_at' => null,
+            ]);
 
-        $supplier = new Supplier;
-        $supplier->user_id = (int) $supplierUser->id;
-        $supplier->created_by_user_id = (int) $request->user()->id;
-        $supplier->profile_status = 'draft';
+            $supplier = new Supplier;
+            $supplier->user_id = (int) $supplierUser->id;
+            $supplier->created_by_user_id = (int) $request->user()->id;
+            $supplier->profile_status = 'draft';
+            $supplier->setTemporaryPassword($temporaryPassword);
 
-        $this->fillAndSave($request, $supplier, $data);
+            $this->fillAndSave($request, $supplier, $data);
 
-        // Автоматически отправляем на модерацию после создания
-        $supplier->moderation_status = 'pending';
-        $supplier->moderation_reviewer_id = null;
-        $supplier->moderation_reviewed_at = null;
-        $supplier->save();
+            // Автоматически отправляем на модерацию после создания
+            $supplier->moderation_status = 'pending';
+            $supplier->moderation_reviewer_id = null;
+            $supplier->moderation_reviewed_at = null;
+            $supplier->save();
+
+            return $supplier;
+        });
 
         return response()->json([
             'success' => true,
             'message' => __('suppliers.added'),
-            'temporary_password' => $temporaryPassword,
-            'supplier_login_email' => $supplierUser->email,
             'supplier' => $this->payloadForDesigner(
                 $supplier,
                 (int) $request->user()->id,
@@ -178,7 +182,15 @@ class SupplierController extends Controller
         if (! empty($supplier->logo)) {
             Storage::disk('public')->delete($supplier->logo);
         }
-        $supplier->delete();
+        DB::transaction(function () use ($supplier): void {
+            $supplierUser = $supplier->user;
+
+            $supplier->delete();
+
+            if ($supplierUser && (string) $supplierUser->role === 'supplier') {
+                $supplierUser->delete();
+            }
+        });
         if ($request->expectsJson() || $request->wantsJson()) {
             return response()->json([
                 'success' => true,

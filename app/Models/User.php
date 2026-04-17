@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -82,5 +83,15 @@ class User extends Authenticatable
     public function supplierProfile(): HasOne
     {
         return $this->hasOne(Supplier::class, 'user_id');
+    }
+
+    public function designerProfile(): HasOne
+    {
+        return $this->hasOne(DesignerProfile::class);
+    }
+
+    public function scopeWithDesignerProfile(Builder $query): Builder
+    {
+        return $query->with('designerProfile');
     }
 }

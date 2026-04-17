@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Designer;
 
 use App\Http\Controllers\Controller;
+use App\Models\DesignerProfile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
@@ -14,9 +15,11 @@ class SettingsController extends Controller
     public function profile(Request $request)
     {
         $user = $request->user();
+        $profile = $this->designerProfile($user);
 
         return view('designer.profile.show', [
             'user' => $user,
+            'profile' => $profile,
             'referralSupplierUrl' => ($user->role ?? null) === 'designer'
                 ? URL::signedRoute('referrals.suppliers.create', ['designer' => $user->id])
                 : null,
@@ -27,16 +30,19 @@ class SettingsController extends Controller
     {
         $user = $request->user();
         $tab = $request->query('tab', 'profile');
+        $profile = $this->designerProfile($user);
 
         return view('designer.settings.index', [
             'activeTab' => in_array($tab, ['profile', 'security'], true) ? $tab : 'profile',
             'user' => $user,
+            'profile' => $profile,
         ]);
     }
 
     public function updateProfile(Request $request): RedirectResponse
     {
         $user = $request->user();
+        $profile = $this->designerProfile($user);
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -60,25 +66,28 @@ class SettingsController extends Controller
         ]);
 
         $user->name = trim((string) $data['name']);
-        $user->short_description = $data['short_description'] ?? null;
-        $user->city = $data['city'] ?? null;
-        $user->work_regions = $data['work_regions'] ?? null;
-        $user->about_designer = $data['about_designer'] ?? null;
-        $user->phone = $data['phone'] ?? null;
         $user->email = $data['email'];
-        $user->website_portfolio = $data['website_portfolio'] ?? null;
-        $user->telegram = $data['telegram'] ?? null;
-        $user->whatsapp = $data['whatsapp'] ?? null;
-        $user->vk = $data['vk'] ?? null;
-        $user->instagram = $data['instagram'] ?? null;
-        $user->experience = $data['experience'] ?? null;
-        $user->price_per_m2 = isset($data['price_per_m2']) ? (float) $data['price_per_m2'] : null;
-        $user->education = $data['education'] ?? null;
-        $user->awards = $data['awards'] ?? null;
-        $user->specialization = $data['specialization'] ?? null;
-        $user->styles = $data['styles'] ?? null;
-
         $user->save();
+
+        $profile->fill([
+            'phone' => $data['phone'] ?? null,
+            'city' => $data['city'] ?? null,
+            'short_description' => $data['short_description'] ?? null,
+            'work_regions' => $data['work_regions'] ?? null,
+            'about_designer' => $data['about_designer'] ?? null,
+            'website_portfolio' => $data['website_portfolio'] ?? null,
+            'telegram' => $data['telegram'] ?? null,
+            'whatsapp' => $data['whatsapp'] ?? null,
+            'vk' => $data['vk'] ?? null,
+            'instagram' => $data['instagram'] ?? null,
+            'experience' => $data['experience'] ?? null,
+            'price_per_m2' => isset($data['price_per_m2']) ? (float) $data['price_per_m2'] : null,
+            'education' => $data['education'] ?? null,
+            'awards' => $data['awards'] ?? null,
+            'specialization' => $data['specialization'] ?? null,
+            'styles' => $data['styles'] ?? null,
+        ]);
+        $profile->save();
 
         return redirect()
             ->route('settings.index', ['tab' => 'profile'])
@@ -99,6 +108,13 @@ class SettingsController extends Controller
         return redirect()
             ->route('settings.index', ['tab' => 'security'])
             ->with('status', __('settings.password_saved'));
+    }
+
+    private function designerProfile($user): DesignerProfile
+    {
+        return $user->designerProfile ?? new DesignerProfile([
+            'user_id' => $user->id,
+        ]);
     }
 }
 

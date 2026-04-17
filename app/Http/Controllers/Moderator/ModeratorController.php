@@ -268,7 +268,10 @@ class ModeratorController extends Controller
     {
         $supplier = Supplier::query()
             ->where('id', $supplierId)
-            ->with('createdBy:id,name')
+            ->with([
+                'createdBy:id,name',
+                'user:id,email,must_change_password',
+            ])
             ->findOrFail($supplierId);
 
         return view('moderator.suppliers.show', [

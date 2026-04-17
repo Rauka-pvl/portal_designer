@@ -203,6 +203,24 @@
             </div>
         </div>
 
+        @php
+            $temporaryPassword = $supplier->moderation_status === 'approved'
+                ? $supplier->temporary_password_for_moderator
+                : null;
+        @endphp
+        @if ($temporaryPassword && $supplier->user)
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.login_email') }}</div>
+                    <input disabled value="{{ $supplier->user->email ?? '' }}" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                </div>
+                <div>
+                    <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.temporary_password') }}</div>
+                    <input disabled value="{{ $temporaryPassword }}" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                </div>
+            </div>
+        @endif
+
         <hr class="my-4 border-[#7c8799] dark:border-[#3E3E3A]">
 
         <form id="moderation-form" method="POST" action="{{ route('moderator.suppliers.decision', $supplier->id) }}">
