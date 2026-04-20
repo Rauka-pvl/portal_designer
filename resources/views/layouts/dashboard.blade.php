@@ -443,6 +443,26 @@
 
                 const closeMenu = () => menu.classList.add('hidden');
                 const openMenu = () => menu.classList.remove('hidden');
+                const syncCustomSelectUi = () => {
+                    const currentOption = select.selectedOptions && select.selectedOptions[0]
+                        ? select.selectedOptions[0]
+                        : Array.from(select.options || []).find((opt) => opt.selected) || realOptions[0];
+                    const currentValue = String(select.value || '');
+                    const currentLabel = currentOption?.textContent?.trim() || '';
+                    const labelEl = btn.querySelector('.custom-select-label');
+
+                    if (labelEl) {
+                        labelEl.textContent = currentLabel;
+                    }
+
+                    menu.querySelectorAll('.custom-select-option').forEach((b) => {
+                        const isActive = b.dataset.value === currentValue;
+                        b.classList.toggle('bg-[#fef3c7]', isActive);
+                        b.classList.toggle('dark:bg-[#1D0002]', isActive);
+                        b.classList.toggle('text-[#f59e0b]', isActive);
+                        b.classList.toggle('dark:text-[#f59e0b]', isActive);
+                    });
+                };
 
                 btn.addEventListener('click', (e) => {
                     e.preventDefault();
@@ -456,23 +476,14 @@
                     optBtn.addEventListener('click', () => {
                         const value = optBtn.dataset.value;
                         select.value = value;
-                        const newLabel = optBtn.textContent.trim();
-                        const labelEl = btn.querySelector('.custom-select-label');
-                        if (labelEl) labelEl.textContent = newLabel;
-
-                        // Подсветка активного пункта
-                        menu.querySelectorAll('.custom-select-option').forEach((b) => {
-                            const isActive = b.dataset.value === value;
-                            b.classList.toggle('bg-[#fef3c7]', isActive);
-                            b.classList.toggle('dark:bg-[#1D0002]', isActive);
-                            b.classList.toggle('text-[#f59e0b]', isActive);
-                            b.classList.toggle('dark:text-[#f59e0b]', isActive);
-                        });
-
                         select.dispatchEvent(new Event('change', { bubbles: true }));
                         closeMenu();
                     });
                 });
+
+                select.addEventListener('change', syncCustomSelectUi);
+                select.addEventListener('custom-select:sync', syncCustomSelectUi);
+                syncCustomSelectUi();
 
                 // Поиск внутри dropdown (только если options > 5)
                 if (showSearch) {

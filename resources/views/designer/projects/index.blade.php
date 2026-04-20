@@ -1087,6 +1087,11 @@ function getStageDisplay(project) {
     return stageTypes.map((s) => stageLabels[s] || s).join(', ') || '-';
 }
 
+/** HTML-escape for safe interpolation in viewProject() (incl. file names/urls). */
+function esc(v) {
+    return String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     let currentPage = 1;
     const itemsPerPage = 10;
@@ -2037,6 +2042,7 @@ function viewProject(id) {
     });
     if (project) {
         const content = document.getElementById('view-project-content');
+        const fileItems = Array.isArray(project.file_items) ? project.file_items : [];
         const statusText = project.status === 'contract_negotiation' ? '{{ __('projects.status_contract_negotiation') }}' :
                           project.status === 'contract_signed' ? '{{ __('projects.status_contract_signed') }}' :
                           project.status === 'prepayment_received' ? '{{ __('projects.status_prepayment_received') }}' :
@@ -2048,6 +2054,34 @@ function viewProject(id) {
         const startDate = new Date(project.start_date).toLocaleDateString('kk-KZ');
         const endDate = new Date(project.planned_end_date).toLocaleDateString('kk-KZ');
         const actualEndDate = project.actual_end_date ? new Date(project.actual_end_date).toLocaleDateString('kk-KZ') : '';
+        const filesHtml = fileItems.length ? `
+            <div>
+                <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-2">{{ __('projects.files') }}</label>
+                <div class="space-y-2">
+                    ${fileItems.map((file, index) => `
+                        <div class="flex items-center gap-3 rounded-xl border border-[#7c8799] dark:border-[#3E3E3A] bg-white/60 dark:bg-[#0a0a0a] px-3 py-2">
+                            <div class="shrink-0 text-[#64748b] dark:text-[#A1A09A]">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7V6a2 2 0 012-2h6a2 2 0 012 2v1m-9 4h8m-8 4h5m-7 5h10a2 2 0 002-2V7H6v12a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <div class="min-w-0 flex-1 truncate text-sm text-[#0f172a] dark:text-[#EDEDEC]">${esc(file.name || '')}</div>
+                            <div class="flex items-center gap-1.5">
+                                <a href="${esc(file.url || '')}" target="_blank" rel="noopener" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors" title="{{ __('projects.view') }}">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                </a>
+                                <a href="${esc(file.url || '')}" download="${esc(file.name || '')}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors" title="{{ __('objects.download') }}">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 10l5 5 5-5" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15V3" /></svg>
+                                </a>
+                                <button type="button" onclick="deleteProjectFileFromIndex(${project.id}, ${index})" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-500 hover:text-red-600 transition-colors" title="{{ __('objects.delete_file') }}">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : '';
 
         content.innerHTML = `
             <div>
@@ -2097,6 +2131,7 @@ function viewProject(id) {
                 <p class="text-[#0f172a] dark:text-[#EDEDEC]">${project.comment}</p>
             </div>
             ` : ''}
+            ${filesHtml}
             <div class="pt-4">
                 <a href="/projects/${project.id}"
                     class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
@@ -2118,6 +2153,28 @@ function viewProject(id) {
                 panel.classList.add('translate-x-0');
             }
         }, 10);
+    }
+}
+
+async function deleteProjectFileFromIndex(projectId, fileIndex) {
+    if (!confirm('{{ __('objects.delete_file_confirm') }}')) return;
+    try {
+        const r = await fetch(`/projects/${projectId}/files/${fileIndex}`, {
+            method: 'DELETE',
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': token,
+            }
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok || !data.success) {
+            projectAlert('error', data.message || '{{ __('projects.delete_error_generic') }}', '', 3200);
+            return;
+        }
+        location.reload();
+    } catch (e) {
+        console.error(e);
+        projectAlert('error', '{{ __('projects.delete_error_generic') }}', '', 3200);
     }
 }
 

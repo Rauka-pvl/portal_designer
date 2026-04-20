@@ -449,6 +449,7 @@
                                 @foreach (trans('cities.passport') as $city)
                                     <option value="{{ $city }}">{{ $city }}</option>
                                 @endforeach
+                                <option value="other">{{ __('objects.other') }}</option>
                             </select>
                         </div>
                         <div>
@@ -759,7 +760,9 @@
 
             const uiLocale = (document.documentElement.lang || 'ru').toLowerCase();
             const nominatimLang = uiLocale.startsWith('kk') ? 'kk' : (uiLocale.startsWith('en') ? 'en' : 'ru');
-
+            const passportCityOptions = Array.from(objectCityEl?.options || [])
+                .map(option => String(option.value || '').trim())
+                .filter(Boolean);
             /** true пока адрес выставлен из карты/подсказки (не ручной ввод). */
             let addressFieldInternalUpdate = false;
 
@@ -772,14 +775,132 @@
                 });
             }
 
+            function normalizeCityName(value) {
+                return String(value || '')
+                    .toLowerCase()
+                    .replace(/^г\.\s*/i, '')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            }
+
+            function matchPassportCity(rawCity) {
+                const normalizedRaw = normalizeCityName(rawCity);
+                if (!normalizedRaw) return '';
+
+                const exact = passportCityOptions.find(option => normalizeCityName(option) === normalizedRaw);
+                if (exact) return exact;
+
+                const fuzzy = passportCityOptions.find(option => {
+                    const normalizedOption = normalizeCityName(option);
+                    return normalizedOption.includes(normalizedRaw) || normalizedRaw.includes(normalizedOption);
+                });
+
+                return fuzzy || '';
+            }
+
+            function resolveCityFromGeocoderRow(row) {
+                return String(row?.address?.city || '').trim();
+            }
+
+            function selectCityOptionByValue(value) {
+                if (!objectCityEl) return;
+
+                const targetValue = String(value || '');
+                const option = Array.from(objectCityEl.options).find((item) => String(item.value) === targetValue);
+                if (!option) return;
+
+                Array.from(objectCityEl.options).forEach((item) => {
+                    item.selected = false;
+                });
+                option.selected = true;
+                objectCityEl.value = targetValue;
+                objectCityEl.dispatchEvent(new Event('custom-select:sync'));
+            }
+
+            function setCitySelection(cityName) {
+                if (!objectCityEl) return;
+
+                const normalizedCity = String(cityName || '').trim();
+                if (normalizedCity === '') {
+                    return;
+                }
+
+                const matched = matchPassportCity(normalizedCity);
+                if (matched) {
+                    selectCityOptionByValue(matched);
+                    return;
+                }
+
+                selectCityOptionByValue('other');
+            }
+
                 function clearMapCoords() {
                     if (objectLatEl) objectLatEl.value = '';
                     if (objectLngEl) objectLngEl.value = '';
                     updateObjectMapMarker(NaN, NaN);
                 }
 
-                function applyAddressPickFromGeocoder(lat, lon, displayName) {
+                async function centerMapToSelectedCity(cityName) {
                     ensureObjectMap();
+                    if (!objectMap) return;
+
+                    const matchedCity = matchPassportCity(cityName);
+                    if (!matchedCity) {
+                        objectMap.setView(defaultMapCenter, defaultMapZoom);
+                        return;
+                    }
+
+                    const url =
+                        `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&countrycodes=kz&accept-language=${encodeURIComponent(nominatimLang)}&q=${encodeURIComponent(`${matchedCity}, Kazakhstan`)}`;
+                    const r = await fetch(url, {
+                        headers: {
+                            'Accept': 'application/json'
+                        },
+                    });
+                    const rows = await r.json().catch(() => []);
+                    const row = Array.isArray(rows) ? rows[0] : null;
+                    if (!row) return;
+
+                    const boundingBox = Array.isArray(row.boundingbox) && row.boundingbox.length === 4
+                        ? row.boundingbox.map(v => parseFloat(v))
+                        : null;
+
+                    if (boundingBox && boundingBox.every(Number.isFinite)) {
+                        const bounds = L.latLngBounds(
+                            [boundingBox[0], boundingBox[2]],
+                            [boundingBox[1], boundingBox[3]]
+                        );
+                        objectMap.fitBounds(bounds, {
+                            padding: [24, 24],
+                            maxZoom: 13,
+                        });
+                        return;
+                    }
+
+                    const lat = parseFloat(row.lat);
+                    const lon = parseFloat(row.lon);
+                    if (Number.isFinite(lat) && Number.isFinite(lon)) {
+                        objectMap.setView([lat, lon], 12);
+                    }
+                }
+
+                function syncCityFromGeocoderRow(row) {
+                    const resolvedCity = resolveCityFromGeocoderRow(row);
+                    if (!resolvedCity || !objectCityEl) return;
+
+                    const selectedCity = String(objectCityEl.value || '').trim();
+                    console.log(selectedCity, resolvedCity);
+                    if (normalizeCityName(selectedCity) === normalizeCityName(resolvedCity)) {
+                        console.log('equal');
+                        return;
+                    }
+                    console.log('not equal');
+                    setCitySelection(resolvedCity);
+                }
+
+                function applyAddressPickFromGeocoder(lat, lon, displayName, row = null) {
+                    ensureObjectMap();
+                    syncCityFromGeocoderRow(row);
                     setAddressValue(displayName);
                     if (objectLatEl) objectLatEl.value = Number.isFinite(lat) ? String(lat) : '';
                     if (objectLngEl) objectLngEl.value = Number.isFinite(lon) ? String(lon) : '';
@@ -833,7 +954,7 @@
                             const lon = parseFloat(row.lon);
                             const titleRaw = String(row.display_name || row.name || '').slice(0,
                                 255);
-                            applyAddressPickFromGeocoder(lat, lon, titleRaw);
+                            applyAddressPickFromGeocoder(lat, lon, titleRaw, row);
                         });
                     });
                 }
@@ -850,7 +971,10 @@
                         },
                     });
                     const data = await r.json().catch(() => ({}));
-                    if (data?.display_name) setAddressValue(data.display_name);
+                    if (data?.display_name) {
+                        syncCityFromGeocoderRow(data);
+                        setAddressValue(data.display_name);
+                    }
                 }
 
                 const _shortEntrance = '{{ __('objects.short_entrance') }}';
@@ -1305,6 +1429,7 @@
             objectCityEl?.addEventListener('change', () => {
                 hideAddressSuggestions();
                 clearMapCoords();
+                centerMapToSelectedCity(objectCityEl.value).catch(() => {});
             });
             document.addEventListener('click', function(e) {
                 if (!objectSuggestListEl || !objectAddressEl) return;
@@ -1611,7 +1736,7 @@
                 document.getElementById('object-modal-title').textContent = '{{ __('objects.edit_object') }}';
                 document.getElementById('object_id').value = obj.id;
                 document.getElementById('object_client_id').value = obj.client_id;
-                document.getElementById('object_city').value = obj.city || '';
+                setCitySelection(obj.city || '');
                 document.getElementById('object_address').value = obj.address || '';
                 document.getElementById('object_apartment').value = obj.apartment || '';
                 document.getElementById('object_apartment_floor').value = obj.apartment_floor || '';

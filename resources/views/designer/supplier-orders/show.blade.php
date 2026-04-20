@@ -100,22 +100,16 @@
                 <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('supplier-orders.advance_amount') }}</div><input type="number" min="0" name="prepayment_amount" value="{{ $o['prepayment_amount'] ?? '' }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
                 <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('supplier-orders.balance_amount') }}</div><input type="number" min="0" name="payment_amount" value="{{ $o['payment_amount'] ?? '' }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
                 <div class="md:col-span-2"><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('supplier-orders.product_service') }}</div><textarea name="comment" rows="3" disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">{{ $o['product_service'] ?? '' }}</textarea></div>
+                <div class="md:col-span-2">
+  
 
-                @foreach (($o['links'] ?? []) as $link)
-                    <input type="hidden" name="links[]" value="{{ $link }}">
-                @endforeach
-                @foreach (($o['files'] ?? []) as $filePath)
-                    <input type="hidden" name="existing_files[]" value="{{ $filePath }}">
-                @endforeach
-                @foreach (($o['included_step_ids'] ?? []) as $stepId)
-                    <input type="hidden" name="included_step_ids[]" value="{{ (int) $stepId }}">
-                @endforeach
-            </div>
-            <div class="mt-6 flex gap-3">
-                <button id="btn-save" type="submit" class="btn hidden">{{ __('supplier-orders.save') }}</button>
-                <button id="btn-cancel" type="button" class="btn hidden">{{ __('supplier-orders.cancel') }}</button>
-            </div>
-        </form>
+    <div class="panel mt-6">
+        <h2 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-4">{{ __('supplier-orders.files') }}</h2>
+        @include('partials.file-actions-list', [
+            'filePaths' => $o['files'] ?? [],
+            'deleteCallback' => 'window.deleteSupplierOrderFileFromShow',
+            'deleteEntityId' => $o['id'],
+        ])
     </div>
 
     <div class="panel mt-6">
@@ -151,10 +145,35 @@
             const btnEdit = document.getElementById('btn-edit');
             const btnSave = document.getElementById('btn-save');
             const btnCancel = document.getElementById('btn-cancel');
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+            window.deleteSupplierOrderFileFromShow = async function(orderId, fileIndex) {
+                if (!confirm('{{ __('objects.delete_file_confirm') }}')) return;
+                try {
+                    const r = await fetch(`/supplier-orders/${orderId}/files/${fileIndex}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Accept': 'application/json',
+                            ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {})
+                        }
+                    });
+                    const data = await r.json().catch(() => ({}));
+                    if (!r.ok || !data.success) {
+                        projectAlert('error', data.message || '{{ __('supplier-orders.error') }}', '', 3200);
+                        return;
+                    }
+                    location.reload();
+                } catch (e) {
+                    console.error(e);
+                    projectAlert('error', '{{ __('supplier-orders.error') }}', '', 3200);
+                }
+            };
             const toggleEdit = (enabled) => {
                 form.querySelectorAll('input, select, textarea').forEach((el) => {
                     if (el.type === 'hidden') return;
                     el.disabled = !enabled;
+                });
+                document.querySelectorAll('.edit-only-control').forEach((el) => {
+                    el.classList.toggle('hidden', !enabled);
                 });
                 btnEdit.classList.toggle('hidden', enabled);
                 btnSave.classList.toggle('hidden', !enabled);

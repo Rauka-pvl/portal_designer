@@ -161,12 +161,21 @@
             <input type="hidden" name="object_id" value="{{ $object->id }}">
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                @php
+                    $passportCities = trans('cities.passport');
+                    $passportCities = is_array($passportCities) ? $passportCities : [];
+                    $hasCustomCity = $object->city && !in_array($object->city, $passportCities, true);
+                @endphp
                 <div>
                     <div class="field-label mb-2">{{ __('objects.city') }}</div>
                     <select id="object_city" name="city" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input" disabled required>
-                        @foreach (trans('cities.passport') as $city)
-                            <option value="{{ $city }}" @selected($object->city === $city)>{{ $city }}</option>
+                        @if ($hasCustomCity)
+                            <option value="{{ $object->city }}" selected data-map-city-option="1">{{ $object->city }}</option>
+                        @endif
+                        @foreach ($passportCities as $city)
+                            <option value="{{ $city }}" {{ $object->city === $city ? 'selected' : '' }}>{{ $city }}</option>
                         @endforeach
+                        <option value="other" {{ $object->city === 'other' ? 'selected' : '' }}>{{ __('objects.other') }}</option>
                     </select>
                 </div>
 
@@ -282,38 +291,11 @@
                         }
                     @endphp
 
-                    @if (!empty($filePaths))
-                        <div class="mt-3 flex flex-col gap-2">
-                            @foreach ($filePaths as $path)
-                                <div class="flex flex-wrap items-center justify-between gap-2">
-                                    <div class="text-xs text-[#64748b] dark:text-[#A1A09A] break-all">
-                                        {{ basename($path) }}
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <a href="{{ asset('storage/' . $path) }}" target="_blank" rel="noopener"
-                                            class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] dark:hover:border-[#f59e0b] transition-colors">
-                                            {{ __('objects.view') }}
-                                        </a>
-                                        <a href="{{ asset('storage/' . $path) }}" download="{{ basename($path) }}"
-                                            class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors">
-                                            {{ __('objects.download') }}
-                                        </a>
-                                        <button type="button"
-                                            onclick="window.deleteObjectFileFromShow({{ $object->id }}, {{ $loop->index }})"
-                                            class="edit-only-control hidden p-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-500 hover:text-red-600 transition-colors"
-                                            title="{{ __('objects.delete_file') }}">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    @else
-                        <p class="text-xs mt-3 text-[#64748b] dark:text-[#A1A09A]">-</p>
-                    @endif
+                    @include('partials.file-actions-list', [
+                        'filePaths' => $filePaths,
+                        'deleteCallback' => 'window.deleteObjectFileFromShow',
+                        'deleteEntityId' => $object->id,
+                    ])
                 </div>
             </div>
 
@@ -362,7 +344,9 @@
             const citySelect = document.getElementById('object_city');
             const addressInput = document.getElementById('object_address');
             const suggestList = document.getElementById('object-address-suggest-list');
-
+            const passportCityOptions = Array.from(citySelect?.options || [])
+                .map(option => String(option.value || '').trim())
+                .filter(Boolean);
             const defaultMapCenter = [48.0196, 66.9237];
             const defaultMapZoom = 5;
             let map = null;
@@ -441,13 +425,123 @@
                 });
             }
 
+            function normalizeCityName(value) {
+                return String(value || '')
+                    .toLowerCase()
+                    .replace(/^г\.\s*/i, '')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            }
+
+            function matchPassportCity(rawCity) {
+                const normalizedRaw = normalizeCityName(rawCity);
+                if (!normalizedRaw) return '';
+
+                const exact = passportCityOptions.find(option => normalizeCityName(option) === normalizedRaw);
+                if (exact) return exact;
+
+                const fuzzy = passportCityOptions.find(option => {
+                    const normalizedOption = normalizeCityName(option);
+                    return normalizedOption.includes(normalizedRaw) || normalizedRaw.includes(normalizedOption);
+                });
+
+                return fuzzy || '';
+            }
+
+            function resolveCityFromGeocoderRow(row) {
+                return String(row?.address?.city || '').trim();
+            }
+
+            function selectCityOptionByValue(value) {
+                if (!citySelect) return;
+
+                const targetValue = String(value || '');
+                const option = Array.from(citySelect.options).find((item) => String(item.value) === targetValue);
+                if (!option) return;
+
+                Array.from(citySelect.options).forEach((item) => {
+                    item.selected = false;
+                });
+                option.selected = true;
+                citySelect.value = targetValue;
+                citySelect.dispatchEvent(new Event('custom-select:sync'));
+            }
+
+            function setCitySelection(cityName) {
+                if (!citySelect) return;
+
+                const normalizedCity = String(cityName || '').trim();
+                if (normalizedCity === '') {
+                    return;
+                }
+
+                const matched = matchPassportCity(normalizedCity);
+                if (matched) {
+                    selectCityOptionByValue(matched);
+                    return;
+                }
+
+                selectCityOptionByValue('other');
+            }
+
             function clearMapCoords() {
                 if (latInput) latInput.value = '';
                 if (lngInput) lngInput.value = '';
                 updateMarker(NaN, NaN);
             }
 
-            function applyAddressPickFromGeocoder(lat, lon, displayName) {
+            async function centerMapToSelectedCity(cityName) {
+                if (!map) return;
+
+                const matchedCity = matchPassportCity(cityName);
+                if (!matchedCity) {
+                    map.setView(defaultMapCenter, defaultMapZoom);
+                    return;
+                }
+
+                const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&countrycodes=kz&q=${encodeURIComponent(`${matchedCity}, Kazakhstan`)}`;
+                const r = await fetch(url, {
+                    headers: { 'Accept': 'application/json' },
+                });
+                const rows = await r.json().catch(() => []);
+                const row = Array.isArray(rows) ? rows[0] : null;
+                if (!row) return;
+
+                const boundingBox = Array.isArray(row.boundingbox) && row.boundingbox.length === 4
+                    ? row.boundingbox.map(v => parseFloat(v))
+                    : null;
+
+                if (boundingBox && boundingBox.every(Number.isFinite)) {
+                    const bounds = L.latLngBounds(
+                        [boundingBox[0], boundingBox[2]],
+                        [boundingBox[1], boundingBox[3]]
+                    );
+                    map.fitBounds(bounds, {
+                        padding: [24, 24],
+                        maxZoom: 13,
+                    });
+                    return;
+                }
+
+                const lat = parseFloat(row.lat);
+                const lon = parseFloat(row.lon);
+                if (Number.isFinite(lat) && Number.isFinite(lon)) {
+                    map.setView([lat, lon], 12);
+                }
+            }
+
+            function syncCityFromGeocoderRow(row) {
+                const resolvedCity = resolveCityFromGeocoderRow(row);
+                if (!resolvedCity || !citySelect) return;
+
+                const selectedCity = String(citySelect.value || '').trim();
+                if (normalizeCityName(selectedCity) === normalizeCityName(resolvedCity)) return;
+
+                setCitySelection(resolvedCity);
+            }
+
+            function applyAddressPickFromGeocoder(lat, lon, displayName, row = null) {
+                syncCityFromGeocoderRow(row);
                 setAddressValue(displayName);
                 if (latInput) latInput.value = Number.isFinite(lat) ? String(lat) : '';
                 if (lngInput) lngInput.value = Number.isFinite(lon) ? String(lon) : '';
@@ -499,7 +593,7 @@
                         const lat = parseFloat(row.lat);
                         const lon = parseFloat(row.lon);
                         const titleRaw = String(row.display_name || row.name || '').slice(0, 255);
-                        applyAddressPickFromGeocoder(lat, lon, titleRaw);
+                        applyAddressPickFromGeocoder(lat, lon, titleRaw, row);
                     });
                 });
             }
@@ -513,7 +607,10 @@
                     headers: { 'Accept': 'application/json' },
                 });
                 const data = await r.json().catch(() => ({}));
-                if (data?.display_name) setAddressValue(data.display_name);
+                if (data?.display_name) {
+                    syncCityFromGeocoderRow(data);
+                    setAddressValue(data.display_name);
+                }
             }
 
             window.deleteObjectFileFromShow = async function(objectId, fileIndex) {
@@ -581,6 +678,7 @@
             citySelect?.addEventListener('change', () => {
                 hideAddressSuggestions();
                 clearMapCoords();
+                centerMapToSelectedCity(citySelect.value).catch(() => {});
             });
 
             form?.addEventListener('submit', function(e) {

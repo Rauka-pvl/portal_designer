@@ -693,6 +693,30 @@ window.supplierSoLabels = @json($supplierSoLabels);
     window.supplierSoView = function(id) {
         const o = allOrders.find(x => x.id === id);
         if (!o) return;
+        const fileItems = Array.isArray(o.file_items) ? o.file_items : [];
+        const filesHtml = fileItems.length ? `
+            <div class="md:col-span-2">
+                <span class="text-sm text-[#64748b]">{{ __('supplier-orders.files') }}</span>
+                <div class="mt-2 space-y-2">
+                    ${fileItems.map(file => `
+                        <div class="flex items-center gap-3 rounded-xl border border-[#7c8799] dark:border-[#3E3E3A] bg-white/60 dark:bg-[#0a0a0a] px-3 py-2">
+                            <div class="shrink-0 text-[#64748b] dark:text-[#A1A09A]">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7V6a2 2 0 012-2h6a2 2 0 012 2v1m-9 4h8m-8 4h5m-7 5h10a2 2 0 002-2V7H6v12a2 2 0 002 2z" /></svg>
+                            </div>
+                            <div class="min-w-0 flex-1 truncate text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(file.name || '')}</div>
+                            <div class="flex items-center gap-1.5">
+                                <a href="${escapeAttr(file.url || '')}" target="_blank" rel="noopener" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors" title="{{ __('supplier-orders.view') }}">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                </a>
+                                <a href="${escapeAttr(file.url || '')}" download="${escapeAttr(file.name || '')}" class="inline-flex items-center justify-center w-9 h-9 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors" title="{{ __('objects.download') }}">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 10l5 5 5-5" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15V3" /></svg>
+                                </a>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : '';
         const html = `
             <div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.number') }}</span><p class="font-medium">#${o.id}</p></div>
             <div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.designer') }}</span><p>${escapeHtml(o.designer_name || '—')}</p></div>
@@ -703,7 +727,7 @@ window.supplierSoLabels = @json($supplierSoLabels);
             <div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.planned_date') }}</span><p>${fmtDate(o.date_planned)}</p></div>
             <div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.actual_date') }}</span><p>${o.date_actual ? fmtDate(o.date_actual) : '—'}</p></div>
             ${o.comment ? `<div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.product_service') }}</span><p>${escapeHtml(o.comment)}</p></div>` : ''}
-            ${(o.file_urls && o.file_urls.length) ? `<div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.files') }}</span><ul class="list-disc pl-5 mt-1">${o.file_urls.map(u => `<li><a href="${escapeAttr(u)}" target="_blank" class="text-[#f59e0b] hover:underline text-sm">${escapeHtml(u.split('/').pop() || u)}</a></li>`).join('')}</ul></div>` : ''}
+            ${filesHtml}
         ` + renderIncludedStepsHtml(o);
         document.getElementById('supplier-so-view-content').innerHTML = html;
         const modal = document.getElementById('supplier-so-view-modal');

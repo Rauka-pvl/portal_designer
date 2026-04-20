@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DesignerFavoriteSupplier;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Support\PublicFileStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -245,7 +246,7 @@ class SupplierController extends Controller
             if (! empty($supplier->logo)) {
                 Storage::disk('public')->delete($supplier->logo);
             }
-            $supplier->logo = $request->file('logo')->store('suppliers', 'public');
+            $supplier->logo = PublicFileStorage::store($request->file('logo'), 'suppliers');
         }
 
         $supplier->name = $data['name'];

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Supplier;
 use App\Http\Controllers\Controller;
 use App\Models\Supplier;
 use App\Models\Supplier_orders;
+use App\Support\PublicFileStorage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -177,7 +178,7 @@ class SupplierPortalController extends Controller
             if (! empty($supplier->logo)) {
                 Storage::disk('public')->delete($supplier->logo);
             }
-            $supplier->logo = $request->file('logo')->store('suppliers', 'public');
+            $supplier->logo = PublicFileStorage::store($request->file('logo'), 'suppliers');
         }
 
         $supplier->profile_status = 'pending';
@@ -228,6 +229,20 @@ class SupplierPortalController extends Controller
             'files' => is_array($order->files) ? $order->files : [],
             'file_urls' => collect(is_array($order->files) ? $order->files : [])
                 ->map(fn ($f) => is_string($f) ? asset('storage/'.ltrim($f, '/')) : null)
+                ->filter()
+                ->values(),
+            'file_items' => collect(is_array($order->files) ? $order->files : [])
+                ->map(function ($f) {
+                    if (! is_string($f) || trim($f) === '') {
+                        return null;
+                    }
+
+                    return [
+                        'path' => $f,
+                        'name' => basename($f),
+                        'url' => asset('storage/'.ltrim($f, '/')),
+                    ];
+                })
                 ->filter()
                 ->values(),
             'product_service' => (string) ($order->comment ?? ''),

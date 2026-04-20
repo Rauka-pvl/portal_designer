@@ -7,6 +7,7 @@ use App\Models\Project;
 use App\Models\Supplier;
 use App\Models\Supplier_orders;
 use App\Models\UserNotification;
+use App\Support\PublicFileStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -156,6 +157,36 @@ class SupplierOrderController extends Controller
         ]);
     }
 
+    public function deleteFile(Request $request, int $orderId, int $fileIndex)
+    {
+        $order = Supplier_orders::query()
+            ->where('user_id', $request->user()->id)
+            ->with(['project:id,name', 'supplier:id,name'])
+            ->findOrFail($orderId);
+
+        $files = is_array($order->files) ? array_values($order->files) : [];
+        if ($files === [] || $fileIndex < 0 || $fileIndex >= count($files)) {
+            return response()->json([
+                'success' => false,
+                'message' => __('supplier-orders.error'),
+            ], 422);
+        }
+
+        $filePath = $files[$fileIndex];
+        if (is_string($filePath) && $filePath !== '') {
+            Storage::disk('public')->delete($filePath);
+        }
+
+        array_splice($files, $fileIndex, 1);
+        $order->files = array_values($files);
+        $order->save();
+
+        return response()->json([
+            'success' => true,
+            'order' => $this->payload($order->fresh(['project:id,name', 'supplier:id,name']), null),
+        ]);
+    }
+
     public function updateStatus(Request $request, int $orderId)
     {
         $data = $request->validate([
@@ -291,7 +322,7 @@ class SupplierOrderController extends Controller
         $uploadedFiles = [];
         foreach ($request->file('files', []) as $file) {
             if ($file) {
-                $uploadedFiles[] = $file->store('supplier-orders', 'public');
+                $uploadedFiles[] = PublicFileStorage::store($file, 'supplier-orders');
             }
         }
 
@@ -422,6 +453,20 @@ class SupplierOrderController extends Controller
             'files' => is_array($order->files) ? $order->files : [],
             'file_urls' => collect(is_array($order->files) ? $order->files : [])
                 ->map(fn ($f) => is_string($f) ? asset('storage/'.ltrim($f, '/')) : null)
+                ->filter()
+                ->values(),
+            'file_items' => collect(is_array($order->files) ? $order->files : [])
+                ->map(function ($f) {
+                    if (! is_string($f) || trim($f) === '') {
+                        return null;
+                    }
+
+                    return [
+                        'path' => $f,
+                        'name' => basename($f),
+                        'url' => asset('storage/'.ltrim($f, '/')),
+                    ];
+                })
                 ->filter()
                 ->values(),
             'product_service' => (string) ($order->comment ?? ''),

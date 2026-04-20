@@ -9,6 +9,7 @@ use App\Models\ProjectStages;
 use App\Models\ProjectStageStep;
 use App\Models\Template;
 use App\Models\User;
+use App\Support\PublicFileStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -180,6 +181,36 @@ class ProjectController extends Controller
         ]);
     }
 
+    public function deleteFile(Request $request, int $projectId, int $fileIndex)
+    {
+        $project = Project::query()
+            ->where('user_id', $request->user()->id)
+            ->with(['object.client', 'stages.steps', 'stages.template'])
+            ->findOrFail($projectId);
+
+        $files = is_array($project->files) ? array_values($project->files) : [];
+        if ($files === [] || $fileIndex < 0 || $fileIndex >= count($files)) {
+            return response()->json([
+                'success' => false,
+                'message' => __('projects.delete_error_generic'),
+            ], 422);
+        }
+
+        $filePath = $files[$fileIndex];
+        if (is_string($filePath) && $filePath !== '') {
+            Storage::disk('public')->delete($filePath);
+        }
+
+        array_splice($files, $fileIndex, 1);
+        $project->files = array_values($files);
+        $project->save();
+
+        return response()->json([
+            'success' => true,
+            'project' => $this->projectPayload($project->fresh(['object.client', 'stages.steps', 'stages.template'])),
+        ]);
+    }
+
     public function updateStatus(Request $request, int $projectId)
     {
         $data = $request->validate([
@@ -315,7 +346,7 @@ class ProjectController extends Controller
         $uploadedFiles = [];
         foreach ($request->file('files', []) as $file) {
             if ($file) {
-                $uploadedFiles[] = $file->store('projects', 'public');
+                $uploadedFiles[] = PublicFileStorage::store($file, 'projects');
             }
         }
 
@@ -423,6 +454,20 @@ class ProjectController extends Controller
             'files' => is_array($project->files) ? $project->files : [],
             'file_urls' => collect(is_array($project->files) ? $project->files : [])
                 ->map(fn ($f) => is_string($f) ? asset('storage/'.ltrim($f, '/')) : null)
+                ->filter()
+                ->values(),
+            'file_items' => collect(is_array($project->files) ? $project->files : [])
+                ->map(function ($f) {
+                    if (! is_string($f) || trim($f) === '') {
+                        return null;
+                    }
+
+                    return [
+                        'path' => $f,
+                        'name' => basename($f),
+                        'url' => asset('storage/'.ltrim($f, '/')),
+                    ];
+                })
                 ->filter()
                 ->values(),
             'comment' => $project->comment,

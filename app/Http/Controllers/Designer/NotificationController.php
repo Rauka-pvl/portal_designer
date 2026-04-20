@@ -84,7 +84,7 @@ class NotificationController extends Controller
         }
 
         $supplier = Supplier::query()
-            ->where('user_id', $request->user()->id)
+            ->where('created_by_user_id', $request->user()->id)
             ->whereKey((int) $notification->related_supplier_id)
             ->first();
 

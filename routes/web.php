@@ -150,6 +150,10 @@ Route::middleware(['auth', 'role:designer'])->group(function () {
     Route::delete('/projects/{projectId}', [ProjectController::class, 'destroy'])
         ->whereNumber('projectId')
         ->name('projects.destroy');
+    Route::delete('/projects/{projectId}/files/{fileIndex}', [ProjectController::class, 'deleteFile'])
+        ->whereNumber('projectId')
+        ->whereNumber('fileIndex')
+        ->name('projects.delete_file');
     Route::patch('/projects/{projectId}/status', [ProjectController::class, 'updateStatus'])
         ->whereNumber('projectId')
         ->name('projects.update_status');
@@ -176,6 +180,10 @@ Route::middleware(['auth', 'role:designer'])->group(function () {
     Route::delete('/supplier-orders/{orderId}', [SupplierOrderController::class, 'destroy'])
         ->whereNumber('orderId')
         ->name('supplier-orders.destroy');
+    Route::delete('/supplier-orders/{orderId}/files/{fileIndex}', [SupplierOrderController::class, 'deleteFile'])
+        ->whereNumber('orderId')
+        ->whereNumber('fileIndex')
+        ->name('supplier-orders.delete_file');
     Route::patch('/supplier-orders/{orderId}/status', [SupplierOrderController::class, 'updateStatus'])
         ->whereNumber('orderId')
         ->name('supplier-orders.update_status');

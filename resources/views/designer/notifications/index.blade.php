@@ -51,6 +51,14 @@
                                 </button>
                             </form>
                         @endif
+                        @if ($n->action_key === 'confirm_referral_supplier' && !empty($n->related_supplier_id))
+                            <form method="POST" action="{{ route('notifications.confirm_referral_supplier', $n->id) }}">
+                                @csrf
+                                <button type="submit" class="px-3 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-900/40 text-xs text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">
+                                    {{ __('notifications.referral_supplier_add') }}
+                                </button>
+                            </form>
+                        @endif
                         @if (!empty($n->related_supplier_id))
                             <a href="{{ route('suppliers.show', ['supplierId' => $n->related_supplier_id, 'readonly' => 1]) }}" class="px-3 py-1.5 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-xs text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">
                                 {{ __('notifications.view_supplier') }}

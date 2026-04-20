@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Designer;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\PassportObject as PassportObjectModel;
+use App\Support\PublicFileStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -118,7 +119,7 @@ class PassportObject extends Controller
         $data = $request->validate([
             'object_id' => ['nullable', 'integer'],
             'client_id' => ['required', 'integer'],
-            'city' => ['required', 'string', Rule::in($this->passportCityNames())],
+            'city' => ['required', 'string', 'max:255'],
             'address' => ['required', 'string', 'max:255'],
             'apartment' => ['nullable', 'string', 'max:50', 'required_if:type,apartment'],
             'apartment_floor' => ['nullable', 'string', 'max:50', 'required_if:type,apartment'],
@@ -215,7 +216,7 @@ class PassportObject extends Controller
                 if (! $file) {
                     continue;
                 }
-                $newPaths[] = $file->store('passport_objects', 'public');
+                $newPaths[] = PublicFileStorage::store($file, 'passport_objects');
             }
         }
 

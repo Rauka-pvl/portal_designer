@@ -110,6 +110,16 @@
                 <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('projects.planned_cost') }}</div><input type="number" step="0.01" name="planned_cost" value="{{ $p['planned_cost'] ?? 0 }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
                 <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('projects.actual_cost') }}</div><input type="number" step="0.01" name="actual_cost" value="{{ $p['actual_cost'] ?? 0 }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
                 <div class="md:col-span-2"><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('projects.comment') }}</div><textarea name="comment" rows="3" disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">{{ $p['comment'] ?? '' }}</textarea></div>
+                <div class="md:col-span-2">
+                    <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('projects.files') }}</div>
+                    <input type="file" name="files[]" multiple disabled
+                        class="w-full text-sm text-[#64748b] dark:text-[#A1A09A] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#f59e0b]/10 file:text-[#f59e0b] hover:file:bg-[#f59e0b]/20">
+                    @include('partials.file-actions-list', [
+                        'filePaths' => $p['files'] ?? [],
+                        'deleteCallback' => 'window.deleteProjectFileFromShow',
+                        'deleteEntityId' => $p['id'],
+                    ])
+                </div>
 
                 @foreach (($p['links'] ?? []) as $link)
                     <input type="hidden" name="links[]" value="{{ $link }}">
@@ -146,10 +156,35 @@
             const btnEdit = document.getElementById('btn-edit');
             const btnSave = document.getElementById('btn-save');
             const btnCancel = document.getElementById('btn-cancel');
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+            window.deleteProjectFileFromShow = async function(projectId, fileIndex) {
+                if (!confirm('{{ __('objects.delete_file_confirm') }}')) return;
+                try {
+                    const r = await fetch(`/projects/${projectId}/files/${fileIndex}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Accept': 'application/json',
+                            ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {})
+                        }
+                    });
+                    const data = await r.json().catch(() => ({}));
+                    if (!r.ok || !data.success) {
+                        projectAlert('error', data.message || '{{ __('projects.delete_error_generic') }}', '', 3200);
+                        return;
+                    }
+                    location.reload();
+                } catch (e) {
+                    console.error(e);
+                    projectAlert('error', '{{ __('projects.delete_error_generic') }}', '', 3200);
+                }
+            };
             const toggleEdit = (enabled) => {
                 form.querySelectorAll('input, select, textarea').forEach((el) => {
                     if (el.type === 'hidden') return;
                     el.disabled = !enabled;
+                });
+                document.querySelectorAll('.edit-only-control').forEach((el) => {
+                    el.classList.toggle('hidden', !enabled);
                 });
                 btnEdit.classList.toggle('hidden', enabled);
                 btnSave.classList.toggle('hidden', !enabled);

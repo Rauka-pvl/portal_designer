@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Designer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Client;
+use App\Support\PublicFileStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -147,7 +148,7 @@ class ClientController extends Controller
                 if (! $file) {
                     continue;
                 }
-                $paths[] = $file->store('clients', 'public');
+                $paths[] = PublicFileStorage::store($file, 'clients');
             }
 
             if (! empty($paths)) {
