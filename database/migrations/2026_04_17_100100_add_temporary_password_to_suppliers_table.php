@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::table('suppliers', function (Blueprint $table) {
             $table->text('temporary_password_encrypted')->nullable()->after('profile_status');
+            // hello world
         });
     }
 
