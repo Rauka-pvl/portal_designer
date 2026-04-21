@@ -286,6 +286,8 @@
                 <option value="new">{{ __('objects.new') }}</option>
                 <option value="in_work">{{ __('objects.in_work') }}</option>
                 <option value="not_working">{{ __('objects.not_working') }}</option>
+                <option value="in_moderation">{{ __('objects.in_moderation') }}</option>
+                <option value="rejected">{{ __('objects.rejected') }}</option>
             </select>
         </div>
     </div>
@@ -302,8 +304,6 @@
                                 data-sort="type">{{ __('objects.type') }}</th>
                             <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header"
                                 data-sort="status">{{ __('objects.status') }}</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header"
-                                data-sort="moderation_status">{{ __('objects.moderation') }}</th>
                             <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header"
                                 data-sort="client_name">{{ __('objects.client') }}</th>
                             <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header"
@@ -1008,24 +1008,16 @@
             const statusLabels = {
                 new: '{{ __('objects.new') }}',
                 in_work: '{{ __('objects.in_work') }}',
-                not_working: '{{ __('objects.not_working') }}'
+                not_working: '{{ __('objects.not_working') }}',
+                in_moderation: '{{ __('objects.in_moderation') }}',
+                rejected: '{{ __('objects.rejected') }}'
             };
             const statusBadgeClasses = {
                 new: 'object-status-badge px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200',
                 in_work: 'object-status-badge px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200',
-                not_working: 'object-status-badge px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-200'
-            };
-
-            const moderationNotRequiredLabel = '{{ __('objects.moderation_not_required') }}';
-            const moderationStatusLabels = {
-                pending: '{{ __('moderation.pending') }}',
-                approved: '{{ __('moderation.approved') }}',
-                rejected: '{{ __('moderation.rejected') }}'
-            };
-            const moderationBadgeClasses = {
-                pending: 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-200',
-                approved: 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300',
-                rejected: 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300'
+                not_working: 'object-status-badge px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-200',
+                in_moderation: 'object-status-badge px-2 py-1 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-200',
+                rejected: 'object-status-badge px-2 py-1 rounded text-xs font-medium bg-rose-100 text-rose-800 dark:bg-rose-900/20 dark:text-rose-200'
             };
 
             function typeLabel(type) {
@@ -1338,18 +1330,9 @@
             }
 
             function renderClientStatusBadge(obj) {
-                const cls = statusBadgeClasses[obj.status] || statusBadgeClasses.new;
-                const label = statusLabels[obj.status] || obj.status;
-                return `<span class="${cls}">${escapeHtml(label)}</span>`;
-            }
-
-            function renderObjectModerationCell(obj) {
-                const st = obj.moderation_status;
-                if (!st || String(st).trim() === '') {
-                    return `<span class="text-sm text-[#64748b] dark:text-[#A1A09A]">${escapeHtml(moderationNotRequiredLabel)}</span>`;
-                }
-                const label = moderationStatusLabels[st] || st;
-                const cls = moderationBadgeClasses[st] || moderationBadgeClasses.pending;
+                const effectiveStatus = obj.workflow_status || obj.status;
+                const cls = statusBadgeClasses[effectiveStatus] || statusBadgeClasses.new;
+                const label = statusLabels[effectiveStatus] || effectiveStatus;
                 return `<span class="${cls}">${escapeHtml(label)}</span>`;
             }
 
@@ -1482,7 +1465,7 @@
                 if (!tbody) return;
                 if (!allObjects.length) {
                     tbody.innerHTML =
-                        `<tr><td colspan="10" class="px-4 py-6 text-center text-[#64748b] dark:text-[#A1A09A]">{{ __('objects.no_objects') }}</td></tr>`;
+                        `<tr><td colspan="9" class="px-4 py-6 text-center text-[#64748b] dark:text-[#A1A09A]">{{ __('objects.no_objects') }}</td></tr>`;
                     document.getElementById('objects-pagination-table').innerHTML = '';
                     return;
                 }
@@ -1502,7 +1485,6 @@
                             <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(full_address)}</td>
                             <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(typeLabel(obj.type || 'other'))}</td>
                             <td class="px-4 py-3 text-sm">${renderClientStatusBadge(obj)}</td>
-                            <td class="px-4 py-3 text-sm">${renderObjectModerationCell(obj)}</td>
                             <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(obj.client_name || '')}</td>
                             <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${parseFloat(obj.area || 0).toLocaleString('kk-KZ', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                             <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(formatTenge(obj.repair_budget_planned || 0))}</td>
@@ -1564,7 +1546,7 @@
                                         <p>${escapeHtml(typeLabel(obj.type || 'other'))}</p>
                                     </div>
                                 </div>
-                                <div class="flex flex-col items-end gap-1">${renderClientStatusBadge(obj)}${renderObjectModerationCell(obj)}</div>
+                                <div class="flex flex-col items-end gap-1">${renderClientStatusBadge(obj)}</div>
                             </div>
 
                             <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm mb-4">
@@ -1627,7 +1609,8 @@
                     not_working: []
                 };
                 allObjects.forEach(obj => {
-                    if (grouped[obj.status]) grouped[obj.status].push(obj);
+                    const effectiveStatus = obj.workflow_status || obj.status;
+                    if (grouped[effectiveStatus]) grouped[effectiveStatus].push(obj);
                 });
 
                 const renderCol = (status, container) => {
@@ -1641,7 +1624,6 @@
                              data-object-id="${obj.id}" data-object='${objectToDataAttr(obj)}'>
                             <h4 class="font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-1">${escapeHtml(buildFullAddress(obj))}</h4>
                             <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">${escapeHtml(obj.client_name || '')}</p>
-                            <div class="mt-1.5">${renderObjectModerationCell(obj)}</div>
                             <div class="flex items-center gap-2 mt-2" onclick="event.stopPropagation()">
                                 <button type="button" onclick="event.stopPropagation(); window.viewObject(${obj.id})"
                                     class="text-xs px-2 py-1 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] transition-colors">{{ __('objects.view') }}</button>

@@ -84,7 +84,17 @@ class PassportObject extends Controller
         }
 
         if ($status !== '') {
-            $query->where('status', $status);
+            if ($status === 'in_moderation') {
+                $query->where('moderation_status', 'pending');
+            } elseif ($status === 'rejected') {
+                $query->where('moderation_status', 'rejected');
+            } else {
+                $query->where('status', $status)
+                    ->where(function ($q) {
+                        $q->whereNull('moderation_status')
+                            ->orWhere('moderation_status', 'approved');
+                    });
+            }
         }
 
         $objects = $query
@@ -441,6 +451,12 @@ class PassportObject extends Controller
 
     private function payload(PassportObjectModel $object): array
     {
+        $workflowStatus = match ((string) ($object->moderation_status ?? '')) {
+            'pending' => 'in_moderation',
+            'rejected' => 'rejected',
+            default => (string) $object->status,
+        };
+
         $clientName = $object->client?->full_name;
         if (is_array($object->links)) {
             $links = $object->links;
@@ -473,6 +489,7 @@ class PassportObject extends Controller
             'apartment_entrance' => $object->apartment_entrance,
             'type' => $object->type,
             'status' => $object->status,
+            'workflow_status' => $workflowStatus,
             'area' => $object->area,
             'repair_budget_planned' => $object->repair_budget_planned,
             'repair_budget_actual' => $object->repair_budget_actual,

@@ -432,6 +432,12 @@ class ProjectController extends Controller
 
     private function projectPayload(Project $project): array
     {
+        $workflowStatus = match ((string) ($project->moderation_status ?? '')) {
+            'pending' => 'in_moderation',
+            'rejected' => 'rejected',
+            default => (string) $project->status,
+        };
+
         return [
             'id' => $project->id,
             'object_id' => $project->object_id,
@@ -440,6 +446,7 @@ class ProjectController extends Controller
             'client_name' => $project->object?->client?->full_name,
             'name' => $project->name,
             'status' => $project->status,
+            'workflow_status' => $workflowStatus,
 
             // Moderation
             'moderation_status' => $project->moderation_status,

@@ -78,6 +78,8 @@ return [
     'status_tz_signed' => 'TZ Signed',
     'status_documents_signed' => 'Documents Signed',
     'status_in_work' => 'Project In Work',
+    'status_in_moderation' => 'In moderation',
+    'status_rejected' => 'Rejected',
 
     // Этапы
     'stage_measurement' => 'Measurement',

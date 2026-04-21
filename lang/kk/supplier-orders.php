@@ -37,6 +37,7 @@ return [
     // Статусы
     'status_order_created' => 'Тапсырыс құрылды',
     'status_order_sent' => 'Тапсырыс жіберілді',
+    'status_draft' => 'Қаралым',
     'status_order_confirmed' => 'Тапсырыс расталды',
     'status_advance_payment' => 'Аванс төлемі',
     'status_full_payment' => '100% төлем',

@@ -18,8 +18,8 @@ use Illuminate\Validation\ValidationException;
 class SupplierOrderController extends Controller
 {
     private const STATUSES = [
+        'draft',
         'order_created',
-        'order_sent',
         'order_confirmed',
         'advance_payment',
         'full_payment',
@@ -190,7 +190,13 @@ class SupplierOrderController extends Controller
     public function updateStatus(Request $request, int $orderId)
     {
         $data = $request->validate([
-            'status' => ['required', Rule::in(self::STATUSES)],
+            'status' => ['required', Rule::in([
+                'order_created',
+                'order_confirmed',
+                'advance_payment',
+                'full_payment',
+                'delivery_completed',
+            ])],
         ]);
 
         $order = Supplier_orders::query()
@@ -339,7 +345,11 @@ class SupplierOrderController extends Controller
             $order->included_step_ids = $stepIds;
         }
         $order->supplier_id = $supplierId;
-        $order->status = (string) ($data['status'] ?? 'order_created');
+        $selectedStatus = (string) ($data['status'] ?? 'order_created');
+        if ($selectedStatus === 'draft') {
+            $selectedStatus = 'order_created';
+        }
+        $order->status = $selectedStatus;
         $order->summa = (int) $data['summa'];
         $order->category = $data['category'] ?? null;
         $order->mark = $data['mark'] ?? null;
@@ -355,9 +365,10 @@ class SupplierOrderController extends Controller
         $order->comment = $data['comment'] ?? null;
 
         if ($request->boolean('send_to_supplier')) {
-            $order->status = 'order_sent';
+            $order->status = $selectedStatus;
             $order->is_sent_to_supplier = true;
         } else {
+            $order->status = 'draft';
             $order->is_sent_to_supplier = false;
         }
 
@@ -422,6 +433,7 @@ class SupplierOrderController extends Controller
     private function payload(Supplier_orders $order, ?array $includedSteps = null, int $unreadChatCount = 0): array
     {
         $status = (string) $order->status;
+        $workflowStatus = (bool) $order->is_sent_to_supplier ? $status : 'draft';
         $includedSteps ??= $order->includedStepsPayload();
 
         return [
@@ -435,6 +447,7 @@ class SupplierOrderController extends Controller
             'supplier_id' => (int) $order->supplier_id,
             'supplier_name' => (string) ($order->supplier?->name ?? '-'),
             'status' => $status,
+            'workflow_status' => $workflowStatus,
             'is_sent_to_supplier' => (bool) $order->is_sent_to_supplier,
             'amount' => (int) $order->summa,
             'summa' => (int) $order->summa,

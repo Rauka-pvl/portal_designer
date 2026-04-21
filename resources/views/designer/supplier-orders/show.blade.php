@@ -30,8 +30,8 @@
     @php
         $o = $orderData;
         $statusMap = [
+            'draft' => __('supplier-orders.status_draft'),
             'order_created' => __('supplier-orders.status_order_created'),
-            'order_sent' => __('supplier-orders.status_order_sent'),
             'order_confirmed' => __('supplier-orders.status_order_confirmed'),
             'advance_payment' => __('supplier-orders.status_advance_payment'),
             'full_payment' => __('supplier-orders.status_full_payment'),
@@ -82,7 +82,6 @@
                     <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('supplier-orders.status') }}</div>
                     <select name="status" disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
                         <option value="order_created" @selected(($o['status'] ?? '') === 'order_created')>{{ __('supplier-orders.status_order_created') }}</option>
-                        <option value="order_sent" @selected(($o['status'] ?? '') === 'order_sent')>{{ __('supplier-orders.status_order_sent') }}</option>
                         <option value="order_confirmed" @selected(($o['status'] ?? '') === 'order_confirmed')>{{ __('supplier-orders.status_order_confirmed') }}</option>
                         <option value="advance_payment" @selected(($o['status'] ?? '') === 'advance_payment')>{{ __('supplier-orders.status_advance_payment') }}</option>
                         <option value="full_payment" @selected(($o['status'] ?? '') === 'full_payment')>{{ __('supplier-orders.status_full_payment') }}</option>
@@ -101,7 +100,20 @@
                 <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('supplier-orders.balance_amount') }}</div><input type="number" min="0" name="payment_amount" value="{{ $o['payment_amount'] ?? '' }}" disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]"></div>
                 <div class="md:col-span-2"><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('supplier-orders.product_service') }}</div><textarea name="comment" rows="3" disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">{{ $o['product_service'] ?? '' }}</textarea></div>
                 <div class="md:col-span-2">
-  
+                    <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('supplier-orders.files') }}</div>
+                    <input type="file" name="files[]" multiple disabled
+                        class="w-full text-sm text-[#64748b] dark:text-[#A1A09A] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#f59e0b]/10 file:text-[#f59e0b] hover:file:bg-[#f59e0b]/20">
+                </div>
+                @foreach (($o['files'] ?? []) as $filePath)
+                    <input type="hidden" name="existing_files[]" value="{{ $filePath }}">
+                @endforeach
+            </div>
+            <div class="mt-6 flex gap-3">
+                <button id="btn-save" type="submit" class="btn hidden">{{ __('supplier-orders.save') }}</button>
+                <button id="btn-cancel" type="button" class="btn hidden">{{ __('supplier-orders.cancel') }}</button>
+            </div>
+        </form>
+    </div>
 
     <div class="panel mt-6">
         <h2 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-4">{{ __('supplier-orders.files') }}</h2>

@@ -37,6 +37,7 @@ return [
     // Статусы
     'status_order_created' => 'Заказ создан',
     'status_order_sent' => 'Заказ отправлен',
+    'status_draft' => 'Черновик',
     'status_order_confirmed' => 'Заказ подтвержден',
     'status_advance_payment' => 'Оплата аванса',
     'status_full_payment' => 'Оплата 100%',

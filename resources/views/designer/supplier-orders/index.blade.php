@@ -279,8 +279,8 @@
     <div class="w-full md:w-48">
         <select id="status-filter" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
             <option value="">{{ __('supplier-orders.all_statuses') }}</option>
+            <option value="draft">{{ __('supplier-orders.status_draft') }}</option>
             <option value="order_created">{{ __('supplier-orders.status_order_created') }}</option>
-            <option value="order_sent">{{ __('supplier-orders.status_order_sent') }}</option>
             <option value="order_confirmed">{{ __('supplier-orders.status_order_confirmed') }}</option>
             <option value="advance_payment">{{ __('supplier-orders.status_advance_payment') }}</option>
             <option value="full_payment">{{ __('supplier-orders.status_full_payment') }}</option>
@@ -301,7 +301,6 @@
                         <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="supplier_name">{{ __('supplier-orders.supplier') }}</th>
                         <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="project_name">{{ __('supplier-orders.project') }}</th>
                         <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="status">{{ __('supplier-orders.status') }}</th>
-                        <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="is_sent_to_supplier">{{ __('supplier-orders.send_status') }}</th>
                         <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="amount">{{ __('supplier-orders.amount') }}</th>
                         <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="planned_date">{{ __('supplier-orders.planned_date') }}</th>
                         <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="actual_date">{{ __('supplier-orders.actual_date') }}</th>
@@ -333,10 +332,6 @@
         <div class="funnel-column" data-status="order_created" ondrop="drop(event)" ondragover="allowDrop(event)">
             <h3 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-4">{{ __('supplier-orders.status_order_created') }}</h3>
             <div id="funnel-order-created" class="funnel-cards"></div>
-        </div>
-        <div class="funnel-column" data-status="order_sent" ondrop="drop(event)" ondragover="allowDrop(event)">
-            <h3 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-4">{{ __('supplier-orders.status_order_sent') }}</h3>
-            <div id="funnel-order-sent" class="funnel-cards"></div>
         </div>
         <div class="funnel-column" data-status="order_confirmed" ondrop="drop(event)" ondragover="allowDrop(event)">
             <h3 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-4">{{ __('supplier-orders.status_order_confirmed') }}</h3>
@@ -451,7 +446,6 @@
                         <label class="modal-label">{{ __('supplier-orders.status') }}</label>
                         <select name="status" id="order_status" class="modal-input">
                             <option value="order_created">{{ __('supplier-orders.status_order_created') }}</option>
-                            <option value="order_sent">{{ __('supplier-orders.status_order_sent') }}</option>
                             <option value="order_confirmed">{{ __('supplier-orders.status_order_confirmed') }}</option>
                             <option value="advance_payment">{{ __('supplier-orders.status_advance_payment') }}</option>
                             <option value="full_payment">{{ __('supplier-orders.status_full_payment') }}</option>
@@ -685,7 +679,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const matchSearch = !search || searchStr.includes(search);
             const matchProject = !projectFilter || order.project_id == projectFilter;
             const matchSupplier = !supplierFilter || order.supplier_id == supplierFilter;
-            const matchStatus = !statusFilter || order.status === statusFilter;
+            const matchStatus = !statusFilter || (order.workflow_status || order.status) === statusFilter;
             return matchSearch && matchProject && matchSupplier && matchStatus;
         });
     }
@@ -747,24 +741,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         tbody.innerHTML = paginated.map(order => {
-            const statusClass = order.status === 'order_created' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200' :
-                               order.status === 'order_sent' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200' :
-                               order.status === 'order_confirmed' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200' :
-                               order.status === 'advance_payment' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-200' :
-                               order.status === 'full_payment' ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-200' :
+            const effectiveStatus = order.workflow_status || order.status;
+            const statusClass = effectiveStatus === 'draft' ? 'bg-slate-100 text-slate-700 dark:bg-slate-900/20 dark:text-slate-300' :
+                               effectiveStatus === 'order_created' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200' :
+                               effectiveStatus === 'order_confirmed' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200' :
+                               effectiveStatus === 'advance_payment' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-200' :
+                               effectiveStatus === 'full_payment' ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-200' :
                                'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-200';
-            const statusText = order.status === 'order_created' ? '{{ __('supplier-orders.status_order_created') }}' :
-                              order.status === 'order_sent' ? '{{ __('supplier-orders.status_order_sent') }}' :
-                              order.status === 'order_confirmed' ? '{{ __('supplier-orders.status_order_confirmed') }}' :
-                              order.status === 'advance_payment' ? '{{ __('supplier-orders.status_advance_payment') }}' :
-                              order.status === 'full_payment' ? '{{ __('supplier-orders.status_full_payment') }}' :
+            const statusText = effectiveStatus === 'draft' ? '{{ __('supplier-orders.status_draft') }}' :
+                              effectiveStatus === 'order_created' ? '{{ __('supplier-orders.status_order_created') }}' :
+                              effectiveStatus === 'order_confirmed' ? '{{ __('supplier-orders.status_order_confirmed') }}' :
+                              effectiveStatus === 'advance_payment' ? '{{ __('supplier-orders.status_advance_payment') }}' :
+                              effectiveStatus === 'full_payment' ? '{{ __('supplier-orders.status_full_payment') }}' :
                               '{{ __('supplier-orders.status_delivery_completed') }}';
-            const sendStatusClass = order.is_sent_to_supplier
-                ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200'
-                : 'bg-slate-100 text-slate-700 dark:bg-slate-900/20 dark:text-slate-300';
-            const sendStatusText = order.is_sent_to_supplier
-                ? '{{ __('supplier-orders.sent_to_supplier') }}'
-                : '{{ __('supplier-orders.not_sent_to_supplier') }}';
 
             const createdDate = new Date(order.created_date).toLocaleDateString('kk-KZ');
             console.log("createdDate", createdDate);
@@ -779,9 +768,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${order.project_name}</td>
                     <td class="px-4 py-3 text-sm">
                         <span class="order-status-badge px-2 py-1 rounded text-xs font-medium ${statusClass}">${statusText}</span>
-                    </td>
-                    <td class="px-4 py-3 text-sm">
-                        <span class="px-2 py-1 rounded text-xs font-medium ${sendStatusClass}">${sendStatusText}</span>
                     </td>
                     <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${parseInt(order.summa).toLocaleString('kk-KZ')} ₸</td>
                     <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${plannedDate}</td>
@@ -826,24 +812,19 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!listBody) return;
 
         listBody.innerHTML = filtered.map(order => {
-            const statusClass = order.status === 'order_created' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200' :
-                               order.status === 'order_sent' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200' :
-                               order.status === 'order_confirmed' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200' :
-                               order.status === 'advance_payment' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-200' :
-                               order.status === 'full_payment' ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-200' :
+            const effectiveStatus = order.workflow_status || order.status;
+            const statusClass = effectiveStatus === 'draft' ? 'bg-slate-100 text-slate-700 dark:bg-slate-900/20 dark:text-slate-300' :
+                               effectiveStatus === 'order_created' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200' :
+                               effectiveStatus === 'order_confirmed' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200' :
+                               effectiveStatus === 'advance_payment' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-200' :
+                               effectiveStatus === 'full_payment' ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-200' :
                                'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-200';
-            const statusText = order.status === 'order_created' ? '{{ __('supplier-orders.status_order_created') }}' :
-                              order.status === 'order_sent' ? '{{ __('supplier-orders.status_order_sent') }}' :
-                              order.status === 'order_confirmed' ? '{{ __('supplier-orders.status_order_confirmed') }}' :
-                              order.status === 'advance_payment' ? '{{ __('supplier-orders.status_advance_payment') }}' :
-                              order.status === 'full_payment' ? '{{ __('supplier-orders.status_full_payment') }}' :
+            const statusText = effectiveStatus === 'draft' ? '{{ __('supplier-orders.status_draft') }}' :
+                              effectiveStatus === 'order_created' ? '{{ __('supplier-orders.status_order_created') }}' :
+                              effectiveStatus === 'order_confirmed' ? '{{ __('supplier-orders.status_order_confirmed') }}' :
+                              effectiveStatus === 'advance_payment' ? '{{ __('supplier-orders.status_advance_payment') }}' :
+                              effectiveStatus === 'full_payment' ? '{{ __('supplier-orders.status_full_payment') }}' :
                               '{{ __('supplier-orders.status_delivery_completed') }}';
-            const sendStatusClass = order.is_sent_to_supplier
-                ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200'
-                : 'bg-slate-100 text-slate-700 dark:bg-slate-900/20 dark:text-slate-300';
-            const sendStatusText = order.is_sent_to_supplier
-                ? '{{ __('supplier-orders.sent_to_supplier') }}'
-                : '{{ __('supplier-orders.not_sent_to_supplier') }}';
 
             const createdDate = new Date(order.created_date).toLocaleDateString('kk-KZ');
             
@@ -862,7 +843,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <div class="flex flex-col items-end gap-1">
                             <span class="order-status-badge px-2 py-1 rounded text-xs font-medium ${statusClass}">${statusText}</span>
-                            <span class="px-2 py-1 rounded text-xs font-medium ${sendStatusClass}">${sendStatusText}</span>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm">
@@ -898,7 +878,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.renderFunnel = function() {
-        const statuses = ['order_created', 'order_sent', 'order_confirmed', 'advance_payment', 'full_payment', 'delivery_completed'];
+        const statuses = ['order_created', 'order_confirmed', 'advance_payment', 'full_payment', 'delivery_completed'];
         const viewLabel = '{{ __('supplier-orders.view') }}';
         const editLabel = '{{ __('supplier-orders.edit') }}';
         const deleteLabel = '{{ __('supplier-orders.delete') }}';
@@ -906,7 +886,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const container = document.getElementById(`funnel-${status.replace(/_/g, '-')}`);
             if (!container) return;
 
-            const filtered = getFilteredOrders().filter(o => o.status === status);
+            const filtered = getFilteredOrders().filter(o => (o.workflow_status || o.status) === status);
             container.innerHTML = filtered.map(order => `
                 <div class="funnel-card" draggable="true"
                     ondragstart="if(event.target.closest('button')){event.preventDefault();return false;}drag(event)"
@@ -1112,15 +1092,13 @@ function viewOrder(id) {
     if (order) {
         const content = document.getElementById('view-order-content');
         const fileItems = Array.isArray(order.file_items) ? order.file_items : [];
-        const statusText = order.status === 'order_created' ? '{{ __('supplier-orders.status_order_created') }}' :
-                          order.status === 'order_sent' ? '{{ __('supplier-orders.status_order_sent') }}' :
-                          order.status === 'order_confirmed' ? '{{ __('supplier-orders.status_order_confirmed') }}' :
-                          order.status === 'advance_payment' ? '{{ __('supplier-orders.status_advance_payment') }}' :
-                          order.status === 'full_payment' ? '{{ __('supplier-orders.status_full_payment') }}' :
+        const effectiveStatus = order.workflow_status || order.status;
+        const statusText = effectiveStatus === 'draft' ? '{{ __('supplier-orders.status_draft') }}' :
+                          effectiveStatus === 'order_created' ? '{{ __('supplier-orders.status_order_created') }}' :
+                          effectiveStatus === 'order_confirmed' ? '{{ __('supplier-orders.status_order_confirmed') }}' :
+                          effectiveStatus === 'advance_payment' ? '{{ __('supplier-orders.status_advance_payment') }}' :
+                          effectiveStatus === 'full_payment' ? '{{ __('supplier-orders.status_full_payment') }}' :
                           '{{ __('supplier-orders.status_delivery_completed') }}';
-        const sendStatusText = order.is_sent_to_supplier
-            ? '{{ __('supplier-orders.sent_to_supplier') }}'
-            : '{{ __('supplier-orders.not_sent_to_supplier') }}';
 
         const createdDate = new Date(order.created_date).toLocaleDateString('kk-KZ');
         const plannedDate = new Date(order.planned_date).toLocaleDateString('kk-KZ');
@@ -1172,10 +1150,6 @@ function viewOrder(id) {
             <div>
                 <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('supplier-orders.status') }}</label>
                 <p class="text-[#0f172a] dark:text-[#EDEDEC]">${statusText}</p>
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('supplier-orders.send_status') }}</label>
-                <p class="text-[#0f172a] dark:text-[#EDEDEC]">${sendStatusText}</p>
             </div>
             <div>
                 <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('supplier-orders.amount') }}</label>
@@ -1377,7 +1351,7 @@ function editOrder(id) {
         document.getElementById('order_id').value = order.id;
         document.getElementById('order_project_id').value = order.project_id || '';
         document.getElementById('order_supplier_id').value = order.supplier_id || '';
-        document.getElementById('order_status').value = order.status || 'order_created';
+        document.getElementById('order_status').value = (order.status === 'draft' ? 'order_created' : (order.status || 'order_created'));
         document.getElementById('order_summa').value = order.amount ?? order.summa ?? '';
         document.getElementById('order_category').value = order.category || '';
         document.getElementById('order_mark').value = order.mark || '';
@@ -1553,19 +1527,25 @@ function drop(ev) {
         .then(data => {
             if (data.success) {
                 const order = (window.allOrders || []).find(o => o.id == orderId);
-                if (order) order.status = newStatus;
+                if (order) {
+                    order.status = newStatus;
+                    order.workflow_status = newStatus;
+                }
                 document.querySelectorAll(`[data-order-id="${orderId}"]`).forEach(el => {
                     const badge = el.querySelector('.order-status-badge');
                     if (badge) {
-                        const labels = { order_created: '{{ __("supplier-orders.status_order_created") }}', order_sent: '{{ __("supplier-orders.status_order_sent") }}', order_confirmed: '{{ __("supplier-orders.status_order_confirmed") }}', advance_payment: '{{ __("supplier-orders.status_advance_payment") }}', full_payment: '{{ __("supplier-orders.status_full_payment") }}', delivery_completed: '{{ __("supplier-orders.status_delivery_completed") }}' };
+                        const labels = { order_created: '{{ __("supplier-orders.status_order_created") }}', order_confirmed: '{{ __("supplier-orders.status_order_confirmed") }}', advance_payment: '{{ __("supplier-orders.status_advance_payment") }}', full_payment: '{{ __("supplier-orders.status_full_payment") }}', delivery_completed: '{{ __("supplier-orders.status_delivery_completed") }}' };
                         badge.textContent = labels[newStatus] || newStatus;
                     }
                     try {
                         const o = JSON.parse(el.getAttribute('data-order')||'{}');
                         o.status = newStatus;
+                        o.workflow_status = newStatus;
                         el.setAttribute('data-order', JSON.stringify(o));
                     } catch(_) {}
                 });
+                if (typeof window.renderTable === 'function') window.renderTable();
+                if (typeof window.renderList === 'function') window.renderList();
             }
             draggedOrderElement = null;
         })

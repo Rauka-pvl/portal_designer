@@ -78,6 +78,8 @@ return [
     'status_tz_signed' => 'ТЗ қол қойылды',
     'status_documents_signed' => 'Құжаттар қол қойылды',
     'status_in_work' => 'Жоба жұмысқа алынды',
+    'status_in_moderation' => 'Модерацияда',
+    'status_rejected' => 'Қабылданбады',
 
     // Этапы
     'stage_measurement' => 'Өлшеу',

@@ -37,6 +37,7 @@ return [
     // Статусы
     'status_order_created' => 'Order Created',
     'status_order_sent' => 'Order Sent',
+    'status_draft' => 'Draft',
     'status_order_confirmed' => 'Order Confirmed',
     'status_advance_payment' => 'Advance Payment',
     'status_full_payment' => '100% Payment',

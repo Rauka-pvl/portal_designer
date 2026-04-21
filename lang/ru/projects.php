@@ -78,6 +78,8 @@ return [
     'status_tz_signed' => 'ТЗ Подписано',
     'status_documents_signed' => 'Документы подписаны',
     'status_in_work' => 'Проект взят в работу',
+    'status_in_moderation' => 'В модерации',
+    'status_rejected' => 'Отказано',
 
     // Этапы
     'stage_measurement' => 'Обмер',

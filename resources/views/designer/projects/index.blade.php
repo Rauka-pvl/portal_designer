@@ -800,6 +800,8 @@
             <option value="tz_signed">{{ __('projects.status_tz_signed') }}</option>
             <option value="documents_signed">{{ __('projects.status_documents_signed') }}</option>
             <option value="in_work">{{ __('projects.status_in_work') }}</option>
+            <option value="in_moderation">{{ __('projects.status_in_moderation') }}</option>
+            <option value="rejected">{{ __('projects.status_rejected') }}</option>
         </select>
     </div>
     <div class="w-full md:w-48">
@@ -1135,7 +1137,8 @@ document.addEventListener('DOMContentLoaded', function() {
         return allProjects.filter(project => {
             const searchStr = Object.values(project).join(' ').toLowerCase();
             const matchSearch = !search || searchStr.includes(search);
-            const matchStatus = !statusFilter || project.status === statusFilter;
+            const effectiveStatus = project.workflow_status || project.status;
+            const matchStatus = !statusFilter || effectiveStatus === statusFilter;
             const stageTypes = getProjectStageTypes(project);
             const matchStage = !stageFilter || stageTypes.includes(stageFilter);
             const matchObject = !objectFilter || project.object_id == objectFilter;
@@ -1201,17 +1204,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         tbody.innerHTML = paginated.map(project => {
-            const statusClass = project.status === 'contract_negotiation' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-200' :
-                               project.status === 'contract_signed' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200' :
-                               project.status === 'prepayment_received' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200' :
-                               project.status === 'tz_signed' ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-200' :
-                               project.status === 'documents_signed' ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-200' :
+            const effectiveStatus = project.workflow_status || project.status;
+            const statusClass = effectiveStatus === 'in_moderation' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-200' :
+                               effectiveStatus === 'rejected' ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/20 dark:text-rose-200' :
+                               effectiveStatus === 'contract_negotiation' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-200' :
+                               effectiveStatus === 'contract_signed' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200' :
+                               effectiveStatus === 'prepayment_received' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200' :
+                               effectiveStatus === 'tz_signed' ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-200' :
+                               effectiveStatus === 'documents_signed' ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-200' :
                                'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200';
-            const statusText = project.status === 'contract_negotiation' ? '{{ __('projects.status_contract_negotiation') }}' :
-                              project.status === 'contract_signed' ? '{{ __('projects.status_contract_signed') }}' :
-                              project.status === 'prepayment_received' ? '{{ __('projects.status_prepayment_received') }}' :
-                              project.status === 'tz_signed' ? '{{ __('projects.status_tz_signed') }}' :
-                              project.status === 'documents_signed' ? '{{ __('projects.status_documents_signed') }}' :
+            const statusText = effectiveStatus === 'in_moderation' ? '{{ __('projects.status_in_moderation') }}' :
+                              effectiveStatus === 'rejected' ? '{{ __('projects.status_rejected') }}' :
+                              effectiveStatus === 'contract_negotiation' ? '{{ __('projects.status_contract_negotiation') }}' :
+                              effectiveStatus === 'contract_signed' ? '{{ __('projects.status_contract_signed') }}' :
+                              effectiveStatus === 'prepayment_received' ? '{{ __('projects.status_prepayment_received') }}' :
+                              effectiveStatus === 'tz_signed' ? '{{ __('projects.status_tz_signed') }}' :
+                              effectiveStatus === 'documents_signed' ? '{{ __('projects.status_documents_signed') }}' :
                               '{{ __('projects.status_in_work') }}';
             console.log("project", project);
             const stageText = getStageDisplay(project);
@@ -1282,17 +1290,22 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!listBody) return;
 
         listBody.innerHTML = filtered.map(project => {
-            const statusClass = project.status === 'contract_negotiation' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-200' :
-                               project.status === 'contract_signed' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200' :
-                               project.status === 'prepayment_received' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200' :
-                               project.status === 'tz_signed' ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-200' :
-                               project.status === 'documents_signed' ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-200' :
+            const effectiveStatus = project.workflow_status || project.status;
+            const statusClass = effectiveStatus === 'in_moderation' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-200' :
+                               effectiveStatus === 'rejected' ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/20 dark:text-rose-200' :
+                               effectiveStatus === 'contract_negotiation' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-200' :
+                               effectiveStatus === 'contract_signed' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200' :
+                               effectiveStatus === 'prepayment_received' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200' :
+                               effectiveStatus === 'tz_signed' ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-200' :
+                               effectiveStatus === 'documents_signed' ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-200' :
                                'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200';
-            const statusText = project.status === 'contract_negotiation' ? '{{ __('projects.status_contract_negotiation') }}' :
-                              project.status === 'contract_signed' ? '{{ __('projects.status_contract_signed') }}' :
-                              project.status === 'prepayment_received' ? '{{ __('projects.status_prepayment_received') }}' :
-                              project.status === 'tz_signed' ? '{{ __('projects.status_tz_signed') }}' :
-                              project.status === 'documents_signed' ? '{{ __('projects.status_documents_signed') }}' :
+            const statusText = effectiveStatus === 'in_moderation' ? '{{ __('projects.status_in_moderation') }}' :
+                              effectiveStatus === 'rejected' ? '{{ __('projects.status_rejected') }}' :
+                              effectiveStatus === 'contract_negotiation' ? '{{ __('projects.status_contract_negotiation') }}' :
+                              effectiveStatus === 'contract_signed' ? '{{ __('projects.status_contract_signed') }}' :
+                              effectiveStatus === 'prepayment_received' ? '{{ __('projects.status_prepayment_received') }}' :
+                              effectiveStatus === 'tz_signed' ? '{{ __('projects.status_tz_signed') }}' :
+                              effectiveStatus === 'documents_signed' ? '{{ __('projects.status_documents_signed') }}' :
                               '{{ __('projects.status_in_work') }}';
             const stageText = getStageDisplay(project);
 
@@ -1363,7 +1376,7 @@ document.addEventListener('DOMContentLoaded', function() {
         };
 
         getFilteredProjects().forEach((project) => {
-            const status = String(project.status || '').trim();
+            const status = String(project.workflow_status || project.status || '').trim();
             if (grouped[status]) grouped[status].push(project);
         });
 
@@ -2043,11 +2056,14 @@ function viewProject(id) {
     if (project) {
         const content = document.getElementById('view-project-content');
         const fileItems = Array.isArray(project.file_items) ? project.file_items : [];
-        const statusText = project.status === 'contract_negotiation' ? '{{ __('projects.status_contract_negotiation') }}' :
-                          project.status === 'contract_signed' ? '{{ __('projects.status_contract_signed') }}' :
-                          project.status === 'prepayment_received' ? '{{ __('projects.status_prepayment_received') }}' :
-                          project.status === 'tz_signed' ? '{{ __('projects.status_tz_signed') }}' :
-                          project.status === 'documents_signed' ? '{{ __('projects.status_documents_signed') }}' :
+        const effectiveStatus = project.workflow_status || project.status;
+        const statusText = effectiveStatus === 'in_moderation' ? '{{ __('projects.status_in_moderation') }}' :
+                          effectiveStatus === 'rejected' ? '{{ __('projects.status_rejected') }}' :
+                          effectiveStatus === 'contract_negotiation' ? '{{ __('projects.status_contract_negotiation') }}' :
+                          effectiveStatus === 'contract_signed' ? '{{ __('projects.status_contract_signed') }}' :
+                          effectiveStatus === 'prepayment_received' ? '{{ __('projects.status_prepayment_received') }}' :
+                          effectiveStatus === 'tz_signed' ? '{{ __('projects.status_tz_signed') }}' :
+                          effectiveStatus === 'documents_signed' ? '{{ __('projects.status_documents_signed') }}' :
                           '{{ __('projects.status_in_work') }}';
         const stageText = getStageDisplay(project);
 
