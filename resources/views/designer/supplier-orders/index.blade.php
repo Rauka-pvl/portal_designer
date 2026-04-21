@@ -754,7 +754,6 @@ document.addEventListener('DOMContentLoaded', function() {
                               effectiveStatus === 'advance_payment' ? '{{ __('supplier-orders.status_advance_payment') }}' :
                               effectiveStatus === 'full_payment' ? '{{ __('supplier-orders.status_full_payment') }}' :
                               '{{ __('supplier-orders.status_delivery_completed') }}';
-
             const createdDate = new Date(order.created_date).toLocaleDateString('kk-KZ');
             console.log("createdDate", createdDate);
             const plannedDate = new Date(order.date_planned).toLocaleDateString('kk-KZ');
@@ -1552,6 +1551,7 @@ function drop(ev) {
         .catch(() => { draggedOrderElement = null; if (typeof window.renderFunnel === 'function') window.renderFunnel(); });
     }
 }
+
 
 document.querySelectorAll('.funnel-column').forEach(column => {
     column.addEventListener('dragleave', function(e) {

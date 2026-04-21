@@ -54,6 +54,17 @@ class ChecklistStepController extends Controller
             : null;
         $step->save();
 
+        if ($request->expectsJson() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'step' => [
+                    'id' => (int) $step->id,
+                    'result_status' => (string) ($step->result_status ?? 'pending'),
+                    'result_comment' => $step->result_comment,
+                ],
+            ]);
+        }
+
         return redirect()->route('checklist-steps.show', $step->id);
     }
 }

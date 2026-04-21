@@ -98,6 +98,32 @@
     .supplier-chat-other { background: #f1f5f9; color: #334155; }
     .dark .supplier-chat-mine { background: #1D0002; color: #f59e0b; }
     .dark .supplier-chat-other { background: #0a0a0a; color: #EDEDEC; }
+    .supplier-status-choice-btn {
+        border: 1px solid #7c8799;
+        border-radius: 8px;
+        padding: 0.55rem 0.75rem;
+        font-size: 0.8125rem;
+        color: #64748b;
+        background: #ffffff;
+        text-align: left;
+        transition: all 0.2s;
+    }
+    .supplier-status-choice-btn:hover { border-color: #f59e0b; color: #f59e0b; }
+    .supplier-status-choice-btn.active {
+        border-color: #f59e0b;
+        background: #fef3c7;
+        color: #b45309;
+    }
+    .dark .supplier-status-choice-btn {
+        border-color: #3E3E3A;
+        background: #0a0a0a;
+        color: #A1A09A;
+    }
+    .dark .supplier-status-choice-btn.active {
+        border-color: #f59e0b;
+        background: #1D0002;
+        color: #f59e0b;
+    }
 </style>
 @endpush
 
@@ -236,6 +262,30 @@
                         <button type="submit" class="px-4 py-2 rounded-lg border border-[#f59e0b] text-[#f59e0b] hover:bg-[#f59e0b]/10">{{ __('supplier-orders.chat_send') }}</button>
                     </div>
                 </form>
+            </div>
+        </div>
+        <div id="supplier-so-status-modal" class="fixed inset-0 bg-black/50 z-50 hidden" onmousedown="if(event.target === this) supplierSoCloseStatusModal()">
+            <div class="absolute right-0 top-0 h-full w-full max-w-md bg-white dark:bg-[#161615] border-l border-[#7c8799] dark:border-[#3E3E3A] shadow-2xl flex flex-col supplier-so-status-panel translate-x-full transition-transform duration-300">
+                <div class="flex items-center justify-between px-5 py-4 border-b border-[#7c8799] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a]">
+                    <div>
+                        <h2 class="text-lg font-semibold text-[#0f172a] dark:text-[#EDEDEC]">{{ __('supplier-orders.status') }}</h2>
+                        <p id="supplier-so-status-subtitle" class="text-sm text-[#64748b] dark:text-[#A1A09A]"></p>
+                    </div>
+                    <button type="button" onclick="supplierSoCloseStatusModal()" class="p-2 rounded-lg text-[#64748b] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a]">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <div class="p-5 space-y-2">
+                    <button type="button" class="supplier-status-choice-btn w-full" data-so-status-choice="order_created">{{ __('supplier-orders.status_order_created') }}</button>
+                    <button type="button" class="supplier-status-choice-btn w-full" data-so-status-choice="order_sent">{{ __('supplier-orders.status_order_sent') }}</button>
+                    <button type="button" class="supplier-status-choice-btn w-full" data-so-status-choice="order_confirmed">{{ __('supplier-orders.status_order_confirmed') }}</button>
+                    <button type="button" class="supplier-status-choice-btn w-full" data-so-status-choice="advance_payment">{{ __('supplier-orders.status_advance_payment') }}</button>
+                    <button type="button" class="supplier-status-choice-btn w-full" data-so-status-choice="full_payment">{{ __('supplier-orders.status_full_payment') }}</button>
+                    <button type="button" class="supplier-status-choice-btn w-full" data-so-status-choice="delivery_completed">{{ __('supplier-orders.status_delivery_completed') }}</button>
+                </div>
+                <div class="mt-auto p-5 pt-0 flex justify-end">
+                    <button type="button" onclick="supplierSoCloseStatusModal()" class="supplier-so-tab-btn">{{ __('supplier-orders.close') }}</button>
+                </div>
             </div>
         </div>
 
@@ -408,6 +458,9 @@ window.supplierSoLabels = @json($supplierSoLabels);
                 <td class="px-3 py-2.5 text-sm">
                     <button type="button" onclick="supplierSoView(${o.id})" class="p-1.5 rounded text-[#64748b] hover:text-[#f59e0b] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a]" title="{{ __('supplier-orders.view') }}">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    </button>
+                    <button type="button" onclick="supplierSoOpenStatusModal(${o.id})" class="p-1.5 rounded text-[#64748b] hover:text-[#f59e0b] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a]" title="{{ __('supplier-orders.status') }}">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                     </button>
                     ${getChatBtnHtml(o, true)}
                 </td>
@@ -743,6 +796,66 @@ window.supplierSoLabels = @json($supplierSoLabels);
         setTimeout(() => modal.classList.add('hidden'), 280);
     };
 
+    function updateOrderStatus(orderId, newStatus) {
+        const token = document.querySelector('meta[name="csrf-token"]')?.content;
+        return fetch(statusUrlBase + '/' + orderId + '/status', {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': token,
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({ status: newStatus }),
+        })
+        .then(r => r.json().then(d => ({ ok: r.ok, d })))
+        .then(({ ok, d }) => {
+            if (!ok || !d.success || !d.order) {
+                throw new Error(d.message || 'status_update_failed');
+            }
+            const idx = allOrders.findIndex(x => String(x.id) === String(orderId));
+            if (idx >= 0) allOrders[idx] = d.order;
+            if (currentTab === 'table') renderTable();
+            if (currentTab === 'list') renderList();
+            if (currentTab === 'funnel') renderFunnel();
+            return d.order;
+        });
+    }
+
+    window.supplierSoOpenStatusModal = function(orderId) {
+        const ord = allOrders.find(o => String(o.id) === String(orderId));
+        if (!ord) return;
+        const modal = document.getElementById('supplier-so-status-modal');
+        const panel = modal.querySelector('.supplier-so-status-panel');
+        const subtitle = document.getElementById('supplier-so-status-subtitle');
+        if (subtitle) subtitle.textContent = `#${ord.number || ord.id} • ${ord.project_name || '—'}`;
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => { panel.classList.remove('translate-x-full'); });
+
+        modal.querySelectorAll('[data-so-status-choice]').forEach((btn) => {
+            const val = btn.getAttribute('data-so-status-choice');
+            btn.classList.toggle('active', val === ord.status);
+            btn.onclick = () => {
+                if (!val) return;
+                updateOrderStatus(ord.id, val)
+                    .then(() => {
+                        projectAlert('success', '{{ __("supplier-orders.saved") }}', '', 1400);
+                        window.supplierSoCloseStatusModal();
+                    })
+                    .catch((e) => {
+                        console.error(e);
+                        projectAlert('error', '{{ __("supplier-orders.error") }}', '', 3200);
+                    });
+            };
+        });
+    };
+
+    window.supplierSoCloseStatusModal = function() {
+        const modal = document.getElementById('supplier-so-status-modal');
+        const panel = modal.querySelector('.supplier-so-status-panel');
+        panel.classList.add('translate-x-full');
+        setTimeout(() => modal.classList.add('hidden'), 280);
+    };
+
     window.supplierSoDrag = function(ev) {
         draggedEl = ev.target.closest('.supplier-funnel-card');
         if (draggedEl) draggedEl.classList.add('dragging');
@@ -765,30 +878,8 @@ window.supplierSoLabels = @json($supplierSoLabels);
         targetBox.appendChild(draggedEl);
         draggedEl.classList.remove('dragging');
 
-        const token = document.querySelector('meta[name="csrf-token"]')?.content;
-        fetch(statusUrlBase + '/' + orderId + '/status', {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': token,
-                'Accept': 'application/json',
-            },
-            body: JSON.stringify({ status: newStatus }),
-        })
-        .then(r => r.json().then(d => ({ ok: r.ok, d })))
-        .then(({ ok, d }) => {
-            if (ok && d.success) {
-                const ord = allOrders.find(x => String(x.id) === String(orderId));
-                if (ord) ord.status = newStatus;
-                renderFunnel();
-                if (currentTab === 'table') renderTable();
-                if (currentTab === 'list') renderList();
-            } else {
-                projectAlert('error', d.message || '{{ __("supplier-orders.error") }}', '', 3200);
-                renderFunnel();
-            }
-            draggedEl = null;
-        })
+        updateOrderStatus(orderId, newStatus)
+        .then(() => { draggedEl = null; })
         .catch(() => {
             draggedEl = null;
             projectAlert('error', '{{ __("supplier-orders.error") }}', '', 3200);
