@@ -403,6 +403,10 @@ class SupplierOrderController extends Controller
                             ->where('moderation_status', 'approved');
                     });
             })
+            ->where(function ($q) {
+                $q->whereNull('moderation_status')
+                    ->orWhereNotIn('moderation_status', ['pending', 'rejected']);
+            })
             ->orderBy('name')
             ->get(['id', 'name']);
     }
