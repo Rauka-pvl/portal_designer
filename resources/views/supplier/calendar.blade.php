@@ -296,6 +296,63 @@
             <div id="day-drawer-content" class="p-4 overflow-y-auto space-y-3 flex-1 min-h-0"></div>
         </div>
 
+        @if (!empty($showInitialProfileModal))
+            <div id="supplier-initial-profile-modal" class="fixed inset-0 bg-black/60 z-[70] hidden">
+                <div class="absolute inset-0 flex items-center justify-center p-4">
+                    <div class="w-full max-w-2xl bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-xl shadow-2xl overflow-hidden">
+                        <div class="px-5 py-4 border-b border-[#7c8799] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a]">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <h2 class="text-lg font-semibold text-[#0f172a] dark:text-[#EDEDEC]">{{ __('supplier-portal.fill_profile_title') }}</h2>
+                                    <p class="mt-1 text-sm text-[#64748b] dark:text-[#A1A09A]">{{ __('supplier-portal.fill_profile_hint') }}</p>
+                                </div>
+                                <div class="flex items-center gap-1 shrink-0">
+                                    <a href="{{ route('language.switch', 'kk') }}"
+                                        class="px-2 py-1 text-xs rounded border border-[#7c8799] dark:border-[#3E3E3A] {{ app()->getLocale() === 'kk' ? 'bg-[#f59e0b] text-white border-[#f59e0b]' : 'text-[#64748b] dark:text-[#A1A09A] hover:text-[#f59e0b]' }}">Қаз</a>
+                                    <a href="{{ route('language.switch', 'ru') }}"
+                                        class="px-2 py-1 text-xs rounded border border-[#7c8799] dark:border-[#3E3E3A] {{ app()->getLocale() === 'ru' ? 'bg-[#f59e0b] text-white border-[#f59e0b]' : 'text-[#64748b] dark:text-[#A1A09A] hover:text-[#f59e0b]' }}">RU</a>
+                                    <a href="{{ route('language.switch', 'en') }}"
+                                        class="px-2 py-1 text-xs rounded border border-[#7c8799] dark:border-[#3E3E3A] {{ app()->getLocale() === 'en' ? 'bg-[#f59e0b] text-white border-[#f59e0b]' : 'text-[#64748b] dark:text-[#A1A09A] hover:text-[#f59e0b]' }}">EN</a>
+                                </div>
+                            </div>
+                        </div>
+                        <form method="POST" action="{{ route('supplier.profile.save') }}" class="p-5 space-y-4">
+                            @csrf
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-xs text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.phone') }}</label>
+                                    <input type="text" name="phone" value="{{ old('phone', $supplier?->phone) }}" class="mt-1 w-full px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.city') }}</label>
+                                    <input type="text" name="city" value="{{ old('city', $supplier?->city) }}" class="mt-1 w-full px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.address') }}</label>
+                                    <input type="text" name="address" value="{{ old('address', $supplier?->address) }}" class="mt-1 w-full px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.website') }}</label>
+                                    <input type="url" name="website" value="{{ old('website', $supplier?->website) }}" class="mt-1 w-full px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label class="text-xs text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.inn') }} *</label>
+                                    <input type="text" name="inn" required value="{{ old('inn', $supplier?->inn) }}" class="mt-1 w-full px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label class="text-xs text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.comment') }}</label>
+                                    <textarea name="comment_main" rows="3" class="mt-1 w-full px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] resize-none">{{ old('comment_main', $supplier?->comment) }}</textarea>
+                                </div>
+                            </div>
+                            <div class="flex justify-end">
+                                <button type="submit" class="px-4 py-2 rounded-lg bg-[#f59e0b] text-white text-sm font-medium hover:bg-[#d97706]">{{ __('supplier-portal.submit_profile') }}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <script>
         document.addEventListener('DOMContentLoaded', function() {
             let currentDate = new Date();
@@ -892,6 +949,12 @@
             document.getElementById('view-calendar').classList.add('active');
             document.querySelector('[data-view="month"]').classList.add('active');
             renderCalendar();
+
+            const initialProfileModal = document.getElementById('supplier-initial-profile-modal');
+            if (initialProfileModal) {
+                initialProfileModal.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+            }
         });
         </script>
     @endunless

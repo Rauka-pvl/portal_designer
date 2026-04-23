@@ -180,67 +180,97 @@
                     @csrf
                     @method('PUT')
 
-                    <h2 class="settings-section-title">{{ __('settings.main_information') }}</h2>
+                    <h2 class="settings-section-title">{{ __('suppliers.main_info') }}</h2>
                     <div class="settings-divider"></div>
                     <div class="settings-grid mb-5">
-                        <label class="settings-label">{{ __('settings.name') }}</label>
-                        <input type="text" name="name" required value="{{ old('name', $user->name) }}" class="settings-input">
+                        <label class="settings-label">{{ __('suppliers.name') }}</label>
+                        <input type="text" name="name" required value="{{ old('name', $supplier?->name ?? $user->name) }}" class="settings-input">
 
-                        <label class="settings-label">{{ __('settings.short_description') }}</label>
-                        <input type="text" name="short_description" value="{{ old('short_description', $user->short_description) }}" class="settings-input">
+                        <label class="settings-label">{{ __('suppliers.phone') }}</label>
+                        <input type="text" name="phone" value="{{ old('phone', $supplier?->phone ?? $user->phone) }}" class="settings-input">
 
-                        <label class="settings-label">{{ __('settings.about_designer') }}</label>
-                        <textarea name="about_designer" class="settings-textarea">{{ old('about_designer', $user->about_designer) }}</textarea>
+                        <label class="settings-label">{{ __('suppliers.email') }}</label>
+                        <input type="email" name="email" required value="{{ old('email', $supplier?->email ?? $user->email) }}" class="settings-input">
 
-                        <label class="settings-label">{{ __('settings.city') }}</label>
-                        <input type="text" name="city" value="{{ old('city', $user->city) }}" class="settings-input">
+                        <label class="settings-label">{{ __('suppliers.city') }}</label>
+                        <input type="text" name="city" value="{{ old('city', $supplier?->city ?? $user->city) }}" class="settings-input">
+
+                        <label class="settings-label">{{ __('suppliers.address') }}</label>
+                        <input type="text" name="address" value="{{ old('address', $supplier?->address) }}" class="settings-input">
+
+                        <label class="settings-label">{{ __('suppliers.website') }}</label>
+                        <input type="url" name="website" value="{{ old('website', $supplier?->website) }}" class="settings-input">
+
+                        <label class="settings-label">Telegram</label>
+                        <input type="text" name="telegram" value="{{ old('telegram', $supplier?->telegram) }}" class="settings-input">
+
+                        <label class="settings-label">WhatsApp</label>
+                        <input type="text" name="whatsapp" value="{{ old('whatsapp', $supplier?->whatsapp) }}" class="settings-input">
+
+                        <label class="settings-label">{{ __('suppliers.sphere_activity') }}</label>
+                        <input type="text" name="sphere" value="{{ old('sphere', $supplier?->sphere) }}" class="settings-input">
+
+                        <label class="settings-label">{{ __('suppliers.work_terms') }}</label>
+                        <select name="work_terms_type" class="settings-select">
+                            <option value="">—</option>
+                            <option value="percent" @selected(old('work_terms_type', $supplier?->work_terms_type) === 'percent')>{{ __('suppliers.work_terms_percent') }}</option>
+                            <option value="amount" @selected(old('work_terms_type', $supplier?->work_terms_type) === 'amount')>{{ __('suppliers.work_terms_amount') }}</option>
+                        </select>
+
+                        <label class="settings-label">{{ __('suppliers.value') }}</label>
+                        <input type="text" name="work_terms_value" value="{{ old('work_terms_value', $supplier?->work_terms_value) }}" class="settings-input">
                     </div>
 
                     <div class="settings-divider"></div>
                     <div class="settings-columns">
                         <div>
-                            <h3 class="settings-section-title text-xl">{{ __('settings.contact_information') }}</h3>
+                            <h3 class="settings-section-title text-xl">{{ __('suppliers.requisites') }}</h3>
                             <div class="settings-divider"></div>
                             <div class="settings-grid">
-                                @php
-                                    $contacts = [
-                                        ['phone', 'phone'],
-                                        ['email', 'email'],
-                                        ['website_portfolio', 'website_portfolio'],
-                                        ['telegram', 'telegram'],
-                                        ['whatsapp', 'whatsapp'],
-                                        ['vk', 'vk'],
-                                        ['instagram', 'instagram'],
-                                    ];
-                                @endphp
-                                @foreach ($contacts as [$field, $label])
-                                    <label class="settings-label">{{ __('settings.' . $label) }}</label>
-                                    <input type="{{ $field === 'email' ? 'email' : 'text' }}" name="{{ $field }}" value="{{ old($field, $user->{$field}) }}" class="settings-input">
-                                @endforeach
+                                <label class="settings-label">{{ __('suppliers.inn') }}</label>
+                                <input type="text" name="inn" value="{{ old('inn', $supplier?->inn) }}" class="settings-input">
+
+                                <label class="settings-label">{{ __('suppliers.kpp') }}</label>
+                                <input type="text" name="kpp" value="{{ old('kpp', $supplier?->kpp) }}" class="settings-input">
+
+                                <label class="settings-label">{{ __('suppliers.ogrn') }}</label>
+                                <input type="text" name="ogrn" value="{{ old('ogrn', $supplier?->ogrn) }}" class="settings-input">
+
+                                <label class="settings-label">{{ __('suppliers.okpo') }}</label>
+                                <input type="text" name="okpo" value="{{ old('okpo', $supplier?->okpo) }}" class="settings-input">
+
+                                <label class="settings-label">{{ __('suppliers.legal_address') }}</label>
+                                <input type="text" name="legal_address" value="{{ old('legal_address', $supplier?->legal_address) }}" class="settings-input">
+
+                                <label class="settings-label">{{ __('suppliers.actual_address') }}</label>
+                                <input type="text" name="actual_address" value="{{ old('actual_address', $supplier?->actual_address) }}" class="settings-input">
+
+                                <label class="settings-label">{{ __('suppliers.director') }}</label>
+                                <input type="text" name="director" value="{{ old('director', $supplier?->director) }}" class="settings-input">
+
+                                <label class="settings-label">{{ __('suppliers.accountant') }}</label>
+                                <input type="text" name="accountant" value="{{ old('accountant', $supplier?->accountant) }}" class="settings-input">
                             </div>
                         </div>
 
                         <div>
-                            <h3 class="settings-section-title text-xl">{{ __('settings.professional_information') }}</h3>
+                            <h3 class="settings-section-title text-xl">{{ __('suppliers.bank_details') }}</h3>
                             <div class="settings-divider"></div>
                             <div class="settings-grid">
-                                <label class="settings-label">{{ __('settings.experience') }}</label>
-                                <input type="text" name="experience" value="{{ old('experience', $user->experience) }}" class="settings-input">
+                                <label class="settings-label">{{ __('suppliers.bik') }}</label>
+                                <input type="text" name="bik" value="{{ old('bik', $supplier?->bik) }}" class="settings-input">
 
-                                <label class="settings-label">{{ __('settings.price_per_m2') }}</label>
-                                <input type="number" step="0.01" min="0" name="price_per_m2" value="{{ old('price_per_m2', $user->price_per_m2) }}" class="settings-input">
+                                <label class="settings-label">{{ __('suppliers.bank') }}</label>
+                                <input type="text" name="bank" value="{{ old('bank', $supplier?->bank) }}" class="settings-input">
 
-                                <label class="settings-label">{{ __('settings.education') }}</label>
-                                <input type="text" name="education" value="{{ old('education', $user->education) }}" class="settings-input">
+                                <label class="settings-label">{{ __('suppliers.checking_account') }}</label>
+                                <input type="text" name="checking_account" value="{{ old('checking_account', $supplier?->checking_account) }}" class="settings-input">
 
-                                <label class="settings-label">{{ __('settings.awards') }}</label>
-                                <input type="text" name="awards" value="{{ old('awards', $user->awards) }}" class="settings-input">
+                                <label class="settings-label">{{ __('suppliers.corr_account') }}</label>
+                                <input type="text" name="corr_account" value="{{ old('corr_account', $supplier?->corr_account) }}" class="settings-input">
 
-                                <label class="settings-label">{{ __('settings.specialization') }}</label>
-                                <input type="text" name="specialization" value="{{ old('specialization', $user->specialization) }}" class="settings-input">
-
-                                <label class="settings-label">{{ __('settings.styles') }}</label>
-                                <input type="text" name="styles" value="{{ old('styles', $user->styles) }}" class="settings-input">
+                                <label class="settings-label">{{ __('suppliers.comment') }}</label>
+                                <textarea name="comment_main" class="settings-textarea">{{ old('comment_main', $supplier?->comment) }}</textarea>
                             </div>
                         </div>
                     </div>

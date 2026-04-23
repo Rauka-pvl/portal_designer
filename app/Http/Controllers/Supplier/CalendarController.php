@@ -17,9 +17,17 @@ class CalendarController extends Controller
             ->where('user_id', (int) $request->user()->id)
             ->first();
 
+        $profileStatus = (string) ($supplier?->profile_status ?? 'draft');
+        $moderationStatus = (string) ($supplier?->moderation_status ?? 'draft');
+        $shouldShowInitialProfileModal = $supplier !== null
+            && (int) ($supplier->created_by_user_id ?? 0) === 0
+            && $profileStatus === 'draft'
+            && in_array($moderationStatus, ['', 'draft'], true);
+
         return view('supplier.calendar', [
             'supplier' => $supplier,
             'stats' => $this->statsForSupplier($supplier),
+            'showInitialProfileModal' => $shouldShowInitialProfileModal,
         ]);
     }
 
