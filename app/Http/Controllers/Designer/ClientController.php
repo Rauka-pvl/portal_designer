@@ -24,7 +24,7 @@ class ClientController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        // Для совместимости с фронтендом (в представлении ожидаются дополнительные поля)
+        // Для совместимости с фронтендом 
         $clients->each(function (Client $client) {
             $client->count_objects = (int) ($client->count_objects ?? 0);
             $client->sum_repair_budget_planned = (float) ($client->sum_repair_budget_planned ?? 0);
