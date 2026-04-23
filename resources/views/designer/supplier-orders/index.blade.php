@@ -436,7 +436,9 @@
                         <select name="supplier_id" id="order_supplier_id" required class="modal-input">
                             <option value="">{{ __('supplier-orders.select_supplier') }}</option>
                             @foreach($suppliers as $supplier)
-                                <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                                @if (!in_array((string) ($supplier->moderation_status ?? ''), ['pending', 'rejected'], true))
+                                    <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                                @endif
                             @endforeach
                         </select>
                     </div>

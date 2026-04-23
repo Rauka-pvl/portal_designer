@@ -364,7 +364,30 @@ class SupplierOrderController extends Controller
         $order->files = $newFiles;
         $order->comment = $data['comment'] ?? null;
 
+        $statusOnlyUpdate = $this->isStatusOnlyUpdate(
+            $order,
+            $projectId,
+            $supplierId,
+            (int) $data['summa'],
+            $data['category'] ?? null,
+            $data['mark'] ?? null,
+            $data['room'] ?? null,
+            $data['date_planned'],
+            $data['date_actual'] ?? null,
+            $data['prepayment_date'] ?? null,
+            $data['payment_date'] ?? null,
+            isset($data['prepayment_amount']) ? (int) $data['prepayment_amount'] : null,
+            isset($data['payment_amount']) ? (int) $data['payment_amount'] : null,
+            $links,
+            $newFiles,
+            $data['comment'] ?? null,
+            $stepIds
+        );
+
         if ($request->boolean('send_to_supplier')) {
+            $order->status = $selectedStatus;
+            $order->is_sent_to_supplier = true;
+        } elseif ($statusOnlyUpdate) {
             $order->status = $selectedStatus;
             $order->is_sent_to_supplier = true;
         } else {
@@ -403,12 +426,61 @@ class SupplierOrderController extends Controller
                             ->where('moderation_status', 'approved');
                     });
             })
-            ->where(function ($q) {
-                $q->whereNull('moderation_status')
-                    ->orWhereNotIn('moderation_status', ['pending', 'rejected']);
-            })
             ->orderBy('name')
-            ->get(['id', 'name']);
+            ->get(['id', 'name', 'moderation_status']);
+    }
+
+    /**
+     * Определяем кейс "изменили только статус" для уже отправленной поставки.
+     */
+    private function isStatusOnlyUpdate(
+        Supplier_orders $order,
+        int $projectId,
+        int $supplierId,
+        int $summa,
+        ?string $category,
+        ?string $mark,
+        ?string $room,
+        ?string $datePlanned,
+        ?string $dateActual,
+        ?string $prepaymentDate,
+        ?string $paymentDate,
+        ?int $prepaymentAmount,
+        ?int $paymentAmount,
+        array $links,
+        array $files,
+        ?string $comment,
+        array $stepIds
+    ): bool {
+        if (! $order->exists || ! (bool) $order->is_sent_to_supplier) {
+            return false;
+        }
+
+        return (int) $order->project_id === $projectId
+            && (int) $order->supplier_id === $supplierId
+            && (int) $order->summa === $summa
+            && (string) ($order->category ?? '') === (string) ($category ?? '')
+            && (string) ($order->mark ?? '') === (string) ($mark ?? '')
+            && (string) ($order->room ?? '') === (string) ($room ?? '')
+            && $this->normalizeDateValue($order->date_planned) === $this->normalizeDateValue($datePlanned)
+            && $this->normalizeDateValue($order->date_actual) === $this->normalizeDateValue($dateActual)
+            && $this->normalizeDateValue($order->prepayment_date) === $this->normalizeDateValue($prepaymentDate)
+            && $this->normalizeDateValue($order->payment_date) === $this->normalizeDateValue($paymentDate)
+            && ($order->prepayment_amount !== null ? (int) $order->prepayment_amount : null) === $prepaymentAmount
+            && ($order->payment_amount !== null ? (int) $order->payment_amount : null) === $paymentAmount
+            && (string) ($order->comment ?? '') === (string) ($comment ?? '')
+            && Supplier_orders::normalizeStepIds($order->included_step_ids) === $stepIds
+            && array_values((array) ($order->links ?? [])) === array_values($links)
+            && array_values((array) ($order->files ?? [])) === array_values($files);
+    }
+
+    private function normalizeDateValue(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return substr((string) $value, 0, 10);
     }
 
     private function categoryOptions(): array
