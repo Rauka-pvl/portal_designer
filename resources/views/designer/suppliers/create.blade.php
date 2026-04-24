@@ -157,8 +157,8 @@
                     <div>
                         <label class="block text-sm mb-1">{{ __('suppliers.org_form') }}</label>
                         <select name="org_form" class="w-full rounded-lg border border-[#94a3b8] px-3 py-2">
-                            <option value="ooo" @selected(old('org_form', 'ooo') === 'ooo')>OOO</option>
-                            <option value="ip" @selected(old('org_form') === 'ip')>IP</option>
+                            <option value="ooo" @selected(old('org_form', 'ooo') === 'ooo')>{{ __('suppliers.org_too') }}</option>
+                            <option value="ip" @selected(old('org_form') === 'ip')>{{ __('suppliers.org_ip') }}</option>
                         </select>
                     </div>
                     <div>
