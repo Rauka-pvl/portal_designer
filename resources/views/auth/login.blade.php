@@ -57,6 +57,7 @@
 
 <form method="POST" action="{{ route('login') }}">
     @csrf
+    <input type="hidden" name="portal" value="{{ $authAsSupplier ? 'supplier' : 'designer' }}">
 
     <div class="mb-4">
         <label for="email" class="block text-sm font-medium mb-2">{{ __('auth_labels.email') }}</label>
@@ -110,6 +111,15 @@
         @endif
     </div>
 </form>
+
+<a
+    href="{{ route('faq.index') }}"
+    class="fixed right-4 bottom-4 z-40 inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-rose-600 text-white shadow-[0_10px_30px_-12px_rgba(245,158,11,0.9)] hover:scale-105 hover:shadow-[0_14px_38px_-12px_rgba(236,72,153,0.8)] transition-all"
+    aria-label="{{ __('faq.help_button') }}"
+    title="{{ __('faq.help_button') }}"
+>
+    <span class="text-2xl leading-none font-semibold">?</span>
+</a>
 @endsection
 
 @section('footer')

@@ -247,6 +247,17 @@
                             <span>{{ __('settings.settings') }}</span>
                         </a>
                     @endif
+
+                    @if (Route::has('faq.index'))
+                        <a href="{{ route('faq.index') }}"
+                            class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1 {{ request()->routeIs('faq.index') ? 'bg-[#FDFDFC] dark:bg-[#0a0a0a]' : '' }}">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8.228 9a3.5 3.5 0 116.544 1.5c0 2-3 2.5-3 4M12 17h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>{{ __('faq.nav') }}</span>
+                        </a>
+                    @endif
                 @endif
             </nav>
 

@@ -103,6 +103,7 @@
     @endphp
 
     <div class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        
         <div>
             <h1 class="text-2xl font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ $p['name'] ?? '-' }}</h1>
             <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-1">{{ __('projects.project') }} #{{ $p['id'] ?? '-' }}</p>

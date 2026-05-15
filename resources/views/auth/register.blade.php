@@ -57,9 +57,7 @@
 
 <form method="POST" action="{{ route('register') }}">
     @csrf
-    @if ($authAsSupplier)
-        <input type="hidden" name="account_type" value="supplier">
-    @endif
+    <input type="hidden" name="portal" value="{{ $authAsSupplier ? 'supplier' : 'designer' }}">
 
     <div class="mb-4">
         <label for="name" class="block text-sm font-medium mb-2">{{ __('auth_labels.name') }}</label>

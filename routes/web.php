@@ -33,6 +33,22 @@ Route::get('/', function () {
     };
 });
 
+Route::get('/faq', function (Request $request) {
+    $user = $request->user();
+    $role = $user?->role;
+
+    $layout = match ($role) {
+        'supplier' => 'layouts.supplier',
+        'designer', 'moderator' => 'layouts.dashboard',
+        default => 'layouts.public',
+    };
+
+    return view('faq.index', [
+        'layout' => $layout,
+        'topics' => config('faq.topics', []),
+    ]);
+})->name('faq.index');
+
 Route::middleware(['auth', 'role:supplier', 'password.changed'])->group(function () {
     Route::get('/supplier', [SupplierCalendarController::class, 'index'])->name('supplier.index');
     Route::get('/supplier/orders', [SupplierPortalController::class, 'orders'])->name('supplier.orders');
@@ -64,12 +80,37 @@ Route::post('/referrals/suppliers', [ReferralSupplierController::class, 'store']
     ->name('referrals.suppliers.store');
 
 Route::middleware(['auth', 'role:designer'])->group(function () {
-    Route::get('/dashboard', function () {
+    Route::get('/dashboard', function (Request $request) {
+        $userId = (int) $request->user()->id;
+        $today = now()->toDateString();
+
+        $clientsCount = \App\Models\Client::query()
+            ->where('user_id', $userId)
+            ->count();
+
+        $ordersInWork = \App\Models\Supplier_orders::query()
+            ->where('user_id', $userId)
+            ->where('is_sent_to_supplier', true)
+            ->where('status', '!=', 'delivery_completed')
+            ->count();
+
+        $tasksToday =
+            \App\Models\ProjectStageStep::query()
+                ->whereDate('deadline', $today)
+                ->whereHas('stage.project', function ($q) use ($userId) {
+                    $q->where('user_id', $userId);
+                })
+                ->count()
+            + \App\Models\Supplier_orders::query()->where('user_id', $userId)->whereDate('date_planned', $today)->count()
+            + \App\Models\Supplier_orders::query()->where('user_id', $userId)->whereDate('date_actual', $today)->count()
+            + \App\Models\Supplier_orders::query()->where('user_id', $userId)->whereDate('prepayment_date', $today)->count()
+            + \App\Models\Supplier_orders::query()->where('user_id', $userId)->whereDate('payment_date', $today)->count();
+
         return view('designer.dashboard', [
             'stats' => [
-                'clients' => 0,
-                'orders_in_work' => 0,
-                'tasks_today' => 0,
+                'clients' => (int) $clientsCount,
+                'orders_in_work' => (int) $ordersInWork,
+                'tasks_today' => (int) $tasksToday,
                 'accumulated_bonuses' => 0,
             ],
         ]);
