@@ -35,4 +35,6 @@ return [
     'force_password_change_description' => 'For the first sign-in, set a new password. After saving, you will enter the supplier account.',
     'save_new_password' => 'Save new password',
     'password_updated_successfully' => 'Password updated successfully.',
+    'wrong_portal_supplier' => 'This account cannot sign in here. Use the designer sign-in form.',
+    'wrong_portal_designer' => 'This account cannot sign in here. Use the supplier sign-in form.',
 ];

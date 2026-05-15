@@ -33,6 +33,22 @@ Route::get('/', function () {
     };
 });
 
+Route::get('/faq', function (Request $request) {
+    $user = $request->user();
+    $role = $user?->role;
+
+    $layout = match ($role) {
+        'supplier' => 'layouts.supplier',
+        'designer', 'moderator' => 'layouts.dashboard',
+        default => 'layouts.public',
+    };
+
+    return view('faq.index', [
+        'layout' => $layout,
+        'topics' => config('faq.topics', []),
+    ]);
+})->name('faq.index');
+
 Route::middleware(['auth', 'role:supplier', 'password.changed'])->group(function () {
     Route::get('/supplier', [SupplierCalendarController::class, 'index'])->name('supplier.index');
     Route::get('/supplier/orders', [SupplierPortalController::class, 'orders'])->name('supplier.orders');

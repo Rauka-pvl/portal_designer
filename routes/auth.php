@@ -33,7 +33,11 @@ Route::match(['get', 'post'], '/login', function (Request $request) {
     $credentials = $request->validate([
         'email' => ['required', 'email'],
         'password' => ['required'],
+        'portal' => ['required', 'in:supplier,designer'],
     ]);
+
+    $portal = $credentials['portal'];
+    $loginRouteParams = $portal === 'supplier' ? ['as' => 'supplier'] : [];
 
     $remember = $request->boolean('remember');
 
@@ -41,14 +45,36 @@ Route::match(['get', 'post'], '/login', function (Request $request) {
         'email' => $credentials['email'],
         'password' => $credentials['password'],
     ], $remember)) {
-        return back()
+        return redirect()
+            ->route('login', $loginRouteParams)
             ->withErrors(['email' => __('auth.failed')])
             ->withInput($request->except('password'));
     }
 
-    $request->session()->regenerate();
-
     $user = Auth::user();
+
+    $portalMatchesRole = match ($portal) {
+        'supplier' => $user->role === 'supplier',
+        'designer' => in_array($user->role, ['designer', 'moderator'], true),
+        default => false,
+    };
+
+    if (! $portalMatchesRole) {
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        $message = $portal === 'supplier'
+            ? __('auth_labels.wrong_portal_supplier')
+            : __('auth_labels.wrong_portal_designer');
+
+        return redirect()
+            ->route('login', $loginRouteParams)
+            ->withErrors(['email' => $message])
+            ->withInput($request->except('password'));
+    }
+
+    $request->session()->regenerate();
 
     if ($user->must_change_password) {
         return redirect()->route('supplier.force-password.edit');
@@ -84,10 +110,10 @@ Route::match(['get', 'post'], '/register', function (Request $request) {
         'name' => ['required', 'string', 'max:255'],
         'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
         'password' => ['required', 'confirmed', PasswordRule::defaults()],
-        'account_type' => ['nullable', 'in:supplier,designer'],
+        'portal' => ['required', 'in:supplier,designer'],
     ]);
 
-    $isSupplier = ($data['account_type'] ?? 'designer') === 'supplier';
+    $isSupplier = $data['portal'] === 'supplier';
 
     $user = User::create([
         'name' => $data['name'],
