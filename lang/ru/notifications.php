@@ -36,4 +36,9 @@ return [
     'new_order_comment' => 'Вам отправлена новая поставка №:order.',
     'order_withdrawn_title' => 'Поставка изменена',
     'order_withdrawn_comment' => ':designer изменил(а) поставку №:order. Заказ сейчас не отправлен и сохранён как черновик.',
+    'rate_supplier_title' => 'Оцените поставщика',
+    'rate_supplier_comment' => 'Поставка №:order завершена. Пожалуйста, оцените работу поставщика :supplier.',
+    'rate_designer_title' => 'Оцените дизайнера',
+    'rate_designer_comment' => 'Поставка №:order завершена. Пожалуйста, оцените работу дизайнера :designer.',
+    'rate_action' => 'Оценить',
 ];

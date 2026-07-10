@@ -52,6 +52,8 @@
         $initials = $initials !== '' ? $initials : 'S';
     @endphp
 
+    @include('partials.supplier-detail-tabs', ['active' => 'profile', 'supplierId' => $s['id'] ?? null])
+
     <div class="mb-6 profile-shell p-5">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div class="flex items-center gap-4">
@@ -64,6 +66,7 @@
                         $modStatus = (string) ($s['moderation_status'] ?? '');
                     @endphp
                     <div class="mt-2 flex items-center gap-2 flex-wrap">
+                        @include('partials.stars', ['value' => $ratingSummary['average'] ?? 0, 'count' => $ratingSummary['count'] ?? 0, 'size' => 'w-4 h-4'])
                         <span class="profile-chip">{{ __('suppliers.city') }}: {{ $s['city'] ?: '-' }}</span>
                         @if($modStatus !== '')
                             <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium

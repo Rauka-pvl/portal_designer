@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Designer;
 
 use App\Http\Controllers\Controller;
 use App\Models\DesignerFavoriteSupplier;
+use App\Models\Review;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Support\PublicFileStorage;
@@ -26,8 +27,13 @@ class SupplierController extends Controller
 
         $favoriteLookup = $this->favoriteLookupForDesigner($userId);
 
-        $suppliers->each(function (Supplier $supplier) use ($favoriteLookup): void {
+        $ratingSummaries = Review::supplierRatingSummaries(
+            $suppliers->pluck('id')->map(fn ($id) => (int) $id)->all()
+        );
+
+        $suppliers->each(function (Supplier $supplier) use ($favoriteLookup, $ratingSummaries): void {
             $supplier->setAttribute('is_favorite', (bool) ($favoriteLookup[(int) $supplier->id] ?? false));
+            $supplier->setAttribute('rating_summary', $ratingSummaries[(int) $supplier->id] ?? ['average' => null, 'count' => 0]);
         });
 
         $cities = $suppliers
@@ -58,7 +64,7 @@ class SupplierController extends Controller
 
         return view('designer.suppliers.index', [
             'suppliers' => $suppliers,
-            'suppliersData' => $suppliers->map(fn (Supplier $s) => $this->payloadForDesigner($s, $userId, $favoriteLookup))->values(),
+            'suppliersData' => $suppliers->map(fn (Supplier $s) => $this->payloadForDesigner($s, $userId, $favoriteLookup, $ratingSummaries))->values(),
             'cities' => $cities,
             'brands' => $brands,
             'spheres' => $spheres,
@@ -83,7 +89,15 @@ class SupplierController extends Controller
         $favoriteLookup = $this->favoriteLookupForDesigner($userId);
 
         $supplier->setAttribute('is_favorite', (bool) ($favoriteLookup[(int) $supplier->id] ?? false));
-        $payload = $this->payloadForDesigner($supplier, $userId, $favoriteLookup);
+        $ratingSummary = Review::supplierRatingSummary((int) $supplier->id);
+        $payload = $this->payloadForDesigner($supplier, $userId, $favoriteLookup, [(int) $supplier->id => $ratingSummary]);
+        $recentReviews = Review::recentForSupplier((int) $supplier->id, 5);
+        $payload['recent_reviews'] = $recentReviews->map(fn (Review $r) => [
+            'author' => (string) ($r->reviewer->name ?? ''),
+            'rating' => (int) $r->rating,
+            'comment' => (string) ($r->comment ?? ''),
+            'date' => optional($r->created_at)->format('Y-m-d'),
+        ])->values();
 
         if ($request->expectsJson() || $request->wantsJson()) {
             return response()->json($payload);
@@ -96,6 +110,33 @@ class SupplierController extends Controller
             'supplierData' => $payload,
             'sphereOptions' => $this->sphereOptions(),
             'isReadOnly' => $isReadOnly,
+            'ratingSummary' => $ratingSummary,
+        ]);
+    }
+
+    public function reviews(Request $request, int $supplierId)
+    {
+        $userId = (int) $request->user()->id;
+        $supplier = Supplier::query()->findOrFail($supplierId);
+
+        $isOwned = $this->isOwnedByDesigner($supplier, $userId);
+        $isPublicApproved = (string) $supplier->profile_status === 'active'
+            && (string) $supplier->moderation_status === 'approved';
+
+        if (! $isOwned && ! $isPublicApproved) {
+            abort(404);
+        }
+
+        return view('designer.suppliers.reviews', [
+            'supplier' => $supplier,
+            'supplierData' => ['id' => (int) $supplier->id, 'name' => (string) $supplier->name],
+            'ratingSummary' => Review::supplierRatingSummary((int) $supplier->id),
+            'reviews' => Review::query()
+                ->where('direction', Review::DIRECTION_DESIGNER_TO_SUPPLIER)
+                ->where('supplier_id', (int) $supplier->id)
+                ->with('reviewer:id,name')
+                ->orderByDesc('id')
+                ->paginate(10),
         ]);
     }
 
@@ -358,7 +399,7 @@ class SupplierController extends Controller
             ->all();
     }
 
-    private function payloadForDesigner(Supplier $supplier, int $designerUserId, array $favoriteLookup): array
+    private function payloadForDesigner(Supplier $supplier, int $designerUserId, array $favoriteLookup, array $ratingSummaries = []): array
     {
         $base = $this->payload($supplier);
         $isOwner = $this->isOwnedByDesigner($supplier, $designerUserId);
@@ -368,6 +409,8 @@ class SupplierController extends Controller
         $base['designer_can_manage'] = $canManage;
         $base['designer_can_place_order'] = true;
         $base['is_favorite'] = (bool) ($favoriteLookup[(int) $supplier->id] ?? false);
+        $base['rating'] = $ratingSummaries[(int) $supplier->id]
+            ?? ['average' => null, 'count' => 0];
 
         return $base;
     }

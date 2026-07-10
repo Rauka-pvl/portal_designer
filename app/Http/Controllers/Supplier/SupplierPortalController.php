@@ -93,6 +93,10 @@ class SupplierPortalController extends Controller
         $order->status = $data['status'];
         $order->save();
 
+        if ($data['status'] === 'delivery_completed') {
+            \App\Models\Review::requestReviewsForCompletedOrder($order->load('supplier:id,user_id,name', 'designer:id,name'));
+        }
+
         return response()->json([
             'success' => true,
             'message' => __('supplier-orders.updated'),
@@ -247,6 +251,21 @@ class SupplierPortalController extends Controller
                 ->values(),
             'product_service' => (string) ($order->comment ?? ''),
             'comment' => (string) ($order->comment ?? ''),
+            'product_items' => collect(is_array($order->product_items) ? $order->product_items : [])
+                ->map(function ($it) {
+                    $pid = (int) ($it['product_id'] ?? 0);
+
+                    return [
+                        'product_id' => $pid,
+                        'name' => (string) ($it['name'] ?? ''),
+                        'qty' => (int) ($it['qty'] ?? 0),
+                        'unit' => (string) ($it['unit'] ?? ''),
+                        'price' => isset($it['price']) && $it['price'] !== null ? (float) $it['price'] : null,
+                        'url' => $pid > 0 ? route('supplier.products.show', $pid) : null,
+                    ];
+                })
+                ->filter(fn ($x) => $x['product_id'] > 0)
+                ->values(),
             'included_step_ids' => Supplier_orders::normalizeStepIds($order->included_step_ids),
             'included_steps' => $includedSteps,
             'unread_chat_count' => max(0, $unreadChatCount),

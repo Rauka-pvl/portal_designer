@@ -83,6 +83,14 @@
                     </svg>
                     <span>{{ __('supplier-portal.nav_orders') }}</span>
                 </a>
+                <a href="{{ route('supplier.products.index') }}"
+                    class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1 {{ request()->routeIs('supplier.products.*') ? 'bg-[#FDFDFC] dark:bg-[#0a0a0a] ring-1 ring-[#f59e0b]/40' : '' }}">
+                    <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                    <span>{{ __('products.nav') }}</span>
+                </a>
                 <a href="{{ route('supplier.company') }}"
                     class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1 {{ request()->routeIs('supplier.company') ? 'bg-[#FDFDFC] dark:bg-[#0a0a0a] ring-1 ring-[#f59e0b]/40' : '' }}">
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -91,6 +99,16 @@
                     </svg>
                     <span>{{ __('supplier-portal.nav_company') }}</span>
                 </a>
+                @if (Route::has('supplier.designers.index'))
+                    <a href="{{ route('supplier.designers.index') }}"
+                        class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1 {{ request()->routeIs('supplier.designers.*') ? 'bg-[#FDFDFC] dark:bg-[#0a0a0a] ring-1 ring-[#f59e0b]/40' : '' }}">
+                        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 10-3-6.65" />
+                        </svg>
+                        <span>{{ __('designers.nav') }}</span>
+                    </a>
+                @endif
                 @if (Route::has('supplier.notifications.index'))
                     <a href="{{ route('supplier.notifications.index') }}"
                         class="flex items-center justify-between gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1 {{ request()->routeIs('supplier.notifications.*') ? 'bg-[#FDFDFC] dark:bg-[#0a0a0a] ring-1 ring-[#f59e0b]/40' : '' }}">

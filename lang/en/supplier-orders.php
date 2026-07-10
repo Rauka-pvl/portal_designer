@@ -14,6 +14,8 @@ return [
     'sent_to_supplier' => 'Sent',
     'not_sent_to_supplier' => 'Not sent',
     'amount' => 'Amount',
+    'bonus_percent' => 'Your percentage (bonus)',
+    'bonus_percent_hint' => 'Bonus from the deal amount after delivery is completed:',
     'planned_date' => 'Date (Planned)',
     'actual_date' => 'Date (Actual)',
     'product_service' => 'Product/Service',

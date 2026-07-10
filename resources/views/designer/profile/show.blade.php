@@ -38,6 +38,8 @@
         $initials = $initials !== '' ? $initials : 'U';
     @endphp
 
+    @include('partials.profile-tabs', ['active' => 'profile'])
+
     <div class="mb-6 profile-shell p-5">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div class="flex items-center gap-4">

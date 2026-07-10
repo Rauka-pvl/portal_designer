@@ -122,6 +122,7 @@ class NotificationController extends Controller
             'layout' => $isSupplier ? 'layouts.supplier' : 'layouts.dashboard',
             'routePrefix' => $isSupplier ? 'supplier.notifications' : 'notifications',
             'isDesigner' => ! $isSupplier,
+            'reviewStoreUrl' => $isSupplier ? route('supplier.reviews.store') : route('reviews.store'),
             'subtitle' => $isSupplier
                 ? __('notifications.subtitle_supplier')
                 : __('notifications.subtitle'),

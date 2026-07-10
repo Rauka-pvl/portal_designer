@@ -206,6 +206,10 @@ class SupplierOrderController extends Controller
         $order->status = $data['status'];
         $order->save();
 
+        if ($data['status'] === 'delivery_completed') {
+            \App\Models\Review::requestReviewsForCompletedOrder($order->load('supplier:id,user_id,name', 'designer:id,name'));
+        }
+
         return response()->json([
             'success' => true,
             'message' => __('supplier-orders.updated'),
@@ -279,6 +283,7 @@ class SupplierOrderController extends Controller
             'status' => ['nullable', Rule::in(self::STATUSES)],
             'send_to_supplier' => ['nullable', 'boolean'],
             'summa' => ['required', 'integer', 'min:0'],
+            'bonus_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'category' => ['nullable', 'string', 'max:255'],
             'mark' => ['nullable', 'string', 'max:255'],
             'room' => ['nullable', 'string', 'max:255'],
@@ -295,6 +300,7 @@ class SupplierOrderController extends Controller
             'files' => ['nullable', 'array'],
             'files.*' => ['nullable', 'file', 'max:10240'],
             'comment' => ['nullable', 'string'],
+            'product_items' => ['nullable', 'string'],
             'included_step_ids' => ['sometimes', 'nullable', 'array'],
             'included_step_ids.*' => ['nullable', 'integer', 'min:1'],
         ]);
@@ -358,6 +364,7 @@ class SupplierOrderController extends Controller
         }
         $order->status = $selectedStatus;
         $order->summa = (int) $data['summa'];
+        $order->bonus_percent = isset($data['bonus_percent']) && $data['bonus_percent'] !== '' ? (float) $data['bonus_percent'] : null;
         $order->category = $data['category'] ?? null;
         $order->mark = $data['mark'] ?? null;
         $order->room = $data['room'] ?? null;
@@ -370,6 +377,11 @@ class SupplierOrderController extends Controller
         $order->links = $links;
         $order->files = $newFiles;
         $order->comment = $data['comment'] ?? null;
+
+        $productItems = $this->normalizeProductItems($data['product_items'] ?? null, $supplierId);
+        if ($productItems !== null) {
+            $order->product_items = $productItems;
+        }
 
         $sendToSupplier = $request->boolean('send_to_supplier');
 
@@ -389,6 +401,63 @@ class SupplierOrderController extends Controller
             $designerName = (string) ($request->user()->name ?? '');
             $this->notifySupplierAboutOrder($supplierId, $order->id, 'withdrawn', $designerName);
         }
+
+        if ($sendToSupplier && $order->status === 'delivery_completed') {
+            \App\Models\Review::requestReviewsForCompletedOrder($order->load('supplier:id,user_id,name', 'designer:id,name'));
+        }
+    }
+
+    /**
+     * Разбирает JSON со списком товаров и оставляет только товары этого поставщика.
+     *
+     * @return list<array<string, mixed>>|null null = не трогать существующее значение
+     */
+    private function normalizeProductItems(?string $raw, int $supplierId): ?array
+    {
+        if ($raw === null || trim($raw) === '') {
+            return null;
+        }
+
+        $decoded = json_decode($raw, true);
+        if (! is_array($decoded) || $decoded === []) {
+            return null;
+        }
+
+        $ids = [];
+        foreach ($decoded as $item) {
+            $id = (int) ($item['id'] ?? $item['product_id'] ?? 0);
+            if ($id > 0) {
+                $ids[] = $id;
+            }
+        }
+        if ($ids === []) {
+            return null;
+        }
+
+        $products = \App\Models\SupplierProduct::query()
+            ->where('supplier_id', $supplierId)
+            ->whereIn('id', $ids)
+            ->get()
+            ->keyBy('id');
+
+        $result = [];
+        foreach ($decoded as $item) {
+            $id = (int) ($item['id'] ?? $item['product_id'] ?? 0);
+            $product = $products->get($id);
+            if (! $product) {
+                continue;
+            }
+            $qty = max(1, (int) ($item['qty'] ?? 1));
+            $result[] = [
+                'product_id' => $id,
+                'name' => (string) $product->name,
+                'qty' => $qty,
+                'price' => $product->price !== null ? (float) $product->price : null,
+                'unit' => (string) ($product->unit ?? ''),
+            ];
+        }
+
+        return $result === [] ? null : $result;
     }
 
     private function notifySupplierAboutOrder(int $supplierId, int $orderId, string $type, string $designerName = ''): void
@@ -481,6 +550,8 @@ class SupplierOrderController extends Controller
             'is_sent_to_supplier' => (bool) $order->is_sent_to_supplier,
             'amount' => (int) $order->summa,
             'summa' => (int) $order->summa,
+            'bonus_percent' => $order->bonus_percent !== null ? (float) $order->bonus_percent : null,
+            'bonus_amount' => $order->bonus_percent !== null ? (int) round((int) $order->summa * (float) $order->bonus_percent / 100) : null,
             'category' => (string) ($order->category ?? ''),
             'mark' => (string) ($order->mark ?? ''),
             'room' => (string) ($order->room ?? ''),

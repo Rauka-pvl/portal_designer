@@ -5,6 +5,43 @@
 
 @push('styles')
 <style>
+    .qty-stepper {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid #7c8799;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #ffffff;
+    }
+    .dark .qty-stepper { border-color: #3E3E3A; background: #0a0a0a; }
+    .qty-stepper button {
+        width: 30px; height: 30px;
+        display: flex; align-items: center; justify-content: center;
+        color: #64748b; transition: all 0.15s; font-size: 16px; line-height: 1; user-select: none;
+    }
+    .qty-stepper button:hover { background: #fef3c7; color: #f59e0b; }
+    .dark .qty-stepper button:hover { background: #1D0002; }
+    .qty-stepper input {
+        width: 40px; height: 30px; text-align: center; border: none;
+        border-left: 1px solid #7c8799; border-right: 1px solid #7c8799;
+        background: transparent; color: #0f172a; font-weight: 600; -moz-appearance: textfield;
+    }
+    .dark .qty-stepper input { color: #EDEDEC; border-color: #3E3E3A; }
+    .qty-stepper input::-webkit-outer-spin-button,
+    .qty-stepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+    #order_bonus_percent {
+        -moz-appearance: textfield;
+        appearance: textfield;
+    }
+    #order_bonus_percent::-webkit-outer-spin-button,
+    #order_bonus_percent::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        appearance: none;
+        margin: 0;
+        display: none;
+    }
+
     .tab-btn {
         background: #ffffff;
         border: 1px solid #7c8799;
@@ -457,6 +494,14 @@
                         <input type="number" name="summa" id="order_summa" min="0" step="1" required class="modal-input" placeholder="0">
                     </div>
                 </div>
+                <div>
+                    <label class="modal-label">{{ __('supplier-orders.bonus_percent') }}</label>
+                    <div class="relative max-w-xs">
+                        <input type="text" inputmode="decimal" name="bonus_percent" id="order_bonus_percent" class="modal-input pr-9" placeholder="0" autocomplete="off">
+                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-[#64748b] dark:text-[#A1A09A]">%</span>
+                    </div>
+                    <p class="text-xs text-[#64748b] dark:text-[#A1A09A] mt-1">{{ __('supplier-orders.bonus_percent_hint') }} <span id="order-bonus-amount" class="font-medium text-[#f59e0b]">0 ₸</span></p>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div>
                         <label class="modal-label">{{ __('supplier-orders.category') }}</label>
@@ -517,6 +562,18 @@
                         <label class="modal-label">{{ __('supplier-orders.balance_amount') }}</label>
                         <input type="number" name="payment_amount" id="order_payment_amount" min="0" step="1" class="modal-input" placeholder="0">
                     </div>
+                </div>
+                <div id="order-products-section">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="modal-label mb-0">{{ __('products.checkout_products') }}</label>
+                        <button type="button" id="order-add-products" class="text-sm font-medium modal-accent-link inline-flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            {{ __('products.add_more_product') }}
+                        </button>
+                    </div>
+                    <div id="order-products-list" class="rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] divide-y divide-[#7c8799]/40 dark:divide-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a] max-h-56 overflow-y-auto"></div>
+                    <div class="mt-2 text-right text-sm text-[#64748b] dark:text-[#A1A09A]">{{ __('products.checkout_total') }}: <span class="font-semibold text-[#0f172a] dark:text-[#EDEDEC]"><span id="order-products-total">0</span> ₸</span></div>
+                    <input type="hidden" name="product_items" id="order_product_items" value="">
                 </div>
                 <div>
                     <label class="modal-label">{{ __('supplier-orders.links') }}</label>
@@ -1020,6 +1077,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('order-form').reset();
         document.getElementById('order_id').value = '';
         document.getElementById('send_to_supplier').value = '0';
+        if (typeof window.updateOrderBonusAmount === 'function') window.updateOrderBonusAmount();
         document.getElementById('order-modal-title').textContent = '{{ __('supplier-orders.add_supplier_order') }}';
         const linksContainer = document.getElementById('order-links-container');
         if (linksContainer) linksContainer.innerHTML = `<input type="url" name="links[]" placeholder="{{ __('supplier-orders.paste_link') }}" class="modal-input">`;
@@ -1157,6 +1215,12 @@ function viewOrder(id) {
                 <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('supplier-orders.amount') }}</label>
                 <p class="text-[#0f172a] dark:text-[#EDEDEC]">${parseInt(order.amount).toLocaleString('kk-KZ')} ₸</p>
             </div>
+            ${(order.bonus_percent !== null && order.bonus_percent !== undefined) ? `
+            <div>
+                <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('supplier-orders.bonus_percent') }}</label>
+                <p class="text-[#0f172a] dark:text-[#EDEDEC]">${order.bonus_percent}% <span class="text-[#f59e0b]">(${parseInt(order.bonus_amount || 0).toLocaleString('kk-KZ')} ₸)</span></p>
+            </div>
+            ` : ''}
             <div>
                 <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('supplier-orders.planned_date') }}</label>
                 <p class="text-[#0f172a] dark:text-[#EDEDEC]">${plannedDate}</p>
@@ -1386,6 +1450,8 @@ function editOrder(id) {
         document.getElementById('order_status').value = (order.status === 'draft' ? 'order_created' : (order.status || 'order_created'));
         syncCustomSelect(document.getElementById('order_status'));
         document.getElementById('order_summa').value = order.amount ?? order.summa ?? '';
+        document.getElementById('order_bonus_percent').value = (order.bonus_percent !== null && order.bonus_percent !== undefined) ? order.bonus_percent : '';
+        if (typeof window.updateOrderBonusAmount === 'function') window.updateOrderBonusAmount();
         document.getElementById('order_category').value = order.category || '';
         document.getElementById('order_mark').value = order.mark || '';
         document.getElementById('order_room').value = order.room || '';
@@ -1505,6 +1571,12 @@ document.getElementById('order-form')?.addEventListener('submit', function(e) {
             if (typeof window.renderTable === 'function') window.renderTable();
             if (typeof window.renderList === 'function') window.renderList();
             if (typeof window.renderFunnel === 'function') window.renderFunnel();
+            try {
+                if (document.querySelectorAll('#order-products-list .order-product-row').length > 0) {
+                    const _sid = parseInt(document.getElementById('order_supplier_id')?.value || '0', 10);
+                    if (_sid) localStorage.removeItem('catalog_cart_' + _sid);
+                }
+            } catch (_) {}
             closeOrderModal();
         }
     })
@@ -1596,5 +1668,135 @@ document.querySelectorAll('.funnel-column').forEach(column => {
         }
     });
 });
+
+// ==== Товары в поставке (корзина из каталога поставщика) ====
+(function () {
+    const fmtNum = (n) => new Intl.NumberFormat('ru-RU').format(Math.round(n));
+    const escProduct = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const cartKey = (sid) => 'catalog_cart_' + sid;
+    const readCart = (sid) => { try { return JSON.parse(localStorage.getItem(cartKey(sid))) || {}; } catch (e) { return {}; } };
+    const writeCart = (sid, c) => localStorage.setItem(cartKey(sid), JSON.stringify(c));
+
+    window.renderOrderProducts = function () {
+        const section = document.getElementById('order-products-section');
+        const listEl = document.getElementById('order-products-list');
+        const totalEl = document.getElementById('order-products-total');
+        if (!section || !listEl) return;
+
+        const editing = !!(document.getElementById('order_id')?.value);
+        if (editing) { section.classList.add('hidden'); return; }
+        section.classList.remove('hidden');
+
+        const sid = parseInt(document.getElementById('order_supplier_id')?.value || '0', 10) || 0;
+        const cart = sid ? readCart(sid) : {};
+        const items = Object.values(cart);
+        listEl.innerHTML = '';
+        let total = 0;
+        const parts = [];
+        items.forEach((i) => {
+            total += i.qty * (i.price || 0);
+            parts.push(i.name + ' × ' + i.qty + (i.unit ? ' ' + i.unit : ''));
+            const row = document.createElement('div');
+            row.className = 'order-product-row flex items-center justify-between gap-3 px-3 py-2 text-sm';
+            row.innerHTML = `
+                <div class="min-w-0">
+                    <div class="text-[#0f172a] dark:text-[#EDEDEC] truncate">${escProduct(i.name)}</div>
+                    <div class="text-xs text-[#64748b] dark:text-[#A1A09A]">${fmtNum(i.price)} ₸${i.unit ? ' / ' + escProduct(i.unit) : ''}</div>
+                </div>
+                <div class="flex items-center gap-3 shrink-0">
+                    <div class="qty-stepper" data-op-stepper data-id="${i.id}">
+                        <button type="button" data-op-dec>−</button>
+                        <input type="number" min="1" step="1" value="${i.qty}" data-op-qty>
+                        <button type="button" data-op-inc>+</button>
+                    </div>
+                    <button type="button" data-op-remove data-id="${i.id}" class="text-[#94a3b8] hover:text-[#ef4444]" title="{{ __('products.delete') }}">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>`;
+            listEl.appendChild(row);
+        });
+        if (items.length === 0) {
+            listEl.innerHTML = '<div class="px-3 py-4 text-center text-sm text-[#64748b] dark:text-[#A1A09A]">{{ __('products.no_products_added') }}</div>';
+        }
+        totalEl.textContent = fmtNum(total);
+        const itemsField = document.getElementById('order_product_items');
+        if (items.length > 0) {
+            const summaEl = document.getElementById('order_summa');
+            const commentEl = document.getElementById('order_comment');
+            if (summaEl) summaEl.value = Math.round(total);
+            if (commentEl) commentEl.value = parts.join('; ');
+            if (itemsField) itemsField.value = JSON.stringify(items.map((i) => ({ id: i.id, qty: i.qty })));
+        } else if (itemsField) {
+            itemsField.value = '';
+        }
+
+        listEl.querySelectorAll('[data-op-stepper]').forEach((st) => {
+            const id = st.dataset.id;
+            const input = st.querySelector('[data-op-qty]');
+            const setQty = (q) => {
+                const c = readCart(sid);
+                if (!c[id]) return;
+                c[id].qty = Math.max(1, q);
+                writeCart(sid, c);
+                window.renderOrderProducts();
+            };
+            st.querySelector('[data-op-dec]').addEventListener('click', () => setQty((parseInt(input.value, 10) || 1) - 1));
+            st.querySelector('[data-op-inc]').addEventListener('click', () => setQty((parseInt(input.value, 10) || 1) + 1));
+            input.addEventListener('change', () => setQty(parseInt(input.value, 10) || 1));
+        });
+        listEl.querySelectorAll('[data-op-remove]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const c = readCart(sid);
+                delete c[btn.dataset.id];
+                writeCart(sid, c);
+                window.renderOrderProducts();
+            });
+        });
+    };
+
+    document.getElementById('order-add-products')?.addEventListener('click', () => {
+        const sid = parseInt(document.getElementById('order_supplier_id')?.value || '0', 10) || 0;
+        if (!sid) {
+            if (typeof projectAlert === 'function') projectAlert('error', '{{ __('products.select_supplier_first') }}', '', 3000);
+            else alert('{{ __('products.select_supplier_first') }}');
+            return;
+        }
+        window.location.href = '{{ url('suppliers') }}/' + sid + '/products';
+    });
+
+    document.getElementById('order_supplier_id')?.addEventListener('change', () => window.renderOrderProducts());
+    document.getElementById('add-order-btn')?.addEventListener('click', () => setTimeout(() => window.renderOrderProducts(), 0));
+
+    // --- Расчёт суммы бонуса дизайнера ---
+    window.updateOrderBonusAmount = function () {
+        const amountEl = document.getElementById('order-bonus-amount');
+        if (!amountEl) return;
+        const summa = parseFloat(document.getElementById('order_summa')?.value) || 0;
+        const percent = parseFloat(document.getElementById('order_bonus_percent')?.value) || 0;
+        amountEl.textContent = fmtNum(summa * percent / 100) + ' ₸';
+    };
+    document.getElementById('order_summa')?.addEventListener('input', window.updateOrderBonusAmount);
+    document.getElementById('order_bonus_percent')?.addEventListener('input', function () {
+        let v = this.value.replace(',', '.').replace(/[^\d.]/g, '');
+        const parts = v.split('.');
+        if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
+        if (v !== '' && parseFloat(v) > 100) v = '100';
+        this.value = v;
+        window.updateOrderBonusAmount();
+    });
+
+    if (typeof window.editOrder === 'function') {
+        const _origEditOrder = window.editOrder;
+        window.editOrder = function (id) { _origEditOrder(id); window.renderOrderProducts(); };
+    }
+
+    window.addEventListener('load', function () {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('open_order') === '1') {
+            document.getElementById('add-order-btn')?.click();
+            setTimeout(() => window.renderOrderProducts(), 0);
+        }
+    });
+})();
 </script>
 @endsection

@@ -36,4 +36,9 @@ return [
     'new_order_comment' => 'Сізге жаңа жеткізу тапсырысы №:order жіберілді.',
     'order_withdrawn_title' => 'Жеткізу өзгертілді',
     'order_withdrawn_comment' => ':designer №:order жеткізуін өзгертті. Тапсырыс қазір жіберілмеген және жоба ретінде сақталды.',
+    'rate_supplier_title' => 'Жеткізушіні бағалаңыз',
+    'rate_supplier_comment' => '№:order жеткізуі аяқталды. :supplier жеткізушісінің жұмысын бағалаңыз.',
+    'rate_designer_title' => 'Дизайнерді бағалаңыз',
+    'rate_designer_comment' => '№:order жеткізуі аяқталды. :designer дизайнерінің жұмысын бағалаңыз.',
+    'rate_action' => 'Бағалау',
 ];

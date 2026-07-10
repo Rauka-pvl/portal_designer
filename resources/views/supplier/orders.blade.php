@@ -753,6 +753,23 @@ window.supplierSoLabels = @json($supplierSoLabels);
                 </div>
             </div>
         ` : '';
+        const productItems = Array.isArray(o.product_items) ? o.product_items : [];
+        const productsHtml = productItems.length ? `
+            <div class="md:col-span-2">
+                <span class="text-sm text-[#64748b]">{{ __('products.checkout_products') }}</span>
+                <div class="mt-2 space-y-2">
+                    ${productItems.map(p => `
+                        <div class="flex items-center justify-between gap-3 rounded-xl border border-[#7c8799] dark:border-[#3E3E3A] bg-white/60 dark:bg-[#0a0a0a] px-3 py-2">
+                            <a href="${escapeAttr(p.url || '#')}" class="min-w-0 flex-1 truncate text-sm text-[#0f172a] dark:text-[#EDEDEC] hover:text-[#f59e0b] transition-colors inline-flex items-center gap-1.5">
+                                <svg class="w-4 h-4 shrink-0 text-[#f59e0b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                                <span class="truncate">${escapeHtml(p.name || '')}</span>
+                            </a>
+                            <span class="shrink-0 text-sm font-medium text-[#0f172a] dark:text-[#EDEDEC]">× ${escapeHtml(String(p.qty))}${p.unit ? ' ' + escapeHtml(p.unit) : ''}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : (o.comment ? `<div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.product_service') }}</span><p>${escapeHtml(o.comment)}</p></div>` : '');
         const html = `
             <div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.number') }}</span><p class="font-medium">#${o.id}</p></div>
             <div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.designer') }}</span><p>${escapeHtml(o.designer_name || '—')}</p></div>
@@ -761,7 +778,7 @@ window.supplierSoLabels = @json($supplierSoLabels);
             <div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.amount') }}</span><p>${Number(o.summa).toLocaleString(dateLocale)} ₸</p></div>
             <div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.planned_date') }}</span><p>${fmtDate(o.date_planned)}</p></div>
             <div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.actual_date') }}</span><p>${o.date_actual ? fmtDate(o.date_actual) : '—'}</p></div>
-            ${o.comment ? `<div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.product_service') }}</span><p>${escapeHtml(o.comment)}</p></div>` : ''}
+            ${productsHtml}
             ${filesHtml}
         ` + renderIncludedStepsHtml(o);
         document.getElementById('supplier-so-view-content').innerHTML = html;

@@ -36,4 +36,9 @@ return [
     'new_order_comment' => 'A new delivery order #:order was sent to you.',
     'order_withdrawn_title' => 'Order updated',
     'order_withdrawn_comment' => ':designer changed delivery order #:order. The order is no longer sent and was saved as a draft.',
+    'rate_supplier_title' => 'Rate the supplier',
+    'rate_supplier_comment' => 'Delivery order #:order is completed. Please rate the supplier :supplier.',
+    'rate_designer_title' => 'Rate the designer',
+    'rate_designer_comment' => 'Delivery order #:order is completed. Please rate the designer :designer.',
+    'rate_action' => 'Rate',
 ];

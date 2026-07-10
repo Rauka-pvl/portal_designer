@@ -66,6 +66,15 @@
                             </a>
                         @endif
 
+                        @if (in_array($n->action_key, ['rate_supplier', 'rate_designer'], true) && !empty($n->related_order_id))
+                            <button type="button"
+                                onclick="openRatingModal('{{ $n->related_order_id }}', @js($n->title))"
+                                class="px-3 py-1.5 rounded-lg border border-[#f59e0b] text-xs text-[#f59e0b] hover:bg-[#f59e0b]/10 transition-colors inline-flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.28 3.94a1 1 0 00.95.69h4.15c.97 0 1.37 1.24.59 1.81l-3.36 2.44a1 1 0 00-.36 1.12l1.28 3.94c.3.92-.75 1.69-1.54 1.12l-3.35-2.44a1 1 0 00-1.18 0l-3.35 2.44c-.79.57-1.84-.2-1.54-1.12l1.28-3.94a1 1 0 00-.36-1.12L1.93 9.37c-.78-.57-.38-1.81.59-1.81h4.15a1 1 0 00.95-.69L9.05 2.93z"/></svg>
+                                {{ __('notifications.rate_action') }}
+                            </button>
+                        @endif
+
                         @if (!$isDesigner && $n->action_key === 'supplier_order' && Route::has('supplier.orders'))
                             <a href="{{ route('supplier.orders') }}" class="px-3 py-1.5 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-xs text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">
                                 {{ __('supplier-portal.nav_orders') }}
@@ -92,4 +101,6 @@
     @if ($notifications->hasPages())
         <div class="mt-6">{{ $notifications->links() }}</div>
     @endif
+
+    @include('partials.rating-modal', ['reviewStoreUrl' => $reviewStoreUrl])
 @endsection
