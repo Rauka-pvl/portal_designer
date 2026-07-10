@@ -21,6 +21,14 @@
     </script>
 </head>
 <body class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] dark:text-[#EDEDEC] min-h-screen transition-colors duration-200">
+    @php
+        $unreadNotifications = auth()->check()
+            ? \App\Models\UserNotification::query()
+                ->where('user_id', auth()->id())
+                ->where('is_read', false)
+                ->count()
+            : 0;
+    @endphp
     @include('layouts.partials.app-toasts')
 
     <aside id="supplier-sidebar"
@@ -83,6 +91,23 @@
                     </svg>
                     <span>{{ __('supplier-portal.nav_company') }}</span>
                 </a>
+                @if (Route::has('supplier.notifications.index'))
+                    <a href="{{ route('supplier.notifications.index') }}"
+                        class="flex items-center justify-between gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1 {{ request()->routeIs('supplier.notifications.*') ? 'bg-[#FDFDFC] dark:bg-[#0a0a0a] ring-1 ring-[#f59e0b]/40' : '' }}">
+                        <span class="flex items-center gap-3">
+                            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            </svg>
+                            <span>{{ __('notifications.title') }}</span>
+                        </span>
+                        @if ($unreadNotifications > 0)
+                            <span class="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs bg-[#f59e0b] text-white">
+                                {{ $unreadNotifications }}
+                            </span>
+                        @endif
+                    </a>
+                @endif
                 <a href="{{ route('supplier.settings.index') }}"
                     class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1 {{ request()->routeIs('supplier.settings.*') ? 'bg-[#FDFDFC] dark:bg-[#0a0a0a] ring-1 ring-[#f59e0b]/40' : '' }}">
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -164,7 +189,13 @@
                     </svg>
                 </button>
                 <h1 class="text-lg sm:text-xl font-medium text-[#0f172a] dark:text-[#EDEDEC]">
-                    @yield('header_title', __('supplier-portal.title'))
+                    @hasSection('header_title')
+                        @yield('header_title')
+                    @elseif (trim($__env->yieldContent('title')) !== '')
+                        @yield('title')
+                    @else
+                        {{ __('supplier-portal.title') }}
+                    @endif
                 </h1>
                 <div class="w-10 shrink-0" aria-hidden="true"></div>
             </div>

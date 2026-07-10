@@ -14,14 +14,23 @@
 
     $deleteCallback = $deleteCallback ?? null;
     $deleteEntityId = $deleteEntityId ?? null;
+    $containerId = $containerId ?? null;
+    $includeExistingHidden = (bool) ($includeExistingHidden ?? false);
 @endphp
 
 @if (empty($items))
     <p class="text-xs mt-3 text-[#64748b] dark:text-[#A1A09A]">-</p>
 @else
-    <div class="mt-3 space-y-2">
+    <div @if ($containerId) id="{{ $containerId }}" @endif class="mt-3 space-y-2">
         @foreach ($items as $index => $item)
-            <div class="flex items-center gap-3 rounded-xl border border-[#7c8799] dark:border-[#3E3E3A] bg-white/60 dark:bg-[#0a0a0a] px-3 py-2">
+            <div
+                class="flex items-center gap-3 rounded-xl border border-[#7c8799] dark:border-[#3E3E3A] bg-white/60 dark:bg-[#0a0a0a] px-3 py-2"
+                data-file-index="{{ $index }}"
+                data-file-path="{{ $item['path'] }}"
+            >
+                @if ($includeExistingHidden)
+                    <input type="hidden" name="existing_files[]" value="{{ $item['path'] }}">
+                @endif
                 <div class="shrink-0 text-[#64748b] dark:text-[#A1A09A]">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7V6a2 2 0 012-2h6a2 2 0 012 2v1m-9 4h8m-8 4h5m-7 5h10a2 2 0 002-2V7H6v12a2 2 0 002 2z" />

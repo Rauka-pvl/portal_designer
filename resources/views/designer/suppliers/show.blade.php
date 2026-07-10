@@ -1,6 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('title', $supplierData['name'] ?? __('suppliers.supplier'))
+@section('header_title', $supplierData['name'] ?? __('suppliers.supplier'))
 
 @push('styles')
     <style>
@@ -58,8 +59,7 @@
                     {{ $initials }}
                 </div>
                 <div>
-                    <h1 class="text-2xl font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ $s['name'] ?? '-' }}</h1>
-                    <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-1">{{ __('suppliers.supplier') }} #{{ $s['id'] ?? '-' }}</p>
+                    <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.supplier') }} #{{ $s['id'] ?? '-' }}</p>
                     @php
                         $modStatus = (string) ($s['moderation_status'] ?? '');
                     @endphp

@@ -1,15 +1,14 @@
-@extends('layouts.dashboard')
+@extends($layout)
 
 @section('title', __('notifications.title'))
+@section('header_title', __('notifications.title'))
 
 @section('content')
     <div class="mb-6 flex items-start md:items-center justify-between gap-3 flex-col md:flex-row">
         <div>
-            <h1 class="text-2xl font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ __('notifications.title') }}</h1>
-            <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-1">{{ __('notifications.subtitle') }}</p>
+            <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">{{ $subtitle }}</p>
         </div>
-
-        <form method="POST" action="{{ route('notifications.read_all') }}">
+        <form method="POST" action="{{ route($routePrefix . '.read_all') }}">
             @csrf
             <button type="submit" class="px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-sm text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">
                 {{ __('notifications.mark_all_read') }}
@@ -35,8 +34,8 @@
                         <div class="text-xs text-[#94a3b8] dark:text-[#71717a] mt-2">{{ optional($n->created_at)->format('Y-m-d H:i') }}</div>
                     </div>
 
-                    <div class="flex items-center gap-2 shrink-0">
-                    @if ($n->is_read)
+                    <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                        @if ($n->is_read)
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
                                 {{ __('notifications.read') }}
                             </span>
@@ -44,29 +43,36 @@
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-200">
                                 {{ __('notifications.unread') }}
                             </span>
-                            <form method="POST" action="{{ route('notifications.read', $n->id) }}">
+                            <form method="POST" action="{{ route($routePrefix . '.read', $n->id) }}">
                                 @csrf
                                 <button type="submit" class="px-3 py-1.5 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-xs text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">
                                     {{ __('notifications.mark_read') }}
                                 </button>
                             </form>
                         @endif
-                        @if ($n->action_key === 'confirm_referral_supplier' && !empty($n->related_supplier_id))
-                            <form method="POST" action="{{ route('notifications.confirm_referral_supplier', $n->id) }}">
+
+                        @if ($isDesigner && $n->action_key === 'confirm_referral_supplier' && !empty($n->related_supplier_id))
+                            <form method="POST" action="{{ route($routePrefix . '.confirm_referral_supplier', $n->id) }}">
                                 @csrf
                                 <button type="submit" class="px-3 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-900/40 text-xs text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">
                                     {{ __('notifications.referral_supplier_add') }}
                                 </button>
                             </form>
                         @endif
-                        @if (!empty($n->related_supplier_id))
+
+                        @if ($isDesigner && !empty($n->related_supplier_id) && $n->action_key !== 'supplier_order')
                             <a href="{{ route('suppliers.show', ['supplierId' => $n->related_supplier_id, 'readonly' => 1]) }}" class="px-3 py-1.5 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-xs text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">
                                 {{ __('notifications.view_supplier') }}
                             </a>
                         @endif
 
+                        @if (!$isDesigner && $n->action_key === 'supplier_order' && Route::has('supplier.orders'))
+                            <a href="{{ route('supplier.orders') }}" class="px-3 py-1.5 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-xs text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">
+                                {{ __('supplier-portal.nav_orders') }}
+                            </a>
+                        @endif
 
-                        <form method="POST" action="{{ route('notifications.destroy', $n->id) }}" onsubmit="return confirm('{{ __('notifications.delete_confirm') }}')">
+                        <form method="POST" action="{{ route($routePrefix . '.destroy', $n->id) }}" onsubmit="return confirm('{{ __('notifications.delete_confirm') }}')">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-900/40 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">

@@ -50,7 +50,9 @@ class ProjectController extends Controller
         return view('designer.projects.index', [
             // Legacy variables kept for current Blade JS initialization
             'projects' => $projects->map(fn (Project $project) => $this->projectPayload($project))->values(),
-            'users' => User::query()->orderBy('name')->get(['id', 'name']),
+            'users' => User::query()
+                ->whereKey($userId)
+                ->get(['id', 'name', 'email']),
             'projectsData' => $projects->map(fn (Project $project) => $this->projectPayload($project))->values(),
             'objectsData' => $objects->map(function (PassportObject $object) {
                 return [
@@ -330,11 +332,19 @@ class ProjectController extends Controller
             'stages.*.template_id' => ['nullable', 'integer'],
             'stages.*.deadline' => ['nullable', 'date'],
             'stages.*.assign_task' => ['nullable', 'boolean'],
-            'stages.*.responsible_id' => ['nullable', 'integer', Rule::exists('users', 'id')],
+            'stages.*.responsible_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('users', 'id')->where(fn ($q) => $q->where('id', $userId)),
+            ],
             'stages.*.steps' => ['nullable', 'array'],
             'stages.*.steps.*.title' => ['nullable', 'string', 'max:1000'],
             'stages.*.steps.*.deadline' => ['nullable', 'date'],
-            'stages.*.steps.*.responsible_id' => ['nullable', 'integer', Rule::exists('users', 'id')],
+            'stages.*.steps.*.responsible_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('users', 'id')->where(fn ($q) => $q->where('id', $userId)),
+            ],
             'stages.*.steps.*.link' => ['nullable', 'url', 'max:1000'],
             'stages.*.steps.*.result_status' => ['nullable', 'string', Rule::in(['pending', 'done'])],
             'stages.*.steps.*.result_comment' => ['nullable', 'string', 'max:5000'],

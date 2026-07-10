@@ -251,6 +251,13 @@ class SupplierOrderController extends Controller
     private function fillAndSave(Request $request, Supplier_orders $order): void
     {
         $userId = (int) $request->user()->id;
+        $wasSentToSupplier = $order->exists && (bool) $order->is_sent_to_supplier;
+
+        if ($request->has('action')) {
+            $request->merge([
+                'send_to_supplier' => $request->input('action') === 'send',
+            ]);
+        }
 
         if ($request->has('included_step_ids')) {
             $raw = $request->input('included_step_ids');
@@ -364,30 +371,9 @@ class SupplierOrderController extends Controller
         $order->files = $newFiles;
         $order->comment = $data['comment'] ?? null;
 
-        $statusOnlyUpdate = $this->isStatusOnlyUpdate(
-            $order,
-            $projectId,
-            $supplierId,
-            (int) $data['summa'],
-            $data['category'] ?? null,
-            $data['mark'] ?? null,
-            $data['room'] ?? null,
-            $data['date_planned'],
-            $data['date_actual'] ?? null,
-            $data['prepayment_date'] ?? null,
-            $data['payment_date'] ?? null,
-            isset($data['prepayment_amount']) ? (int) $data['prepayment_amount'] : null,
-            isset($data['payment_amount']) ? (int) $data['payment_amount'] : null,
-            $links,
-            $newFiles,
-            $data['comment'] ?? null,
-            $stepIds
-        );
+        $sendToSupplier = $request->boolean('send_to_supplier');
 
-        if ($request->boolean('send_to_supplier')) {
-            $order->status = $selectedStatus;
-            $order->is_sent_to_supplier = true;
-        } elseif ($statusOnlyUpdate) {
+        if ($sendToSupplier) {
             $order->status = $selectedStatus;
             $order->is_sent_to_supplier = true;
         } else {
@@ -397,19 +383,40 @@ class SupplierOrderController extends Controller
 
         $order->save();
 
-        if ($request->boolean('send_to_supplier')) {
-            $supplier = Supplier::query()->find($supplierId);
-            if ($supplier && (int) ($supplier->user_id ?? 0) > 0) {
-                UserNotification::query()->create([
-                    'user_id' => (int) $supplier->user_id,
-                    'title' => __('notifications.new_order_title'),
-                    'comment' => __('notifications.new_order_comment', ['order' => (string) $order->id]),
-                    'is_read' => false,
-                    'related_supplier_id' => (int) $supplier->id,
-                    'action_key' => 'supplier_order',
-                ]);
-            }
+        if ($sendToSupplier && ! $wasSentToSupplier) {
+            $this->notifySupplierAboutOrder($supplierId, $order->id, 'new');
+        } elseif (! $sendToSupplier && $wasSentToSupplier) {
+            $designerName = (string) ($request->user()->name ?? '');
+            $this->notifySupplierAboutOrder($supplierId, $order->id, 'withdrawn', $designerName);
         }
+    }
+
+    private function notifySupplierAboutOrder(int $supplierId, int $orderId, string $type, string $designerName = ''): void
+    {
+        $supplier = Supplier::query()->find($supplierId);
+        if (! $supplier || (int) ($supplier->user_id ?? 0) <= 0) {
+            return;
+        }
+
+        if ($type === 'withdrawn') {
+            $title = __('notifications.order_withdrawn_title');
+            $comment = __('notifications.order_withdrawn_comment', [
+                'order' => (string) $orderId,
+                'designer' => $designerName !== '' ? $designerName : __('supplier-orders.designer'),
+            ]);
+        } else {
+            $title = __('notifications.new_order_title');
+            $comment = __('notifications.new_order_comment', ['order' => (string) $orderId]);
+        }
+
+        UserNotification::query()->create([
+            'user_id' => (int) $supplier->user_id,
+            'title' => $title,
+            'comment' => $comment,
+            'is_read' => false,
+            'related_supplier_id' => (int) $supplier->id,
+            'action_key' => 'supplier_order',
+        ]);
     }
 
     private function availableSuppliers(int $designerId)
@@ -428,59 +435,6 @@ class SupplierOrderController extends Controller
             })
             ->orderBy('name')
             ->get(['id', 'name', 'moderation_status']);
-    }
-
-    /**
-     * Определяем кейс "изменили только статус" для уже отправленной поставки.
-     */
-    private function isStatusOnlyUpdate(
-        Supplier_orders $order,
-        int $projectId,
-        int $supplierId,
-        int $summa,
-        ?string $category,
-        ?string $mark,
-        ?string $room,
-        ?string $datePlanned,
-        ?string $dateActual,
-        ?string $prepaymentDate,
-        ?string $paymentDate,
-        ?int $prepaymentAmount,
-        ?int $paymentAmount,
-        array $links,
-        array $files,
-        ?string $comment,
-        array $stepIds
-    ): bool {
-        if (! $order->exists || ! (bool) $order->is_sent_to_supplier) {
-            return false;
-        }
-
-        return (int) $order->project_id === $projectId
-            && (int) $order->supplier_id === $supplierId
-            && (int) $order->summa === $summa
-            && (string) ($order->category ?? '') === (string) ($category ?? '')
-            && (string) ($order->mark ?? '') === (string) ($mark ?? '')
-            && (string) ($order->room ?? '') === (string) ($room ?? '')
-            && $this->normalizeDateValue($order->date_planned) === $this->normalizeDateValue($datePlanned)
-            && $this->normalizeDateValue($order->date_actual) === $this->normalizeDateValue($dateActual)
-            && $this->normalizeDateValue($order->prepayment_date) === $this->normalizeDateValue($prepaymentDate)
-            && $this->normalizeDateValue($order->payment_date) === $this->normalizeDateValue($paymentDate)
-            && ($order->prepayment_amount !== null ? (int) $order->prepayment_amount : null) === $prepaymentAmount
-            && ($order->payment_amount !== null ? (int) $order->payment_amount : null) === $paymentAmount
-            && (string) ($order->comment ?? '') === (string) ($comment ?? '')
-            && Supplier_orders::normalizeStepIds($order->included_step_ids) === $stepIds
-            && array_values((array) ($order->links ?? [])) === array_values($links)
-            && array_values((array) ($order->files ?? [])) === array_values($files);
-    }
-
-    private function normalizeDateValue(mixed $value): ?string
-    {
-        if ($value === null || $value === '') {
-            return null;
-        }
-
-        return substr((string) $value, 0, 10);
     }
 
     private function categoryOptions(): array

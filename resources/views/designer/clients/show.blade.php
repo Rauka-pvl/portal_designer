@@ -1,6 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('title', $client->full_name)
+@section('header_title', $client->full_name)
 
 @push('styles')
     <style>
@@ -78,10 +79,7 @@
 
     <div class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-medium text-[#0f172a] dark:text-[#EDEDEC]">
-                {{ $client->full_name }}
-            </h1>
-            <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-1">
+            <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">
                 {{ __('clients.client') }}
                 #{{ $client->id }}
             </p>

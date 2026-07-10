@@ -25,8 +25,8 @@
             </svg>
         </span>
         <span class="min-w-0 flex-1">
-            <span class="block font-semibold text-[#0f172a] dark:text-[#EDEDEC]">{{ __('auth_labels.im_designer') }}</span>
-            <span class="block text-xs text-[#64748b] dark:text-[#A1A09A] mt-0.5">{{ __('auth_labels.login_designer') }} →</span>
+            <span class="block text-lg font-semibold text-[#0f172a] dark:text-[#EDEDEC]">{{ __('auth_labels.im_designer') }}</span>
+            <span class="block text-sm text-[#64748b] dark:text-[#A1A09A] mt-0.5">{{ __('auth_labels.login_designer') }} →</span>
         </span>
         <svg class="w-5 h-5 shrink-0 text-[#f59e0b] opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
     </a>
@@ -48,8 +48,8 @@
             </svg>
         </span>
         <span class="min-w-0 flex-1">
-            <span class="block font-semibold text-[#0f172a] dark:text-[#EDEDEC]">{{ __('auth_labels.im_supplier') }}</span>
-            <span class="block text-xs text-[#64748b] dark:text-[#A1A09A] mt-0.5">{{ __('auth_labels.login_supplier') }} →</span>
+            <span class="block text-lg font-semibold text-[#0f172a] dark:text-[#EDEDEC]">{{ __('auth_labels.im_supplier') }}</span>
+            <span class="block text-sm text-[#64748b] dark:text-[#A1A09A] mt-0.5">{{ __('auth_labels.login_supplier') }} →</span>
         </span>
         <svg class="w-5 h-5 shrink-0 text-[#f59e0b] opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
     </a>
@@ -123,10 +123,10 @@
 @endsection
 
 @section('footer')
-<p class="text-sm text-center text-[#706f6c] dark:text-[#A1A09A]">
+<p class="text-base text-center text-[#706f6c] dark:text-[#A1A09A]">
     {{ __('auth_labels.no_account') }}
-    <a href="{{ $authAsSupplier ? route('register', ['as' => 'supplier']) : route('register') }}" class="text-[#f53003] dark:text-[#FF4433] hover:underline font-medium">
-        {{ $authAsSupplier ? __('auth_labels.register_supplier') : __('auth_labels.register') }}
+    <a href="{{ $authAsSupplier ? route('register', ['as' => 'supplier']) : route('register') }}" class="text-base text-[#f53003] dark:text-[#FF4433] hover:underline font-semibold">
+        {{ $authAsSupplier ? __('auth_labels.register_supplier') : __('auth_labels.register_designer') }}
     </a>
 </p>
 

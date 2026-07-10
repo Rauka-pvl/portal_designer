@@ -137,37 +137,41 @@ class ClientController extends Controller
             $client->user_id = $userId;
         }
 
-        // Загружаем несколько файлов и сохраняем их пути.
-        // file_path оставляем для совместимости (первый файл), file_paths — для списка.
+        $existingFiles = array_values(array_filter(array_map(
+            fn ($v) => trim((string) $v),
+            (array) $request->input('existing_files', [])
+        )));
+
+        $uploadedPaths = [];
         if ($request->hasFile('files')) {
             $files = $request->file('files');
             $uploaded = is_array($files) ? $files : [$files];
-            $paths = [];
-
             foreach ($uploaded as $file) {
-                if (! $file) {
-                    continue;
+                if ($file) {
+                    $uploadedPaths[] = PublicFileStorage::store($file, 'clients');
                 }
-                $paths[] = PublicFileStorage::store($file, 'clients');
-            }
-
-            if (! empty($paths)) {
-                // Добавляем к уже существующим (если они были).
-                $existing = [];
-                if (! empty($client->file_paths)) {
-                    $decoded = json_decode((string) $client->file_paths, true);
-                    if (is_array($decoded)) {
-                        $existing = array_values(array_filter($decoded, fn ($p) => is_string($p) && $p !== ''));
-                    }
-                } elseif (! empty($client->file_path)) {
-                    $existing = [$client->file_path];
-                }
-
-                $merged = array_values(array_unique(array_merge($existing, $paths)));
-                $client->file_paths = json_encode($merged, JSON_UNESCAPED_SLASHES);
-                $client->file_path = $merged[0] ?? null; // совместимость со старым полем
             }
         }
+
+        $oldPaths = [];
+        if (! empty($client->file_paths)) {
+            $decoded = json_decode((string) $client->file_paths, true);
+            if (is_array($decoded)) {
+                $oldPaths = array_values(array_filter($decoded, fn ($p) => is_string($p) && $p !== ''));
+            }
+        } elseif (! empty($client->file_path)) {
+            $oldPaths = [(string) $client->file_path];
+        }
+
+        $newPaths = array_values(array_unique(array_merge($existingFiles, $uploadedPaths)));
+        foreach ($oldPaths as $oldPath) {
+            if ($oldPath !== '' && ! in_array($oldPath, $newPaths, true)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
+            }
+        }
+
+        $client->file_paths = $newPaths !== [] ? json_encode($newPaths, JSON_UNESCAPED_SLASHES) : null;
+        $client->file_path = $newPaths[0] ?? null;
 
         $client->full_name = $data['full_name'];
         $client->client_type = $data['client_type'] ?? 'person';

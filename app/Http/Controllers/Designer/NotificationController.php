@@ -21,9 +21,7 @@ class NotificationController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('designer.notifications.index', [
-            'notifications' => $notifications,
-        ]);
+        return view('notifications.index', $this->viewData($request, $notifications));
     }
 
     public function markRead(Request $request, int $notificationId): RedirectResponse
@@ -74,6 +72,10 @@ class NotificationController extends Controller
 
     public function confirmReferralSupplier(Request $request, int $notificationId): RedirectResponse
     {
+        if (($request->user()->role ?? '') !== 'designer') {
+            abort(403);
+        }
+
         $notification = UserNotification::query()
             ->where('user_id', $request->user()->id)
             ->whereKey($notificationId)
@@ -106,6 +108,24 @@ class NotificationController extends Controller
         $notification->save();
 
         return redirect()->back()->with('status', __('notifications.referral_supplier_confirmed'));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function viewData(Request $request, $notifications): array
+    {
+        $isSupplier = ($request->user()->role ?? '') === 'supplier';
+
+        return [
+            'notifications' => $notifications,
+            'layout' => $isSupplier ? 'layouts.supplier' : 'layouts.dashboard',
+            'routePrefix' => $isSupplier ? 'supplier.notifications' : 'notifications',
+            'isDesigner' => ! $isSupplier,
+            'subtitle' => $isSupplier
+                ? __('notifications.subtitle_supplier')
+                : __('notifications.subtitle'),
+        ];
     }
 }
 

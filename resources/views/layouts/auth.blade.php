@@ -131,7 +131,7 @@
                     <a href="{{ route('language.switch', 'en') }}" class="px-2 py-1 text-xs rounded-sm transition-colors {{ app()->getLocale() === 'en' ? 'bg-[#1b1b18] dark:bg-[#eeeeec] text-white dark:text-[#1C1C1A]' : 'text-[#706f6c] dark:text-[#A1A09A] hover:text-[#1b1b18] dark:hover:text-[#EDEDEC]' }}">EN</a>
                 </div>
             </div>
-            <h1 class="text-2xl font-medium mb-6">@yield('heading')</h1>
+            <h1 class="text-3xl font-semibold mb-6 leading-tight">@yield('heading')</h1>
 
             @if (session('status'))
                 <div class="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-sm">

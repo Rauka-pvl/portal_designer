@@ -1,6 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('title', __('objects.object_passport') . ' #' . $object->id)
+@section('header_title', __('objects.object_passport') . ' #' . $object->id)
 
 @push('styles')
     <style>

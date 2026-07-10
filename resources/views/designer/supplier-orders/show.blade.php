@@ -1,6 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('title', __('supplier-orders.supplier_order'))
+@section('header_title', __('supplier-orders.supplier_order'))
 
 @push('styles')
     <style>
@@ -43,8 +44,7 @@
 
     <div class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ __('supplier-orders.supplier_order') }} #{{ $o['id'] ?? '-' }}</h1>
-            <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-1">{{ __('supplier-orders.project') }}: {{ $o['project_name'] ?? '-' }}</p>
+            <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">#{{ $o['id'] ?? '-' }} · {{ __('supplier-orders.project') }}: {{ $o['project_name'] ?? '-' }}</p>
         </div>
         <div class="flex gap-3">
             <button id="btn-edit" type="button" class="btn">{{ __('supplier-orders.edit') }}</button>
@@ -61,6 +61,7 @@
         <form id="supplier-order-details-form" method="POST" action="{{ route('supplier-orders.update', $o['id']) }}" enctype="multipart/form-data">
             @csrf
             @method('PUT')
+            <input type="hidden" name="send_to_supplier" id="send_to_supplier" value="0">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                     <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('supplier-orders.project') }}</div>
@@ -108,9 +109,10 @@
                     <input type="hidden" name="existing_files[]" value="{{ $filePath }}">
                 @endforeach
             </div>
-            <div class="mt-6 flex gap-3">
-                <button id="btn-save" type="submit" class="btn hidden">{{ __('supplier-orders.save') }}</button>
-                <button id="btn-cancel" type="button" class="btn hidden">{{ __('supplier-orders.cancel') }}</button>
+            <div id="order-save-actions" class="mt-6 flex flex-col sm:flex-row gap-3 hidden">
+                <button type="submit" name="action" value="save" class="btn flex-1">{{ __('supplier-orders.save_without_send') }}</button>
+                <button type="submit" name="action" value="send" class="btn flex-1 border-2 border-[#f59e0b] text-[#f59e0b] hover:bg-[#f59e0b]/10">{{ __('supplier-orders.send_to_supplier') }}</button>
+                <button id="btn-cancel" type="button" class="btn">{{ __('supplier-orders.cancel') }}</button>
             </div>
         </form>
     </div>
@@ -155,8 +157,9 @@
         (function() {
             const form = document.getElementById('supplier-order-details-form');
             const btnEdit = document.getElementById('btn-edit');
-            const btnSave = document.getElementById('btn-save');
+            const saveActions = document.getElementById('order-save-actions');
             const btnCancel = document.getElementById('btn-cancel');
+            const sendInput = document.getElementById('send_to_supplier');
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
             window.deleteSupplierOrderFileFromShow = async function(orderId, fileIndex) {
                 if (!confirm('{{ __('objects.delete_file_confirm') }}')) return;
@@ -188,9 +191,14 @@
                     el.classList.toggle('hidden', !enabled);
                 });
                 btnEdit.classList.toggle('hidden', enabled);
-                btnSave.classList.toggle('hidden', !enabled);
-                btnCancel.classList.toggle('hidden', !enabled);
+                saveActions?.classList.toggle('hidden', !enabled);
             };
+            form?.addEventListener('submit', function(e) {
+                const sendBtn = e.submitter && e.submitter.value === 'send';
+                if (sendInput) {
+                    sendInput.value = sendBtn ? '1' : '0';
+                }
+            });
             btnEdit?.addEventListener('click', () => toggleEdit(true));
             btnCancel?.addEventListener('click', () => location.reload());
         })();

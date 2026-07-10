@@ -1,4 +1,4 @@
-{{-- Legacy duplicate block disabled to prevent conflicting markup/scripts.
+﻿{{-- Legacy duplicate block disabled to prevent conflicting markup/scripts.
 @extends('layouts.dashboard')
 
 @section('title', __('projects.projects'))
@@ -144,6 +144,8 @@
                             {{ __('projects.select_files') }}
                         </label>
                     </div>
+                    <div id="project-existing-files" class="mt-3 space-y-2"></div>
+                    <div id="project-new-files-preview" class="mt-2 space-y-1 text-sm text-[#64748b] dark:text-[#A1A09A]"></div>
                 </div>
                 <div>
                     <label class="modal-label">{{ __('projects.comment') }}</label>
@@ -447,6 +449,7 @@
 @extends('layouts.dashboard')
 
 @section('title', __('projects.projects'))
+@section('header_title', __('projects.projects'))
 
 @push('styles')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -768,8 +771,7 @@
 @endpush
 
 @section('content')
-<div class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-    <h1 class="text-2xl font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ __('projects.projects') }}</h1>
+<div class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-end gap-4">
     <button id="add-project-btn" class="add-btn">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -1052,6 +1054,8 @@
                             {{ __('projects.select_files') }}
                         </label>
                     </div>
+                    <div id="project-existing-files" class="mt-3 space-y-2"></div>
+                    <div id="project-new-files-preview" class="mt-2 space-y-1 text-sm text-[#64748b] dark:text-[#A1A09A]"></div>
                 </div>
                 <div>
                     <label class="modal-label">{{ __('projects.comment') }}</label>
@@ -1094,7 +1098,23 @@ function esc(v) {
     return String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+function ensureProjectFilePicker() {
+    if (window.ModalFilePicker && !window.ModalFilePicker.get('project')) {
+        window.ModalFilePicker.create({
+            id: 'project',
+            inputName: 'project_files[]',
+        });
+    }
+}
+
+function resetProjectModalFiles(project = null) {
+    ensureProjectFilePicker();
+    window.ModalFilePicker?.get('project')?.reset(project);
+}
+
+
 document.addEventListener('DOMContentLoaded', function() {
+    ensureProjectFilePicker();
     let currentPage = 1;
     const itemsPerPage = 10;
     let sortColumn = null;
@@ -1476,7 +1496,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('project_id').value = '';
         document.getElementById('project-modal-title').textContent = '{{ __('projects.new_project') }}';
         document.getElementById('project-submit-btn').textContent = '{{ __('projects.add_project') }}';
-        document.getElementById('project-files-label').textContent = '{{ __('projects.files_not_selected') }}';
+        resetProjectModalFiles(null);
         projectSelectedStages = [];
         window._projectEditChecklists = null;
         if (prefillObjectId) {
@@ -1520,13 +1540,6 @@ document.addEventListener('DOMContentLoaded', function() {
             let v = this.value.replace(/\s/g, '').replace(/\D/g, '');
             this.value = v ? parseInt(v, 10).toLocaleString('kk-KZ') : '';
         });
-    });
-
-    // Обновление метки файлов
-    document.getElementById('project-files-input')?.addEventListener('change', function() {
-        const label = document.getElementById('project-files-label');
-        const n = this.files?.length || 0;
-        label.textContent = n ? (n + ' {{ __("projects.files_selected") }}') : '{{ __('projects.files_not_selected') }}';
     });
 
     // Multi-select этапов с тегами и чек-листами
@@ -2264,8 +2277,7 @@ async function editProject(id) {
         for (let i = 1; i < links.length; i++) {
             addProjectLinkField(links[i]);
         }
-        document.getElementById('project-files-label').textContent = '{{ __('projects.files_not_selected') }}';
-        document.getElementById('project-files-input').value = '';
+        resetProjectModalFiles(project);
     }
 }
 
@@ -2303,7 +2315,7 @@ function closeProjectModal() {
             <input type="url" name="project_links[]" class="modal-input" placeholder="{{ __('projects.paste_link') }}">
         </div>
     `;
-    document.getElementById('project-files-label').textContent = '{{ __('projects.files_not_selected') }}';
+    resetProjectModalFiles(null);
     projectSelectedStages = [];
     if (typeof renderProjectStageTags === 'function') renderProjectStageTags();
     if (typeof resetProjectDateMasks === 'function') resetProjectDateMasks();

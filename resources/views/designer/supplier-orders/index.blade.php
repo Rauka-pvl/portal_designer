@@ -1,6 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('title', __('supplier-orders.supplier_orders'))
+@section('header_title', __('supplier-orders.supplier_orders'))
 
 @push('styles')
 <style>
@@ -237,8 +238,7 @@
 @endpush
 
 @section('content')
-<div class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-    <h1 class="text-2xl font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ __('supplier-orders.supplier_orders') }}</h1>
+<div class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-end gap-4">
     <button id="add-order-btn" class="add-btn">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -435,10 +435,8 @@
                         <label class="modal-label modal-label-required">{{ __('supplier-orders.select_supplier') }}</label>
                         <select name="supplier_id" id="order_supplier_id" required class="modal-input">
                             <option value="">{{ __('supplier-orders.select_supplier') }}</option>
-                            @foreach($suppliers as $supplier)
-                                @if (!in_array((string) ($supplier->moderation_status ?? ''), ['pending', 'rejected'], true))
-                                    <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
-                                @endif
+                            @foreach ($suppliers as $supplier)
+                                <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -531,14 +529,14 @@
                         {{ __('supplier-orders.add_link') }}
                     </button>
                 </div>
-                <div>
-                    <label class="modal-label">{{ __('supplier-orders.files') }}</label>
-                    <p class="text-xs text-[#64748b] dark:text-[#A1A09A] mb-2">{{ __('supplier-orders.upload_files_desc') }}</p>
-                    <div class="flex gap-2">
-                        <input type="file" name="files[]" id="order_files" multiple class="modal-input flex-1 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#f59e0b]/10 file:text-[#f59e0b] hover:file:bg-[#f59e0b]/20">
-                        <label for="order_files" class="px-4 py-2 rounded-lg border border-[#f59e0b] text-[#f59e0b] hover:bg-[#f59e0b]/10 cursor-pointer text-sm font-medium shrink-0">{{ __('supplier-orders.select_files') }}</label>
-                    </div>
-                </div>
+                @include('partials.modal-file-picker', [
+                    'pickerId' => 'order',
+                    'inputName' => 'files[]',
+                    'title' => __('supplier-orders.files'),
+                    'subtitle' => __('supplier-orders.upload_files_desc'),
+                    'notSelectedText' => __('supplier-orders.no_files_selected'),
+                    'selectButtonText' => __('supplier-orders.select_files'),
+                ])
                 <div>
                     <label class="modal-label">{{ __('supplier-orders.product_service') }}</label>
                     <input type="text" name="comment" id="order_comment" class="modal-input" placeholder="{{ __('supplier-orders.product_service_placeholder') }}">
@@ -1016,6 +1014,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Кнопка добавления заказа
     document.getElementById('add-order-btn').addEventListener('click', () => {
+        window.ModalFilePicker?.get('order')?.reset(null);
         document.getElementById('order-modal').classList.remove('hidden');
         document.getElementById('order-modal').classList.add('flex');
         document.getElementById('order-form').reset();
@@ -1029,7 +1028,9 @@ document.addEventListener('DOMContentLoaded', function() {
         @endif
         @if(isset($selectedSupplierId))
         document.getElementById('order_supplier_id').value = '{{ $selectedSupplierId }}';
+        syncCustomSelect(document.getElementById('order_supplier_id'));
         @endif
+        syncCustomSelect(document.getElementById('order_project_id'));
         const pidNew = document.getElementById('order_project_id')?.value;
         refreshOrderProjectSteps(pidNew || '', []);
     });
@@ -1336,23 +1337,54 @@ function formatDateForInput(val) {
     return m ? m[0] : '';
 }
 
-function editOrder(id) {
-    const rows = document.querySelectorAll(`tr[data-order], div[data-order], .funnel-card[data-order]`);
-    let order = null;
-    rows.forEach(row => {
+function findOrderById(id) {
+    const numId = Number(id);
+    let order = (window.allOrders || []).find(o => Number(o.id) === numId);
+    if (order) return order;
+
+    const rows = document.querySelectorAll('[data-order]');
+    for (const row of rows) {
         try {
             const o = JSON.parse(row.getAttribute('data-order') || '{}');
-            if (o.id === id) order = o;
-        } catch(_) {}
-    });
+            if (Number(o.id) === numId) return o;
+        } catch (_) {}
+    }
+    return null;
+}
+
+function syncCustomSelect(selectEl) {
+    if (!selectEl) return;
+    selectEl.dispatchEvent(new Event('custom-select:sync', { bubbles: true }));
+}
+
+function setOrderSupplierSelect(supplierId, supplierName) {
+    const sel = document.getElementById('order_supplier_id');
+    if (!sel || !supplierId) return;
+
+    const id = String(supplierId);
+    let opt = sel.querySelector(`option[value="${CSS.escape(id)}"]`);
+    if (!opt) {
+        opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = supplierName || `#${id}`;
+        sel.appendChild(opt);
+    }
+    sel.value = id;
+    syncCustomSelect(sel);
+}
+
+function editOrder(id) {
+    const order = findOrderById(id);
     if (order) {
         document.getElementById('order-modal').classList.remove('hidden');
         document.getElementById('order-modal').classList.add('flex');
         document.getElementById('order-modal-title').textContent = '{{ __('supplier-orders.edit') }}';
         document.getElementById('order_id').value = order.id;
         document.getElementById('order_project_id').value = order.project_id || '';
-        document.getElementById('order_supplier_id').value = order.supplier_id || '';
+        setOrderSupplierSelect(order.supplier_id, order.supplier_name);
+        syncCustomSelect(document.getElementById('order_project_id'));
         document.getElementById('order_status').value = (order.status === 'draft' ? 'order_created' : (order.status || 'order_created'));
+        syncCustomSelect(document.getElementById('order_status'));
         document.getElementById('order_summa').value = order.amount ?? order.summa ?? '';
         document.getElementById('order_category').value = order.category || '';
         document.getElementById('order_mark').value = order.mark || '';
@@ -1372,6 +1404,7 @@ function editOrder(id) {
         }).join('') + `<div class="flex gap-2"><input type="url" name="links[]" placeholder="{{ __('supplier-orders.paste_link') }}" class="modal-input flex-1"><button type="button" onclick="this.parentElement.remove()" class="px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500">×</button></div>` :
             `<input type="url" name="links[]" placeholder="{{ __('supplier-orders.paste_link') }}" class="modal-input">`;
         refreshOrderProjectSteps(order.project_id, order.included_step_ids || []);
+        window.ModalFilePicker?.get('order')?.reset(order);
     }
 }
 
@@ -1401,6 +1434,7 @@ function closeOrderModal() {
     document.getElementById('order-form').reset();
     document.getElementById('order_id').value = '';
     document.getElementById('send_to_supplier').value = '0';
+    window.ModalFilePicker?.get('order')?.reset(null);
     const linksContainer = document.getElementById('order-links-container');
     linksContainer.innerHTML = `<input type="url" name="links[]" placeholder="{{ __('supplier-orders.paste_link') }}" class="modal-input">`;
     const sc = document.getElementById('order-steps-container');

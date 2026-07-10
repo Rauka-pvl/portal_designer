@@ -62,6 +62,18 @@ Route::middleware(['auth', 'role:supplier', 'password.changed'])->group(function
     Route::patch('/supplier/orders/{orderId}/status', [SupplierPortalController::class, 'updateOrderStatus'])
         ->whereNumber('orderId')
         ->name('supplier.orders.update_status');
+
+    Route::get('/supplier/notifications', [NotificationController::class, 'index'])->name('supplier.notifications.index');
+    Route::post('/supplier/notifications/{notificationId}/read', [NotificationController::class, 'markRead'])
+        ->whereNumber('notificationId')
+        ->name('supplier.notifications.read');
+    Route::delete('/supplier/notifications/{notificationId}', [NotificationController::class, 'destroy'])
+        ->whereNumber('notificationId')
+        ->name('supplier.notifications.destroy');
+    Route::post('/supplier/notifications/read-all', [NotificationController::class, 'markAllRead'])
+        ->name('supplier.notifications.read_all');
+    Route::get('/supplier/notifications/unread-count', [NotificationController::class, 'unreadCount'])
+        ->name('supplier.notifications.unread_count');
 });
 
 Route::get('/language/{locale}', function (string $locale, Request $request) {

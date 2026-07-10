@@ -183,7 +183,6 @@
                                 <th class="px-3 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-hdr" data-sort="designer_name">{{ __('supplier-orders.designer') }}</th>
                                 <th class="px-3 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-hdr" data-sort="project_name">{{ __('supplier-orders.project') }}</th>
                                 <th class="px-3 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-hdr" data-sort="status">{{ __('supplier-orders.status') }}</th>
-                                <th class="px-3 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-hdr" data-sort="is_sent_to_supplier">{{ __('supplier-orders.send_status') }}</th>
                                 <th class="px-3 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-hdr" data-sort="amount">{{ __('supplier-orders.amount') }}</th>
                                 <th class="px-3 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-hdr" data-sort="planned_date">{{ __('supplier-orders.planned_date') }}</th>
                                 <th class="px-3 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-hdr" data-sort="actual_date">{{ __('supplier-orders.actual_date') }}</th>
@@ -428,7 +427,7 @@ window.supplierSoLabels = @json($supplierSoLabels);
         const pageRows = sorted.slice(start, start + itemsPerPage);
 
         if (sorted.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="12" class="px-4 py-8 text-center text-[#64748b] dark:text-[#A1A09A]">{{ __('supplier-orders.no_orders') }}</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="11" class="px-4 py-8 text-center text-[#64748b] dark:text-[#A1A09A]">{{ __('supplier-orders.no_orders') }}</td></tr>';
             if (pag) pag.innerHTML = '';
             return;
         }
@@ -437,19 +436,12 @@ window.supplierSoLabels = @json($supplierSoLabels);
             const st = o.status;
             const badge = statusBadgeClass(st);
             const stText = statusLabel(st);
-            const sendStatusClass = o.is_sent_to_supplier
-                ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200'
-                : 'bg-slate-100 text-slate-700 dark:bg-slate-900/20 dark:text-slate-300';
-            const sendStatusText = o.is_sent_to_supplier
-                ? '{{ __('supplier-orders.sent_to_supplier') }}'
-                : '{{ __('supplier-orders.not_sent_to_supplier') }}';
             return `<tr class="hover:bg-[#f8fafc] dark:hover:bg-[#0a0a0a]" data-order-id="${o.id}">
                 <td class="px-3 py-2.5 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${o.id}</td>
                 <td class="px-3 py-2.5 text-sm">${fmtDate(o.created_date)}</td>
                 <td class="px-3 py-2.5 text-sm">${escapeHtml(o.designer_name || '—')}</td>
                 <td class="px-3 py-2.5 text-sm">${escapeHtml(o.project_name || '—')}</td>
                 <td class="px-3 py-2.5 text-sm"><span class="px-2 py-0.5 rounded text-xs font-medium ${badge} order-status-badge">${escapeHtml(stText)}</span></td>
-                <td class="px-3 py-2.5 text-sm"><span class="px-2 py-0.5 rounded text-xs font-medium ${sendStatusClass}">${sendStatusText}</span></td>
                 <td class="px-3 py-2.5 text-sm">${Number(o.summa).toLocaleString(dateLocale)} ₸</td>
                 <td class="px-3 py-2.5 text-sm">${fmtDate(o.date_planned)}</td>
                 <td class="px-3 py-2.5 text-sm">${o.date_actual ? fmtDate(o.date_actual) : '—'}</td>
@@ -511,22 +503,13 @@ window.supplierSoLabels = @json($supplierSoLabels);
         }
         el.innerHTML = rows.map(o => {
             const st = o.status;
-            const sendStatusClass = o.is_sent_to_supplier
-                ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200'
-                : 'bg-slate-100 text-slate-700 dark:bg-slate-900/20 dark:text-slate-300';
-            const sendStatusText = o.is_sent_to_supplier
-                ? '{{ __('supplier-orders.sent_to_supplier') }}'
-                : '{{ __('supplier-orders.not_sent_to_supplier') }}';
             return `<div class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg p-5" data-order-id="${o.id}">
                 <div class="flex flex-wrap items-start justify-between gap-3 mb-3">
                     <div>
                         <h3 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC]">#${o.id}</h3>
                         <p class="text-sm text-[#64748b] mt-1">${escapeHtml(o.designer_name || '—')} · ${escapeHtml(o.project_name || '—')}</p>
                     </div>
-                    <div class="flex flex-col items-end gap-1">
-                        <span class="px-2 py-1 rounded text-xs font-medium ${statusBadgeClass(st)}">${escapeHtml(statusLabel(st))}</span>
-                        <span class="px-2 py-1 rounded text-xs font-medium ${sendStatusClass}">${sendStatusText}</span>
-                    </div>
+                    <span class="px-2 py-1 rounded text-xs font-medium ${statusBadgeClass(st)}">${escapeHtml(statusLabel(st))}</span>
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                     <div><span class="text-[#64748b]">{{ __('supplier-orders.created_date') }}:</span> <span class="font-medium">${fmtDate(o.created_date)}</span></div>
@@ -775,7 +758,6 @@ window.supplierSoLabels = @json($supplierSoLabels);
             <div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.designer') }}</span><p>${escapeHtml(o.designer_name || '—')}</p></div>
             <div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.project') }}</span><p>${escapeHtml(o.project_name || '—')}</p></div>
             <div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.status') }}</span><p>${escapeHtml(statusLabel(o.status))}</p></div>
-            <div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.send_status') }}</span><p>${o.is_sent_to_supplier ? '{{ __('supplier-orders.sent_to_supplier') }}' : '{{ __('supplier-orders.not_sent_to_supplier') }}'}</p></div>
             <div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.amount') }}</span><p>${Number(o.summa).toLocaleString(dateLocale)} ₸</p></div>
             <div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.planned_date') }}</span><p>${fmtDate(o.date_planned)}</p></div>
             <div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.actual_date') }}</span><p>${o.date_actual ? fmtDate(o.date_actual) : '—'}</p></div>

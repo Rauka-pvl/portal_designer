@@ -1,6 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('title', __('dashboard.dashboard'))
+@section('header_title', __('dashboard.dashboard'))
 
 @push('styles')
 <style>

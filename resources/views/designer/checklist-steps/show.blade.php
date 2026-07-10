@@ -1,6 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('title', __('projects.stage_checklist'))
+@section('header_title', __('projects.stage_checklist'))
 
 @push('styles')
     <style>
