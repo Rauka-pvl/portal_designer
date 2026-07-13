@@ -332,7 +332,13 @@
                     </svg>
                 </button>
                 <h1 class="text-xl font-medium">
-                    @yield('header_title', $isModerator ? __('moderation.moderator_cabinet') : __('dashboard.dashboard'))
+                    @hasSection('header_title')
+                        @yield('header_title')
+                    @elseif (trim($__env->yieldContent('title')) !== '')
+                        @yield('title')
+                    @else
+                        {{ $isModerator ? __('moderation.moderator_cabinet') : __('dashboard.dashboard') }}
+                    @endif
                 </h1>
                 <div class="w-10"></div>
             </div>
@@ -555,6 +561,8 @@
             });
         })();
     </script>
+
+    <script src="{{ asset('js/modal-file-picker.js') }}" defer></script>
 
     {{-- Page-specific scripts --}}
     @yield('scripts')

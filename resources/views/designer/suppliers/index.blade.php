@@ -1,6 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('title', __('suppliers.suppliers'))
+@section('header_title', __('suppliers.suppliers'))
 
 @push('styles')
     <link href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" rel="stylesheet">
@@ -427,8 +428,7 @@
             {{ session('success') }}
         </div>
     @endif
-    <div class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <h1 class="text-2xl font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ __('suppliers.suppliers') }}</h1>
+    <div class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-end gap-4">
         <button id="add-supplier-btn" class="add-btn">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -523,6 +523,8 @@
                             <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">
                                 {{ __('suppliers.brand') }}</th>
                             <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">
+                                {{ __('reviews.rating_label') }}</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">
                                 {{ __('moderation.status') }}</th>
                             <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">
                                 {{ __('suppliers.actions') }}</th>
@@ -551,6 +553,9 @@
                                     {{ $supplier->sphere ? ($supplierSphereTranslation !== 'supplier_spheres.' . $supplier->sphere ? $supplierSphereTranslation : $supplier->sphere) : '-' }}</td>
                                 <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">
                                     {{ $supplier->brand_display ?: '-' }}</td>
+                                <td class="px-4 py-3 text-sm">
+                                    @include('partials.stars', ['value' => $supplier->rating_summary['average'] ?? 0, 'count' => $supplier->rating_summary['count'] ?? 0])
+                                </td>
                                 <td class="px-4 py-3 text-sm">
                                     @php
                                         $status = (string) ($supplier->moderation_status ?? 'pending');
@@ -617,7 +622,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-4 py-8 text-center text-[#64748b] dark:text-[#A1A09A]">
+                                <td colspan="9" class="px-4 py-8 text-center text-[#64748b] dark:text-[#A1A09A]">
                                     {{ __('suppliers.no_suppliers') }}</td>
                             </tr>
                         @endforelse
@@ -639,8 +644,9 @@
                     data-supplier-id="{{ $supplier->id }}">
                     <div class="flex items-start justify-between mb-4">
                         <div>
-                            <h3 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-2">{{ $supplier->name }}
+                            <h3 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-1">{{ $supplier->name }}
                             </h3>
+                            <div class="mb-2">@include('partials.stars', ['value' => $supplier->rating_summary['average'] ?? 0, 'count' => $supplier->rating_summary['count'] ?? 0])</div>
                             <div class="space-y-1 text-sm text-[#64748b] dark:text-[#A1A09A]">
                                 <p>{{ $supplier->phone ?? '-' }}</p>
                                 @if ($supplier->website)
@@ -1434,6 +1440,18 @@
                 return data;
             }
 
+            function starsHtml(rating) {
+                const avg = rating && rating.average != null ? Number(rating.average) : 0;
+                const count = rating && rating.count ? Number(rating.count) : 0;
+                const rounded = Math.round(avg);
+                let stars = '';
+                for (let i = 1; i <= 5; i++) {
+                    stars += `<svg class="w-3.5 h-3.5 ${i <= rounded ? '' : 'opacity-30'}" fill="currentColor" viewBox="0 0 20 20"><path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.28 3.94a1 1 0 00.95.69h4.15c.97 0 1.37 1.24.59 1.81l-3.36 2.44a1 1 0 00-.36 1.12l1.28 3.94c.3.92-.75 1.69-1.54 1.12l-3.35-2.44a1 1 0 00-1.18 0l-3.35 2.44c-.79.57-1.84-.2-1.54-1.12l1.28-3.94a1 1 0 00-.36-1.12L1.93 9.37c-.78-.57-.38-1.81.59-1.81h4.15a1 1 0 00.95-.69L9.05 2.93z"/></svg>`;
+                }
+                const label = avg > 0 ? avg.toFixed(1) : '\u2014';
+                return `<span class="inline-flex items-center gap-1.5 align-middle"><span class="inline-flex items-center text-[#f59e0b]">${stars}</span><span class="text-xs text-[#64748b] dark:text-[#A1A09A]">${label}${count ? ` <span class="opacity-70">(${count})</span>` : ''}</span></span>`;
+            }
+
             function tableActionsCell(s) {
                 if (!s.is_owned_by_designer || !s.designer_can_manage) {
                     return `<div class="flex items-center gap-2">
@@ -1546,7 +1564,7 @@
                 if (currentPage > totalPages) currentPage = 1;
                 const paged = data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
                 if (!paged.length) {
-                    tableBody.innerHTML = `<tr><td colspan="8" class="px-4 py-8 text-center text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.no_suppliers') }}</td></tr>`;
+                    tableBody.innerHTML = `<tr><td colspan="9" class="px-4 py-8 text-center text-[#64748b] dark:text-[#A1A09A]">{{ __('suppliers.no_suppliers') }}</td></tr>`;
                 } else {
                     tableBody.innerHTML = paged.map((s) => `
                         <tr class="hover:bg-[#f8fafc] dark:hover:bg-[#0a0a0a]" data-supplier-id="${s.id}">
@@ -1556,6 +1574,7 @@
                             <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.city || '-')}</td>
                             <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.sphere_display || s.sphere || '-')}</td>
                             <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.brand_display || '-')}</td>
+                            <td class="px-4 py-3 text-sm">${starsHtml(s.rating)}</td>
                             <td class="px-4 py-3 text-sm">
                                 ${(() => {
                                     const st = String(s.moderation_status || 'pending');
@@ -1595,7 +1614,8 @@
                         <div class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg p-6" data-supplier-id="${s.id}">
                             <div class="flex items-start justify-between mb-4">
                                 <div>
-                                    <h3 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-2">${escapeHtml(s.name || '')}</h3>
+                                    <h3 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-1">${escapeHtml(s.name || '')}</h3>
+                                    <div class="mb-2">${starsHtml(s.rating)}</div>
                                     <div class="space-y-1 text-sm text-[#64748b] dark:text-[#A1A09A]">
                                         <p>${escapeHtml(s.phone || '-')}</p>
                                         ${s.website ? `<p><a href="${escapeHtml(s.website)}" target="_blank" class="text-[#f59e0b] hover:underline">${escapeHtml(s.website)}</a></p>` : ''}
@@ -1814,19 +1834,36 @@
             }
         }
 
+        function renderRatingStars(rating) {
+            const avg = rating && rating.average != null ? Number(rating.average) : 0;
+            const count = rating && rating.count ? Number(rating.count) : 0;
+            const rounded = Math.round(avg);
+            let stars = '';
+            for (let i = 1; i <= 5; i++) {
+                stars += `<svg class="w-4 h-4 ${i <= rounded ? '' : 'opacity-30'}" fill="currentColor" viewBox="0 0 20 20"><path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.28 3.94a1 1 0 00.95.69h4.15c.97 0 1.37 1.24.59 1.81l-3.36 2.44a1 1 0 00-.36 1.12l1.28 3.94c.3.92-.75 1.69-1.54 1.12l-3.35-2.44a1 1 0 00-1.18 0l-3.35 2.44c-.79.57-1.84-.2-1.54-1.12l1.28-3.94a1 1 0 00-.36-1.12L1.93 9.37c-.78-.57-.38-1.81.59-1.81h4.15a1 1 0 00.95-.69L9.05 2.93z"/></svg>`;
+            }
+            const label = avg > 0 ? avg.toFixed(1) : '\u2014';
+            return `<span class="inline-flex items-center gap-2"><span class="inline-flex items-center text-[#f59e0b]">${stars}</span><span class="text-sm text-[#64748b] dark:text-[#A1A09A]">${label}${count ? ` (${count})` : ''}</span></span>`;
+        }
+
         async function viewSupplier(id) {
             try {
-                let s = (window.allSuppliers || []).find((x) => parseInt(x.id, 10) === parseInt(id, 10));
-                if (!s) {
+                let s = null;
+                try {
                     const r = await fetch('{{ url('suppliers') }}/' + id, {
                         headers: {
                             'Accept': 'application/json'
                         }
                     });
-                    if (!r.ok) {
-                        return;
+                    if (r.ok) {
+                        s = await r.json();
                     }
-                    s = await r.json();
+                } catch (_) {}
+                if (!s) {
+                    s = (window.allSuppliers || []).find((x) => parseInt(x.id, 10) === parseInt(id, 10));
+                }
+                if (!s) {
+                    return;
                 }
                 const content = document.getElementById('view-supplier-content');
                 const brands = Array.isArray(s.brands) ? s.brands.join(', ') : (s.brands || '-');
@@ -1842,7 +1879,12 @@
                 const logoHtml = s.logo_url ?
                     `<div class="mb-4"><img src="${s.logo_url}" alt="Logo" class="w-20 h-20 rounded-full object-cover border-2 border-[#7c8799] dark:border-[#3E3E3A]"></div>` :
                     '';
-                content.innerHTML = logoHtml + `
+                const ratingBlock = `
+                    <div class="pb-4 mb-1 border-b border-[#7c8799] dark:border-[#3E3E3A]">
+                        <div class="text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1.5">{{ __('reviews.rating_label') }}</div>
+                        ${renderRatingStars(s.rating)}
+                    </div>`;
+                content.innerHTML = logoHtml + ratingBlock + `
             <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.name') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.name || '-')}</p></div>
             <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.phone') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.phone || '-')}</p></div>
             <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">Email</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(s.email || '-')}</p></div>

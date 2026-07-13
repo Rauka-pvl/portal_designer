@@ -8,11 +8,15 @@ use App\Http\Controllers\Designer\PassportObject;
 use App\Http\Controllers\Designer\ProjectController;
 use App\Http\Controllers\Designer\ReferralSupplierController;
 use App\Http\Controllers\Designer\SettingsController;
+use App\Http\Controllers\Designer\SupplierCatalogController;
 use App\Http\Controllers\Designer\SupplierController;
 use App\Http\Controllers\Designer\SupplierOrderController;
 use App\Http\Controllers\SupplierOrderChatController;
 use App\Http\Controllers\Moderator\ModeratorController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\Supplier\CalendarController as SupplierCalendarController;
+use App\Http\Controllers\Supplier\DesignerDirectoryController;
+use App\Http\Controllers\Supplier\ProductController as SupplierProductController;
 use App\Http\Controllers\Supplier\SupplierPortalController;
 use App\Http\Controllers\Supplier\SettingsController as SupplierSettingsController;
 use Illuminate\Http\Request;
@@ -62,6 +66,46 @@ Route::middleware(['auth', 'role:supplier', 'password.changed'])->group(function
     Route::patch('/supplier/orders/{orderId}/status', [SupplierPortalController::class, 'updateOrderStatus'])
         ->whereNumber('orderId')
         ->name('supplier.orders.update_status');
+
+    Route::get('/supplier/products', [SupplierProductController::class, 'index'])->name('supplier.products.index');
+    Route::get('/supplier/products/template', [SupplierProductController::class, 'template'])->name('supplier.products.template');
+    Route::post('/supplier/products/import', [SupplierProductController::class, 'import'])->name('supplier.products.import');
+    Route::post('/supplier/products', [SupplierProductController::class, 'store'])->name('supplier.products.store');
+    Route::get('/supplier/products/{productId}', [SupplierProductController::class, 'show'])
+        ->whereNumber('productId')
+        ->name('supplier.products.show');
+    Route::post('/supplier/products/{productId}', [SupplierProductController::class, 'update'])
+        ->whereNumber('productId')
+        ->name('supplier.products.update');
+    Route::post('/supplier/products/{productId}/image', [SupplierProductController::class, 'updateImage'])
+        ->whereNumber('productId')
+        ->name('supplier.products.image');
+    Route::delete('/supplier/products/{productId}', [SupplierProductController::class, 'destroy'])
+        ->whereNumber('productId')
+        ->name('supplier.products.destroy');
+
+    Route::get('/supplier/designers', [DesignerDirectoryController::class, 'index'])->name('supplier.designers.index');
+    Route::get('/supplier/designers/{designerId}', [DesignerDirectoryController::class, 'show'])
+        ->whereNumber('designerId')
+        ->name('supplier.designers.show');
+    Route::get('/supplier/designers/{designerId}/reviews', [DesignerDirectoryController::class, 'reviews'])
+        ->whereNumber('designerId')
+        ->name('supplier.designers.reviews');
+
+    Route::get('/supplier/profile/reviews', [ReviewController::class, 'index'])->name('supplier.profile.reviews');
+    Route::post('/supplier/reviews', [ReviewController::class, 'store'])->name('supplier.reviews.store');
+
+    Route::get('/supplier/notifications', [NotificationController::class, 'index'])->name('supplier.notifications.index');
+    Route::post('/supplier/notifications/{notificationId}/read', [NotificationController::class, 'markRead'])
+        ->whereNumber('notificationId')
+        ->name('supplier.notifications.read');
+    Route::delete('/supplier/notifications/{notificationId}', [NotificationController::class, 'destroy'])
+        ->whereNumber('notificationId')
+        ->name('supplier.notifications.destroy');
+    Route::post('/supplier/notifications/read-all', [NotificationController::class, 'markAllRead'])
+        ->name('supplier.notifications.read_all');
+    Route::get('/supplier/notifications/unread-count', [NotificationController::class, 'unreadCount'])
+        ->name('supplier.notifications.unread_count');
 });
 
 Route::get('/language/{locale}', function (string $locale, Request $request) {
@@ -170,6 +214,9 @@ Route::middleware(['auth', 'role:designer'])->group(function () {
     Route::get('/suppliers/{supplierId}', [SupplierController::class, 'show'])
         ->whereNumber('supplierId')
         ->name('suppliers.show');
+    Route::get('/suppliers/{supplierId}/reviews', [SupplierController::class, 'reviews'])
+        ->whereNumber('supplierId')
+        ->name('suppliers.reviews');
     Route::put('/suppliers/{supplierId}', [SupplierController::class, 'update'])
         ->whereNumber('supplierId')
         ->name('suppliers.update');
@@ -179,6 +226,14 @@ Route::middleware(['auth', 'role:designer'])->group(function () {
     Route::post('/suppliers/{supplierId}/toggle-favorite', [SupplierController::class, 'toggleFavorite'])
         ->whereNumber('supplierId')
         ->name('suppliers.toggle_favorite');
+
+    Route::get('/suppliers/{supplierId}/products', [SupplierCatalogController::class, 'index'])
+        ->whereNumber('supplierId')
+        ->name('suppliers.products.index');
+    Route::get('/suppliers/{supplierId}/products/{productId}', [SupplierCatalogController::class, 'show'])
+        ->whereNumber('supplierId')
+        ->whereNumber('productId')
+        ->name('suppliers.products.show');
 
     Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
     Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
@@ -228,6 +283,9 @@ Route::middleware(['auth', 'role:designer'])->group(function () {
     Route::patch('/supplier-orders/{orderId}/status', [SupplierOrderController::class, 'updateStatus'])
         ->whereNumber('orderId')
         ->name('supplier-orders.update_status');
+
+    Route::get('/profile/reviews', [ReviewController::class, 'index'])->name('profile.reviews');
+    Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
 
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{notificationId}/read', [NotificationController::class, 'markRead'])

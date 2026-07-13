@@ -1,6 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('title', $supplier->name ?? __('suppliers.supplier'))
+@section('header_title', $supplier->name ?? __('suppliers.supplier'))
 
 @push('styles')
     <style>

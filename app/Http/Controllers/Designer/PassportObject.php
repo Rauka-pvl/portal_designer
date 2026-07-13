@@ -217,32 +217,34 @@ class PassportObject extends Controller
             }
         }
 
-        // файлы (несколько)
-        $newPaths = [];
+        $existingFiles = array_values(array_filter(array_map(
+            fn ($v) => trim((string) $v),
+            (array) $request->input('existing_files', [])
+        )));
+
+        $uploadedPaths = [];
         $files = $request->file('files');
         if ($files) {
             $uploaded = is_array($files) ? $files : [$files];
             foreach ($uploaded as $file) {
-                if (! $file) {
-                    continue;
+                if ($file) {
+                    $uploadedPaths[] = PublicFileStorage::store($file, 'passport_objects');
                 }
-                $newPaths[] = PublicFileStorage::store($file, 'passport_objects');
             }
         }
 
-        // существующие пути
-        $existingPaths = [];
-        if (! empty($object->file_paths) && is_array($object->file_paths)) {
-            $existingPaths = array_values(array_filter($object->file_paths, fn ($p) => is_string($p) && $p !== ''));
+        $oldPaths = is_array($object->file_paths)
+            ? array_values(array_filter($object->file_paths, fn ($p) => is_string($p) && $p !== ''))
+            : [];
+
+        $newPaths = array_values(array_unique(array_merge($existingFiles, $uploadedPaths)));
+        foreach ($oldPaths as $oldPath) {
+            if ($oldPath !== '' && ! in_array($oldPath, $newPaths, true)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPath);
+            }
         }
 
-        if (! empty($newPaths)) {
-            $merged = array_values(array_unique(array_merge($existingPaths, $newPaths)));
-            $object->file_paths = $merged;
-        } else {
-            // оставляем как было
-            $object->file_paths = $existingPaths ?: $object->file_paths;
-        }
+        $object->file_paths = $newPaths !== [] ? $newPaths : null;
 
         $object->client_id = (int) $data['client_id'];
         $object->city = $data['city'];

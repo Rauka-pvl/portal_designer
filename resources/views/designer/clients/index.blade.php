@@ -1,6 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('title', __('clients.my_clients'))
+@section('header_title', __('clients.my_clients'))
 
 @push('styles')
     <style>
@@ -201,8 +202,7 @@
 @endpush
 
 @section('content')
-    <div class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <h1 class="text-2xl font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ __('clients.my_clients') }}</h1>
+    <div class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-end gap-4">
         <button id="add-client-btn" class="add-btn">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -692,9 +692,12 @@
                         @enderror
                     </div>
                     <div>
-                        <label class="modal-label">{{ __('clients.files') }}</label>
-                        <input type="file" name="files[]" multiple
-                            class="modal-input file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#f59e0b]/10 file:text-[#f59e0b] hover:file:bg-[#f59e0b]/20">
+                        @include('partials.modal-file-picker', [
+                            'pickerId' => 'client',
+                            'inputName' => 'files[]',
+                            'title' => __('clients.files'),
+                            'subtitle' => __('projects.files_subtitle'),
+                        ])
                         @error('file')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                         @enderror
@@ -712,280 +715,6 @@
 
 
 
-    {{-- <!-- Модалка добавления объекта -->
-    <div id="object-modal"
-        class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center modal-overlay p-4"
-        onmousedown="if(event.target === this) closeObjectModal()">
-        <div class="bg-white dark:bg-[#161615] rounded-xl max-w-2xl w-full mx-auto max-h-[90vh] overflow-hidden flex flex-col modal-content border border-[#7c8799] dark:border-[#3E3E3A]"
-            onclick="event.stopPropagation()">
-            <div
-                class="flex items-start justify-between px-6 pt-6 pb-4 border-b border-[#7c8799] dark:border-[#3E3E3A] shrink-0">
-                <div>
-                    <h2 class="text-xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]">{{ __('clients.add_object') }}
-                    </h2>
-                    <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-1">{{ __('clients.add_object') }}
-                        {{ __('clients.client') }}</p>
-                </div>
-                <button type="button" onclick="closeObjectModal()"
-                    class="p-2 rounded-lg text-[#64748b] dark:text-[#A1A09A] hover:bg-[#e5e7eb] dark:hover:bg-[#3E3E3A] hover:text-[#0f172a] dark:hover:text-[#EDEDEC] transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-            <form id="object-form" class="flex flex-col flex-1 min-h-0" method="POST" action="{{ Route::has('objects.add_object') ? route('objects.add_object') : '#' }}" enctype="multipart/form-data">
-                @csrf
-                <div class="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div>
-                            <label class="modal-label modal-label-required">{{ __('clients.client') }}</label>
-                            <select name="client_id" required class="modal-input">
-                                @foreach ($clients as $client)
-                                    <option value="{{ $client->id }}">{{ $client->full_name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <label class="modal-label modal-label-required">{{ __('clients.property_type') }}</label>
-                            <select name="property_type" required class="modal-input">
-                                <option value="apartment">{{ __('clients.apartment') }}</option>
-                                <option value="house">{{ __('clients.house') }}</option>
-                                <option value="commercial">{{ __('clients.commercial') }}</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="modal-label modal-label-required">{{ __('clients.object_address') }}</label>
-                        <input type="text" name="address" required class="modal-input">
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div>
-                            <label class="modal-label modal-label-required">{{ __('clients.object_status') }}</label>
-                            <select name="object_status" required class="modal-input">
-                                <option value="new">{{ __('clients.new') }}</option>
-                                <option value="in_work">{{ __('clients.in_work') }}</option>
-                                <option value="not_working">{{ __('clients.not_working') }}</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="modal-label modal-label-required">{{ __('clients.object_area') }}</label>
-                            <input type="number" name="area" step="0.01" required class="modal-input">
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="modal-section-title">{{ __('clients.repair_budget') }}</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                            <div>
-                                <input type="number" name="planned_cost" step="0.01"
-                                    placeholder="{{ __('clients.planned_cost') }}" class="modal-input">
-                            </div>
-                            <div>
-                                <input type="number" name="actual_cost" step="0.01"
-                                    placeholder="{{ __('clients.actual_cost') }}" class="modal-input">
-                            </div>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="modal-section-title">{{ __('clients.repair_budget_per_m2') }}</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-                            <div>
-                                <input type="number" name="planned_cost_per_m2" step="0.01"
-                                    placeholder="{{ __('clients.planned_cost') }}" class="modal-input">
-                            </div>
-                            <div>
-                                <input type="number" name="actual_cost_per_m2" step="0.01"
-                                    placeholder="{{ __('clients.actual_cost') }}" class="modal-input">
-                            </div>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="modal-label">{{ __('clients.links') }}</label>
-                        <div id="links-container" class="space-y-2">
-                            <input type="url" name="links[]" placeholder="{{ __('clients.add_link') }}"
-                                class="modal-input">
-                        </div>
-                        <button type="button" onclick="addLinkField()"
-                            class="mt-2 text-sm font-medium modal-accent-link flex items-center gap-1">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4v16m8-8H4" />
-                            </svg>
-                            {{ __('clients.add_link') }}
-                        </button>
-                    </div>
-                    <div>
-                        <label class="modal-label">{{ __('clients.files') }}</label>
-                        <input type="file" name="files[]" multiple
-                            class="modal-input file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#f59e0b]/10 file:text-[#f59e0b] hover:file:bg-[#f59e0b]/20">
-                    </div>
-                    <div>
-                        <label class="modal-label">{{ __('clients.comment') }}</label>
-                        <textarea name="comment" rows="3" class="modal-input resize-none"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn-primary">{{ __('clients.save') }}</button>
-                    <button type="button" onclick="closeObjectModal()"
-                        class="btn-secondary">{{ __('clients.cancel') }}</button>
-                </div>
-            </form>
-        </div>
-    </div> --}}
-
-    <!-- Модалка добавления/редактирования объекта -->
-    <div id="object-modal"
-        class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center modal-overlay p-4"
-        onmousedown="if(event.target === this) closeObjectModal()">
-        <div class="bg-white dark:bg-[#161615] rounded-xl max-w-2xl w-full mx-auto max-h-[90vh] overflow-hidden flex flex-col modal-content border border-[#7c8799] dark:border-[#3E3E3A]"
-            onclick="event.stopPropagation()">
-            <div
-                class="flex items-start justify-between px-6 pt-6 pb-4 border-b border-[#7c8799] dark:border-[#3E3E3A] flex-shrink-0">
-                <div>
-                    <h2 class="text-xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]" id="object-modal-title">
-                        {{ __('objects.new_object') }}</h2>
-                    <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-1">{{ __('objects.modal_object_subtitle') }}
-                    </p>
-                </div>
-                <button type="button" onclick="closeObjectModal()"
-                    class="p-2 rounded-lg text-[#64748b] dark:text-[#A1A09A] hover:bg-[#e5e7eb] dark:hover:bg-[#3E3E3A] hover:text-[#0f172a] dark:hover:text-[#EDEDEC] transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-            <form id="object-form" class="flex flex-col flex-1 min-h-0" method="POST"
-                action="{{ Route::has('objects.add_object') ? route('objects.add_object') : '#' }}" enctype="multipart/form-data">
-                @csrf
-                <input type="hidden" name="_method" id="object_form_method" value="">
-                <input type="hidden" name="object_id" id="object_id" value="">
-                <div class="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div>
-                            <label class="modal-label modal-label-required">{{ __('objects.select_client') }}</label>
-                            <select name="client_id" required class="modal-input">
-                                <option value="">{{ __('objects.select_client_placeholder') }}</option>
-                                @foreach ($clients as $client)
-                                    <option value="{{ $client->id }}">{{ $client->full_name }}</option>
-                                @endforeach
-                            </select>
-                            {{-- <input type="text" name="address" required value="{{ $client }}"
-                                class="modal-input"> --}}
-                            <p class="modal-helper">{{ __('objects.create_client_helper') }} <a
-                                    href="{{ route('clients.index') }}"
-                                    class="modal-accent-link">{{ __('objects.create_client') }}</a></p>
-                        </div>
-                        <div>
-                            <label class="modal-label modal-label-required">{{ __('objects.property_type') }}</label>
-                            <select name="type" required class="modal-input">
-                                <option value="" disabled selected>{{ __('objects.select_type_placeholder') }}
-                                </option>
-                                <option value="apartment">{{ __('objects.apartment') }}</option>
-                                <option value="house">{{ __('objects.house') }}</option>
-                                <option value="commercial">{{ __('objects.commercial') }}</option>
-                                <option value="other">{{ __('objects.other') }}</option>
-                            </select>
-                            <p class="modal-helper">{{ __('objects.select_type_helper') }}</p>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="modal-label modal-label-required">{{ __('objects.address') }}</label>
-                        <input type="text" name="address" required
-                            placeholder="{{ __('objects.address_placeholder') }}" class="modal-input">
-                        <p class="modal-helper">{{ __('objects.address_helper') }}</p>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div>
-                            <label class="modal-label modal-label-required">{{ __('objects.status') }}</label>
-                            <select name="status" required class="modal-input">
-                                <option value="">{{ __('objects.select_status_placeholder') }}</option>
-                                <option value="new">{{ __('objects.new') }}</option>
-                                <option value="in_work">{{ __('objects.in_work') }}</option>
-                                <option value="not_working">{{ __('objects.not_working') }}</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="modal-label modal-label-required">{{ __('objects.area') }},
-                                {{ __('objects.area_m2') }}</label>
-                            <input type="number" name="area" step="0.01" required
-                                placeholder="{{ __('objects.area_placeholder') }}" class="modal-input">
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="modal-section-title">{{ __('objects.repair_budget') }}</h3>
-                        <p class="modal-section-subtitle">{{ __('objects.budget_subtitle') }}</p>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <input type="number" name="repair_budget_planned" step="0.01"
-                                    placeholder="{{ __('objects.planned') }}" class="modal-input">
-                                <p class="modal-helper">{{ __('objects.planned_example') }}</p>
-                            </div>
-                            <div>
-                                <input type="number" name="repair_budget_actual" step="0.01"
-                                    placeholder="{{ __('objects.actual') }}" class="modal-input">
-                                <p class="modal-helper">{{ __('objects.actual_example') }}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="modal-section-title">{{ __('objects.repair_budget_per_m2') }}</h3>
-                        <p class="modal-section-subtitle">{{ __('objects.budget_per_m2_subtitle') }}</p>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <input type="number" name="repair_budget_per_m2_planned" step="0.01"
-                                    placeholder="{{ __('objects.planned') }}" class="modal-input">
-                                <p class="modal-helper">{{ __('objects.per_m2_example') }}</p>
-                            </div>
-                            <div>
-                                <input type="number" name="repair_budget_per_m2_actual" step="0.01"
-                                    placeholder="{{ __('objects.actual') }}" class="modal-input">
-                                <p class="modal-helper">{{ __('objects.per_m2_example') }}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="modal-label">{{ __('objects.links') }}</label>
-                        <p class="modal-section-subtitle">{{ __('objects.links_subtitle') }}</p>
-                        <div id="links-container" class="space-y-2">
-                            <div class="flex gap-2">
-                                <div class="input-with-icon flex-1">
-                                    <span class="input-icon text-[#64748b] dark:text-[#A1A09A]">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                                        </svg>
-                                    </span>
-                                    <input type="url" name="links[]" placeholder="{{ __('objects.paste_link') }}"
-                                        class="modal-input">
-                                </div>
-                            </div>
-                        </div>
-                        <button type="button" onclick="addLinkField()"
-                            class="mt-2 text-sm font-medium modal-accent-link flex items-center gap-1">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4v16m8-8H4" />
-                            </svg>
-                            {{ __('objects.add_link') }}
-                        </button>
-                    </div>
-                    <div>
-                        <label class="modal-label">{{ __('objects.files') }}</label>
-                        <input type="file" name="file"
-                            class="modal-input file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#f59e0b]/10 file:text-[#f59e0b] hover:file:bg-[#f59e0b]/20">
-                    </div>
-                    <div>
-                        <label class="modal-label">{{ __('objects.comment') }}</label>
-                        <textarea name="comment" rows="3" placeholder="{{ __('objects.comment') }}" class="modal-input resize-none"></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn-primary">{{ __('objects.save') }}</button>
-                    <button type="button" onclick="closeObjectModal()"
-                        class="btn-secondary">{{ __('objects.cancel') }}</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -1132,6 +861,7 @@
                 document.getElementById('client_id').value = '';
                 document.getElementById('client-modal-title').textContent =
                     '{{ __('clients.add_client') }}';
+                window.ModalFilePicker?.get('client')?.reset(null);
                 if (typeof updateClientFullNameLabel === 'function') {
                     updateClientFullNameLabel();
                 }
@@ -1583,75 +1313,26 @@
         });
 
         @if ($errors->any())
-            @php
-                $objectFields = ['client_id', 'address', 'type', 'status', 'area', 'repair_budget_planned', 'repair_budget_actual', 'repair_budget_per_m2_planned', 'repair_budget_per_m2_actual', 'links', 'file', 'comment'];
-                $hasObjectErrors = collect($objectFields)->contains(function ($field) use ($errors) {
-                    return $errors->has($field);
-                });
-            @endphp
-
-            @if ($hasObjectErrors)
-                // Открываем модалку объекта
-                const modal = document.getElementById('object-modal');
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-            @else
-                // Открываем модалку клиента
-                const modal = document.getElementById('client-modal');
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-            @endif
+            const modal = document.getElementById('client-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
         @endif
 
         function closeClientModal() {
             document.getElementById('client-modal').classList.add('hidden');
             document.getElementById('client-modal').classList.remove('flex');
-        }
-
-        function closeObjectModal() {
-            document.getElementById('object-modal').classList.add('hidden');
-            document.getElementById('object-modal').classList.remove('flex');
-            document.getElementById('object-form').reset();
-            // Переактивируем select
-            document.querySelector('#object-form select[name="client_id"]').disabled = false;
-
-            const linksContainer = document.getElementById('links-container');
-            linksContainer.innerHTML =
-                `<input type="url" name="links[]" placeholder="{{ __('clients.add_link') }}" class="modal-input">`;
+            window.ModalFilePicker?.get('client')?.reset(null);
         }
 
         function addObject(clientId) {
-            document.getElementById('object-modal').classList.remove('hidden');
-            document.getElementById('object-modal').classList.add('flex');
-
-
-            const clientSelect = document.querySelector('#object-form select[name="client_id"]');
-
-            // Очищаем дополнительные поля ссылок
-            const linksContainer = document.getElementById('links-container');
-            linksContainer.innerHTML = `
-        <div class="flex gap-2 mb-2">
-            <input type="url" name="links[]" class="flex-1 px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
-        </div>
-    `;
-            // Если выбран конкретный клиент - выбираем его и отключаем select
+            const params = new URLSearchParams({
+                add_object: '1',
+                return_to: 'clients',
+            });
             if (clientId) {
-                clientSelect.value = clientId;
-
-            } else {
-                clientSelect.disabled = false;
+                params.set('client_id', String(clientId));
             }
-        }
-
-        function addLinkField() {
-            const container = document.getElementById('links-container');
-            const div = document.createElement('div');
-            div.className = 'flex gap-2';
-            div.innerHTML = `
-                <input type="url" name="links[]" placeholder="{{ __('clients.add_link') }}" class="modal-input flex-1">
-                <button type="button" onclick="this.parentElement.remove()" class="px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500 hover:border-red-300 transition-colors">×</button>
-            `;
-            container.appendChild(div);
+            window.location.href = `{{ route('objects.index') }}?${params.toString()}`;
         }
 
         function closeViewClientModal() {
@@ -1864,6 +1545,10 @@
                 if (typeof updateClientFullNameLabel === 'function') {
                     updateClientFullNameLabel();
                 }
+                window.ModalFilePicker?.get('client')?.reset({
+                    file_paths: client.file_paths,
+                    file_path: client.file_path,
+                });
             }
 
 

@@ -1,6 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('title', $object->address)
+@section('header_title', $object->address)
 
 @push('styles')
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -138,10 +139,7 @@
 
     <div class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-medium text-[#0f172a] dark:text-[#EDEDEC]">
-                {{ $object->address }}
-            </h1>
-            <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-1">
+            <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">
                 {{ __('objects.client') }}: {{ $object->client?->full_name ?? $object->client_id }}
             </p>
         </div>

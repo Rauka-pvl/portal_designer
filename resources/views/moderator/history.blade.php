@@ -1,6 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('title', __('moderation.history_title'))
+@section('header_title', __('moderation.history_title'))
 
 @section('content')
     <div class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">

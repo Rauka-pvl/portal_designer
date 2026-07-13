@@ -34,6 +34,8 @@ class Supplier_orders extends Model
         'links',
         'files',
         'comment',
+        'product_items',
+        'bonus_percent',
     ];
 
     protected $casts = [
@@ -41,6 +43,8 @@ class Supplier_orders extends Model
         'included_step_ids' => 'array',
         'links' => 'array',
         'files' => 'array',
+        'product_items' => 'array',
+        'bonus_percent' => 'decimal:2',
         'date_planned' => 'date',
         'date_actual' => 'date',
         'prepayment_date' => 'date',

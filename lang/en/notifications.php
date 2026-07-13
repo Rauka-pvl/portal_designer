@@ -3,6 +3,7 @@
 return [
     'title' => 'Notifications',
     'subtitle' => 'Status updates from moderator',
+    'subtitle_supplier' => 'New delivery orders and updates from designers',
     'empty' => 'No notifications yet.',
     'read' => 'Read',
     'unread' => 'Unread',
@@ -33,4 +34,11 @@ return [
     'supplier_invite_comment' => 'Designer :name invites you to collaborate. Confirm this invitation in supplier portal.',
     'new_order_title' => 'New delivery order',
     'new_order_comment' => 'A new delivery order #:order was sent to you.',
+    'order_withdrawn_title' => 'Order updated',
+    'order_withdrawn_comment' => ':designer changed delivery order #:order. The order is no longer sent and was saved as a draft.',
+    'rate_supplier_title' => 'Rate the supplier',
+    'rate_supplier_comment' => 'Delivery order #:order is completed. Please rate the supplier :supplier.',
+    'rate_designer_title' => 'Rate the designer',
+    'rate_designer_comment' => 'Delivery order #:order is completed. Please rate the designer :designer.',
+    'rate_action' => 'Rate',
 ];

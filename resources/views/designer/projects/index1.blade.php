@@ -1,6 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('title', __('projects.projects'))
+@section('header_title', __('projects.projects'))
 
 @push('styles')
 <style>
@@ -274,8 +275,7 @@
 @endpush
 
 @section('content')
-<div class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-    <h1 class="text-2xl font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ __('projects.projects') }}</h1>
+<div class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-end gap-4">
     <button id="add-project-btn" class="filter-btn active">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>

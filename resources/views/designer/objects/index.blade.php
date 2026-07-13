@@ -1,6 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('title', __('objects.object_passport'))
+@section('header_title', __('objects.object_passport'))
 
 @push('styles')
     <style>
@@ -173,8 +174,7 @@
 @endpush
 
 @section('content')
-    <div class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <h1 class="text-2xl font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ __('objects.object_passport') }}</h1>
+    <div class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-end gap-4">
         <button id="add-object-btn" class="add-btn">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />

@@ -14,6 +14,8 @@ return [
     'sent_to_supplier' => 'Отправлено',
     'not_sent_to_supplier' => 'Не отправлено',
     'amount' => 'Сумма',
+    'bonus_percent' => 'Ваш процент (бонус)',
+    'bonus_percent_hint' => 'Бонус с суммы сделки после завершения поставки:',
     'planned_date' => 'Дата (план)',
     'actual_date' => 'Дата (факт)',
     'product_service' => 'Товар/услуга',

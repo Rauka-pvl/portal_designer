@@ -1,6 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('title', __('objects.object_passport'))
+@section('header_title', __('objects.object_passport'))
 
 @push('styles')
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -234,10 +235,7 @@
 @endpush
 
 @section('content')
-    <div class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <h1 class="text-2xl font-medium text-[#0f172a] dark:text-[#EDEDEC]">
-            {{ __('objects.object_passport') }}
-        </h1>
+    <div class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-end gap-4">
         <button id="add-object-btn" class="add-btn">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -452,7 +450,12 @@
                                 <option value="other">{{ __('objects.other') }}</option>
                             </select>
                         </div>
-                        <div>
+                        <div id="object-client-locked-display" class="hidden">
+                            <label class="modal-label modal-label-required">{{ __('objects.select_client') }}</label>
+                            <p id="object-client-locked-name"
+                                class="modal-input bg-[#f8fafc] dark:bg-[#0a0a0a] cursor-default"></p>
+                        </div>
+                        <div id="object-client-field-wrapper">
                             <label class="modal-label modal-label-required">{{ __('objects.select_client') }}</label>
                             <select name="client_id" required id="object_client_id" class="modal-input">
                                 <option value="">{{ __('objects.select_client_placeholder') }}</option>
@@ -565,11 +568,12 @@
                             class="modal-input resize-none"></textarea>
                     </div>
 
-                    <div>
-                        <label class="modal-label">{{ __('objects.files') }}</label>
-                        <input type="file" name="files[]" multiple
-                            class="modal-input file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#f59e0b]/10 file:text-[#f59e0b] hover:file:bg-[#f59e0b]/20">
-                    </div>
+                    @include('partials.modal-file-picker', [
+                        'pickerId' => 'object',
+                        'inputName' => 'files[]',
+                        'title' => __('objects.files'),
+                        'subtitle' => __('projects.files_subtitle'),
+                    ])
 
                     <div>
                         <label class="modal-label">{{ __('objects.comment') }}</label>
@@ -1033,11 +1037,48 @@
                 return JSON.stringify(obj).replace(/'/g, "&#39;");
             }
 
+            function unlockObjectClientField() {
+                document.getElementById('object-client-field-wrapper')?.classList.remove('hidden');
+                document.getElementById('object-client-locked-display')?.classList.add('hidden');
+                const select = document.getElementById('object_client_id');
+                if (select) {
+                    select.disabled = false;
+                    select.setAttribute('name', 'client_id');
+                }
+                document.getElementById('object_client_id_hidden')?.remove();
+            }
+
+            function lockObjectClientField(clientId) {
+                const select = document.getElementById('object_client_id');
+                const id = String(clientId || '');
+                const name = select?.querySelector(`option[value="${id}"]`)?.textContent?.trim() || '';
+                document.getElementById('object-client-field-wrapper')?.classList.add('hidden');
+                document.getElementById('object-client-locked-display')?.classList.remove('hidden');
+                const nameEl = document.getElementById('object-client-locked-name');
+                if (nameEl) nameEl.textContent = name;
+                if (select) {
+                    select.value = id;
+                    select.disabled = true;
+                    select.removeAttribute('name');
+                }
+                let hidden = document.getElementById('object_client_id_hidden');
+                if (!hidden) {
+                    hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = 'client_id';
+                    hidden.id = 'object_client_id_hidden';
+                    document.getElementById('object-form')?.appendChild(hidden);
+                }
+                hidden.value = id;
+            }
+
             function closeObjectModal() {
                 const modal = document.getElementById('object-modal');
                 if (!modal) return;
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
+                unlockObjectClientField();
+                window.ModalFilePicker?.get('object')?.reset(null);
             }
 
             function openObjectModal() {
@@ -1691,6 +1732,7 @@
 
             // Form handlers
             document.getElementById('add-object-btn').addEventListener('click', function() {
+                unlockObjectClientField();
                 document.getElementById('object-modal-title').textContent =
                     '{{ __('objects.new_object') }}';
                 document.getElementById('object_id').value = '';
@@ -1701,6 +1743,7 @@
                 syncApartmentVisibility();
                 updateObjectMapMarker(NaN, NaN);
                 hideAddressSuggestions();
+                window.ModalFilePicker?.get('object')?.reset(null);
                 openObjectModal();
             });
 
@@ -1715,6 +1758,7 @@
                 });
                 if (!obj) return;
 
+                unlockObjectClientField();
                 document.getElementById('object-modal-title').textContent = '{{ __('objects.edit_object') }}';
                 document.getElementById('object_id').value = obj.id;
                 document.getElementById('object_client_id').value = obj.client_id;
@@ -1740,6 +1784,9 @@
                 if (objectLngEl) objectLngEl.value = obj.longitude ?? '';
                 syncApartmentVisibility();
                 hideAddressSuggestions();
+                window.ModalFilePicker?.get('object')?.reset({
+                    file_paths: obj.file_paths,
+                });
                 openObjectModal();
                 updateObjectMapMarker(Number(obj.latitude), Number(obj.longitude));
             };
@@ -1801,6 +1848,12 @@
                     if (objectLngEl) objectLngEl.value = '';
                     syncApartmentVisibility();
                     updateObjectMapMarker(NaN, NaN);
+                    const returnTo = sessionStorage.getItem('objectModalReturnTo');
+                    sessionStorage.removeItem('objectModalReturnTo');
+                    if (returnTo === 'clients') {
+                        window.location.href = '{{ route('clients.index') }}';
+                        return;
+                    }
                     await window.refreshObjects?.();
                 } catch (err) {
                     console.error(err);
@@ -1811,6 +1864,34 @@
             // Initial render
             syncApartmentVisibility();
             window.renderActiveTab();
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const prefillClientId = urlParams.get('client_id');
+            if (urlParams.get('add_object') === '1') {
+                if (urlParams.get('return_to') === 'clients') {
+                    sessionStorage.setItem('objectModalReturnTo', 'clients');
+                }
+                setTimeout(() => {
+                    document.getElementById('object-modal-title').textContent =
+                        '{{ __('objects.new_object') }}';
+                    document.getElementById('object_id').value = '';
+                    document.getElementById('object-form').reset();
+                    if (objectCityEl) objectCityEl.value = '';
+                    if (objectLatEl) objectLatEl.value = '';
+                    if (objectLngEl) objectLngEl.value = '';
+                    syncApartmentVisibility();
+                    updateObjectMapMarker(NaN, NaN);
+                    hideAddressSuggestions();
+                    window.ModalFilePicker?.get('object')?.reset(null);
+                    if (prefillClientId) {
+                        lockObjectClientField(prefillClientId);
+                    } else {
+                        unlockObjectClientField();
+                    }
+                    openObjectModal();
+                    history.replaceState({}, '', '{{ route('objects.index') }}');
+                }, 100);
+            }
         });
     </script>
 @endsection

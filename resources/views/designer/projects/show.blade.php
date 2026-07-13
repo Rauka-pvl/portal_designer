@@ -1,6 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('title', $projectData['name'] ?? __('projects.project'))
+@section('header_title', $projectData['name'] ?? __('projects.project'))
 
 @push('styles')
     <style>
@@ -105,8 +106,7 @@
     <div class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         
         <div>
-            <h1 class="text-2xl font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ $p['name'] ?? '-' }}</h1>
-            <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-1">{{ __('projects.project') }} #{{ $p['id'] ?? '-' }}</p>
+            <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">{{ __('projects.project') }} #{{ $p['id'] ?? '-' }}</p>
         </div>
         <div class="flex gap-3">
             <button id="btn-edit" type="button" class="btn">{{ __('projects.edit') }}</button>
@@ -168,20 +168,28 @@
                 <div class="md:col-span-2"><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('projects.comment') }}</div><textarea name="comment" rows="3" disabled class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615]">{{ $p['comment'] ?? '' }}</textarea></div>
                 <div class="md:col-span-2">
                     <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('projects.files') }}</div>
-                    <input type="file" name="files[]" multiple disabled
-                        class="w-full text-sm text-[#64748b] dark:text-[#A1A09A] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#f59e0b]/10 file:text-[#f59e0b] hover:file:bg-[#f59e0b]/20">
+                    @php
+                        $projectFilePaths = $p['files'] ?? [];
+                        if (empty($projectFilePaths) && ! empty($p['file_items'] ?? [])) {
+                            $projectFilePaths = collect($p['file_items'])->pluck('path')->filter()->values()->all();
+                        }
+                    @endphp
                     @include('partials.file-actions-list', [
-                        'filePaths' => $p['files'] ?? [],
-                        'deleteCallback' => 'window.deleteProjectFileFromShow',
+                        'filePaths' => $projectFilePaths,
+                        'deleteCallback' => 'window.removeProjectFileFromShow',
                         'deleteEntityId' => $p['id'],
+                        'containerId' => 'project-show-files-list',
+                        'includeExistingHidden' => true,
                     ])
+                    <div class="edit-only-control hidden mt-3">
+                        <input type="file" id="project-show-files-input" name="files[]" multiple
+                            class="w-full text-sm text-[#64748b] dark:text-[#A1A09A] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-[#f59e0b]/10 file:text-[#f59e0b] hover:file:bg-[#f59e0b]/20">
+                        <div id="project-show-new-files" class="mt-2 space-y-1"></div>
+                    </div>
                 </div>
 
                 @foreach (($p['links'] ?? []) as $link)
                     <input type="hidden" name="links[]" value="{{ $link }}">
-                @endforeach
-                @foreach (($p['files'] ?? []) as $filePath)
-                    <input type="hidden" name="existing_files[]" value="{{ $filePath }}">
                 @endforeach
                 @foreach (($p['stages'] ?? []) as $si => $stage)
                     <input type="hidden" name="stages[{{ $si }}][stage_type]" value="{{ $stage['stage_type'] ?? '' }}">
@@ -368,27 +376,51 @@
                     }
                 });
             });
-            window.deleteProjectFileFromShow = async function(projectId, fileIndex) {
+            window.removeProjectFileFromShow = function(projectId, fileIndex) {
                 if (!confirm('{{ __('objects.delete_file_confirm') }}')) return;
-                try {
-                    const r = await fetch(`/projects/${projectId}/files/${fileIndex}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Accept': 'application/json',
-                            ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {})
-                        }
-                    });
-                    const data = await r.json().catch(() => ({}));
-                    if (!r.ok || !data.success) {
-                        projectAlert('error', data.message || '{{ __('projects.delete_error_generic') }}', '', 3200);
-                        return;
-                    }
-                    location.reload();
-                } catch (e) {
-                    console.error(e);
-                    projectAlert('error', '{{ __('projects.delete_error_generic') }}', '', 3200);
-                }
+                const list = document.getElementById('project-show-files-list');
+                const row = list?.querySelector(`[data-file-index="${fileIndex}"]`);
+                if (!row) return;
+                row.remove();
             };
+
+            const showFilesInput = document.getElementById('project-show-files-input');
+            const showNewFilesList = document.getElementById('project-show-new-files');
+            let showPendingFiles = [];
+
+            const syncShowFilesInput = () => {
+                if (!showFilesInput) return;
+                const dt = new DataTransfer();
+                showPendingFiles.forEach((file) => dt.items.add(file));
+                showFilesInput.files = dt.files;
+            };
+
+            const renderShowNewFiles = () => {
+                if (!showNewFilesList) return;
+                showNewFilesList.innerHTML = '';
+                showPendingFiles.forEach((file, index) => {
+                    const row = document.createElement('div');
+                    row.className = 'flex items-center justify-between gap-2 text-sm text-[#64748b] dark:text-[#A1A09A]';
+                    row.innerHTML = `
+                        <span class="truncate">${file.name}</span>
+                        <button type="button" class="text-red-500 hover:text-red-600 shrink-0">{{ __('objects.delete_file') }}</button>
+                    `;
+                    row.querySelector('button')?.addEventListener('click', () => {
+                        showPendingFiles.splice(index, 1);
+                        syncShowFilesInput();
+                        renderShowNewFiles();
+                    });
+                    showNewFilesList.appendChild(row);
+                });
+            };
+
+            showFilesInput?.addEventListener('change', function() {
+                const picked = Array.from(this.files || []);
+                if (!picked.length) return;
+                showPendingFiles = showPendingFiles.concat(picked);
+                syncShowFilesInput();
+                renderShowNewFiles();
+            });
             const toggleEdit = (enabled) => {
                 form.querySelectorAll('input, select, textarea').forEach((el) => {
                     if (el.type === 'hidden') return;
@@ -401,7 +433,11 @@
                 btnSave.classList.toggle('hidden', !enabled);
                 btnCancel.classList.toggle('hidden', !enabled);
             };
-            btnEdit?.addEventListener('click', () => toggleEdit(true));
+            btnEdit?.addEventListener('click', () => {
+                showPendingFiles = [];
+                renderShowNewFiles();
+                toggleEdit(true);
+            });
             btnCancel?.addEventListener('click', () => location.reload());
         })();
     </script>

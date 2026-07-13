@@ -17,12 +17,14 @@ class UserNotification extends Model
         'read_at',
         'related_supplier_id',
         'action_key',
+        'related_order_id',
     ];
 
     protected $casts = [
         'is_read' => 'boolean',
         'read_at' => 'datetime',
         'related_supplier_id' => 'integer',
+        'related_order_id' => 'integer',
     ];
 
     public function user(): BelongsTo

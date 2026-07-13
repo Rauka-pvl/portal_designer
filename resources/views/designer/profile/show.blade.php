@@ -1,6 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('title', __('dashboard.profile'))
+@section('header_title', __('dashboard.profile'))
 
 @push('styles')
     <style>
@@ -36,6 +37,8 @@
         $initials = collect(preg_split('/\s+/', $name))->filter()->take(2)->map(fn ($p) => mb_strtoupper(mb_substr($p, 0, 1)))->implode('');
         $initials = $initials !== '' ? $initials : 'U';
     @endphp
+
+    @include('partials.profile-tabs', ['active' => 'profile'])
 
     <div class="mb-6 profile-shell p-5">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">

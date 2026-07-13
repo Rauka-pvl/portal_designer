@@ -14,6 +14,8 @@ return [
     'sent_to_supplier' => 'Жіберілді',
     'not_sent_to_supplier' => 'Жіберілмеді',
     'amount' => 'Сома',
+    'bonus_percent' => 'Сіздің пайызыңыз (бонус)',
+    'bonus_percent_hint' => 'Жеткізу аяқталғаннан кейінгі мәміле сомасынан бонус:',
     'planned_date' => 'Күні (жоспар)',
     'actual_date' => 'Күні (факт)',
     'product_service' => 'Тауар/қызмет',

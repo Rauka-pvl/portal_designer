@@ -2,7 +2,7 @@
 
 @section('title', __('supplier-portal.page_company_title'))
 
-@section('header_title', __('supplier-portal.nav_company'))
+@section('header_title', __('supplier-portal.page_company_title'))
 
 @section('content')
     @php
