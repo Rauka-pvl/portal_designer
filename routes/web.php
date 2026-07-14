@@ -369,6 +369,7 @@ Route::middleware(['auth', 'role:designer'])->group(function () {
     Route::post('/subscription/change-plan', [SubscriptionController::class, 'changePlan'])->name('subscription.change-plan');
     Route::post('/subscription/payment', [SubscriptionController::class, 'updatePayment'])->name('subscription.payment');
     Route::post('/subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
+    Route::post('/subscription/resume', [SubscriptionController::class, 'resume'])->name('subscription.resume');
 });
 
 Route::middleware(['auth', 'role:designer|supplier', 'password.changed', 'subscription.active'])->group(function () {

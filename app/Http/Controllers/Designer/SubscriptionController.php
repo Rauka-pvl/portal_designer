@@ -15,23 +15,48 @@ class SubscriptionController extends Controller
     {
         $user = $request->user();
         $hasAccess = DesignerSubscription::hasAccess($user);
+        $status = DesignerSubscription::status($user);
+        $currentPlan = $user->subscription_plan;
+        $planData = $currentPlan ? DesignerSubscription::plan($currentPlan) : null;
+        $accessEndsAt = DesignerSubscription::accessEndsAt($user);
+        $nextChargeAt = DesignerSubscription::nextChargeAt($user);
+        $nextChargeAmount = DesignerSubscription::nextChargeAmount($user);
+
+        $payments = DesignerSubscriptionPayment::query()
+            ->where('user_id', $user->id)
+            ->latest('id')
+            ->limit(20)
+            ->get()
+            ->map(fn (DesignerSubscriptionPayment $p) => $this->paymentRow($p));
 
         return view('designer.subscription.index', [
             'plans' => DesignerSubscription::plans(),
-            'status' => DesignerSubscription::status($user),
+            'status' => $status,
             'isOnTrial' => DesignerSubscription::isOnTrial($user),
             'trialDaysLeft' => DesignerSubscription::trialDaysLeft($user),
+            'trialProgress' => DesignerSubscription::trialProgressPercent($user),
+            'trialTotalDays' => DesignerSubscription::TRIAL_DAYS,
             'canUseTrial' => DesignerSubscription::canUseTrial($user),
-            'currentPlan' => $user->subscription_plan,
+            'currentPlan' => $currentPlan,
+            'planPrice' => $planData ? (int) $planData['price'] : null,
             'paymentMethod' => $user->subscription_payment_method,
-            'accessEndsAt' => DesignerSubscription::accessEndsAt($user),
+            'cardLast4' => DesignerSubscription::cardLast4($user),
+            'cardExpiry' => DesignerSubscription::cardExpiry($user),
+            'accessEndsAt' => $accessEndsAt,
+            'accessEndsAtLabel' => DesignerSubscription::formatDate($accessEndsAt),
+            'nextChargeAt' => $nextChargeAt,
+            'nextChargeAtLabel' => DesignerSubscription::formatDate($nextChargeAt),
+            'nextChargeAmount' => $nextChargeAmount,
+            'nextChargeAmountLabel' => $nextChargeAmount !== null
+                ? DesignerSubscription::formatMoney($nextChargeAmount)
+                : null,
+            'autoRenew' => DesignerSubscription::isAutoRenewEnabled($user),
+            'primaryAction' => DesignerSubscription::primaryAction($user),
             'hasAccess' => $hasAccess,
             'cancelledAt' => $user->subscription_cancelled_at,
-            'payments' => DesignerSubscriptionPayment::query()
-                ->where('user_id', $user->id)
-                ->latest()
-                ->limit(10)
-                ->get(),
+            'billingName' => $user->name,
+            'billingEmail' => $user->email,
+            'payments' => $payments,
             'locked' => ! $hasAccess,
         ]);
     }
@@ -67,28 +92,29 @@ class SubscriptionController extends Controller
         $method = $data['payment_method'];
         $promo = $data['promo_code'] ?? null;
 
-        // Если введён валидный промокод — оплата промо
         if (DesignerSubscription::isValidPromo($promo)) {
             $method = 'promo';
         }
 
-        // Карта / Kaspi пока заглушки: без промо всё равно активируем (демо)
+        $cardDigits = preg_replace('/\D+/', '', (string) ($data['card_number'] ?? ''));
+        $cardLast4 = $cardDigits && strlen($cardDigits) >= 4 ? substr($cardDigits, -4) : null;
+
         $wasTrialEligible = DesignerSubscription::canUseTrial($request->user());
 
         DesignerSubscription::checkout(
             $request->user(),
             $data['plan'],
             $method,
-            $promo
+            $promo,
+            $cardLast4,
+            $data['card_expiry'] ?? null
         );
 
-        $message = $wasTrialEligible
-            ? __('subscription.trial_started')
-            : __('subscription.purchase_success');
-
         return redirect()
-            ->route('dashboard')
-            ->with('success', $message);
+            ->route('subscription.index')
+            ->with('success', $wasTrialEligible
+                ? __('subscription.trial_started')
+                : __('subscription.purchase_success'));
     }
 
     public function changePlan(Request $request): RedirectResponse
@@ -115,8 +141,61 @@ class SubscriptionController extends Controller
 
     public function cancel(Request $request): RedirectResponse
     {
-        DesignerSubscription::cancel($request->user());
+        $data = $request->validate([
+            'reason' => ['nullable', 'in:expensive,not_using,missing_features,tech_issues,other'],
+        ]);
 
-        return back()->with('success', __('subscription.cancelled'));
+        DesignerSubscription::cancel($request->user(), $data['reason'] ?? null);
+
+        $ends = DesignerSubscription::formatDate(DesignerSubscription::accessEndsAt($request->user()->fresh()));
+
+        return back()->with('success', __('subscription.cancelled_until', ['date' => $ends ?? '—']));
+    }
+
+    public function resume(Request $request): RedirectResponse
+    {
+        DesignerSubscription::resume($request->user());
+
+        return back()->with('success', __('subscription.resumed'));
+    }
+
+    private function paymentRow(DesignerSubscriptionPayment $p): array
+    {
+        $meta = is_array($p->meta) ? $p->meta : [];
+        $method = (string) ($meta['payment_method'] ?? '');
+        $isTrial = (bool) ($meta['is_trial'] ?? false) || $p->status === 'trial';
+        $listPrice = isset($meta['list_price']) ? (int) $meta['list_price'] : null;
+
+        $statusKey = match ((string) $p->status) {
+            'trial' => 'trial',
+            'pending' => 'pending',
+            'failed' => 'failed',
+            'refunded' => 'refunded',
+            'cancelled' => 'cancelled',
+            default => 'paid',
+        };
+
+        return [
+            'id' => $p->id,
+            'date' => DesignerSubscription::formatDate($p->created_at),
+            'plan' => $p->plan,
+            'plan_label' => __('subscription.plan_'.$p->plan),
+            'period' => DesignerSubscription::formatDate($p->starts_at)
+                .'–'.DesignerSubscription::formatDate($p->ends_at),
+            'method' => $method,
+            'method_label' => match ($method) {
+                'kaspi' => __('subscription.pay_kaspi'),
+                'card' => __('subscription.pay_card'),
+                'promo' => __('subscription.pay_promo'),
+                default => '—',
+            },
+            'amount' => (int) $p->amount,
+            'amount_label' => DesignerSubscription::formatMoney((int) $p->amount),
+            'list_price_label' => $listPrice !== null ? DesignerSubscription::formatMoney($listPrice) : null,
+            'is_trial' => $isTrial,
+            'status' => $statusKey,
+            'status_label' => __('subscription.payment_status_'.$statusKey),
+            'has_receipt' => ! $isTrial && (int) $p->amount > 0 && $statusKey === 'paid',
+        ];
     }
 }

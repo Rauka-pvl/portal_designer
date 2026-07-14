@@ -35,6 +35,7 @@ class User extends Authenticatable
         'subscription_trial_used',
         'subscription_payment_method',
         'subscription_cancelled_at',
+        'subscription_cancel_reason',
         'phone',
         'city',
         'short_description',
