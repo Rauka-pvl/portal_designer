@@ -81,6 +81,18 @@
                             </a>
                         @endif
 
+                        @if ($n->action_key === 'order_offer')
+                            @if ($isDesigner && Route::has('supplier-orders.index'))
+                                <a href="{{ route('supplier-orders.index') }}" class="px-3 py-1.5 rounded-lg border border-[#f59e0b] text-xs text-[#f59e0b] hover:bg-[#f59e0b]/10 transition-colors">
+                                    {{ __('notifications.offer_view_order') }}
+                                </a>
+                            @elseif (!$isDesigner && Route::has('supplier.orders'))
+                                <a href="{{ route('supplier.orders') }}?tab=offers" class="px-3 py-1.5 rounded-lg border border-[#f59e0b] text-xs text-[#f59e0b] hover:bg-[#f59e0b]/10 transition-colors">
+                                    {{ __('notifications.offer_view_order') }}
+                                </a>
+                            @endif
+                        @endif
+
                         <form method="POST" action="{{ route($routePrefix . '.destroy', $n->id) }}" onsubmit="return confirm('{{ __('notifications.delete_confirm') }}')">
                             @csrf
                             @method('DELETE')

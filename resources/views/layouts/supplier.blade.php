@@ -219,7 +219,7 @@
             </div>
         </header>
 
-        <main class="flex-1 px-4 sm:px-6 py-8 w-full mx-auto max-w-[min(100%,90rem)]">
+        <main class="flex-1 p-6 w-full">
             @yield('content')
         </main>
     </div>

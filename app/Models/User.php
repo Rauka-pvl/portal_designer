@@ -91,6 +91,11 @@ class User extends Authenticatable
         return $this->hasOne(DesignerProfile::class);
     }
 
+    public function cashbackTransactions(): HasMany
+    {
+        return $this->hasMany(DesignerCashbackTransaction::class)->latest();
+    }
+
     public function scopeWithDesignerProfile(Builder $query): Builder
     {
         return $query->with('designerProfile');

@@ -6,8 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\Supplier;
 use App\Models\Supplier_orders;
-use App\Models\UserNotification;
+use App\Support\OrderOfferNotifier;
 use App\Support\PublicFileStorage;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -203,11 +204,17 @@ class SupplierOrderController extends Controller
             ->where('user_id', $request->user()->id)
             ->findOrFail($orderId);
 
+        if (! $order->isInFunnel()) {
+            abort(422, __('supplier-orders.offer_not_accepted_yet'));
+        }
+
         $order->status = $data['status'];
         $order->save();
 
         if ($data['status'] === 'delivery_completed') {
-            \App\Models\Review::requestReviewsForCompletedOrder($order->load('supplier:id,user_id,name', 'designer:id,name'));
+            $order->load('supplier:id,user_id,name', 'designer:id,name');
+            \App\Models\Review::requestReviewsForCompletedOrder($order);
+            \App\Support\CashbackAccrual::forCompletedOrder($order);
         }
 
         return response()->json([
@@ -386,25 +393,128 @@ class SupplierOrderController extends Controller
         $sendToSupplier = $request->boolean('send_to_supplier');
 
         if ($sendToSupplier) {
-            $order->status = $selectedStatus;
             $order->is_sent_to_supplier = true;
+
+            if (! $wasSentToSupplier || ! in_array($order->offer_status, [
+                Supplier_orders::OFFER_ACCEPTED,
+                Supplier_orders::OFFER_PENDING_SUPPLIER,
+                Supplier_orders::OFFER_PENDING_DESIGNER,
+            ], true)) {
+                // Первая отправка или повторная после отзыва — новое предложение поставщику
+                $order->offer_status = Supplier_orders::OFFER_PENDING_SUPPLIER;
+                $order->status = 'order_created';
+                $order->offer_message = null;
+                $order->appendOfferHistory(
+                    'designer',
+                    $order->bonus_percent !== null ? (float) $order->bonus_percent : null
+                );
+            } else {
+                $order->status = $selectedStatus;
+            }
         } else {
             $order->status = 'draft';
             $order->is_sent_to_supplier = false;
+            $order->offer_status = null;
+            $order->offer_message = null;
         }
 
         $order->save();
 
         if ($sendToSupplier && ! $wasSentToSupplier) {
-            $this->notifySupplierAboutOrder($supplierId, $order->id, 'new');
+            OrderOfferNotifier::notify($order, 'new', 'supplier');
+        } elseif ($sendToSupplier && $wasSentToSupplier && $order->offer_status === Supplier_orders::OFFER_PENDING_SUPPLIER
+            && $order->wasChanged('offer_status')) {
+            OrderOfferNotifier::notify($order, 'new', 'supplier');
         } elseif (! $sendToSupplier && $wasSentToSupplier) {
             $designerName = (string) ($request->user()->name ?? '');
-            $this->notifySupplierAboutOrder($supplierId, $order->id, 'withdrawn', $designerName);
+            OrderOfferNotifier::notifyWithdrawn($supplierId, $order->id, $designerName);
         }
 
-        if ($sendToSupplier && $order->status === 'delivery_completed') {
-            \App\Models\Review::requestReviewsForCompletedOrder($order->load('supplier:id,user_id,name', 'designer:id,name'));
+        if ($sendToSupplier && $order->offer_status === Supplier_orders::OFFER_ACCEPTED && $order->status === 'delivery_completed') {
+            $order->load('supplier:id,user_id,name', 'designer:id,name');
+            \App\Models\Review::requestReviewsForCompletedOrder($order);
+            \App\Support\CashbackAccrual::forCompletedOrder($order);
         }
+    }
+
+    public function acceptOffer(Request $request, int $orderId): JsonResponse
+    {
+        $order = $this->findDesignerOrder($request, $orderId);
+        if (! $order->canDesignerRespondToOffer()) {
+            abort(422, __('supplier-orders.offer_action_unavailable'));
+        }
+
+        $order->offer_status = Supplier_orders::OFFER_ACCEPTED;
+        $order->status = 'order_confirmed';
+        $order->offer_message = null;
+        $order->appendOfferHistory('designer', $order->bonus_percent !== null ? (float) $order->bonus_percent : null, 'accepted');
+        $order->save();
+
+        OrderOfferNotifier::notify($order, 'accepted', 'supplier');
+
+        return response()->json([
+            'success' => true,
+            'message' => __('supplier-orders.offer_accepted'),
+            'order' => $this->payload($order->load(['project:id,name', 'supplier:id,name'])),
+        ]);
+    }
+
+    public function rejectOffer(Request $request, int $orderId): JsonResponse
+    {
+        $order = $this->findDesignerOrder($request, $orderId);
+        if (! $order->canDesignerRespondToOffer()) {
+            abort(422, __('supplier-orders.offer_action_unavailable'));
+        }
+
+        $order->offer_status = Supplier_orders::OFFER_REJECTED;
+        $order->appendOfferHistory('designer', $order->bonus_percent !== null ? (float) $order->bonus_percent : null, 'rejected');
+        $order->save();
+
+        OrderOfferNotifier::notify($order, 'rejected', 'supplier');
+
+        return response()->json([
+            'success' => true,
+            'message' => __('supplier-orders.offer_rejected'),
+            'order' => $this->payload($order->load(['project:id,name', 'supplier:id,name'])),
+        ]);
+    }
+
+    public function counterOffer(Request $request, int $orderId): JsonResponse
+    {
+        $data = $request->validate([
+            'bonus_percent' => ['required', 'numeric', 'min:0', 'max:100'],
+            'message' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $order = $this->findDesignerOrder($request, $orderId);
+        if (! $order->canDesignerRespondToOffer()) {
+            abort(422, __('supplier-orders.offer_action_unavailable'));
+        }
+
+        $percent = (float) $data['bonus_percent'];
+        $message = isset($data['message']) ? trim((string) $data['message']) : null;
+
+        $order->bonus_percent = $percent;
+        $order->offer_message = $message !== '' ? $message : null;
+        $order->offer_status = Supplier_orders::OFFER_PENDING_SUPPLIER;
+        $order->appendOfferHistory('designer', $percent, $message);
+        $order->save();
+
+        OrderOfferNotifier::notify($order, 'counter', 'supplier');
+
+        return response()->json([
+            'success' => true,
+            'message' => __('supplier-orders.offer_counter_sent'),
+            'order' => $this->payload($order->load(['project:id,name', 'supplier:id,name'])),
+        ]);
+    }
+
+    private function findDesignerOrder(Request $request, int $orderId): Supplier_orders
+    {
+        return Supplier_orders::query()
+            ->where('user_id', (int) $request->user()->id)
+            ->with(['project:id,name', 'supplier:id,name,user_id', 'designer:id,name'])
+            ->findOrFail($orderId);
     }
 
     /**
@@ -458,34 +568,6 @@ class SupplierOrderController extends Controller
         }
 
         return $result === [] ? null : $result;
-    }
-
-    private function notifySupplierAboutOrder(int $supplierId, int $orderId, string $type, string $designerName = ''): void
-    {
-        $supplier = Supplier::query()->find($supplierId);
-        if (! $supplier || (int) ($supplier->user_id ?? 0) <= 0) {
-            return;
-        }
-
-        if ($type === 'withdrawn') {
-            $title = __('notifications.order_withdrawn_title');
-            $comment = __('notifications.order_withdrawn_comment', [
-                'order' => (string) $orderId,
-                'designer' => $designerName !== '' ? $designerName : __('supplier-orders.designer'),
-            ]);
-        } else {
-            $title = __('notifications.new_order_title');
-            $comment = __('notifications.new_order_comment', ['order' => (string) $orderId]);
-        }
-
-        UserNotification::query()->create([
-            'user_id' => (int) $supplier->user_id,
-            'title' => $title,
-            'comment' => $comment,
-            'is_read' => false,
-            'related_supplier_id' => (int) $supplier->id,
-            'action_key' => 'supplier_order',
-        ]);
     }
 
     private function availableSuppliers(int $designerId)
@@ -550,8 +632,6 @@ class SupplierOrderController extends Controller
             'is_sent_to_supplier' => (bool) $order->is_sent_to_supplier,
             'amount' => (int) $order->summa,
             'summa' => (int) $order->summa,
-            'bonus_percent' => $order->bonus_percent !== null ? (float) $order->bonus_percent : null,
-            'bonus_amount' => $order->bonus_percent !== null ? (int) round((int) $order->summa * (float) $order->bonus_percent / 100) : null,
             'category' => (string) ($order->category ?? ''),
             'mark' => (string) ($order->mark ?? ''),
             'room' => (string) ($order->room ?? ''),
@@ -586,6 +666,7 @@ class SupplierOrderController extends Controller
             'product_service' => (string) ($order->comment ?? ''),
             'comment' => (string) ($order->comment ?? ''),
             'unread_chat_count' => max(0, $unreadChatCount),
+            ...$order->offerPayload('designer'),
         ];
     }
 

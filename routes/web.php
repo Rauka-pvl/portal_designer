@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Designer\CashbackController;
 use App\Http\Controllers\Designer\ChecklistStepController;
 use App\Http\Controllers\Designer\ClientController;
 use App\Http\Controllers\Designer\DashboardCalendarController;
@@ -66,6 +67,15 @@ Route::middleware(['auth', 'role:supplier', 'password.changed'])->group(function
     Route::patch('/supplier/orders/{orderId}/status', [SupplierPortalController::class, 'updateOrderStatus'])
         ->whereNumber('orderId')
         ->name('supplier.orders.update_status');
+    Route::post('/supplier/orders/{orderId}/offer/accept', [SupplierPortalController::class, 'acceptOffer'])
+        ->whereNumber('orderId')
+        ->name('supplier.orders.offer.accept');
+    Route::post('/supplier/orders/{orderId}/offer/reject', [SupplierPortalController::class, 'rejectOffer'])
+        ->whereNumber('orderId')
+        ->name('supplier.orders.offer.reject');
+    Route::post('/supplier/orders/{orderId}/offer/counter', [SupplierPortalController::class, 'counterOffer'])
+        ->whereNumber('orderId')
+        ->name('supplier.orders.offer.counter');
 
     Route::get('/supplier/products', [SupplierProductController::class, 'index'])->name('supplier.products.index');
     Route::get('/supplier/products/template', [SupplierProductController::class, 'template'])->name('supplier.products.template');
@@ -155,7 +165,7 @@ Route::middleware(['auth', 'role:designer'])->group(function () {
                 'clients' => (int) $clientsCount,
                 'orders_in_work' => (int) $ordersInWork,
                 'tasks_today' => (int) $tasksToday,
-                'accumulated_bonuses' => 0,
+                'accumulated_bonuses' => \App\Models\DesignerCashbackTransaction::availableBalance($userId),
             ],
         ]);
     })->name('dashboard');
@@ -283,8 +293,20 @@ Route::middleware(['auth', 'role:designer'])->group(function () {
     Route::patch('/supplier-orders/{orderId}/status', [SupplierOrderController::class, 'updateStatus'])
         ->whereNumber('orderId')
         ->name('supplier-orders.update_status');
+    Route::post('/supplier-orders/{orderId}/offer/accept', [SupplierOrderController::class, 'acceptOffer'])
+        ->whereNumber('orderId')
+        ->name('supplier-orders.offer.accept');
+    Route::post('/supplier-orders/{orderId}/offer/reject', [SupplierOrderController::class, 'rejectOffer'])
+        ->whereNumber('orderId')
+        ->name('supplier-orders.offer.reject');
+    Route::post('/supplier-orders/{orderId}/offer/counter', [SupplierOrderController::class, 'counterOffer'])
+        ->whereNumber('orderId')
+        ->name('supplier-orders.offer.counter');
 
     Route::get('/profile/reviews', [ReviewController::class, 'index'])->name('profile.reviews');
+    Route::get('/profile/cashback', [CashbackController::class, 'index'])->name('profile.cashback');
+    Route::get('/profile/cashback/withdraw', [CashbackController::class, 'withdrawForm'])->name('profile.cashback.withdraw');
+    Route::post('/profile/cashback/withdraw', [CashbackController::class, 'withdraw'])->name('profile.cashback.withdraw.store');
     Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
 
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');

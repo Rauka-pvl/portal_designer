@@ -329,21 +329,19 @@
 <!-- Контент вкладок -->
 <div id="table-view" class="tab-content">
     <div class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full">
+        <div class="w-full">
+            <table class="w-full table-fixed">
                 <thead class="bg-[#f8fafc] dark:bg-[#0a0a0a]">
                     <tr>
-                        <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="number">{{ __('supplier-orders.number') }}</th>
-                        <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="created_date">{{ __('supplier-orders.created_date') }}</th>
-                        <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="supplier_name">{{ __('supplier-orders.supplier') }}</th>
-                        <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="project_name">{{ __('supplier-orders.project') }}</th>
-                        <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="status">{{ __('supplier-orders.status') }}</th>
-                        <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="amount">{{ __('supplier-orders.amount') }}</th>
-                        <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="planned_date">{{ __('supplier-orders.planned_date') }}</th>
-                        <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="actual_date">{{ __('supplier-orders.actual_date') }}</th>
-                        <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('supplier-orders.product_service') }}</th>
-                        <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('supplier-orders.links') }}</th>
-                        <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('supplier-orders.view') }}</th>
+                        <th class="w-[6%] px-2 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="number">{{ __('supplier-orders.number') }}</th>
+                        <th class="w-[11%] px-2 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="created_date">{{ __('supplier-orders.created_date') }}</th>
+                        <th class="w-[12%] px-2 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="supplier_name">{{ __('supplier-orders.supplier') }}</th>
+                        <th class="w-[14%] px-2 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="project_name">{{ __('supplier-orders.project') }}</th>
+                        <th class="w-[15%] px-2 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="status">{{ __('supplier-orders.status') }}</th>
+                        <th class="w-[11%] px-2 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="amount">{{ __('supplier-orders.amount') }}</th>
+                        <th class="w-[11%] px-2 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="planned_date">{{ __('supplier-orders.planned_date') }}</th>
+                        <th class="w-[11%] px-2 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header" data-sort="actual_date">{{ __('supplier-orders.actual_date') }}</th>
+                        <th class="w-[9%] px-2 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('supplier-orders.view') }}</th>
                     </tr>
                 </thead>
                 <tbody id="orders-table-body" class="divide-y divide-[#7c8799] dark:divide-[#3E3E3A]">
@@ -792,7 +790,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!tbody) return;
 
         if (paginated.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="12" class="px-4 py-8 text-center text-[#64748b] dark:text-[#A1A09A]">{{ __('supplier-orders.no_orders') }}</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-8 text-center text-[#64748b] dark:text-[#A1A09A]">{{ __('supplier-orders.no_orders') }}</td></tr>';
             renderPagination();
             return;
         }
@@ -811,29 +809,31 @@ document.addEventListener('DOMContentLoaded', function() {
                               effectiveStatus === 'advance_payment' ? '{{ __('supplier-orders.status_advance_payment') }}' :
                               effectiveStatus === 'full_payment' ? '{{ __('supplier-orders.status_full_payment') }}' :
                               '{{ __('supplier-orders.status_delivery_completed') }}';
+            const offerBadge = order.offer_status === 'pending_supplier'
+                ? '<span class="ml-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">{{ __("supplier-orders.offer_pending_supplier") }}</span>'
+                : order.offer_status === 'pending_designer'
+                ? '<span class="ml-1 px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-200">{{ __("supplier-orders.offer_pending_designer") }}</span>'
+                : order.offer_status === 'rejected'
+                ? '<span class="ml-1 px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-200">{{ __("supplier-orders.offer_rejected") }}</span>'
+                : '';
             const createdDate = new Date(order.created_date).toLocaleDateString('kk-KZ');
-            console.log("createdDate", createdDate);
             const plannedDate = new Date(order.date_planned).toLocaleDateString('kk-KZ');
             const actualDate = order.date_actual ? new Date(order.date_actual).toLocaleDateString('kk-KZ') : '';
 
             return `
                 <tr class="hover:bg-[#f8fafc] dark:hover:bg-[#0a0a0a]" data-order-id="${order.id}" data-order='${JSON.stringify(order).replace(/'/g, "&#39;")}'>
-                    <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${order.id}</td>
-                    <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${createdDate}</td>
-                    <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${order.supplier_name}</td>
-                    <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${order.project_name}</td>
-                    <td class="px-4 py-3 text-sm">
-                        <span class="order-status-badge px-2 py-1 rounded text-xs font-medium ${statusClass}">${statusText}</span>
+                    <td class="px-2 py-2.5 text-sm text-[#0f172a] dark:text-[#EDEDEC] whitespace-nowrap">${order.id}</td>
+                    <td class="px-2 py-2.5 text-sm text-[#0f172a] dark:text-[#EDEDEC] whitespace-nowrap">${createdDate}</td>
+                    <td class="px-2 py-2.5 text-sm text-[#0f172a] dark:text-[#EDEDEC] truncate" title="${(order.supplier_name || '').replace(/"/g,'&quot;')}">${order.supplier_name}</td>
+                    <td class="px-2 py-2.5 text-sm text-[#0f172a] dark:text-[#EDEDEC] truncate" title="${(order.project_name || '').replace(/"/g,'&quot;')}">${order.project_name}</td>
+                    <td class="px-2 py-2.5 text-sm">
+                        <span class="order-status-badge inline-flex items-center px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${statusClass}">${statusText}</span>${offerBadge}
                     </td>
-                    <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${parseInt(order.summa).toLocaleString('kk-KZ')} ₸</td>
-                    <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${plannedDate}</td>
-                    <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${actualDate || '-'}</td>
-                    <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${order.comment || '-'}</td>
-                    <td class="px-4 py-3 text-sm">
-                        ${order.links && order.links.length > 0 ? order.links.map(link => `<a href="${link}" target="_blank" class="text-[#f59e0b] hover:underline text-xs">{{ __('supplier-orders.links') }}</a>`).join(' ') : '<span class="text-[#64748b] dark:text-[#A1A09A]">-</span>'}
-                    </td>
-                    <td class="px-4 py-3 text-sm">
-                        <div class="flex items-center gap-2">
+                    <td class="px-2 py-2.5 text-sm text-[#0f172a] dark:text-[#EDEDEC] whitespace-nowrap">${parseInt(order.summa).toLocaleString('kk-KZ')} ₸</td>
+                    <td class="px-2 py-2.5 text-sm text-[#0f172a] dark:text-[#EDEDEC] whitespace-nowrap">${plannedDate}</td>
+                    <td class="px-2 py-2.5 text-sm text-[#0f172a] dark:text-[#EDEDEC] whitespace-nowrap">${actualDate || '-'}</td>
+                    <td class="px-2 py-2.5 text-sm whitespace-nowrap">
+                        <div class="flex items-center gap-1 flex-nowrap">
                             <button onclick="viewOrder(${order.id})" class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] transition-colors" title="{{ __('supplier-orders.view') }}">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -899,6 +899,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                         <div class="flex flex-col items-end gap-1">
                             <span class="order-status-badge px-2 py-1 rounded text-xs font-medium ${statusClass}">${statusText}</span>
+                            ${order.offer_status === 'pending_supplier' ? '<span class="px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">{{ __("supplier-orders.offer_pending_supplier") }}</span>' : ''}
+                            ${order.offer_status === 'pending_designer' ? '<span class="px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-200">{{ __("supplier-orders.offer_pending_designer") }}</span>' : ''}
+                            ${order.offer_status === 'rejected' ? '<span class="px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-200">{{ __("supplier-orders.offer_rejected") }}</span>' : ''}
                         </div>
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm">
@@ -942,7 +945,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const container = document.getElementById(`funnel-${status.replace(/_/g, '-')}`);
             if (!container) return;
 
-            const filtered = getFilteredOrders().filter(o => (o.workflow_status || o.status) === status);
+            const filtered = getFilteredOrders().filter(o => {
+                if (o.is_in_funnel === false) return false;
+                if (['pending_supplier', 'pending_designer', 'rejected'].includes(o.offer_status)) return false;
+                return (o.workflow_status || o.status) === status;
+            });
             container.innerHTML = filtered.map(order => `
                 <div class="funnel-card" draggable="true"
                     ondragstart="if(event.target.closest('button')){event.preventDefault();return false;}drag(event)"
@@ -1141,14 +1148,14 @@ function closeViewOrderModal() {
 }
 
 function viewOrder(id) {
-    const rows = document.querySelectorAll(`tr[data-order], div[data-order]`);
-    let order = null;
-    rows.forEach(row => {
-        const o = JSON.parse(row.getAttribute('data-order'));
-        if (o.id === id) {
-            order = o;
-        }
-    });
+    let order = (window.allOrders || []).find(o => Number(o.id) === Number(id)) || null;
+    if (!order) {
+        const rows = document.querySelectorAll(`tr[data-order], div[data-order]`);
+        rows.forEach(row => {
+            const o = JSON.parse(row.getAttribute('data-order'));
+            if (o.id === id) order = o;
+        });
+    }
     if (order) {
         const content = document.getElementById('view-order-content');
         const fileItems = Array.isArray(order.file_items) ? order.file_items : [];
@@ -1190,6 +1197,60 @@ function viewOrder(id) {
             </div>
         ` : '';
 
+        const history = Array.isArray(order.offer_history) ? order.offer_history : [];
+        const historyHtml = history.length ? `
+            <div class="space-y-1 mt-2">
+                <p class="text-xs text-[#64748b]">{{ __('supplier-orders.offer_history') }}</p>
+                ${history.slice().reverse().map(h => `
+                    <p class="text-xs text-[#64748b] dark:text-[#A1A09A]">
+                        ${h.by === 'supplier' ? '{{ __("supplier-orders.offer_by_supplier") }}' : '{{ __("supplier-orders.offer_by_designer") }}'}
+                        · ${h.percent != null ? h.percent + '%' : '—'}
+                        ${h.message ? ' · ' + escapeHtml(h.message) : ''}
+                    </p>
+                `).join('')}
+            </div>
+        ` : '';
+
+        const offerLabel = order.offer_status === 'pending_supplier' ? '{{ __("supplier-orders.offer_pending_supplier") }}'
+            : order.offer_status === 'pending_designer' ? '{{ __("supplier-orders.offer_pending_designer") }}'
+            : order.offer_status === 'rejected' ? '{{ __("supplier-orders.offer_rejected") }}'
+            : order.offer_status === 'accepted' ? '{{ __("supplier-orders.offer_accepted") }}' : '';
+
+        const offerBlock = (order.offer_status && order.offer_status !== 'accepted') || order.can_respond_to_offer ? `
+            <div class="md:col-span-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] p-4 space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <label class="text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('supplier-orders.offer_bonus_label') }}</label>
+                    <span class="text-sm text-[#f59e0b]">${offerLabel}</span>
+                </div>
+                <p class="text-[#0f172a] dark:text-[#EDEDEC] font-medium">${order.bonus_percent != null ? order.bonus_percent + '%' : '—'}
+                    ${order.bonus_amount != null ? `<span class="text-[#f59e0b]">(${parseInt(order.bonus_amount).toLocaleString('kk-KZ')} ₸)</span>` : ''}
+                </p>
+                ${order.offer_message ? `<p class="text-sm text-[#64748b]">${escapeHtml(order.offer_message)}</p>` : ''}
+                ${historyHtml}
+                ${order.can_respond_to_offer ? `
+                <div class="flex flex-wrap gap-2 pt-1">
+                    <button type="button" onclick="designerOfferAccept(${order.id})" class="px-4 py-2 rounded-lg bg-[#f59e0b] text-white text-sm font-medium hover:bg-[#d97706]">{{ __('supplier-orders.offer_accept') }}</button>
+                    <button type="button" onclick="designerOfferReject(${order.id})" class="px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-sm text-[#64748b] hover:border-red-400 hover:text-red-500">{{ __('supplier-orders.offer_reject') }}</button>
+                    <button type="button" onclick="document.getElementById('designer-offer-counter-box').classList.remove('hidden')" class="px-4 py-2 rounded-lg border border-[#f59e0b] text-sm text-[#f59e0b] hover:bg-[#f59e0b]/10">{{ __('supplier-orders.offer_counter') }}</button>
+                </div>
+                <div id="designer-offer-counter-box" class="hidden space-y-2 pt-2 border-t border-[#7c8799]/40 dark:border-[#3E3E3A]">
+                    <label class="text-sm text-[#64748b]">{{ __('supplier-orders.offer_your_percent') }}</label>
+                    <div class="relative max-w-[140px]">
+                        <input type="text" inputmode="decimal" id="designer-offer-counter-percent" class="w-full px-3 py-2 pr-8 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#0a0a0a] text-[#0f172a] dark:text-[#EDEDEC]" value="${order.bonus_percent != null ? order.bonus_percent : ''}">
+                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-[#64748b]">%</span>
+                    </div>
+                    <input type="text" id="designer-offer-counter-message" class="w-full px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#0a0a0a] text-sm" placeholder="{{ __('supplier-orders.offer_message_placeholder') }}">
+                    <button type="button" onclick="designerOfferCounter(${order.id})" class="px-4 py-2 rounded-lg bg-[#0f172a] dark:bg-[#EDEDEC] text-white dark:text-[#0a0a0a] text-sm font-medium">{{ __('supplier-orders.offer_counter_send') }}</button>
+                </div>
+                ` : ''}
+            </div>
+        ` : ((order.bonus_percent !== null && order.bonus_percent !== undefined) ? `
+            <div>
+                <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('supplier-orders.bonus_percent') }}</label>
+                <p class="text-[#0f172a] dark:text-[#EDEDEC]">${order.bonus_percent}% <span class="text-[#f59e0b]">(${parseInt(order.bonus_amount || 0).toLocaleString('kk-KZ')} ₸)</span></p>
+            </div>
+        ` : '');
+
         content.innerHTML = `
             <div>
                 <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('supplier-orders.number') }}</label>
@@ -1215,12 +1276,7 @@ function viewOrder(id) {
                 <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('supplier-orders.amount') }}</label>
                 <p class="text-[#0f172a] dark:text-[#EDEDEC]">${parseInt(order.amount).toLocaleString('kk-KZ')} ₸</p>
             </div>
-            ${(order.bonus_percent !== null && order.bonus_percent !== undefined) ? `
-            <div>
-                <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('supplier-orders.bonus_percent') }}</label>
-                <p class="text-[#0f172a] dark:text-[#EDEDEC]">${order.bonus_percent}% <span class="text-[#f59e0b]">(${parseInt(order.bonus_amount || 0).toLocaleString('kk-KZ')} ₸)</span></p>
-            </div>
-            ` : ''}
+            ${offerBlock}
             <div>
                 <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('supplier-orders.planned_date') }}</label>
                 <p class="text-[#0f172a] dark:text-[#EDEDEC]">${plannedDate}</p>
@@ -1259,6 +1315,53 @@ function viewOrder(id) {
             }
         }, 10);
     }
+}
+
+function designerOfferFetch(url, body) {
+    const token = document.querySelector('meta[name="csrf-token"]')?.content;
+    return fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': token,
+            'Accept': 'application/json',
+        },
+        body: body ? JSON.stringify(body) : '{}',
+    }).then(r => r.json().then(d => ({ ok: r.ok, d })));
+}
+
+function applyDesignerOffer(order) {
+    const idx = (window.allOrders || []).findIndex(o => o.id == order.id);
+    if (idx >= 0) window.allOrders[idx] = order;
+    else window.allOrders.unshift(order);
+    if (typeof window.renderTable === 'function') window.renderTable();
+    if (typeof window.renderList === 'function') window.renderList();
+    if (typeof window.renderFunnel === 'function') window.renderFunnel();
+    closeViewOrderModal();
+    if (typeof projectAlert === 'function') projectAlert('success', '{{ __("supplier-orders.saved") }}', '', 2500);
+}
+
+function designerOfferAccept(id) {
+    designerOfferFetch(`{{ url('supplier-orders') }}/${id}/offer/accept`)
+        .then(({ ok, d }) => { if (!ok || !d.success) throw new Error(); applyDesignerOffer(d.order); })
+        .catch(() => { if (typeof projectAlert === 'function') projectAlert('error', '{{ __("supplier-orders.error") }}', '', 3000); });
+}
+function designerOfferReject(id) {
+    designerOfferFetch(`{{ url('supplier-orders') }}/${id}/offer/reject`)
+        .then(({ ok, d }) => { if (!ok || !d.success) throw new Error(); applyDesignerOffer(d.order); })
+        .catch(() => { if (typeof projectAlert === 'function') projectAlert('error', '{{ __("supplier-orders.error") }}', '', 3000); });
+}
+function designerOfferCounter(id) {
+    let percent = (document.getElementById('designer-offer-counter-percent')?.value || '').replace(',', '.');
+    percent = parseFloat(percent);
+    if (isNaN(percent) || percent < 0 || percent > 100) {
+        if (typeof projectAlert === 'function') projectAlert('error', '{{ __("supplier-orders.error") }}', '', 3000);
+        return;
+    }
+    const message = document.getElementById('designer-offer-counter-message')?.value || '';
+    designerOfferFetch(`{{ url('supplier-orders') }}/${id}/offer/counter`, { bonus_percent: percent, message })
+        .then(({ ok, d }) => { if (!ok || !d.success) throw new Error(); applyDesignerOffer(d.order); })
+        .catch(() => { if (typeof projectAlert === 'function') projectAlert('error', '{{ __("supplier-orders.error") }}', '', 3000); });
 }
 
 async function deleteOrderFileFromIndex(orderId, fileIndex) {

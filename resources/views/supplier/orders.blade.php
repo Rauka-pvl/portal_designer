@@ -51,13 +51,80 @@
     .sortable-hdr {
         cursor: pointer;
         user-select: none;
-        padding-right: 1rem;
-        position: relative;
+        white-space: nowrap;
     }
     .sortable-hdr:hover { color: #f59e0b; }
-    .sortable-hdr::after { content: '↕'; position: absolute; right: 0; opacity: 0.5; }
-    .sortable-hdr.asc::after { content: '↑'; opacity: 1; }
-    .sortable-hdr.desc::after { content: '↓'; opacity: 1; }
+    .sortable-hdr .sort-ico { opacity: 0.45; margin-left: 0.25rem; font-size: 0.7em; }
+    .sortable-hdr.asc .sort-ico,
+    .sortable-hdr.desc .sort-ico { opacity: 1; }
+    .sortable-hdr.asc .sort-ico::before { content: '↑'; }
+    .sortable-hdr.desc .sort-ico::before { content: '↓'; }
+    .sortable-hdr .sort-ico::before { content: '↕'; }
+    .supplier-so-status-badge {
+        display: inline-flex;
+        align-items: center;
+        white-space: nowrap;
+        line-height: 1.25;
+        padding: 0.25rem 0.625rem;
+        border-radius: 0.375rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        vertical-align: middle;
+    }
+    .supplier-so-filters {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+    @media (min-width: 768px) {
+        .supplier-so-filters {
+            grid-template-columns: minmax(0, 1fr) 13rem 13rem;
+            align-items: center;
+        }
+        .supplier-so-filters.is-offers {
+            grid-template-columns: minmax(0, 1fr) 13rem;
+        }
+    }
+    .supplier-so-filters input,
+    .supplier-so-filters select {
+        width: 100%;
+        min-height: 2.5rem;
+    }
+    .supplier-so-product-cell {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        overflow: hidden;
+        word-break: break-word;
+        white-space: normal;
+        line-height: 1.35;
+        max-height: 2.7em;
+    }
+    #supplier-so-table-view {
+        width: 100%;
+    }
+    #supplier-so-table-view > div {
+        width: 100%;
+    }
+    #supplier-so-table-view table {
+        width: 100%;
+        table-layout: fixed;
+    }
+    .supplier-so-actions {
+        display: inline-flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 0.15rem;
+        white-space: nowrap;
+    }
+    .supplier-so-status-badge {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
     .supplier-so-pagination { display: flex; gap: 0.5rem; align-items: center; justify-content: center; margin-top: 1.5rem; flex-wrap: wrap; }
     .supplier-so-pagination button {
         padding: 0.5rem 1rem;
@@ -140,27 +207,31 @@
             <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">{{ __('supplier-portal.orders_intro') }}</p>
         </div>
 
-        <div class="mb-6 flex flex-wrap gap-2">
-            <button type="button" data-so-tab="table" class="supplier-so-tab-btn active">{{ __('supplier-orders.table') }}</button>
-            <button type="button" data-so-tab="list" class="supplier-so-tab-btn">{{ __('supplier-orders.list') }}</button>
-            <button type="button" data-so-tab="funnel" class="supplier-so-tab-btn">{{ __('supplier-orders.funnel') }}</button>
+        <div class="mb-4 flex flex-col gap-3">
+            <div class="flex flex-wrap gap-2">
+                <button type="button" data-so-scope="active" class="supplier-so-tab-btn active">{{ __('supplier-orders.supplier_orders') }}</button>
+                <button type="button" data-so-scope="offers" class="supplier-so-tab-btn">{{ __('supplier-orders.offers') }}</button>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button type="button" data-so-tab="table" class="supplier-so-tab-btn active">{{ __('supplier-orders.table') }}</button>
+                <button type="button" data-so-tab="list" class="supplier-so-tab-btn">{{ __('supplier-orders.list') }}</button>
+                <button type="button" data-so-tab="funnel" class="supplier-so-tab-btn">{{ __('supplier-orders.funnel') }}</button>
+            </div>
         </div>
 
-        <div class="mb-6 flex flex-col lg:flex-row gap-4">
-            <div class="flex-1 min-w-0">
-                <input type="search" id="supplier-so-search" placeholder="{{ __('supplier-orders.search') }}"
-                    class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
-            </div>
-            <div class="w-full lg:w-52">
-                <select id="supplier-so-project" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+        <div class="supplier-so-filters">
+            <input type="text" id="supplier-so-search" placeholder="{{ __('supplier-orders.search') }}" autocomplete="off"
+                class="px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+            <div id="supplier-so-project-wrap">
+                <select id="supplier-so-project" class="px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
                     <option value="">{{ __('supplier-orders.all_projects') }}</option>
                     @foreach ($filterProjects as $p)
                         <option value="{{ $p['id'] }}">{{ $p['name'] }}</option>
                     @endforeach
                 </select>
             </div>
-            <div class="w-full lg:w-52">
-                <select id="supplier-so-status" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+            <div id="supplier-so-status-wrap">
+                <select id="supplier-so-status" class="px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
                     <option value="">{{ __('supplier-orders.all_statuses') }}</option>
                     <option value="order_created">{{ __('supplier-orders.status_order_created') }}</option>
                     <option value="order_sent">{{ __('supplier-orders.status_order_sent') }}</option>
@@ -172,23 +243,21 @@
             </div>
         </div>
 
-        <div id="supplier-so-table-view" class="supplier-so-tab-panel">
-            <div class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full min-w-[880px]">
+        <div id="supplier-so-table-view" class="supplier-so-tab-panel w-full">
+            <div class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg overflow-hidden w-full">
+                <div class="w-full">
+                    <table class="w-full table-fixed">
                         <thead class="bg-[#f8fafc] dark:bg-[#0a0a0a]">
                             <tr>
-                                <th class="px-3 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-hdr" data-sort="number">{{ __('supplier-orders.number') }}</th>
-                                <th class="px-3 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-hdr" data-sort="created_date">{{ __('supplier-orders.created_date') }}</th>
-                                <th class="px-3 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-hdr" data-sort="designer_name">{{ __('supplier-orders.designer') }}</th>
-                                <th class="px-3 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-hdr" data-sort="project_name">{{ __('supplier-orders.project') }}</th>
-                                <th class="px-3 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-hdr" data-sort="status">{{ __('supplier-orders.status') }}</th>
-                                <th class="px-3 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-hdr" data-sort="amount">{{ __('supplier-orders.amount') }}</th>
-                                <th class="px-3 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-hdr" data-sort="planned_date">{{ __('supplier-orders.planned_date') }}</th>
-                                <th class="px-3 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-hdr" data-sort="actual_date">{{ __('supplier-orders.actual_date') }}</th>
-                                <th class="px-3 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('supplier-orders.product_service') }}</th>
-                                <th class="px-3 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('supplier-orders.links') }}</th>
-                                <th class="px-3 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('supplier-orders.view') }}</th>
+                                <th class="w-[6%] px-2 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-hdr" data-sort="number">{{ __('supplier-orders.number') }}<span class="sort-ico"></span></th>
+                                <th class="w-[11%] px-2 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-hdr" data-sort="created_date">{{ __('supplier-orders.created_date') }}<span class="sort-ico"></span></th>
+                                <th class="w-[12%] px-2 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-hdr" data-sort="designer_name">{{ __('supplier-orders.designer') }}<span class="sort-ico"></span></th>
+                                <th class="w-[14%] px-2 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-hdr" data-sort="project_name">{{ __('supplier-orders.project') }}<span class="sort-ico"></span></th>
+                                <th class="w-[15%] px-2 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-hdr" data-sort="status">{{ __('supplier-orders.status') }}<span class="sort-ico"></span></th>
+                                <th class="w-[11%] px-2 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-hdr" data-sort="amount">{{ __('supplier-orders.amount') }}<span class="sort-ico"></span></th>
+                                <th class="w-[11%] px-2 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-hdr" data-sort="planned_date">{{ __('supplier-orders.planned_date') }}<span class="sort-ico"></span></th>
+                                <th class="w-[11%] px-2 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-hdr" data-sort="actual_date">{{ __('supplier-orders.actual_date') }}<span class="sort-ico"></span></th>
+                                <th class="w-[9%] px-2 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">{{ __('supplier-orders.view') }}</th>
                             </tr>
                         </thead>
                         <tbody id="supplier-so-tbody" class="divide-y divide-[#7c8799] dark:divide-[#3E3E3A]"></tbody>
@@ -304,6 +373,10 @@
                 'status_delivery_completed' => __('supplier-orders.status_delivery_completed'),
                 'project_steps_section' => __('supplier-orders.project_steps_section'),
                 'step_link' => __('supplier-orders.step_link'),
+                'offer_pending_supplier' => __('supplier-orders.offer_pending_supplier'),
+                'offer_pending_designer_supplier' => __('supplier-orders.offer_pending_designer_supplier'),
+                'offer_accepted' => __('supplier-orders.offer_accepted'),
+                'offer_rejected' => __('supplier-orders.offer_rejected'),
             ];
         @endphp
         <script>
@@ -321,11 +394,31 @@ window.supplierSoLabels = @json($supplierSoLabels);
     let sortColumn = 'number';
     let sortDirection = 'desc';
     let currentTab = 'table';
+    let currentScope = 'active';
     let draggedEl = null;
 
     const dateLocale = window.supplierSoDateLocale || 'ru-RU';
     const statusUrlBase = window.supplierSoStatusUrl || '';
     const L = window.supplierSoLabels || {};
+    const offerUrlBase = statusUrlBase;
+
+    function isOfferOrder(o) {
+        return ['pending_supplier', 'pending_designer', 'rejected'].includes(o.offer_status);
+    }
+
+    function isActiveOrder(o) {
+        return o.is_in_funnel === true || (!o.offer_status && o.is_sent_to_supplier) || o.offer_status === 'accepted';
+    }
+
+    function offerStatusLabel(s) {
+        const map = {
+            pending_supplier: L.offer_pending_supplier || '{{ __("supplier-orders.offer_pending_supplier") }}',
+            pending_designer: L.offer_pending_designer_supplier || '{{ __("supplier-orders.offer_pending_designer_supplier") }}',
+            accepted: L.offer_accepted || '{{ __("supplier-orders.offer_accepted") }}',
+            rejected: L.offer_rejected || '{{ __("supplier-orders.offer_rejected") }}',
+        };
+        return map[s] || s || '';
+    }
 
     function statusLabel(s) {
         const map = {
@@ -356,10 +449,15 @@ window.supplierSoLabels = @json($supplierSoLabels);
         const project = document.getElementById('supplier-so-project')?.value || '';
         const status = document.getElementById('supplier-so-status')?.value || '';
         return allOrders.filter(o => {
-            const hay = [o.number, o.project_name, o.designer_name, o.comment, o.status].join(' ').toLowerCase();
+            if (currentScope === 'offers') {
+                if (!isOfferOrder(o)) return false;
+            } else {
+                if (!isActiveOrder(o)) return false;
+            }
+            const hay = [o.number, o.project_name, o.designer_name, o.comment, o.status, o.offer_status].join(' ').toLowerCase();
             const okSearch = !search || hay.includes(search);
             const okProj = !project || String(o.project_id) === project;
-            const okSt = !status || o.status === status;
+            const okSt = currentScope === 'offers' || !status || o.status === status;
             return okSearch && okProj && okSt;
         });
     }
@@ -427,7 +525,7 @@ window.supplierSoLabels = @json($supplierSoLabels);
         const pageRows = sorted.slice(start, start + itemsPerPage);
 
         if (sorted.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="11" class="px-4 py-8 text-center text-[#64748b] dark:text-[#A1A09A]">{{ __('supplier-orders.no_orders') }}</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-8 text-center text-[#64748b] dark:text-[#A1A09A]">{{ __('supplier-orders.no_orders') }}</td></tr>';
             if (pag) pag.innerHTML = '';
             return;
         }
@@ -437,17 +535,16 @@ window.supplierSoLabels = @json($supplierSoLabels);
             const badge = statusBadgeClass(st);
             const stText = statusLabel(st);
             return `<tr class="hover:bg-[#f8fafc] dark:hover:bg-[#0a0a0a]" data-order-id="${o.id}">
-                <td class="px-3 py-2.5 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${o.id}</td>
-                <td class="px-3 py-2.5 text-sm">${fmtDate(o.created_date)}</td>
-                <td class="px-3 py-2.5 text-sm">${escapeHtml(o.designer_name || '—')}</td>
-                <td class="px-3 py-2.5 text-sm">${escapeHtml(o.project_name || '—')}</td>
-                <td class="px-3 py-2.5 text-sm"><span class="px-2 py-0.5 rounded text-xs font-medium ${badge} order-status-badge">${escapeHtml(stText)}</span></td>
-                <td class="px-3 py-2.5 text-sm">${Number(o.summa).toLocaleString(dateLocale)} ₸</td>
-                <td class="px-3 py-2.5 text-sm">${fmtDate(o.date_planned)}</td>
-                <td class="px-3 py-2.5 text-sm">${o.date_actual ? fmtDate(o.date_actual) : '—'}</td>
-                <td class="px-3 py-2.5 text-sm max-w-[200px] truncate" title="${escapeHtml(o.comment || '')}">${escapeHtml(o.comment || '—')}</td>
-                <td class="px-3 py-2.5 text-sm">${(o.links && o.links.length) ? o.links.map(l => `<a href="${escapeAttr(l)}" target="_blank" rel="noopener" class="text-[#f59e0b] hover:underline text-xs mr-1">{{ __('supplier-orders.links') }}</a>`).join('') : '—'}</td>
-                <td class="px-3 py-2.5 text-sm">
+                <td class="px-2 py-2.5 text-sm text-[#0f172a] dark:text-[#EDEDEC] whitespace-nowrap">${o.id}</td>
+                <td class="px-2 py-2.5 text-sm whitespace-nowrap">${fmtDate(o.created_date)}</td>
+                <td class="px-2 py-2.5 text-sm truncate" title="${escapeAttr(o.designer_name || '')}">${escapeHtml(o.designer_name || '—')}</td>
+                <td class="px-2 py-2.5 text-sm truncate" title="${escapeAttr(o.project_name || '')}">${escapeHtml(o.project_name || '—')}</td>
+                <td class="px-2 py-2.5 text-sm"><span class="supplier-so-status-badge order-status-badge ${badge}">${escapeHtml(stText)}</span></td>
+                <td class="px-2 py-2.5 text-sm whitespace-nowrap">${Number(o.summa).toLocaleString(dateLocale)} ₸</td>
+                <td class="px-2 py-2.5 text-sm whitespace-nowrap">${fmtDate(o.date_planned)}</td>
+                <td class="px-2 py-2.5 text-sm whitespace-nowrap">${o.date_actual ? fmtDate(o.date_actual) : '—'}</td>
+                <td class="px-2 py-2.5 text-sm whitespace-nowrap">
+                    <div class="supplier-so-actions">
                     <button type="button" onclick="supplierSoView(${o.id})" class="p-1.5 rounded text-[#64748b] hover:text-[#f59e0b] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a]" title="{{ __('supplier-orders.view') }}">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                     </button>
@@ -455,6 +552,7 @@ window.supplierSoLabels = @json($supplierSoLabels);
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                     </button>
                     ${getChatBtnHtml(o, true)}
+                    </div>
                 </td>
             </tr>`;
         }).join('');
@@ -517,7 +615,7 @@ window.supplierSoLabels = @json($supplierSoLabels);
                     <div><span class="text-[#64748b]">{{ __('supplier-orders.planned_date') }}:</span> <span class="font-medium">${fmtDate(o.date_planned)}</span></div>
                     <div><span class="text-[#64748b]">{{ __('supplier-orders.actual_date') }}:</span> <span class="font-medium">${o.date_actual ? fmtDate(o.date_actual) : '—'}</span></div>
                 </div>
-                ${o.comment ? `<p class="text-sm mt-3 text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(o.comment)}</p>` : ''}
+                ${o.comment ? `<p class="supplier-so-product-cell text-sm mt-3 text-[#0f172a] dark:text-[#EDEDEC]" title="${escapeAttr(o.comment)}">${escapeHtml(o.comment)}</p>` : ''}
                 <div class="mt-4 flex items-center gap-2">
                     <button type="button" onclick="supplierSoView(${o.id})" class="supplier-so-tab-btn">{{ __('supplier-orders.view') }}</button>
                     ${getChatBtnHtml(o)}
@@ -580,6 +678,33 @@ window.supplierSoLabels = @json($supplierSoLabels);
         html += '</div>';
         return html;
     }
+
+    document.querySelectorAll('[data-so-scope]').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('[data-so-scope]').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            currentScope = this.dataset.soScope;
+            const funnelBtn = document.querySelector('[data-so-tab="funnel"]');
+            const statusWrap = document.getElementById('supplier-so-status-wrap');
+            const filters = document.querySelector('.supplier-so-filters');
+            if (currentScope === 'offers') {
+                if (currentTab === 'funnel') {
+                    document.querySelector('[data-so-tab="table"]')?.click();
+                }
+                if (funnelBtn) funnelBtn.classList.add('hidden');
+                if (statusWrap) statusWrap.classList.add('hidden');
+                filters?.classList.add('is-offers');
+            } else {
+                if (funnelBtn) funnelBtn.classList.remove('hidden');
+                if (statusWrap) statusWrap.classList.remove('hidden');
+                filters?.classList.remove('is-offers');
+            }
+            currentPage = 1;
+            if (currentTab === 'table') renderTable();
+            if (currentTab === 'list') renderList();
+            if (currentTab === 'funnel') renderFunnel();
+        });
+    });
 
     document.querySelectorAll('[data-so-tab]').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -770,6 +895,54 @@ window.supplierSoLabels = @json($supplierSoLabels);
                 </div>
             </div>
         ` : (o.comment ? `<div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.product_service') }}</span><p>${escapeHtml(o.comment)}</p></div>` : '');
+
+        const bonusText = o.bonus_percent != null
+            ? `${o.bonus_percent}% · ${(o.bonus_amount || 0).toLocaleString(dateLocale)} ₸`
+            : '—';
+        const history = Array.isArray(o.offer_history) ? o.offer_history : [];
+        const historyHtml = history.length ? `
+            <div class="md:col-span-2 mt-2 space-y-1">
+                <span class="text-xs text-[#64748b]">{{ __('supplier-orders.offer_history') }}</span>
+                ${history.slice().reverse().map(h => `
+                    <div class="text-xs text-[#64748b] dark:text-[#A1A09A]">
+                        ${escapeHtml(h.by === 'supplier' ? '{{ __("supplier-orders.offer_by_supplier") }}' : '{{ __("supplier-orders.offer_by_designer") }}')}
+                        · ${h.percent != null ? escapeHtml(String(h.percent)) + '%' : '—'}
+                        ${h.message ? ' · ' + escapeHtml(h.message) : ''}
+                    </div>
+                `).join('')}
+            </div>
+        ` : '';
+
+        let offerHtml = '';
+        if (isOfferOrder(o) || o.offer_status === 'accepted') {
+            offerHtml = `
+            <div class="md:col-span-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] p-4 space-y-3">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <span class="text-sm text-[#64748b]">{{ __('supplier-orders.offer_bonus_label') }}</span>
+                    <span class="text-sm font-medium text-[#f59e0b]">${escapeHtml(offerStatusLabel(o.offer_status))}</span>
+                </div>
+                <p class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(bonusText)}</p>
+                ${o.offer_message ? `<p class="text-sm text-[#64748b]">${escapeHtml(o.offer_message)}</p>` : ''}
+                ${historyHtml}
+                ${o.can_respond_to_offer ? `
+                <div class="flex flex-wrap gap-2 pt-1">
+                    <button type="button" onclick="supplierSoOfferAccept(${o.id})" class="px-4 py-2 rounded-lg bg-[#f59e0b] text-white text-sm font-medium hover:bg-[#d97706]">{{ __('supplier-orders.offer_accept') }}</button>
+                    <button type="button" onclick="supplierSoOfferReject(${o.id})" class="px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-sm text-[#64748b] hover:border-red-400 hover:text-red-500">{{ __('supplier-orders.offer_reject') }}</button>
+                    <button type="button" onclick="supplierSoOfferShowCounter(${o.id})" class="px-4 py-2 rounded-lg border border-[#f59e0b] text-sm text-[#f59e0b] hover:bg-[#f59e0b]/10">{{ __('supplier-orders.offer_counter') }}</button>
+                </div>
+                <div id="supplier-so-counter-box" class="hidden space-y-2 pt-2 border-t border-[#7c8799]/40 dark:border-[#3E3E3A]">
+                    <label class="text-sm text-[#64748b]">{{ __('supplier-orders.offer_your_percent') }}</label>
+                    <div class="relative max-w-[140px]">
+                        <input type="text" inputmode="decimal" id="supplier-so-counter-percent" class="w-full px-3 py-2 pr-8 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#0a0a0a] text-[#0f172a] dark:text-[#EDEDEC]" placeholder="0" value="${o.bonus_percent != null ? escapeAttr(String(o.bonus_percent)) : ''}">
+                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-[#64748b]">%</span>
+                    </div>
+                    <input type="text" id="supplier-so-counter-message" class="w-full px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#0a0a0a] text-sm text-[#0f172a] dark:text-[#EDEDEC]" placeholder="{{ __('supplier-orders.offer_message_placeholder') }}">
+                    <button type="button" onclick="supplierSoOfferCounter(${o.id})" class="px-4 py-2 rounded-lg bg-[#0f172a] dark:bg-[#EDEDEC] text-white dark:text-[#0a0a0a] text-sm font-medium">{{ __('supplier-orders.offer_counter_send') }}</button>
+                </div>
+                ` : ''}
+            </div>`;
+        }
+
         const html = `
             <div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.number') }}</span><p class="font-medium">#${o.id}</p></div>
             <div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.designer') }}</span><p>${escapeHtml(o.designer_name || '—')}</p></div>
@@ -778,6 +951,7 @@ window.supplierSoLabels = @json($supplierSoLabels);
             <div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.amount') }}</span><p>${Number(o.summa).toLocaleString(dateLocale)} ₸</p></div>
             <div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.planned_date') }}</span><p>${fmtDate(o.date_planned)}</p></div>
             <div><span class="text-sm text-[#64748b]">{{ __('supplier-orders.actual_date') }}</span><p>${o.date_actual ? fmtDate(o.date_actual) : '—'}</p></div>
+            ${offerHtml}
             ${productsHtml}
             ${filesHtml}
         ` + renderIncludedStepsHtml(o);
@@ -794,6 +968,71 @@ window.supplierSoLabels = @json($supplierSoLabels);
         panel.classList.add('translate-x-full');
         setTimeout(() => modal.classList.add('hidden'), 280);
     };
+
+    window.supplierSoOfferShowCounter = function() {
+        document.getElementById('supplier-so-counter-box')?.classList.remove('hidden');
+    };
+
+    function applyOfferResponse(order) {
+        const idx = allOrders.findIndex(x => String(x.id) === String(order.id));
+        if (idx >= 0) allOrders[idx] = order;
+        if (currentTab === 'table') renderTable();
+        if (currentTab === 'list') renderList();
+        if (currentTab === 'funnel') renderFunnel();
+        window.supplierSoCloseView();
+        if (typeof projectAlert === 'function') projectAlert('success', '{{ __("supplier-orders.saved") }}', '', 2500);
+    }
+
+    function offerFetch(url, body) {
+        const token = document.querySelector('meta[name="csrf-token"]')?.content;
+        return fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': token,
+                'Accept': 'application/json',
+            },
+            body: body ? JSON.stringify(body) : '{}',
+        }).then(r => r.json().then(d => ({ ok: r.ok, d })));
+    }
+
+    window.supplierSoOfferAccept = function(id) {
+        offerFetch(offerUrlBase + '/' + id + '/offer/accept')
+            .then(({ ok, d }) => {
+                if (!ok || !d.success || !d.order) throw new Error(d.message || 'fail');
+                applyOfferResponse(d.order);
+            })
+            .catch(() => { if (typeof projectAlert === 'function') projectAlert('error', '{{ __("supplier-orders.error") }}', '', 3000); });
+    };
+
+    window.supplierSoOfferReject = function(id) {
+        offerFetch(offerUrlBase + '/' + id + '/offer/reject')
+            .then(({ ok, d }) => {
+                if (!ok || !d.success || !d.order) throw new Error(d.message || 'fail');
+                applyOfferResponse(d.order);
+            })
+            .catch(() => { if (typeof projectAlert === 'function') projectAlert('error', '{{ __("supplier-orders.error") }}', '', 3000); });
+    };
+
+    window.supplierSoOfferCounter = function(id) {
+        let percent = (document.getElementById('supplier-so-counter-percent')?.value || '').replace(',', '.');
+        percent = parseFloat(percent);
+        if (isNaN(percent) || percent < 0 || percent > 100) {
+            if (typeof projectAlert === 'function') projectAlert('error', '{{ __("supplier-orders.error") }}', '', 3000);
+            return;
+        }
+        const message = document.getElementById('supplier-so-counter-message')?.value || '';
+        offerFetch(offerUrlBase + '/' + id + '/offer/counter', { bonus_percent: percent, message })
+            .then(({ ok, d }) => {
+                if (!ok || !d.success || !d.order) throw new Error(d.message || 'fail');
+                applyOfferResponse(d.order);
+            })
+            .catch(() => { if (typeof projectAlert === 'function') projectAlert('error', '{{ __("supplier-orders.error") }}', '', 3000); });
+    };
+
+    if (new URLSearchParams(window.location.search).get('tab') === 'offers') {
+        document.querySelector('[data-so-scope="offers"]')?.click();
+    }
 
     function updateOrderStatus(orderId, newStatus) {
         const token = document.querySelector('meta[name="csrf-token"]')?.content;

@@ -36,7 +36,18 @@ class Supplier_orders extends Model
         'comment',
         'product_items',
         'bonus_percent',
+        'offer_status',
+        'offer_message',
+        'offer_history',
     ];
+
+    public const OFFER_PENDING_SUPPLIER = 'pending_supplier';
+
+    public const OFFER_PENDING_DESIGNER = 'pending_designer';
+
+    public const OFFER_ACCEPTED = 'accepted';
+
+    public const OFFER_REJECTED = 'rejected';
 
     protected $casts = [
         'is_sent_to_supplier' => 'boolean',
@@ -45,6 +56,7 @@ class Supplier_orders extends Model
         'files' => 'array',
         'product_items' => 'array',
         'bonus_percent' => 'decimal:2',
+        'offer_history' => 'array',
         'date_planned' => 'date',
         'date_actual' => 'date',
         'prepayment_date' => 'date',
@@ -64,6 +76,97 @@ class Supplier_orders extends Model
     public function designer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /** Эффективный статус оффера: старые отправленные заказы = accepted. */
+    public function effectiveOfferStatus(): ?string
+    {
+        if ($this->offer_status) {
+            return (string) $this->offer_status;
+        }
+
+        if ((bool) $this->is_sent_to_supplier) {
+            return self::OFFER_ACCEPTED;
+        }
+
+        return null;
+    }
+
+    /** Активная поставка в воронке (принята или legacy без offer_status). */
+    public function isInFunnel(): bool
+    {
+        if (! (bool) $this->is_sent_to_supplier) {
+            return false;
+        }
+
+        return $this->effectiveOfferStatus() === self::OFFER_ACCEPTED;
+    }
+
+    public function isOfferNegotiation(): bool
+    {
+        return in_array($this->effectiveOfferStatus(), [
+            self::OFFER_PENDING_SUPPLIER,
+            self::OFFER_PENDING_DESIGNER,
+            self::OFFER_REJECTED,
+        ], true);
+    }
+
+    public function canSupplierRespondToOffer(): bool
+    {
+        return $this->effectiveOfferStatus() === self::OFFER_PENDING_SUPPLIER;
+    }
+
+    public function canDesignerRespondToOffer(): bool
+    {
+        return $this->effectiveOfferStatus() === self::OFFER_PENDING_DESIGNER;
+    }
+
+    public function bonusAmount(): ?int
+    {
+        if ($this->bonus_percent === null) {
+            return null;
+        }
+
+        return (int) round((int) $this->summa * (float) $this->bonus_percent / 100);
+    }
+
+    /**
+     * @return list<array{by: string, percent: float|null, message: string|null, at: string}>
+     */
+    public function offerHistoryList(): array
+    {
+        return is_array($this->offer_history) ? array_values($this->offer_history) : [];
+    }
+
+    public function appendOfferHistory(string $by, ?float $percent, ?string $message = null): void
+    {
+        $history = $this->offerHistoryList();
+        $history[] = [
+            'by' => $by,
+            'percent' => $percent,
+            'message' => $message !== null && trim($message) !== '' ? trim($message) : null,
+            'at' => now()->toIso8601String(),
+        ];
+        $this->offer_history = $history;
+    }
+
+    /** @return array<string, mixed> */
+    public function offerPayload(string $viewer): array
+    {
+        $status = $this->effectiveOfferStatus();
+
+        return [
+            'offer_status' => $status,
+            'offer_message' => (string) ($this->offer_message ?? ''),
+            'offer_history' => $this->offerHistoryList(),
+            'bonus_percent' => $this->bonus_percent !== null ? (float) $this->bonus_percent : null,
+            'bonus_amount' => $this->bonusAmount(),
+            'can_respond_to_offer' => $viewer === 'supplier'
+                ? $this->canSupplierRespondToOffer()
+                : $this->canDesignerRespondToOffer(),
+            'is_offer_negotiation' => $this->isOfferNegotiation(),
+            'is_in_funnel' => $this->isInFunnel(),
+        ];
     }
 
     /** @return list<int> */
