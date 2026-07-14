@@ -220,13 +220,14 @@ class DesignerDataController extends Controller
 
         $supplierIds = $suppliers->pluck('id')->map(fn ($id) => (int) $id)->all();
 
-        $favoriteIds = DesignerFavoriteSupplier::query()
-            ->where('user_id', $userId)
-            ->whereIn('supplier_id', $supplierIds)
-            ->pluck('supplier_id')
-            ->map(fn ($id) => (int) $id)
-            ->flip()
-            ->all();
+        $favoriteIds = $supplierIds === []
+            ? []
+            : DesignerFavoriteSupplier::query()
+                ->where('designer_user_id', $userId)
+                ->whereIn('supplier_id', $supplierIds)
+                ->pluck('supplier_id')
+                ->mapWithKeys(fn ($id) => [(int) $id => true])
+                ->all();
 
         $ratings = Review::supplierRatingSummaries($supplierIds);
 
