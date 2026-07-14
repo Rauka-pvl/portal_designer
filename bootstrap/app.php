@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureDesignerSubscription;
 use App\Http\Middleware\EnsurePasswordIsChanged;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\SetLocale;
@@ -18,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => RoleMiddleware::class,
             'password.changed' => EnsurePasswordIsChanged::class,
+            'subscription.active' => EnsureDesignerSubscription::class,
         ]);
         $middleware->web(append: [SetLocale::class]);
     })

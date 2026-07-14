@@ -51,6 +51,8 @@ class AuthController extends Controller
             'token' => $token,
             'token_type' => 'Bearer',
             'user' => $this->userPayload($user),
+            'subscription_required' => $user->role === 'designer'
+                && ! \App\Support\DesignerSubscription::hasAccess($user),
         ]);
     }
 
@@ -95,6 +97,8 @@ class AuthController extends Controller
             'token' => $token,
             'token_type' => 'Bearer',
             'user' => $this->userPayload($user),
+            'subscription_required' => $user->role === 'designer'
+                && ! \App\Support\DesignerSubscription::hasAccess($user),
         ], 201);
     }
 
@@ -135,12 +139,25 @@ class AuthController extends Controller
 
     private function userPayload(User $user): array
     {
-        return [
+        $payload = [
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
             'role' => $user->role,
             'must_change_password' => (bool) $user->must_change_password,
         ];
+
+        if ($user->role === 'designer') {
+            $payload['subscription'] = [
+                'has_access' => \App\Support\DesignerSubscription::hasAccess($user),
+                'status' => \App\Support\DesignerSubscription::status($user),
+                'plan' => $user->subscription_plan,
+                'can_use_trial' => \App\Support\DesignerSubscription::canUseTrial($user),
+                'trial_days_left' => \App\Support\DesignerSubscription::trialDaysLeft($user),
+                'ends_at' => optional(\App\Support\DesignerSubscription::accessEndsAt($user))->toIso8601String(),
+            ];
+        }
+
+        return $payload;
     }
 }

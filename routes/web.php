@@ -9,6 +9,7 @@ use App\Http\Controllers\Designer\PassportObject;
 use App\Http\Controllers\Designer\ProjectController;
 use App\Http\Controllers\Designer\ReferralSupplierController;
 use App\Http\Controllers\Designer\SettingsController;
+use App\Http\Controllers\Designer\SubscriptionController;
 use App\Http\Controllers\Designer\SupplierCatalogController;
 use App\Http\Controllers\Designer\SupplierController;
 use App\Http\Controllers\Designer\SupplierOrderController;
@@ -31,10 +32,12 @@ Route::get('/', function () {
         return view('auth.login');
     }
 
-    return match (Auth::user()->role) {
+    $user = Auth::user();
+
+    return match ($user->role) {
         'moderator' => redirect()->route('moderator.index'),
         'supplier' => redirect()->route('supplier.index'),
-        default => redirect()->route('dashboard'),
+        default => redirect()->route(\App\Support\DesignerSubscription::redirectRoute($user)),
     };
 });
 
@@ -133,7 +136,7 @@ Route::get('/referrals/suppliers/create', [ReferralSupplierController::class, 'c
 Route::post('/referrals/suppliers', [ReferralSupplierController::class, 'store'])
     ->name('referrals.suppliers.store');
 
-Route::middleware(['auth', 'role:designer'])->group(function () {
+Route::middleware(['auth', 'role:designer', 'subscription.active'])->group(function () {
     Route::get('/dashboard', function (Request $request) {
         $userId = (int) $request->user()->id;
         $today = now()->toDateString();
@@ -350,14 +353,25 @@ Route::middleware(['auth', 'role:moderator'])->group(function () {
         ->name('moderator.objects.decision');
 });
 
-Route::middleware(['auth', 'role:designer|moderator'])->group(function () {
+Route::middleware(['auth', 'role:designer|moderator', 'subscription.active'])->group(function () {
     Route::get('/profile', [SettingsController::class, 'profile'])->name('profile.show');
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::put('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile.update');
     Route::put('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password.update');
 });
 
-Route::middleware(['auth', 'role:designer|supplier', 'password.changed'])->group(function () {
+Route::middleware(['auth', 'role:designer'])->group(function () {
+    Route::get('/subscription', [SubscriptionController::class, 'index'])->name('subscription.index');
+    Route::get('/subscription/checkout/{plan}', [SubscriptionController::class, 'checkout'])
+        ->whereIn('plan', ['standard', 'pro'])
+        ->name('subscription.checkout');
+    Route::post('/subscription/purchase', [SubscriptionController::class, 'purchase'])->name('subscription.purchase');
+    Route::post('/subscription/change-plan', [SubscriptionController::class, 'changePlan'])->name('subscription.change-plan');
+    Route::post('/subscription/payment', [SubscriptionController::class, 'updatePayment'])->name('subscription.payment');
+    Route::post('/subscription/cancel', [SubscriptionController::class, 'cancel'])->name('subscription.cancel');
+});
+
+Route::middleware(['auth', 'role:designer|supplier', 'password.changed', 'subscription.active'])->group(function () {
     Route::get('/supplier-orders/{orderId}/chat/messages', [SupplierOrderChatController::class, 'messages'])
         ->whereNumber('orderId')
         ->name('supplier-orders.chat.messages');

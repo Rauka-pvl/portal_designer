@@ -17,10 +17,12 @@ use Illuminate\Validation\Rules\Password as PasswordRule;
  */
 Route::match(['get', 'post'], '/login', function (Request $request) {
     if (Auth::check()) {
-        return match (Auth::user()->role) {
+        $user = Auth::user();
+
+        return match ($user->role) {
             'moderator' => redirect()->route('moderator.index'),
             'supplier' => redirect()->route('supplier.index'),
-            default => redirect()->route('dashboard'),
+            default => redirect()->route(\App\Support\DesignerSubscription::redirectRoute($user)),
         };
     }
 
@@ -88,15 +90,19 @@ Route::match(['get', 'post'], '/login', function (Request $request) {
         return redirect()->intended(route('supplier.index'));
     }
 
-    return redirect()->intended(route('dashboard'));
+    $target = \App\Support\DesignerSubscription::redirectRoute($user);
+
+    return redirect()->intended(route($target));
 })->name('login')->middleware('guest');
 
 Route::match(['get', 'post'], '/register', function (Request $request) {
     if (Auth::check()) {
-        return match (Auth::user()->role) {
+        $user = Auth::user();
+
+        return match ($user->role) {
             'moderator' => redirect()->route('moderator.index'),
             'supplier' => redirect()->route('supplier.index'),
-            default => redirect()->route('dashboard'),
+            default => redirect()->route(\App\Support\DesignerSubscription::redirectRoute($user)),
         };
     }
 
@@ -137,9 +143,10 @@ Route::match(['get', 'post'], '/register', function (Request $request) {
     Auth::login($user);
     $request->session()->regenerate();
 
+    // Дизайнер сразу на страницу выбора подписки (триал — только после выбора плана)
     return $isSupplier
         ? redirect()->route('supplier.index')
-        : redirect()->route('dashboard');
+        : redirect()->route('subscription.index');
 })->name('register')->middleware('guest');
 
 Route::post('/logout', function (Request $request) {

@@ -148,7 +148,7 @@
                 <button type="button" class="settings-tab" disabled>{{ __('settings.notifications') }}</button>
                 <button type="button" class="settings-tab" disabled>{{ __('settings.roles_and_access') }}</button>
                 <button type="button" class="settings-tab" disabled>{{ __('settings.team') }}</button>
-                <button type="button" class="settings-tab" disabled>{{ __('settings.subscriptions') }}</button>
+                <a href="{{ route('subscription.index') }}" class="settings-tab">{{ __('settings.subscriptions') }}</a>
             </div>
             <div class="settings-actions flex items-center gap-2">
                 <button type="button" form="{{ $activeTab === 'security' ? 'security-form' : 'profile-form' }}" class="cancel-btn" onclick="document.getElementById('{{ $activeTab === 'security' ? 'security-form' : 'profile-form' }}').reset()">{{ __('settings.cancel') }}</button>

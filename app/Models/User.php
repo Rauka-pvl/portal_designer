@@ -29,6 +29,12 @@ class User extends Authenticatable
         'password',
         'must_change_password',
         'password_changed_at',
+        'subscription_trial_ends_at',
+        'subscription_plan',
+        'subscription_ends_at',
+        'subscription_trial_used',
+        'subscription_payment_method',
+        'subscription_cancelled_at',
         'phone',
         'city',
         'short_description',
@@ -69,6 +75,10 @@ class User extends Authenticatable
             'password' => 'hashed',
             'must_change_password' => 'boolean',
             'password_changed_at' => 'datetime',
+            'subscription_trial_ends_at' => 'datetime',
+            'subscription_ends_at' => 'datetime',
+            'subscription_trial_used' => 'boolean',
+            'subscription_cancelled_at' => 'datetime',
             'price_per_m2' => 'decimal:2',
         ];
     }
@@ -94,6 +104,11 @@ class User extends Authenticatable
     public function cashbackTransactions(): HasMany
     {
         return $this->hasMany(DesignerCashbackTransaction::class)->latest();
+    }
+
+    public function subscriptionPayments(): HasMany
+    {
+        return $this->hasMany(DesignerSubscriptionPayment::class)->latest();
     }
 
     public function scopeWithDesignerProfile(Builder $query): Builder
