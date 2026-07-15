@@ -25,7 +25,19 @@ class DesignerSubscription
 
     public const METHOD_PROMO = 'promo';
 
-    /** @return array<string, array{key: string, price: int, period_days: int}> */
+    /**
+     * Single source of truth for designer tariffs.
+     *
+     * @return array<string, array{
+     *     key: string,
+     *     price: int,
+     *     period_days: int,
+     *     recommended: bool,
+     *     feature_keys: list<string>,
+     *     limit_key: string,
+     *     desc_key: string
+     * }>
+     */
     public static function plans(): array
     {
         return [
@@ -33,13 +45,75 @@ class DesignerSubscription
                 'key' => self::PLAN_STANDARD,
                 'price' => 5000,
                 'period_days' => self::PERIOD_DAYS,
+                'recommended' => false,
+                'feature_keys' => [
+                    'feature_clients',
+                    'feature_projects',
+                    'feature_orders',
+                    'feature_reports',
+                    'feature_support',
+                ],
+                'limit_key' => 'plan_standard_limit',
+                'desc_key' => 'plan_standard_desc',
             ],
             self::PLAN_PRO => [
                 'key' => self::PLAN_PRO,
                 'price' => 9990,
                 'period_days' => self::PERIOD_DAYS,
+                'recommended' => true,
+                'feature_keys' => [
+                    'feature_unlimited',
+                    'feature_analytics',
+                    'feature_priority',
+                    'feature_pro_tools',
+                    'feature_cashback',
+                    'feature_suppliers',
+                ],
+                'limit_key' => 'plan_pro_limit',
+                'desc_key' => 'plan_pro_desc',
             ],
         ];
+    }
+
+    /** Designer without cabinet access — onboarding chrome (no full sidebar). */
+    public static function needsOnboardingLayout(User $user): bool
+    {
+        return $user->role === 'designer' && ! self::hasAccess($user);
+    }
+
+    /** Card is not required to start a free trial in the current product flow. */
+    public static function trialRequiresCard(): bool
+    {
+        return false;
+    }
+
+    /** Real money payments only (trial / zero-amount rows are excluded). */
+    public static function hasRealPayments(User $user): bool
+    {
+        return DesignerSubscriptionPayment::query()
+            ->where('user_id', $user->id)
+            ->where('amount', '>', 0)
+            ->where('status', 'completed')
+            ->exists();
+    }
+
+    /**
+     * Feature keys for comparison table (union across plans, stable order).
+     *
+     * @return list<string>
+     */
+    public static function comparisonFeatureKeys(): array
+    {
+        $keys = [];
+        foreach (self::plans() as $plan) {
+            foreach ($plan['feature_keys'] as $key) {
+                if (! in_array($key, $keys, true)) {
+                    $keys[] = $key;
+                }
+            }
+        }
+
+        return $keys;
     }
 
     public static function plan(string $key): ?array

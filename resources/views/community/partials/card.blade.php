@@ -10,6 +10,9 @@
     $isOwner = (bool) ($post->is_owner ?? false);
     $isLiked = (bool) ($post->is_liked ?? false);
     $isSaved = (bool) ($post->is_saved ?? false);
+    $profileUrl = \App\Support\BackNavigation::withFrom(route('community.profile', $author->id));
+    $postUrl = \App\Support\BackNavigation::withFrom(route('community.post', $post->id));
+    $postCommentsUrl = \App\Support\BackNavigation::withFrom(route('community.post', $post->id).'#comments');
 
     $linkified = e($text);
     $linkified = preg_replace(
@@ -31,15 +34,15 @@
     data-owner="{{ $isOwner ? '1' : '0' }}">
     <div class="flex items-start justify-between gap-2">
         <div class="flex items-start gap-2.5 min-w-0">
-            <a href="{{ route('community.profile', $author->id) }}" class="shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f59e0b] rounded-full">
+            <a href="{{ $profileUrl }}" class="shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f59e0b] rounded-full">
                 @include('community.partials.avatar', ['name' => $author->name ?? '', 'size' => 'w-10 h-10', 'textSize' => 'text-sm'])
             </a>
             <div class="min-w-0 pt-0.5">
-                <a href="{{ route('community.profile', $author->id) }}" class="text-[15px] font-semibold leading-tight text-[#0f172a] dark:text-[#EDEDEC] hover:text-[#f59e0b] truncate block">
+                <a href="{{ $profileUrl }}" class="text-[15px] font-semibold leading-tight text-[#0f172a] dark:text-[#EDEDEC] hover:text-[#f59e0b] truncate block">
                     {{ $author->name }}
                 </a>
                 <div class="text-[12px] sm:text-[13px] leading-snug text-[#94a3b8] dark:text-[#A1A09A] mt-1 truncate">
-                    <a href="{{ route('community.post', $post->id) }}" class="hover:text-[#f59e0b]">{{ $meta }}</a>
+                    <a href="{{ $postUrl }}" class="hover:text-[#f59e0b]">{{ $meta }}</a>
                 </div>
                 @if ($post->category)
                     <span class="inline-flex mt-1.5 text-[11px] px-2 py-0.5 rounded-full border border-[#7c8799]/40 dark:border-[#3E3E3A] text-[#94a3b8] dark:text-[#A1A09A]">
@@ -131,7 +134,7 @@
             <svg class="w-5 h-5" fill="{{ $isLiked ? 'currentColor' : 'none' }}" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z"/></svg>
             <span class="hidden sm:inline">{{ __('community.like') }}</span>
         </button>
-        <a href="{{ route('community.post', $post->id) }}#comments" class="inline-flex items-center justify-center gap-1.5 min-h-10 rounded-lg text-xs sm:text-[13px] text-[#64748b] dark:text-[#A1A09A] hover:bg-[#F8FAFC] dark:hover:bg-[#0a0a0a]">
+        <a href="{{ $postCommentsUrl }}" class="inline-flex items-center justify-center gap-1.5 min-h-10 rounded-lg text-xs sm:text-[13px] text-[#64748b] dark:text-[#A1A09A] hover:bg-[#F8FAFC] dark:hover:bg-[#0a0a0a]">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
             <span class="hidden sm:inline">{{ __('community.comment') }}</span>
         </a>

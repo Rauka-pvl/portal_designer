@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\Supplier;
 use App\Models\Supplier_orders;
+use App\Models\UserNotification;
 use App\Support\OrderOfferNotifier;
 use App\Support\PublicFileStorage;
 use Illuminate\Http\JsonResponse;
@@ -124,6 +125,20 @@ class SupplierOrderController extends Controller
             return response()->json($payload);
         }
 
+        if ($request->query('section') === 'offer') {
+            UserNotification::query()
+                ->where('user_id', (int) $request->user()->id)
+                ->where('related_order_id', $orderId)
+                ->where('action_key', 'order_offer')
+                ->where(function ($q) {
+                    $q->where('is_read', false)->orWhereNull('is_read');
+                })
+                ->update([
+                    'is_read' => true,
+                    'read_at' => now(),
+                ]);
+        }
+
         return view('designer.supplier-orders.show', [
             'order' => $order,
             'orderData' => $this->payload($order, null, $this->chatUnreadMapForDesigner((int) $request->user()->id, [(int) $order->id])[(int) $order->id] ?? 0),
@@ -131,6 +146,7 @@ class SupplierOrderController extends Controller
             'suppliers' => $this->availableSuppliers((int) $request->user()->id),
             'categoryOptions' => $this->categoryOptions(),
             'roomOptions' => $this->roomOptions(),
+            'focusOfferSection' => $request->query('section') === 'offer',
         ]);
     }
 
@@ -493,6 +509,13 @@ class SupplierOrderController extends Controller
 
         $percent = (float) $data['bonus_percent'];
         $message = isset($data['message']) ? trim((string) $data['message']) : null;
+
+        if ($order->bonus_percent !== null && abs((float) $order->bonus_percent - $percent) < 0.0001) {
+            return response()->json([
+                'success' => false,
+                'message' => __('supplier-orders.offer_percent_same'),
+            ], 422);
+        }
 
         $order->bonus_percent = $percent;
         $order->offer_message = $message !== '' ? $message : null;

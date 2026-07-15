@@ -9,6 +9,7 @@ return [
     'open_topic' => 'Open topic',
     'video_not_supported' => 'Your browser does not support video playback.',
     'back_to_login' => 'Back to sign in',
+    'back' => 'Back',
     'help_button' => 'Open training',
 
     'topics' => [

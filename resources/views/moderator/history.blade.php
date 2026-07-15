@@ -9,10 +9,12 @@
             <h1 class="text-2xl font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ __('moderation.history_title') }}</h1>
             <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-1">{{ __('moderation.history_hint') }}</p>
         </div>
-        <a href="{{ route('moderator.index') }}"
-            class="px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] text-sm transition-colors">
-            {{ __('moderation.queue_link') }}
-        </a>
+        @include('partials.back-link', [
+            'fallback' => route('moderator.index'),
+            'label' => __('moderation.queue_link'),
+            'class' => 'px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] text-sm transition-colors',
+            'icon' => false,
+        ])
     </div>
 
     <form method="get" action="{{ route('moderator.history') }}"

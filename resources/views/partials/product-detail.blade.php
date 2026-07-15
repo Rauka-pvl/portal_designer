@@ -7,11 +7,12 @@
 
 <div class="max-w-5xl mx-auto">
     @if ($backUrl)
-        <a href="{{ $backUrl }}"
-            class="inline-flex items-center gap-1.5 text-sm text-[#64748b] dark:text-[#A1A09A] hover:text-[#f59e0b] transition-colors mb-6">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-            {{ $backLabel }}
-        </a>
+        <div class="mb-6">
+            @include('partials.back-link', [
+                'fallback' => $backUrl,
+                'label' => $backLabel,
+            ])
+        </div>
     @endif
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">

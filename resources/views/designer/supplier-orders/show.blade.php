@@ -53,9 +53,22 @@
                 @method('DELETE')
                 <button type="submit" class="btn btn-danger">{{ __('supplier-orders.delete') }}</button>
             </form>
-            <a href="{{ route('supplier-orders.index') }}" class="btn">{{ __('supplier-orders.close') }}</a>
+            @include('partials.back-link', [
+                'fallback' => route('supplier-orders.index', array_filter([
+                    'project_id' => request('project_id'),
+                    'supplier_id' => request('supplier_id'),
+                ])),
+                'label' => __('supplier-orders.close'),
+                'variant' => 'btn',
+                'icon' => false,
+            ])
         </div>
     </div>
+
+    @include('designer.supplier-orders.partials.offer-negotiation', [
+        'orderData' => $o,
+        'focusOfferSection' => $focusOfferSection ?? false,
+    ])
 
     <div class="panel">
         <form id="supplier-order-details-form" method="POST" action="{{ route('supplier-orders.update', $o['id']) }}" enctype="multipart/form-data">

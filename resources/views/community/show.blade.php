@@ -38,9 +38,17 @@
      data-max-text="{{ $maxText }}"
      data-i18n="{{ json_encode($communityI18n, JSON_UNESCAPED_UNICODE) }}">
 
-    <a href="{{ route('community.index') }}" class="inline-flex items-center gap-1 text-sm text-[#64748b] dark:text-[#A1A09A] hover:text-[#f59e0b] mb-4">
-        ← {{ __('community.back_community') }}
-    </a>
+    <div class="mb-4">
+        @include('partials.back-link', [
+            'fallback' => route('community.index', array_filter([
+                'tab' => request('tab'),
+                'q' => request('q'),
+                'category' => request('category'),
+            ])),
+            'label' => __('community.back_community'),
+            'icon' => true,
+        ])
+    </div>
 
     <div id="community-feed-list">
         @include('community.partials.card', ['post' => $post, 'currentUser' => $currentUser])

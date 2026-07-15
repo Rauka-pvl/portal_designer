@@ -113,6 +113,9 @@ Route::middleware(['auth', 'role:supplier', 'password.changed'])->group(function
     Route::post('/supplier/notifications/{notificationId}/read', [NotificationController::class, 'markRead'])
         ->whereNumber('notificationId')
         ->name('supplier.notifications.read');
+    Route::post('/supplier/notifications/{notificationId}/unread', [NotificationController::class, 'markUnread'])
+        ->whereNumber('notificationId')
+        ->name('supplier.notifications.unread');
     Route::delete('/supplier/notifications/{notificationId}', [NotificationController::class, 'destroy'])
         ->whereNumber('notificationId')
         ->name('supplier.notifications.destroy');
@@ -317,6 +320,9 @@ Route::middleware(['auth', 'role:designer', 'subscription.active'])->group(funct
     Route::post('/notifications/{notificationId}/read', [NotificationController::class, 'markRead'])
         ->whereNumber('notificationId')
         ->name('notifications.read');
+    Route::post('/notifications/{notificationId}/unread', [NotificationController::class, 'markUnread'])
+        ->whereNumber('notificationId')
+        ->name('notifications.unread');
     Route::delete('/notifications/{notificationId}', [NotificationController::class, 'destroy'])
         ->whereNumber('notificationId')
         ->name('notifications.destroy');

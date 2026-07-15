@@ -39,7 +39,12 @@
             </p>
         </div>
         <div class="flex gap-3">
-            <a href="{{ route('moderator.index') }}" class="btn">{{ __('suppliers.close') }}</a>
+            @include('partials.back-link', [
+                'fallback' => route('moderator.index'),
+                'label' => __('suppliers.close'),
+                'variant' => 'btn',
+                'icon' => false,
+            ])
         </div>
     </div>
 

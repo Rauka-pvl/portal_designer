@@ -154,18 +154,86 @@ class Supplier_orders extends Model
     public function offerPayload(string $viewer): array
     {
         $status = $this->effectiveOfferStatus();
+        $history = $this->offerHistoryList();
+        $canRespond = $viewer === 'supplier'
+            ? $this->canSupplierRespondToOffer()
+            : $this->canDesignerRespondToOffer();
+
+        $lastSupplier = null;
+        $lastDesignerProposal = null;
+        $decidedAt = null;
+        foreach (array_reverse($history) as $item) {
+            $by = (string) ($item['by'] ?? '');
+            $msg = strtolower(trim((string) ($item['message'] ?? '')));
+            $isDecision = in_array($msg, ['accepted', 'rejected'], true);
+
+            if ($isDecision && $decidedAt === null) {
+                $decidedAt = $item['at'] ?? null;
+            }
+
+            if ($by === 'supplier' && $lastSupplier === null && array_key_exists('percent', $item)) {
+                $lastSupplier = $item;
+            }
+
+            if ($by === 'designer' && $lastDesignerProposal === null && ! $isDecision && array_key_exists('percent', $item)) {
+                $lastDesignerProposal = $item;
+            }
+        }
+
+        $currentPercent = $this->bonus_percent !== null ? (float) $this->bonus_percent : null;
+        $summa = (int) $this->summa;
+
+        $supplierPercent = isset($lastSupplier['percent']) && $lastSupplier['percent'] !== null
+            ? (float) $lastSupplier['percent']
+            : ($status === self::OFFER_PENDING_DESIGNER ? $currentPercent : null);
+
+        $designerPercent = isset($lastDesignerProposal['percent']) && $lastDesignerProposal['percent'] !== null
+            ? (float) $lastDesignerProposal['percent']
+            : ($status === self::OFFER_PENDING_SUPPLIER ? $currentPercent : null);
+
+        // Show negotiation UI only when there was a real offer flow (status or history).
+        $hasOfferUi = $this->offer_status !== null || $history !== [];
+
+        $uiState = 'hidden';
+        if ($hasOfferUi) {
+            if (in_array($status, [
+                self::OFFER_PENDING_DESIGNER,
+                self::OFFER_PENDING_SUPPLIER,
+                self::OFFER_ACCEPTED,
+                self::OFFER_REJECTED,
+            ], true)) {
+                $uiState = $status;
+            } else {
+                $uiState = 'unavailable';
+            }
+        }
 
         return [
             'offer_status' => $status,
             'offer_message' => (string) ($this->offer_message ?? ''),
-            'offer_history' => $this->offerHistoryList(),
-            'bonus_percent' => $this->bonus_percent !== null ? (float) $this->bonus_percent : null,
+            'offer_history' => $history,
+            'bonus_percent' => $currentPercent,
             'bonus_amount' => $this->bonusAmount(),
-            'can_respond_to_offer' => $viewer === 'supplier'
-                ? $this->canSupplierRespondToOffer()
-                : $this->canDesignerRespondToOffer(),
+            'can_respond_to_offer' => $canRespond,
+            'can_accept' => $canRespond,
+            'can_reject' => $canRespond,
+            'can_counter_offer' => $canRespond,
+            'can_view_history' => $history !== [],
             'is_offer_negotiation' => $this->isOfferNegotiation(),
             'is_in_funnel' => $this->isInFunnel(),
+            'has_offer_ui' => $hasOfferUi,
+            'offer_ui_state' => $uiState,
+            'order_amount' => $summa,
+            'supplier_offer_percent' => $supplierPercent,
+            'supplier_offer_amount' => $supplierPercent !== null ? (int) round($summa * $supplierPercent / 100) : null,
+            'supplier_offer_at' => $lastSupplier['at'] ?? null,
+            'designer_offer_percent' => $designerPercent,
+            'designer_offer_amount' => $designerPercent !== null ? (int) round($summa * $designerPercent / 100) : null,
+            'designer_offer_at' => $lastDesignerProposal['at'] ?? null,
+            'decided_at' => $decidedAt,
+            'pending_percent' => in_array($status, [self::OFFER_PENDING_DESIGNER, self::OFFER_PENDING_SUPPLIER], true)
+                ? $currentPercent
+                : null,
         ];
     }
 

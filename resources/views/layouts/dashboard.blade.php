@@ -33,6 +33,7 @@
         $isDesigner = auth()->check() && (auth()->user()->role ?? null) === 'designer';
         $hasSubscriptionAccess = ! $isDesigner
             || \App\Support\DesignerSubscription::hasAccess(auth()->user());
+        $isSubscriptionOnboarding = $isDesigner && ! $hasSubscriptionAccess;
         $unreadNotifications = ! $isModerator && auth()->check() && $hasSubscriptionAccess
             ? \App\Models\UserNotification::query()
                 ->where('user_id', auth()->id())
@@ -76,6 +77,101 @@
     @endphp
 
     @include('layouts.partials.app-toasts')
+    @include('layouts.partials.back-nav-script')
+
+    @if ($isSubscriptionOnboarding)
+    {{-- Compact onboarding chrome: no empty sidebar --}}
+    <header class="sticky top-0 z-40 border-b border-[#7c8799]/40 dark:border-[#3E3E3A] bg-white/95 dark:bg-[#0a0a0a]/95 backdrop-blur-sm">
+        <div class="mx-auto max-w-[1160px] px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+            <a href="{{ route('subscription.index') }}" class="block w-[140px] sm:w-[168px] shrink-0" aria-label="{{ config('app.name') }}">
+                <svg viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto">
+                    <defs>
+                        <linearGradient id="onboardGoldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:1" />
+                            <stop offset="50%" style="stop-color:#ef4444;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <rect width="400" height="120" fill="transparent" />
+                    <g transform="translate(30, 20)">
+                        <rect x="5" y="5" width="70" height="70" rx="8" fill="none" stroke="url(#onboardGoldGradient)" stroke-width="4" />
+                        <rect x="15" y="15" width="50" height="50" rx="6" fill="none" stroke="url(#onboardGoldGradient)" stroke-width="3" opacity="0.6" />
+                        <polygon points="40,30 50,40 40,50 30,40" fill="url(#onboardGoldGradient)" opacity="0.8" />
+                    </g>
+                    <text x="120" y="45" font-family="'Arial Black', sans-serif" font-size="32" font-weight="900" fill="currentColor" letter-spacing="1">ПОРТАЛ</text>
+                    <text x="120" y="75" font-family="Arial, sans-serif" font-size="18" font-weight="400" fill="currentColor" letter-spacing="4">ДИЗАЙНЕРА</text>
+                </svg>
+            </a>
+
+            <div class="flex items-center gap-1.5 sm:gap-2">
+                <div class="flex items-center rounded-lg border border-[#7c8799]/50 dark:border-[#3E3E3A] p-0.5" role="group" aria-label="Language">
+                    <a href="{{ route('language.switch', 'kk') }}"
+                        class="min-w-9 min-h-9 px-2 inline-flex items-center justify-center text-xs rounded-md transition-colors {{ app()->getLocale() === 'kk' ? 'bg-[#1b1b18] dark:bg-[#eeeeec] text-white dark:text-[#1C1C1A]' : 'text-[#706f6c] dark:text-[#A1A09A] hover:text-[#1b1b18] dark:hover:text-[#EDEDEC]' }}">Қаз</a>
+                    <a href="{{ route('language.switch', 'ru') }}"
+                        class="min-w-9 min-h-9 px-2 inline-flex items-center justify-center text-xs rounded-md transition-colors {{ app()->getLocale() === 'ru' ? 'bg-[#1b1b18] dark:bg-[#eeeeec] text-white dark:text-[#1C1C1A]' : 'text-[#706f6c] dark:text-[#A1A09A] hover:text-[#1b1b18] dark:hover:text-[#EDEDEC]' }}">RU</a>
+                    <a href="{{ route('language.switch', 'en') }}"
+                        class="min-w-9 min-h-9 px-2 inline-flex items-center justify-center text-xs rounded-md transition-colors {{ app()->getLocale() === 'en' ? 'bg-[#1b1b18] dark:bg-[#eeeeec] text-white dark:text-[#1C1C1A]' : 'text-[#706f6c] dark:text-[#A1A09A] hover:text-[#1b1b18] dark:hover:text-[#EDEDEC]' }}">EN</a>
+                </div>
+
+                @if (Route::has('faq.index'))
+                    <a href="{{ \App\Support\BackNavigation::withFrom(route('faq.index')) }}"
+                        class="hidden sm:inline-flex min-h-9 items-center px-3 rounded-lg text-sm text-[#706f6c] dark:text-[#A1A09A] hover:text-[#f59e0b] border border-transparent hover:border-[#f59e0b]/30 transition-colors">
+                        {{ __('subscription.need_help') }}
+                    </a>
+                @endif
+
+                <div class="relative" data-onboard-menu>
+                    <button type="button"
+                        class="inline-flex min-h-9 items-center gap-1.5 px-2.5 sm:px-3 rounded-lg border border-[#7c8799]/50 dark:border-[#3E3E3A] text-sm text-[#1b1b18] dark:text-[#EDEDEC] hover:border-[#f59e0b]/50 transition-colors"
+                        aria-expanded="false"
+                        aria-haspopup="true"
+                        data-onboard-menu-btn>
+                        <span class="max-w-[120px] truncate">{{ auth()->user()->name }}</span>
+                        <svg class="w-4 h-4 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div class="hidden absolute right-0 mt-1.5 w-48 rounded-xl border border-[#7c8799]/50 dark:border-[#3E3E3A] bg-white dark:bg-[#161615] py-1 shadow-lg z-50" data-onboard-menu-panel role="menu">
+                        @if (Route::has('faq.index'))
+                            <a href="{{ \App\Support\BackNavigation::withFrom(route('faq.index')) }}" role="menuitem" class="sm:hidden block px-3 py-2.5 text-sm text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a]">{{ __('subscription.need_help') }}</a>
+                        @endif
+                        <form method="POST" action="{{ route('logout') }}" role="none">
+                            @csrf
+                            <button type="submit" role="menuitem" class="w-full text-left px-3 py-2.5 text-sm text-[#f53003] dark:text-[#FF4433] hover:bg-[#fff2f2] dark:hover:bg-[#1D0002]">
+                                {{ __('dashboard.logout') }}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="min-h-[calc(100vh-4rem)]">
+        <div class="mx-auto max-w-[1160px] px-4 sm:px-6 py-6 sm:py-8">
+            @yield('content')
+        </div>
+    </main>
+
+    <script>
+        (function () {
+            const root = document.querySelector('[data-onboard-menu]');
+            if (!root) return;
+            const btn = root.querySelector('[data-onboard-menu-btn]');
+            const panel = root.querySelector('[data-onboard-menu-panel]');
+            if (!btn || !panel) return;
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const open = panel.classList.toggle('hidden') === false;
+                btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+            document.addEventListener('click', () => {
+                panel.classList.add('hidden');
+                btn.setAttribute('aria-expanded', 'false');
+            });
+        })();
+    </script>
+    @yield('scripts')
+    @stack('scripts')
+    @else
 
     <!-- Выдвижная навигация -->
     <aside id="sidebar"
@@ -231,11 +327,10 @@
                                 </svg>
                                 <span>{{ __('notifications.title') }}</span>
                             </span>
-                            @if ($unreadNotifications > 0)
-                                <span class="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs bg-[#f59e0b] text-white">
-                                    {{ $unreadNotifications }}
-                                </span>
-                            @endif
+                            <span data-unread-notifications
+                                class="{{ $unreadNotifications > 0 ? '' : 'hidden' }} inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs bg-[#f59e0b] text-white">
+                                {{ $unreadNotifications }}
+                            </span>
                         </a>
                     @endif
 
@@ -285,7 +380,7 @@
                         @endif
 
                         @if (Route::has('faq.index'))
-                            <a href="{{ route('faq.index') }}"
+                            <a href="{{ \App\Support\BackNavigation::withFrom(route('faq.index')) }}"
                                 class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1 {{ request()->routeIs('faq.index') ? 'bg-[#FDFDFC] dark:bg-[#0a0a0a]' : '' }}">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -605,6 +700,8 @@
 
     {{-- Page-specific scripts --}}
     @yield('scripts')
+    @stack('scripts')
+    @endif {{-- !$isSubscriptionOnboarding --}}
 </body>
 
 </html>

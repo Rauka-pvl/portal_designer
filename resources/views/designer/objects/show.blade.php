@@ -147,9 +147,12 @@
             <button id="btn-edit" type="button" class="btn">
                 {{ __('objects.edit') }}
             </button>
-            <a href="{{ route('objects.index') }}" class="btn">
-                {{ __('objects.close') }}
-            </a>
+            @include('partials.back-link', [
+                'fallback' => route('objects.index'),
+                'label' => __('objects.close'),
+                'variant' => 'btn',
+                'icon' => false,
+            ])
         </div>
     </div>
 

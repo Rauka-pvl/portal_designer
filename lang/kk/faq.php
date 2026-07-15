@@ -9,6 +9,7 @@ return [
     'open_topic' => 'Тақырыпты ашу',
     'video_not_supported' => 'Браузеріңіз видеоны ойнатуды қолдамайды.',
     'back_to_login' => 'Кіруге оралу',
+    'back' => 'Артқа',
     'help_button' => 'Оқытуды ашу',
 
     'topics' => [

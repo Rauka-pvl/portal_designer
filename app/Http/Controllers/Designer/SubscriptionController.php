@@ -29,14 +29,19 @@ class SubscriptionController extends Controller
             ->get()
             ->map(fn (DesignerSubscriptionPayment $p) => $this->paymentRow($p));
 
+        $hasRealPayments = DesignerSubscription::hasRealPayments($user);
+        $isOnboarding = DesignerSubscription::needsOnboardingLayout($user);
+
         return view('designer.subscription.index', [
             'plans' => DesignerSubscription::plans(),
+            'comparisonFeatures' => DesignerSubscription::comparisonFeatureKeys(),
             'status' => $status,
             'isOnTrial' => DesignerSubscription::isOnTrial($user),
             'trialDaysLeft' => DesignerSubscription::trialDaysLeft($user),
             'trialProgress' => DesignerSubscription::trialProgressPercent($user),
             'trialTotalDays' => DesignerSubscription::TRIAL_DAYS,
             'canUseTrial' => DesignerSubscription::canUseTrial($user),
+            'trialRequiresCard' => DesignerSubscription::trialRequiresCard(),
             'currentPlan' => $currentPlan,
             'planPrice' => $planData ? (int) $planData['price'] : null,
             'paymentMethod' => $user->subscription_payment_method,
@@ -53,6 +58,9 @@ class SubscriptionController extends Controller
             'autoRenew' => DesignerSubscription::isAutoRenewEnabled($user),
             'primaryAction' => DesignerSubscription::primaryAction($user),
             'hasAccess' => $hasAccess,
+            'isOnboarding' => $isOnboarding,
+            'hasRealPayments' => $hasRealPayments,
+            'showPaymentHistory' => $hasAccess && $hasRealPayments,
             'cancelledAt' => $user->subscription_cancelled_at,
             'billingName' => $user->name,
             'billingEmail' => $user->email,
@@ -69,19 +77,27 @@ class SubscriptionController extends Controller
 
         $user = $request->user();
 
+        $hasAccess = DesignerSubscription::hasAccess($user);
+
         return view('designer.subscription.checkout', [
             'planKey' => $plan,
             'plan' => DesignerSubscription::plans()[$plan],
             'canUseTrial' => DesignerSubscription::canUseTrial($user),
-            'hasAccess' => DesignerSubscription::hasAccess($user),
-            'locked' => ! DesignerSubscription::hasAccess($user),
+            'trialTotalDays' => DesignerSubscription::TRIAL_DAYS,
+            'trialRequiresCard' => DesignerSubscription::trialRequiresCard(),
+            'hasAccess' => $hasAccess,
+            'isOnboarding' => DesignerSubscription::needsOnboardingLayout($user),
+            'locked' => ! $hasAccess,
+            'checkoutStep' => 2,
         ]);
     }
 
     public function purchase(Request $request): RedirectResponse
     {
+        $planKeys = array_keys(DesignerSubscription::plans());
+
         $data = $request->validate([
-            'plan' => ['required', 'in:standard,pro'],
+            'plan' => ['required', 'in:'.implode(',', $planKeys)],
             'payment_method' => ['required', 'in:kaspi,card,promo'],
             'promo_code' => ['nullable', 'string', 'max:100'],
             'card_number' => ['nullable', 'string', 'max:32'],
@@ -99,10 +115,11 @@ class SubscriptionController extends Controller
         $cardDigits = preg_replace('/\D+/', '', (string) ($data['card_number'] ?? ''));
         $cardLast4 = $cardDigits && strlen($cardDigits) >= 4 ? substr($cardDigits, -4) : null;
 
-        $wasTrialEligible = DesignerSubscription::canUseTrial($request->user());
+        $user = $request->user();
+        $wasTrialEligible = DesignerSubscription::canUseTrial($user);
 
         DesignerSubscription::checkout(
-            $request->user(),
+            $user,
             $data['plan'],
             $method,
             $promo,
@@ -110,11 +127,20 @@ class SubscriptionController extends Controller
             $data['card_expiry'] ?? null
         );
 
+        $message = $wasTrialEligible
+            ? __('subscription.trial_started', ['days' => DesignerSubscription::TRIAL_DAYS])
+            : __('subscription.purchase_success');
+
+        // After first activation, send the designer into the unlocked cabinet.
+        if ($wasTrialEligible || DesignerSubscription::hasAccess($user->fresh())) {
+            return redirect()
+                ->route('dashboard')
+                ->with('success', $message);
+        }
+
         return redirect()
             ->route('subscription.index')
-            ->with('success', $wasTrialEligible
-                ? __('subscription.trial_started')
-                : __('subscription.purchase_success'));
+            ->with('success', $message);
     }
 
     public function changePlan(Request $request): RedirectResponse

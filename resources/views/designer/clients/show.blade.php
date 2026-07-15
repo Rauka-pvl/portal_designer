@@ -89,9 +89,12 @@
             <button id="btn-edit" type="button" class="btn">
                 {{ __('clients.edit') }}
             </button>
-            <a href="{{ route('clients.index') }}" class="btn">
-                {{ __('clients.close') }}
-            </a>
+            @include('partials.back-link', [
+                'fallback' => route('clients.index'),
+                'label' => __('clients.close'),
+                'variant' => 'btn',
+                'icon' => false,
+            ])
         </div>
     </div>
 

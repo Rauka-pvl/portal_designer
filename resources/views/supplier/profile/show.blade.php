@@ -43,9 +43,10 @@
 
     @if ($isPublicView)
         <div class="mb-4">
-            <a href="{{ route('community.index') }}" class="inline-flex items-center gap-1 text-sm text-[#64748b] dark:text-[#A1A09A] hover:text-[#f59e0b]">
-                ← {{ __('community.back_community') }}
-            </a>
+            @include('partials.back-link', [
+                'fallback' => route('community.index'),
+                'label' => __('community.back_community'),
+            ])
         </div>
     @endif
 

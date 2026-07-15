@@ -7,9 +7,28 @@
 @section('content')
     @php
         $baseDirectory = trim((string) config('faq.storage_directory', 'video'), '/');
+        $user = auth()->user();
+        $role = (string) ($user->role ?? '');
+        $faqBackFallback = match (true) {
+            $role === 'supplier' && \Illuminate\Support\Facades\Route::has('supplier.index') => route('supplier.index'),
+            $role === 'moderator' && \Illuminate\Support\Facades\Route::has('moderator.index') => route('moderator.index'),
+            $role === 'designer' && $user && ! \App\Support\DesignerSubscription::hasAccess($user)
+                && \Illuminate\Support\Facades\Route::has('subscription.index') => route('subscription.index'),
+            $role === 'designer' && \Illuminate\Support\Facades\Route::has('dashboard') => route('dashboard'),
+            default => route('login'),
+        };
     @endphp
 
     <div class="w-full {{ $layout === 'layouts.auth' ? 'max-w-none' : 'max-w-5xl mx-auto' }}">
+        @if ($layout !== 'layouts.public')
+            <div class="mb-4">
+                @include('partials.back-link', [
+                    'fallback' => $faqBackFallback,
+                    'label' => __('faq.back'),
+                ])
+            </div>
+        @endif
+
         <div class="rounded-3xl border border-[#e2e8f0] dark:border-[#3E3E3A] bg-white/75 dark:bg-[#131312]/90 backdrop-blur-md shadow-[0_20px_50px_-30px_rgba(15,23,42,0.35)] p-4 sm:p-6">
             <div class="mb-6">
                 <h2 class="text-2xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]">{{ __('faq.heading') }}</h2>

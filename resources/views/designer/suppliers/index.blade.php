@@ -1899,7 +1899,7 @@
             <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.work_terms') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(workTerms)}</p></div>
             <div><label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.comment') }}</label><p class="text-[#0f172a] dark:text-[#EDEDEC] whitespace-pre-wrap">${escapeHtml(s.comment || '-')}</p></div>
             <div class="pt-4">
-                <a href="/suppliers/${s.id}"
+                <a href="${typeof appWithFrom === 'function' ? appWithFrom('/suppliers/' + s.id) : ('/suppliers/' + s.id)}"
                     class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
                     title="{{ __('suppliers.details') }}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

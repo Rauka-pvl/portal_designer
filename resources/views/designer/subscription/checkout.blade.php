@@ -1,10 +1,12 @@
 @extends('layouts.dashboard')
 
 @section('title', __('subscription.checkout_title'))
-@section('header_title', __('subscription.checkout_title'))
+@section('header_title', ($isOnboarding ?? false) ? '' : __('subscription.checkout_title'))
 
 @php
     $listPrice = (int) $plan['price'];
+    $isOnboarding = $isOnboarding ?? false;
+    $trialTotalDays = $trialTotalDays ?? \App\Support\DesignerSubscription::TRIAL_DAYS;
 @endphp
 
 @push('styles')
@@ -31,12 +33,20 @@
 @endpush
 
 @section('content')
-    <div class="mb-5">
-        <a href="{{ route('subscription.index') }}"
-            class="inline-flex items-center gap-1.5 text-sm text-[#64748b] dark:text-[#A1A09A] hover:text-[#f59e0b] transition-colors">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-            {{ __('subscription.back_plans') }}
-        </a>
+    <div class="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        @include('partials.back-link', [
+            'fallback' => route('subscription.index'),
+            'label' => __('subscription.back_plans'),
+        ])
+        @if ($isOnboarding)
+            <nav class="flex flex-wrap items-center gap-2 text-sm text-[#A1A09A]" aria-label="{{ __('subscription.steps_aria') }}">
+                <span>{{ __('subscription.step_plan') }}</span>
+                <span aria-hidden="true">→</span>
+                <span class="text-[#f59e0b] font-semibold">{{ __('subscription.step_payment') }}</span>
+                <span aria-hidden="true">→</span>
+                <span>{{ __('subscription.step_done') }}</span>
+            </nav>
+        @endif
     </div>
 
     <div class="grid grid-cols-1 xl:grid-cols-5 gap-6 items-start max-w-5xl">
@@ -50,13 +60,16 @@
                     <div class="text-xs text-white/50 mb-1">{{ __('subscription.amount_due') }}</div>
                     <div class="text-3xl font-bold" id="amount-display">
                         @if ($canUseTrial)
-                            {{ __('subscription.free_trial_amount') }}
+                            {{ __('subscription.free_trial_amount', ['days' => $trialTotalDays]) }}
                         @else
-                            {{ number_format($listPrice, 0, ',', ' ') }} ₸
+                            {{ \App\Support\DesignerSubscription::formatMoney($listPrice) }}
                         @endif
                     </div>
                     @if ($canUseTrial)
-                        <p class="mt-2 text-sm text-[#fbbf24]">{{ __('subscription.trial_hint') }}</p>
+                        <p class="mt-2 text-sm text-[#fbbf24]">{{ __('subscription.trial_hint', ['days' => $trialTotalDays]) }}</p>
+                        @if (! ($trialRequiresCard ?? false))
+                            <p class="mt-1 text-xs text-white/50">{{ __('subscription.trust_no_card') }}</p>
+                        @endif
                     @endif
                     <p class="mt-2 text-sm text-[#fbbf24] hidden" id="promo-ok-msg">{{ __('subscription.free_with_promo') }}</p>
                 </div>
@@ -161,7 +174,7 @@
                 <button type="submit" id="pay-submit"
                     class="w-full inline-flex justify-center items-center gap-2 rounded-xl bg-gradient-to-r from-[#f59e0b] to-[#fb923c] px-5 py-3.5 text-sm font-semibold text-white shadow-sm hover:opacity-95 transition-opacity">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                    <span id="pay-label">{{ $canUseTrial ? __('subscription.start_trial') : __('subscription.pay_now') }}</span>
+                    <span id="pay-label">{{ $canUseTrial ? __('subscription.start_trial', ['days' => $trialTotalDays]) : __('subscription.pay_now') }}</span>
                 </button>
             </form>
         </div>
@@ -198,8 +211,8 @@
             return;
         }
         if (canUseTrial) {
-            amountEl.textContent = @json(__('subscription.free_trial_amount'));
-            payLabel.textContent = @json(__('subscription.start_trial'));
+            amountEl.textContent = @json(__('subscription.free_trial_amount', ['days' => $trialTotalDays]));
+            payLabel.textContent = @json(__('subscription.start_trial', ['days' => $trialTotalDays]));
             return;
         }
         amountEl.textContent = formatMoney(listPrice);

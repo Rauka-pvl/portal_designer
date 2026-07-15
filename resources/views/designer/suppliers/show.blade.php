@@ -89,7 +89,12 @@
                         <button type="submit" class="btn btn-danger">{{ __('suppliers.delete') }}</button>
                     </form>
                 @endif
-                <a href="{{ route('suppliers.index') }}" class="btn">{{ __('suppliers.close') }}</a>
+                @include('partials.back-link', [
+                    'fallback' => route('suppliers.index'),
+                    'label' => __('suppliers.close'),
+                    'variant' => 'btn',
+                    'icon' => false,
+                ])
             </div>
         </div>
     </div>

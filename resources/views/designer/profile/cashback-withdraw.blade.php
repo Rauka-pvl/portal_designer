@@ -51,13 +51,10 @@
     @include('partials.profile-tabs', ['active' => 'cashback'])
 
     <div class="mb-5">
-        <a href="{{ route('profile.cashback') }}"
-            class="inline-flex items-center gap-1.5 text-sm text-[#64748b] dark:text-[#A1A09A] hover:text-[#f59e0b] transition-colors">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-            </svg>
-            {{ __('cashback.withdraw_back') }}
-        </a>
+        @include('partials.back-link', [
+            'fallback' => route('profile.cashback', array_filter(['period' => request('period')])),
+            'label' => __('cashback.withdraw_back'),
+        ])
         <p class="mt-3 text-sm text-[#64748b] dark:text-[#A1A09A]">{{ __('cashback.withdraw_subtitle') }}</p>
     </div>
 
@@ -214,10 +211,12 @@
 
                 {{-- Actions --}}
                 <div class="flex flex-col-reverse sm:flex-row sm:items-center gap-3 pt-1 border-t border-[#7c8799]/30 dark:border-[#3E3E3A] mt-2">
-                    <a href="{{ route('profile.cashback') }}"
-                        class="inline-flex justify-center items-center gap-2 rounded-xl border border-[#7c8799] dark:border-[#3E3E3A] px-5 py-3 text-sm font-medium text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">
-                        {{ __('cashback.withdraw_back') }}
-                    </a>
+                    @include('partials.back-link', [
+                        'fallback' => route('profile.cashback', array_filter(['period' => request('period')])),
+                        'label' => __('cashback.withdraw_back'),
+                        'class' => 'inline-flex justify-center items-center gap-2 rounded-xl border border-[#7c8799] dark:border-[#3E3E3A] px-5 py-3 text-sm font-medium text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors',
+                        'icon' => false,
+                    ])
                     <button type="submit"
                         class="flex-1 inline-flex justify-center items-center gap-2 rounded-xl bg-gradient-to-r from-[#f59e0b] to-[#fb923c] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:opacity-95 active:scale-[0.99] transition-all">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">

@@ -3,122 +3,119 @@
 @section('title', __('notifications.title'))
 @section('header_title', __('notifications.title'))
 
+@push('styles')
+<style>
+    .n-row { transition: background-color .15s ease; }
+    .n-row.is-unread { background: rgba(245, 158, 11, 0.06); }
+    .dark .n-row.is-unread { background: rgba(245, 158, 11, 0.08); }
+    .n-dot { width: 8px; height: 8px; border-radius: 999px; background: #f59e0b; flex-shrink: 0; }
+    .n-btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        height: 36px; padding: 0 14px; border-radius: 9px;
+        font-size: 13px; font-weight: 500; white-space: nowrap;
+        transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+    }
+    .n-btn-accent { background: #f59e0b; color: #111827; border: 1px solid #f59e0b; }
+    .n-btn-accent:hover { background: #d97706; border-color: #d97706; }
+    .n-btn-secondary {
+        background: transparent; color: #64748b;
+        border: 1px solid rgba(124, 135, 153, 0.55);
+    }
+    .dark .n-btn-secondary { color: #A1A09A; border-color: #3E3E3A; }
+    .n-btn-secondary:hover { border-color: #f59e0b; color: #f59e0b; }
+    .n-menu {
+        position: absolute; right: 0; top: 100%; margin-top: 4px; z-index: 30;
+        min-width: 220px; border-radius: 12px;
+        border: 1px solid rgba(124, 135, 153, 0.45);
+        background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,.18);
+        padding: 4px 0;
+    }
+    .dark .n-menu { background: #1b1b18; border-color: #3E3E3A; }
+    .n-menu button, .n-menu a {
+        display: block; width: 100%; text-align: left;
+        padding: 9px 14px; font-size: 13px; color: #0f172a;
+    }
+    .dark .n-menu button, .dark .n-menu a { color: #EDEDEC; }
+    .n-menu button:hover, .n-menu a:hover { background: #F8FAFC; }
+    .dark .n-menu button:hover, .dark .n-menu a:hover { background: #0a0a0a; }
+    .n-menu .danger { color: #dc2626; }
+    .dark .n-menu .danger { color: #f87171; }
+</style>
+@endpush
+
 @section('content')
-    <div class="mb-6 flex items-start md:items-center justify-between gap-3 flex-col md:flex-row">
+@php
+    $csrf = csrf_token();
+@endphp
+
+<div id="notifications-app"
+     data-csrf="{{ $csrf }}"
+     data-route-prefix="{{ $routePrefix }}"
+     data-unread-total="{{ (int) $unreadTotal }}"
+     data-i18n="{{ json_encode([
+         'mark_read' => __('notifications.mark_read'),
+         'mark_unread' => __('notifications.mark_unread'),
+         'delete' => __('notifications.delete'),
+         'delete_confirm' => __('notifications.delete_confirm'),
+         'marked_read' => __('notifications.marked_read'),
+         'marked_unread' => __('notifications.marked_unread'),
+         'marked_all_read' => __('notifications.marked_all_read'),
+         'deleted' => __('notifications.deleted'),
+         'referral_ok' => __('notifications.referral_supplier_confirmed'),
+         'view_supplier' => __('notifications.view_supplier'),
+         'empty' => __('notifications.empty'),
+         'empty_unread' => __('notifications.empty_unread'),
+     ], JSON_UNESCAPED_UNICODE) }}">
+
+    <div class="mb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
             <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">{{ $subtitle }}</p>
+            <div class="mt-3 flex items-center gap-1 border-b border-[#7c8799]/40 dark:border-[#3E3E3A]">
+                <a href="{{ route($routePrefix . '.index', ['filter' => 'all']) }}"
+                   class="px-3 py-2 text-sm border-b-2 -mb-px {{ $filter === 'all' ? 'border-[#f59e0b] text-[#f59e0b]' : 'border-transparent text-[#64748b] dark:text-[#A1A09A]' }}">
+                    {{ __('notifications.filter_all') }}
+                </a>
+                <a href="{{ route($routePrefix . '.index', ['filter' => 'unread']) }}"
+                   class="px-3 py-2 text-sm border-b-2 -mb-px inline-flex items-center gap-1.5 {{ $filter === 'unread' ? 'border-[#f59e0b] text-[#f59e0b]' : 'border-transparent text-[#64748b] dark:text-[#A1A09A]' }}">
+                    {{ __('notifications.filter_unread') }}
+                    <span id="notifications-unread-tab-count"
+                          class="{{ $unreadTotal > 0 ? '' : 'hidden' }} inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-semibold bg-[#f59e0b]/15 text-[#f59e0b]">
+                        {{ $unreadTotal }}
+                    </span>
+                </a>
+            </div>
         </div>
-        <form method="POST" action="{{ route($routePrefix . '.read_all') }}">
-            @csrf
-            <button type="submit" class="px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-sm text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">
-                {{ __('notifications.mark_all_read') }}
-            </button>
-        </form>
+
+        <button type="button" id="notifications-read-all"
+                class="{{ $unreadTotal > 0 ? '' : 'hidden' }} n-btn n-btn-secondary self-start sm:self-auto"
+                data-url="{{ route($routePrefix . '.read_all') }}">
+            <span data-label>{{ __('notifications.mark_all_read') }}</span>
+            <svg data-spinner class="hidden ml-2 w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v3a5 5 0 00-5 5H4z"></path></svg>
+        </button>
     </div>
 
-    @if (session('status'))
-        <div class="mb-4 px-4 py-3 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 text-sm border border-emerald-200 dark:border-emerald-500/30">
-            {{ session('status') }}
-        </div>
-    @endif
-
-    <div class="space-y-3">
+    <div id="notifications-list" class="space-y-2.5">
         @forelse ($notifications as $n)
-            <div class="rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] p-4">
-                <div class="flex items-start justify-between gap-3">
-                    <div>
-                        <div class="font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ $n->title }}</div>
-                        @if (!empty($n->comment))
-                            <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-1 whitespace-pre-line">{{ $n->comment }}</div>
-                        @endif
-                        <div class="text-xs text-[#94a3b8] dark:text-[#71717a] mt-2">{{ optional($n->created_at)->format('Y-m-d H:i') }}</div>
-                    </div>
-
-                    <div class="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-                        @if ($n->is_read)
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
-                                {{ __('notifications.read') }}
-                            </span>
-                        @else
-                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-200">
-                                {{ __('notifications.unread') }}
-                            </span>
-                            <form method="POST" action="{{ route($routePrefix . '.read', $n->id) }}">
-                                @csrf
-                                <button type="submit" class="px-3 py-1.5 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-xs text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">
-                                    {{ __('notifications.mark_read') }}
-                                </button>
-                            </form>
-                        @endif
-
-                        @if ($isDesigner && $n->action_key === 'confirm_referral_supplier' && !empty($n->related_supplier_id))
-                            <form method="POST" action="{{ route($routePrefix . '.confirm_referral_supplier', $n->id) }}">
-                                @csrf
-                                <button type="submit" class="px-3 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-900/40 text-xs text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors">
-                                    {{ __('notifications.referral_supplier_add') }}
-                                </button>
-                            </form>
-                        @endif
-
-                        @if ($isDesigner && !empty($n->related_supplier_id) && $n->action_key !== 'supplier_order')
-                            <a href="{{ route('suppliers.show', ['supplierId' => $n->related_supplier_id, 'readonly' => 1]) }}" class="px-3 py-1.5 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-xs text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">
-                                {{ __('notifications.view_supplier') }}
-                            </a>
-                        @endif
-
-                        @if (in_array($n->action_key, ['rate_supplier', 'rate_designer'], true) && !empty($n->related_order_id))
-                            <button type="button"
-                                onclick="openRatingModal('{{ $n->related_order_id }}', @js($n->title))"
-                                class="px-3 py-1.5 rounded-lg border border-[#f59e0b] text-xs text-[#f59e0b] hover:bg-[#f59e0b]/10 transition-colors inline-flex items-center gap-1">
-                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path d="M9.05 2.93c.3-.92 1.6-.92 1.9 0l1.28 3.94a1 1 0 00.95.69h4.15c.97 0 1.37 1.24.59 1.81l-3.36 2.44a1 1 0 00-.36 1.12l1.28 3.94c.3.92-.75 1.69-1.54 1.12l-3.35-2.44a1 1 0 00-1.18 0l-3.35 2.44c-.79.57-1.84-.2-1.54-1.12l1.28-3.94a1 1 0 00-.36-1.12L1.93 9.37c-.78-.57-.38-1.81.59-1.81h4.15a1 1 0 00.95-.69L9.05 2.93z"/></svg>
-                                {{ __('notifications.rate_action') }}
-                            </button>
-                        @endif
-
-                        @if (!$isDesigner && $n->action_key === 'supplier_order' && Route::has('supplier.orders'))
-                            <a href="{{ route('supplier.orders') }}" class="px-3 py-1.5 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-xs text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">
-                                {{ __('supplier-portal.nav_orders') }}
-                            </a>
-                        @endif
-
-                        @if ($n->action_key === 'order_offer')
-                            @if ($isDesigner && Route::has('supplier-orders.index'))
-                                <a href="{{ route('supplier-orders.index') }}" class="px-3 py-1.5 rounded-lg border border-[#f59e0b] text-xs text-[#f59e0b] hover:bg-[#f59e0b]/10 transition-colors">
-                                    {{ __('notifications.offer_view_order') }}
-                                </a>
-                            @elseif (!$isDesigner && Route::has('supplier.orders'))
-                                <a href="{{ route('supplier.orders') }}?tab=offers" class="px-3 py-1.5 rounded-lg border border-[#f59e0b] text-xs text-[#f59e0b] hover:bg-[#f59e0b]/10 transition-colors">
-                                    {{ __('notifications.offer_view_order') }}
-                                </a>
-                            @endif
-                        @endif
-
-                        @if (in_array($n->action_key, ['community_like', 'community_comment', 'community_reply'], true) && !empty($n->related_post_id) && Route::has('community.post'))
-                            <a href="{{ route('community.post', $n->related_post_id) }}" class="px-3 py-1.5 rounded-lg border border-[#f59e0b] text-xs text-[#f59e0b] hover:bg-[#f59e0b]/10 transition-colors">
-                                {{ __('notifications.community_view_post') }}
-                            </a>
-                        @endif
-
-                        <form method="POST" action="{{ route($routePrefix . '.destroy', $n->id) }}" onsubmit="return confirm('{{ __('notifications.delete_confirm') }}')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-900/40 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                                {{ __('notifications.delete') }}
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
+            @php $actions = $actionsById[$n->id] ?? ['type' => 'info', 'icon' => 'bell', 'primary' => null, 'secondary' => null, 'menu_secondary' => null, 'row_href' => null, 'accent_primary' => false]; @endphp
+            @include('notifications.partials.row', [
+                'n' => $n,
+                'actions' => $actions,
+                'routePrefix' => $routePrefix,
+            ])
         @empty
-            <div class="rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] p-8 text-center text-[#64748b] dark:text-[#A1A09A]">
-                {{ __('notifications.empty') }}
+            <div id="notifications-empty" class="rounded-xl border border-[#7c8799]/50 dark:border-[#3E3E3A] bg-white dark:bg-[#161615] p-8 text-center text-sm text-[#64748b] dark:text-[#A1A09A]">
+                {{ $filter === 'unread' ? __('notifications.empty_unread') : __('notifications.empty') }}
             </div>
         @endforelse
     </div>
 
     @if ($notifications->hasPages())
-        <div class="mt-6">{{ $notifications->links() }}</div>
+        <div class="mt-6 flex justify-center">
+            {{ $notifications->onEachSide(1)->links() }}
+        </div>
     @endif
+</div>
 
-    @include('partials.rating-modal', ['reviewStoreUrl' => $reviewStoreUrl])
+@include('partials.rating-modal', ['reviewStoreUrl' => $reviewStoreUrl])
+@include('notifications.partials.scripts')
 @endsection

@@ -115,7 +115,12 @@
                 @method('DELETE')
                 <button type="submit" class="btn btn-danger">{{ __('projects.delete') }}</button>
             </form>
-            <a href="{{ route('projects.index') }}" class="btn">{{ __('projects.close') }}</a>
+            @include('partials.back-link', [
+                'fallback' => route('projects.index'),
+                'label' => __('projects.close'),
+                'variant' => 'btn',
+                'icon' => false,
+            ])
         </div>
     </div>
 

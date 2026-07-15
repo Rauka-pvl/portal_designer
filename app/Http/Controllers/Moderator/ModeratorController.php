@@ -371,10 +371,14 @@ class ModeratorController extends Controller
             ? __('notifications.status_approved')
             : __('notifications.status_rejected');
 
+        $actionKey = $decision === 'approved' ? 'supplier_approved' : 'supplier_rejected';
+
         UserNotification::query()->create([
             'user_id' => $targetUserId,
             'title' => __('notifications.supplier_title', ['status' => $statusLabel]),
             'comment' => __('notifications.supplier_comment', ['name' => $label !== '' ? $label : '#'.$supplier->id])."\n".$comment,
+            'related_supplier_id' => (int) $supplier->id,
+            'action_key' => $actionKey,
         ]);
     }
 
@@ -389,12 +393,15 @@ class ModeratorController extends Controller
             ? __('notifications.status_approved')
             : __('notifications.status_rejected');
 
+        $actionKey = $decision === 'approved' ? 'object_approved' : 'object_rejected';
+
         UserNotification::query()->create([
             'user_id' => (int) $object->user_id,
             'title' => __('notifications.object_title', ['status' => $statusLabel]),
             'comment' => __('notifications.object_comment', [
                 'name' => $label !== '' ? $label : '#'.$object->id,
             ])."\n".$comment,
+            'action_key' => $actionKey,
         ]);
     }
 }

@@ -11,9 +11,12 @@
             <h1 class="text-2xl font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ $designer->name ?? '—' }}</h1>
             <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-1">{{ __('reviews.subtitle_designer_view') }}</p>
         </div>
-        <a href="{{ route('supplier.designers.index') }}" class="px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-sm text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">
-            {{ __('designers.back') }}
-        </a>
+        @include('partials.back-link', [
+            'fallback' => route('supplier.designers.show', $designer->id),
+            'label' => __('designers.back'),
+            'class' => 'px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-sm text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors',
+            'icon' => false,
+        ])
     </div>
 
     <div class="mb-6 grid grid-cols-2 gap-4 sm:max-w-md">

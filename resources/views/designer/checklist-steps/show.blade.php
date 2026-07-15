@@ -88,7 +88,12 @@
 
         <div class="flex gap-3">
             <button id="btn-edit" type="button" class="btn">{{ __('projects.edit') }}</button>
-            <a href="{{ route('dashboard') }}" class="btn">{{ __('projects.close') }}</a>
+            @include('partials.back-link', [
+                'fallback' => $project ? route('projects.show', $project->id) : route('projects.index'),
+                'label' => __('projects.close'),
+                'variant' => 'btn',
+                'icon' => false,
+            ])
         </div>
     </div>
 

@@ -55,9 +55,12 @@
                     </div>
                 </div>
             </div>
-            <a href="{{ route('supplier.designers.index') }}" class="px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-sm text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">
-                {{ __('designers.back') }}
-            </a>
+            @include('partials.back-link', [
+                'fallback' => route('supplier.designers.index'),
+                'label' => __('designers.back'),
+                'class' => 'px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-sm text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors',
+                'icon' => false,
+            ])
         </div>
     </div>
 

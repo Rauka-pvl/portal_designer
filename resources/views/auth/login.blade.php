@@ -113,7 +113,7 @@
 </form>
 
 <a
-    href="{{ route('faq.index') }}"
+    href="{{ \App\Support\BackNavigation::withFrom(route('faq.index')) }}"
     class="fixed right-4 bottom-4 z-40 inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-rose-600 text-white shadow-[0_10px_30px_-12px_rgba(245,158,11,0.9)] hover:scale-105 hover:shadow-[0_14px_38px_-12px_rgba(236,72,153,0.8)] transition-all"
     aria-label="{{ __('faq.help_button') }}"
     title="{{ __('faq.help_button') }}"

@@ -30,6 +30,7 @@
             : 0;
     @endphp
     @include('layouts.partials.app-toasts')
+    @include('layouts.partials.back-nav-script')
 
     <aside id="supplier-sidebar"
         class="fixed left-0 top-0 h-full w-64 bg-white dark:bg-[#161615] border-r border-[#7c8799] dark:border-[#3E3E3A] transform -translate-x-full lg:translate-x-0 transition-transform duration-300 z-50">
@@ -119,11 +120,10 @@
                             </svg>
                             <span>{{ __('notifications.title') }}</span>
                         </span>
-                        @if ($unreadNotifications > 0)
-                            <span class="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs bg-[#f59e0b] text-white">
-                                {{ $unreadNotifications }}
-                            </span>
-                        @endif
+                        <span data-unread-notifications
+                            class="{{ $unreadNotifications > 0 ? '' : 'hidden' }} inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs bg-[#f59e0b] text-white">
+                            {{ $unreadNotifications }}
+                        </span>
                     </a>
                 @endif
                 @if (Route::has('community.index'))
@@ -146,7 +146,7 @@
                     </svg>
                     <span>{{ __('settings.settings') }}</span>
                 </a>
-                <a href="{{ route('faq.index') }}"
+                <a href="{{ \App\Support\BackNavigation::withFrom(route('faq.index')) }}"
                     class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1 {{ request()->routeIs('faq.index') ? 'bg-[#FDFDFC] dark:bg-[#0a0a0a] ring-1 ring-[#f59e0b]/40' : '' }}">
                     <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

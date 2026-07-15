@@ -1,7 +1,7 @@
 @extends('layouts.dashboard')
 
-@section('title', __('subscription.title'))
-@section('header_title', __('subscription.title'))
+@section('title', $isOnboarding ? __('subscription.onboarding_title') : __('subscription.title'))
+@section('header_title', $isOnboarding ? '' : __('subscription.title'))
 
 @php
     $statusLabel = __('subscription.status_'.$status);
@@ -9,9 +9,12 @@
     $priceLabel = $planPrice !== null
         ? \App\Support\DesignerSubscription::formatMoney($planPrice).' '.__('subscription.per_month')
         : null;
-
-    $standardFeatures = ['feature_clients','feature_projects','feature_orders','feature_reports','feature_support'];
-    $proFeatures = ['feature_unlimited','feature_analytics','feature_priority','feature_pro_tools','feature_cashback','feature_suppliers'];
+    $comparisonFeatures = $comparisonFeatures ?? \App\Support\DesignerSubscription::comparisonFeatureKeys();
+    $showPaymentHistory = $showPaymentHistory ?? false;
+    $isOnboarding = $isOnboarding ?? ! ($hasAccess ?? false);
+    $trialRequiresCard = $trialRequiresCard ?? false;
+    // No pre-selection: both plan CTAs stay equal weight until the user chooses.
+    $defaultSelected = null;
 
     $badgeClass = match ($status) {
         'active' => 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
@@ -26,6 +29,20 @@
 @push('styles')
 <style>
     .sub-page { max-width: 1240px; margin: 0 auto; }
+    .sub-onboard { max-width: 1100px; margin: 0 auto; position: relative; }
+    .sub-onboard::before {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: -40px;
+        transform: translateX(-50%);
+        width: min(640px, 90vw);
+        height: 280px;
+        background: radial-gradient(ellipse at center, rgba(245,158,11,0.12), transparent 70%);
+        pointer-events: none;
+        z-index: 0;
+    }
+    .sub-onboard > * { position: relative; z-index: 1; }
     .sub-card {
         border-radius: 16px;
         border: 1px solid rgba(124,135,153,0.35);
@@ -37,20 +54,25 @@
         border-color: #7c8799;
     }
     .sub-plan-card {
-        border-radius: 16px;
+        border-radius: 15px;
         border: 1px solid rgba(124,135,153,0.35);
         background: #161615;
-        padding: 22px 24px;
+        padding: 24px;
         display: flex;
         flex-direction: column;
         min-height: 100%;
-        transition: border-color .15s ease;
+        transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
     }
     html:not(.dark) .sub-plan-card { background: #fff; border-color: #7c8799; }
-    .sub-plan-card.is-current { border-color: #f59e0b; }
+    .sub-plan-card.is-current,
+    .sub-plan-card.is-selected {
+        border-color: #f59e0b;
+        box-shadow: 0 0 0 1px rgba(245,158,11,0.25);
+    }
+    .sub-plan-card:hover { border-color: rgba(245,158,11,0.55); }
     .sub-btn {
         display: inline-flex; align-items: center; justify-content: center;
-        gap: .5rem; height: 42px; padding: 0 1.1rem; border-radius: 12px;
+        gap: .5rem; min-height: 40px; height: 42px; padding: 0 1.1rem; border-radius: 12px;
         font-size: .875rem; font-weight: 600; transition: opacity .15s ease, background .15s ease, border-color .15s ease;
     }
     .sub-btn:disabled { opacity: .55; cursor: not-allowed; }
@@ -63,7 +85,7 @@
     html:not(.dark) .sub-btn-secondary { color: #0f172a; border-color: #7c8799; }
     .sub-btn-secondary:hover:not(:disabled) { border-color: #f59e0b; color: #f59e0b; }
     .sub-btn-text {
-        background: transparent; border: 0; color: #A1A09A; height: auto; padding: 0;
+        background: transparent; border: 0; color: #A1A09A; height: auto; min-height: 40px; padding: 0 .25rem;
         font-weight: 500; text-decoration: underline; text-underline-offset: 3px;
     }
     .sub-btn-text:hover { color: #f59e0b; }
@@ -88,25 +110,277 @@
     html:not(.dark) .sub-title { color: #0f172a; }
     .sub-text { color: #EDEDEC; }
     html:not(.dark) .sub-text { color: #0f172a; }
+    .sub-steps {
+        display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem;
+        font-size: .8rem; color: #A1A09A;
+    }
+    .sub-steps .is-active { color: #f59e0b; font-weight: 600; }
+    .sub-steps .is-done { color: #EDEDEC; }
+    html:not(.dark) .sub-steps .is-done { color: #0f172a; }
+    .sub-sticky-cta {
+        position: sticky; bottom: 0; z-index: 20;
+        margin: 1.25rem -1rem -1.5rem;
+        padding: .875rem 1rem calc(.875rem + env(safe-area-inset-bottom));
+        border-top: 1px solid rgba(124,135,153,.35);
+        background: rgba(10,10,10,.92);
+        backdrop-filter: blur(8px);
+    }
+    html:not(.dark) .sub-sticky-cta {
+        background: rgba(255,255,255,.94);
+        border-top-color: #7c8799;
+    }
+    @media (min-width: 768px) {
+        .sub-sticky-cta { display: none; }
+    }
+    .sub-badge-soft {
+        display: inline-flex; align-items: center; border-radius: 999px;
+        border: 1px solid rgba(245,158,11,.35); background: rgba(245,158,11,.12);
+        color: #fbbf24; font-size: 11px; font-weight: 600; padding: .2rem .55rem;
+    }
 </style>
 @endpush
 
 @section('content')
+@if ($isOnboarding)
+{{-- ===================== ONBOARDING ===================== --}}
+<div class="sub-onboard space-y-7 pb-24 md:pb-4" data-sub-onboard
+    data-can-trial="{{ $canUseTrial ? '1' : '0' }}"
+    data-default-plan="{{ $defaultSelected }}">
+
+    <div class="text-center max-w-2xl mx-auto">
+        <h1 class="text-2xl sm:text-[28px] font-semibold tracking-tight sub-title">
+            {{ $canUseTrial ? __('subscription.onboarding_title') : __('subscription.onboarding_resume_title') }}
+        </h1>
+        <p class="mt-2 text-sm sm:text-base sub-muted">
+            {{ $canUseTrial ? __('subscription.onboarding_subtitle') : __('subscription.onboarding_resume_subtitle') }}
+        </p>
+    </div>
+
+    @if (! $canUseTrial)
+        <nav class="sub-steps justify-center" aria-label="{{ __('subscription.steps_aria') }}">
+            <span class="is-active">{{ __('subscription.step_plan') }}</span>
+            <span aria-hidden="true">→</span>
+            <span>{{ __('subscription.step_payment') }}</span>
+            <span aria-hidden="true">→</span>
+            <span>{{ __('subscription.step_done') }}</span>
+        </nav>
+    @endif
+
+    @if (empty($plans))
+        <div class="sub-card text-center py-10">
+            <p class="sub-text font-medium">{{ __('subscription.plans_unavailable') }}</p>
+            <a href="{{ route('subscription.index') }}" class="sub-btn sub-btn-secondary mt-4 inline-flex">{{ __('subscription.retry') }}</a>
+        </div>
+    @else
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch" role="listbox" aria-label="{{ __('subscription.choose_plan') }}">
+            @foreach ($plans as $key => $plan)
+                @php
+                    $isRecommended = ! empty($plan['recommended']);
+                    $featureKeys = $plan['feature_keys'] ?? [];
+                    $priceFormatted = \App\Support\DesignerSubscription::formatMoney((int) $plan['price']);
+                @endphp
+                <article
+                    class="sub-plan-card"
+                    role="option"
+                    tabindex="0"
+                    aria-selected="false"
+                    data-plan-card
+                    data-plan="{{ $key }}"
+                    data-plan-label="{{ __('subscription.plan_'.$key) }}"
+                    data-plan-price="{{ $priceFormatted }}"
+                    data-checkout-url="{{ route('subscription.checkout', ['plan' => $key]) }}"
+                >
+                    <div class="flex items-start justify-between gap-3 mb-3">
+                        <div>
+                            <h2 class="text-xl font-semibold sub-title">{{ __('subscription.plan_'.$key) }}</h2>
+                            <p class="mt-1 text-sm sub-muted">{{ __('subscription.'.$plan['desc_key']) }}</p>
+                        </div>
+                        <div class="flex flex-col items-end gap-1.5 shrink-0">
+                            @if ($isRecommended)
+                                <span class="sub-badge-soft">{{ __('subscription.recommended') }}</span>
+                            @endif
+                            <span class="hidden text-[11px] font-medium text-[#f59e0b]" data-selected-badge>{{ __('subscription.selected_badge') }}</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <span class="text-2xl font-semibold sub-title">{{ $priceFormatted }}</span>
+                        <span class="text-sm sub-muted"> {{ __('subscription.per_month') }}</span>
+                    </div>
+
+                    <ul class="space-y-2 mb-3 flex-1">
+                        @foreach (array_slice($featureKeys, 0, 6) as $feat)
+                            <li class="flex gap-2 text-sm sub-text">
+                                <span class="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#f59e0b] shrink-0" aria-hidden="true"></span>
+                                {{ __('subscription.'.$feat) }}
+                            </li>
+                        @endforeach
+                    </ul>
+                    <p class="text-xs sub-muted mb-4">{{ __('subscription.'.$plan['limit_key']) }}</p>
+
+                    <button type="button"
+                        class="sub-btn sub-btn-secondary w-full"
+                        data-select-plan="{{ $key }}">
+                        {{ __('subscription.select_plan', ['plan' => __('subscription.plan_'.$key)]) }}
+                    </button>
+                </article>
+            @endforeach
+        </div>
+
+        @if ($canUseTrial)
+            <p class="text-center text-sm sub-muted max-w-xl mx-auto" id="trial-terms-line"
+                data-template="{{ __('subscription.trial_terms_line', ['days' => $trialTotalDays, 'price' => ':price']) }}">
+                {{ __('subscription.trial_terms_line', [
+                    'days' => $trialTotalDays,
+                    'price' => '—',
+                ]) }}
+            </p>
+            <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs sm:text-sm sub-muted">
+                <span>{{ __('subscription.trust_trial_days', ['days' => $trialTotalDays]) }}</span>
+                <span aria-hidden="true">·</span>
+                <span>{{ __('subscription.trust_cancel_anytime') }}</span>
+                <span aria-hidden="true">·</span>
+                @if (! $trialRequiresCard)
+                    <span>{{ __('subscription.trust_no_card') }}</span>
+                @else
+                    <span>{{ __('subscription.trust_pay_after_trial') }}</span>
+                @endif
+            </div>
+        @else
+            <div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs sm:text-sm sub-muted">
+                <span>{{ __('subscription.trust_secure_pay') }}</span>
+                <span aria-hidden="true">·</span>
+                <span>{{ __('subscription.trust_cancel_anytime') }}</span>
+            </div>
+        @endif
+
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6">
+            <button type="button" class="sub-btn sub-btn-text" data-open-modal="compare-modal">{{ __('subscription.compare_all') }}</button>
+            <button type="button" class="sub-btn sub-btn-text" data-open-modal="trial-faq-modal">{{ __('subscription.trial_faq_link') }}</button>
+        </div>
+
+        <form method="POST" action="{{ route('subscription.purchase') }}" id="onboard-activate-form" class="hidden" data-sub-busy-form>
+            @csrf
+            <input type="hidden" name="plan" id="onboard-plan-input" value="">
+            <input type="hidden" name="payment_method" value="kaspi">
+        </form>
+
+        <div class="hidden md:flex justify-center pt-1">
+            <button type="button" id="onboard-primary-cta" class="sub-btn sub-btn-primary min-w-[280px] px-6" disabled>
+                {{ __('subscription.choose_plan') }}
+            </button>
+        </div>
+
+        <div class="sub-sticky-cta md:hidden hidden" id="onboard-sticky-bar">
+            <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="text-xs sub-muted truncate" id="sticky-plan-label"></p>
+                </div>
+                <button type="button" id="onboard-sticky-cta" class="sub-btn sub-btn-primary shrink-0 px-4">
+                    {{ __('subscription.continue') }}
+                </button>
+            </div>
+        </div>
+    @endif
+</div>
+
+{{-- Compare modal --}}
+<div id="compare-modal" class="sub-modal fixed inset-0 z-[90] items-center justify-center p-4 bg-black/60" role="dialog" aria-modal="true" aria-labelledby="compare-title">
+    <div class="w-full max-w-lg rounded-2xl border border-white/10 bg-[#161615] p-5 sm:p-6 shadow-xl max-h-[85vh] overflow-y-auto" role="document">
+        <div class="flex items-start justify-between gap-3 mb-4">
+            <h3 id="compare-title" class="text-lg font-semibold text-[#EDEDEC]">{{ __('subscription.compare_title') }}</h3>
+            <button type="button" class="min-w-10 min-h-10 text-[#A1A09A] hover:text-[#f59e0b]" data-close-modal="compare-modal" aria-label="{{ __('subscription.confirm_plan_cancel') }}">✕</button>
+        </div>
+        <div class="space-y-3 md:hidden">
+            @foreach ($plans as $key => $plan)
+                <div class="rounded-xl border border-white/10 p-3">
+                    <div class="font-medium text-[#EDEDEC] mb-2">{{ __('subscription.plan_'.$key) }}</div>
+                    <ul class="space-y-1.5">
+                        @foreach (($plan['feature_keys'] ?? []) as $feat)
+                            <li class="text-sm text-[#A1A09A]">{{ __('subscription.'.$feat) }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endforeach
+        </div>
+        <div class="hidden md:block overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-white/10 text-left">
+                        <th class="py-2 pr-3 text-[#A1A09A] font-medium">{{ __('subscription.compare_feature') }}</th>
+                        @foreach ($plans as $key => $plan)
+                            <th class="py-2 px-2 text-[#EDEDEC] font-medium">{{ __('subscription.plan_'.$key) }}</th>
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($comparisonFeatures as $feat)
+                        <tr class="border-b border-white/5">
+                            <td class="py-2.5 pr-3 text-[#A1A09A]">{{ __('subscription.'.$feat) }}</td>
+                            @foreach ($plans as $key => $plan)
+                                @php $has = in_array($feat, $plan['feature_keys'] ?? [], true); @endphp
+                                <td class="py-2.5 px-2 {{ $has ? 'text-[#f59e0b]' : 'text-[#64748b]' }}">
+                                    {{ $has ? '✓' : '—' }}
+                                </td>
+                            @endforeach
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{{-- Trial FAQ modal --}}
+<div id="trial-faq-modal" class="sub-modal fixed inset-0 z-[90] items-center justify-center p-4 bg-black/60" role="dialog" aria-modal="true" aria-labelledby="trial-faq-title">
+    <div class="w-full max-w-md rounded-2xl border border-white/10 bg-[#161615] p-5 sm:p-6 shadow-xl max-h-[85vh] overflow-y-auto" role="document">
+        <div class="flex items-start justify-between gap-3 mb-3">
+            <h3 id="trial-faq-title" class="text-lg font-semibold text-[#EDEDEC]">{{ __('subscription.trial_faq_title') }}</h3>
+            <button type="button" class="min-w-10 min-h-10 text-[#A1A09A] hover:text-[#f59e0b]" data-close-modal="trial-faq-modal" aria-label="{{ __('subscription.confirm_plan_cancel') }}">✕</button>
+        </div>
+        <dl class="space-y-4 text-sm">
+            <div>
+                <dt class="font-medium text-[#EDEDEC]">{{ __('subscription.trial_faq_q1') }}</dt>
+                <dd class="mt-1 text-[#A1A09A]">{{ __('subscription.trial_faq_a1', ['days' => $trialTotalDays]) }}</dd>
+            </div>
+            <div>
+                <dt class="font-medium text-[#EDEDEC]">{{ __('subscription.trial_faq_q2') }}</dt>
+                <dd class="mt-1 text-[#A1A09A]">{{ __('subscription.trial_faq_a2') }}</dd>
+            </div>
+            <div>
+                <dt class="font-medium text-[#EDEDEC]">{{ __('subscription.trial_faq_q3') }}</dt>
+                <dd class="mt-1 text-[#A1A09A]">{{ __('subscription.trial_faq_a3') }}</dd>
+            </div>
+            <div>
+                <dt class="font-medium text-[#EDEDEC]">{{ __('subscription.trial_faq_q4') }}</dt>
+                <dd class="mt-1 text-[#A1A09A]">{{ __('subscription.trial_faq_a4') }}</dd>
+            </div>
+            <div>
+                <dt class="font-medium text-[#EDEDEC]">{{ __('subscription.trial_faq_q5') }}</dt>
+                <dd class="mt-1 text-[#A1A09A]">{{ __('subscription.trial_faq_a5') }}</dd>
+            </div>
+        </dl>
+        @if (Route::has('faq.index'))
+            <a href="{{ \App\Support\BackNavigation::withFrom(route('faq.index')) }}" class="sub-btn sub-btn-secondary w-full mt-5">{{ __('subscription.need_help') }}</a>
+        @endif
+    </div>
+</div>
+
+@else
+{{-- ===================== MANAGEMENT ===================== --}}
 <div class="sub-page space-y-7">
-    {{-- Header --}}
     <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
             <h1 class="text-2xl sm:text-[26px] font-semibold tracking-tight sub-title">{{ __('subscription.title') }}</h1>
             <p class="mt-1.5 text-sm sub-muted">{{ __('subscription.page_subtitle') }}</p>
         </div>
         @if (Route::has('faq.index'))
-            <a href="{{ route('faq.index') }}" class="sub-btn sub-btn-secondary shrink-0 self-start">
+            <a href="{{ \App\Support\BackNavigation::withFrom(route('faq.index')) }}" class="sub-btn sub-btn-secondary shrink-0 self-start">
                 {{ __('subscription.need_help') }}
             </a>
         @endif
     </div>
 
-    {{-- Current subscription card --}}
     <section class="sub-card" aria-labelledby="sub-current-heading">
         <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-5">
             <div>
@@ -124,8 +398,6 @@
                     <p class="mt-2 text-sm text-amber-300">{{ __('subscription.payment_failed_title') }}</p>
                 @elseif ($status === 'cancelled')
                     <p class="mt-2 text-sm sub-muted">{{ __('subscription.cancelled_title') }}</p>
-                @elseif ($status === 'none')
-                    <p class="mt-2 text-sm sub-muted">{{ __('subscription.blocked_subtitle') }}</p>
                 @endif
             </div>
             @if ($priceLabel)
@@ -206,8 +478,6 @@
                 <a href="{{ $primaryAction['href'] }}" class="sub-btn sub-btn-primary w-full sm:w-auto">{{ $primaryAction['label'] }}</a>
             @elseif (($primaryAction['key'] ?? '') === 'update_payment')
                 <button type="button" class="sub-btn sub-btn-primary w-full sm:w-auto" data-open-modal="payment-modal">{{ $primaryAction['label'] }}</button>
-            @else
-                <a href="#plans" class="sub-btn sub-btn-primary w-full sm:w-auto">{{ $primaryAction['label'] }}</a>
             @endif
 
             @if ($hasAccess)
@@ -220,29 +490,33 @@
         </div>
     </section>
 
-    {{-- Plans --}}
     <section id="plans" aria-labelledby="plans-heading">
         <div class="mb-4">
             <h2 id="plans-heading" class="text-lg font-semibold sub-title">{{ __('subscription.choose_plan') }}</h2>
-            @if ($canUseTrial)
-                <p class="mt-1 text-sm sub-muted">{{ __('subscription.trial_hint') }}</p>
-            @endif
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             @foreach ($plans as $key => $plan)
-                @php $isCurrent = $currentPlan === $key && $hasAccess; @endphp
+                @php
+                    $isCurrent = $currentPlan === $key && $hasAccess;
+                    $featureKeys = $plan['feature_keys'] ?? [];
+                @endphp
                 <article class="sub-plan-card {{ $isCurrent ? 'is-current' : '' }}">
                     <div class="flex items-start justify-between gap-3 mb-3">
                         <div>
                             <h3 class="text-xl font-semibold sub-title">{{ __('subscription.plan_'.$key) }}</h3>
-                            <p class="mt-1 text-sm sub-muted">{{ __('subscription.plan_'.$key.'_desc') }}</p>
+                            <p class="mt-1 text-sm sub-muted">{{ __('subscription.'.$plan['desc_key']) }}</p>
                         </div>
-                        @if ($isCurrent)
-                            <span class="shrink-0 inline-flex items-center rounded-full border border-[#f59e0b]/40 px-2.5 py-0.5 text-[11px] font-medium text-[#f59e0b]">
-                                {{ __('subscription.current_plan_badge') }}
-                            </span>
-                        @endif
+                        <div class="flex flex-col items-end gap-1.5">
+                            @if (! empty($plan['recommended']))
+                                <span class="sub-badge-soft">{{ __('subscription.recommended') }}</span>
+                            @endif
+                            @if ($isCurrent)
+                                <span class="shrink-0 inline-flex items-center rounded-full border border-[#f59e0b]/40 px-2.5 py-0.5 text-[11px] font-medium text-[#f59e0b]">
+                                    {{ __('subscription.current_plan_badge') }}
+                                </span>
+                            @endif
+                        </div>
                     </div>
 
                     <div class="mb-4">
@@ -251,40 +525,32 @@
                     </div>
 
                     <ul class="space-y-2 mb-3 flex-1">
-                        @foreach (($key === 'pro' ? $proFeatures : $standardFeatures) as $feat)
+                        @foreach ($featureKeys as $feat)
                             <li class="flex gap-2 text-sm sub-text">
                                 <span class="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#f59e0b] shrink-0" aria-hidden="true"></span>
                                 {{ __('subscription.'.$feat) }}
                             </li>
                         @endforeach
                     </ul>
-                    <p class="text-xs sub-muted mb-4">{{ __('subscription.plan_'.$key.'_limit') }}</p>
+                    <p class="text-xs sub-muted mb-4">{{ __('subscription.'.$plan['limit_key']) }}</p>
 
                     @if ($isCurrent)
                         <button type="button" class="sub-btn sub-btn-secondary w-full" disabled>{{ __('subscription.current_plan_badge') }}</button>
-                    @elseif ($hasAccess)
+                    @else
                         <button type="button"
-                            class="sub-btn {{ $key === 'pro' ? 'sub-btn-primary' : 'sub-btn-secondary' }} w-full"
+                            class="sub-btn sub-btn-secondary w-full"
                             data-open-change-plan="{{ $key }}"
                             data-plan-label="{{ __('subscription.plan_'.$key) }}"
                             data-plan-price="{{ \App\Support\DesignerSubscription::formatMoney((int) $plan['price']) }}">
                             {{ __('subscription.select_plan', ['plan' => __('subscription.plan_'.$key)]) }}
                         </button>
-                    @else
-                        <a href="{{ route('subscription.checkout', ['plan' => $key]) }}"
-                            class="sub-btn {{ $key === 'pro' ? 'sub-btn-primary' : 'sub-btn-secondary' }} w-full">
-                            {{ $canUseTrial ? __('subscription.start_trial') : __('subscription.select_plan', ['plan' => __('subscription.plan_'.$key)]) }}
-                        </a>
                     @endif
                 </article>
             @endforeach
         </div>
-        @if ($hasAccess)
-            <p class="mt-3 text-xs sub-muted">{{ __('subscription.plan_apply_now') }}</p>
-        @endif
+        <p class="mt-3 text-xs sub-muted">{{ __('subscription.plan_apply_now') }}</p>
     </section>
 
-    {{-- Payment + billing --}}
     @if ($hasAccess || $paymentMethod)
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <section class="sub-card" aria-labelledby="pay-heading">
@@ -335,18 +601,12 @@
         </div>
     @endif
 
-    {{-- History --}}
-    <section class="sub-card !p-0 overflow-hidden" aria-labelledby="history-heading">
-        <div class="px-5 sm:px-6 py-4 border-b border-white/5">
-            <h2 id="history-heading" class="text-lg font-semibold sub-title">{{ __('subscription.history') }}</h2>
-        </div>
-
-        @if ($payments->isEmpty())
-            <div class="px-5 sm:px-6 py-12 text-center">
-                <p class="text-sm font-medium sub-text">{{ __('subscription.history_empty') }}</p>
-                <p class="mt-1 text-sm sub-muted">{{ __('subscription.history_empty_hint') }}</p>
+    @if ($showPaymentHistory)
+        <section class="sub-card !p-0 overflow-hidden" aria-labelledby="history-heading">
+            <div class="px-5 sm:px-6 py-4 border-b border-white/5">
+                <h2 id="history-heading" class="text-lg font-semibold sub-title">{{ __('subscription.history') }}</h2>
             </div>
-        @else
+
             <div class="hidden md:block overflow-x-auto">
                 <table class="sub-table w-full text-sm">
                     <thead>
@@ -377,11 +637,7 @@
                                     <span class="text-xs sub-muted">{{ $row['status_label'] }}</span>
                                 </td>
                                 <td class="px-5 py-3.5 text-right">
-                                    @if ($row['has_receipt'])
-                                        <span class="text-xs sub-muted">{{ __('subscription.history_no_doc') }}</span>
-                                    @else
-                                        <span class="text-xs sub-muted">{{ __('subscription.history_no_doc') }}</span>
-                                    @endif
+                                    <span class="text-xs sub-muted">{{ __('subscription.history_no_doc') }}</span>
                                 </td>
                             </tr>
                         @endforeach
@@ -402,10 +658,9 @@
                     </div>
                 @endforeach
             </div>
-        @endif
-    </section>
+        </section>
+    @endif
 
-    {{-- Danger zone --}}
     @if ($hasAccess && ! $cancelledAt)
         <section class="pt-2" aria-labelledby="manage-heading">
             <h2 id="manage-heading" class="text-base font-semibold sub-title mb-1">{{ __('subscription.manage_section') }}</h2>
@@ -469,7 +724,7 @@
             <p class="mt-3 text-base font-semibold text-[#EDEDEC]">{{ $priceLabel }}</p>
         @endif
         <ul class="mt-4 space-y-2">
-            @foreach (($currentPlan === 'pro' ? $proFeatures : $standardFeatures) as $feat)
+            @foreach (($plans[$currentPlan]['feature_keys'] ?? []) as $feat)
                 <li class="flex gap-2 text-sm text-[#EDEDEC]">
                     <span class="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#f59e0b] shrink-0"></span>
                     {{ __('subscription.'.$feat) }}
@@ -505,6 +760,7 @@
         </form>
     </div>
 </div>
+@endif
 @endsection
 
 @section('scripts')
@@ -560,8 +816,8 @@
         modal.addEventListener('mousedown', (e) => {
             if (e.target === modal) closeModal(modal.id);
         });
-        modal.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeModal(modal.id);
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.classList.contains('open')) closeModal(modal.id);
         });
     });
 
@@ -579,11 +835,111 @@
             const btn = form.querySelector('button[type="submit"]');
             if (!btn) return;
             btn.disabled = true;
-            const original = btn.textContent;
-            btn.dataset.originalText = original;
+            btn.dataset.originalText = btn.textContent;
             btn.textContent = @json(__('subscription.saving'));
         });
     });
+
+    // Onboarding plan selection
+    const onboard = document.querySelector('[data-sub-onboard]');
+    if (!onboard) return;
+
+    const canTrial = onboard.dataset.canTrial === '1';
+    const i18n = {
+        startTrial: @json(__('subscription.start_trial_with')),
+        continueWith: @json(__('subscription.continue_with')),
+        sticky: @json(__('subscription.sticky_selected')),
+        loading: @json(__('subscription.saving')),
+        perMonth: @json(__('subscription.per_month')),
+    };
+    let selected = onboard.dataset.defaultPlan || null;
+    let busy = false;
+
+    function planCard(key) {
+        return onboard.querySelector(`[data-plan-card][data-plan="${key}"]`);
+    }
+
+    function updateSelection(key) {
+        selected = key;
+        const input = document.getElementById('onboard-plan-input');
+        if (input) input.value = key;
+
+        onboard.querySelectorAll('[data-plan-card]').forEach((card) => {
+            const isSel = card.dataset.plan === key;
+            card.classList.toggle('is-selected', isSel);
+            card.setAttribute('aria-selected', isSel ? 'true' : 'false');
+            const badge = card.querySelector('[data-selected-badge]');
+            if (badge) badge.classList.toggle('hidden', !isSel);
+            const btn = card.querySelector('[data-select-plan]');
+            if (btn) {
+                btn.classList.toggle('sub-btn-primary', isSel);
+                btn.classList.toggle('sub-btn-secondary', !isSel);
+            }
+        });
+
+        const card = planCard(key);
+        const label = card?.dataset.planLabel || key;
+        const price = card?.dataset.planPrice || '';
+        const primary = document.getElementById('onboard-primary-cta');
+        const tpl = canTrial ? i18n.startTrial : i18n.continueWith;
+        if (primary) {
+            primary.disabled = false;
+            primary.textContent = tpl.replace(':plan', label);
+        }
+        const stickyBar = document.getElementById('onboard-sticky-bar');
+        const stickyLabel = document.getElementById('sticky-plan-label');
+        if (stickyBar) stickyBar.classList.remove('hidden');
+        if (stickyLabel) {
+            stickyLabel.textContent = i18n.sticky
+                .replace(':plan', label)
+                .replace(':price', price + ' ' + i18n.perMonth);
+        }
+        const terms = document.getElementById('trial-terms-line');
+        if (terms?.dataset.template) {
+            terms.textContent = terms.dataset.template.replace(':price', price);
+        }
+    }
+
+    function activate() {
+        if (busy || !selected) return;
+        const card = planCard(selected);
+        if (!card) return;
+
+        if (!canTrial) {
+            window.location.href = card.dataset.checkoutUrl;
+            return;
+        }
+
+        const form = document.getElementById('onboard-activate-form');
+        if (!form) return;
+        busy = true;
+        [document.getElementById('onboard-primary-cta'), document.getElementById('onboard-sticky-cta')]
+            .forEach((btn) => {
+                if (!btn) return;
+                btn.disabled = true;
+                btn.textContent = i18n.loading;
+            });
+        form.requestSubmit ? form.requestSubmit() : form.submit();
+    }
+
+    onboard.querySelectorAll('[data-select-plan]').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            updateSelection(btn.getAttribute('data-select-plan'));
+        });
+    });
+    onboard.querySelectorAll('[data-plan-card]').forEach((card) => {
+        card.addEventListener('click', () => updateSelection(card.dataset.plan));
+        card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                updateSelection(card.dataset.plan);
+            }
+        });
+    });
+    document.getElementById('onboard-primary-cta')?.addEventListener('click', activate);
+    document.getElementById('onboard-sticky-cta')?.addEventListener('click', activate);
+
 })();
 </script>
 @endsection

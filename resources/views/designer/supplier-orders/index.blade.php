@@ -1295,7 +1295,7 @@ function viewOrder(id) {
             ` : ''}
             ${filesHtml}
             <div class="pt-4">
-                <a href="/supplier-orders/${order.id}"
+                <a href="${typeof appWithFrom === 'function' ? appWithFrom('/supplier-orders/' + order.id) : ('/supplier-orders/' + order.id)}"
                     class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
                     title="{{ __('supplier-orders.details') }}">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

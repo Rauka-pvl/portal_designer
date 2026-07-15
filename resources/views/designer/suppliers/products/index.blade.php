@@ -74,9 +74,12 @@
                 </div>
             </div>
         </div>
-        <a href="{{ route('suppliers.show', $supplier->id) }}" class="px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-sm text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors self-start">
-            {{ __('suppliers.close') }}
-        </a>
+        @include('partials.back-link', [
+            'fallback' => route('suppliers.show', $supplier->id),
+            'label' => __('suppliers.close'),
+            'class' => 'px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-sm text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors self-start',
+            'icon' => false,
+        ])
     </div>
 
     @if ($products->isEmpty())

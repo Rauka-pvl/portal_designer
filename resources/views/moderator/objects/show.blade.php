@@ -33,7 +33,12 @@
             <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-1">{{ __('objects.object_passport') }} #{{ $object->id }}</p>
         </div>
         <div class="flex gap-3">
-            <a href="{{ route('moderator.index') }}" class="btn">{{ __('suppliers.close') }}</a>
+            @include('partials.back-link', [
+                'fallback' => route('moderator.index'),
+                'label' => __('suppliers.close'),
+                'variant' => 'btn',
+                'icon' => false,
+            ])
         </div>
     </div>
 

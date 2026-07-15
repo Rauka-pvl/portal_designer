@@ -143,6 +143,11 @@ Route::match(['get', 'post'], '/register', function (Request $request) {
     Auth::login($user);
     $request->session()->regenerate();
 
+    // Keep locale from session / app default so registration does not jump to English by accident.
+    if (! $request->session()->has('locale')) {
+        $request->session()->put('locale', config('app.locale', 'ru'));
+    }
+
     // Дизайнер сразу на страницу выбора подписки (триал — только после выбора плана)
     return $isSupplier
         ? redirect()->route('supplier.index')
