@@ -93,6 +93,12 @@
                             @endif
                         @endif
 
+                        @if (in_array($n->action_key, ['community_like', 'community_comment', 'community_reply'], true) && !empty($n->related_post_id) && Route::has('community.post'))
+                            <a href="{{ route('community.post', $n->related_post_id) }}" class="px-3 py-1.5 rounded-lg border border-[#f59e0b] text-xs text-[#f59e0b] hover:bg-[#f59e0b]/10 transition-colors">
+                                {{ __('notifications.community_view_post') }}
+                            </a>
+                        @endif
+
                         <form method="POST" action="{{ route($routePrefix . '.destroy', $n->id) }}" onsubmit="return confirm('{{ __('notifications.delete_confirm') }}')">
                             @csrf
                             @method('DELETE')

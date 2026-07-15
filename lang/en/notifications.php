@@ -50,4 +50,12 @@ return [
     'rate_designer_title' => 'Rate the designer',
     'rate_designer_comment' => 'Delivery order #:order is completed. Please rate the designer :designer.',
     'rate_action' => 'Rate',
+    'community_like_title' => 'New post like',
+    'community_like_comment' => ':name liked your post',
+    'community_like_comment_grouped' => ':name and :count more liked your post',
+    'community_comment_title' => 'New comment',
+    'community_comment_comment' => ':name commented on your post',
+    'community_reply_title' => 'Reply to your comment',
+    'community_reply_comment' => ':name replied to your comment',
+    'community_view_post' => 'View post',
 ];

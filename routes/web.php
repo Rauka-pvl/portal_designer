@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\Designer\CashbackController;
 use App\Http\Controllers\Designer\ChecklistStepController;
 use App\Http\Controllers\Designer\ClientController;
@@ -386,4 +387,20 @@ Route::middleware(['auth', 'role:designer|supplier', 'password.changed', 'subscr
         ->name('supplier-orders.chat.unread_map');
     Route::get('/chat/unread-count', [SupplierOrderChatController::class, 'unreadCount'])
         ->name('chat.unread_count');
+
+    Route::get('/community', [CommunityController::class, 'index'])->name('community.index');
+    Route::get('/community/my-posts', fn () => redirect()->route('community.index', ['tab' => 'my']))->name('community.my_posts');
+    Route::get('/community/saved', fn () => redirect()->route('community.index', ['tab' => 'saved']))->name('community.saved');
+    Route::get('/community/post/{postId}', [CommunityController::class, 'show'])->whereNumber('postId')->name('community.post');
+    Route::get('/community/profile/{userId}', [CommunityController::class, 'profile'])->whereNumber('userId')->name('community.profile');
+    Route::post('/community/posts', [CommunityController::class, 'store'])->name('community.posts.store');
+    Route::post('/community/posts/{postId}', [CommunityController::class, 'update'])->whereNumber('postId')->name('community.posts.update');
+    Route::delete('/community/posts/{postId}', [CommunityController::class, 'destroy'])->whereNumber('postId')->name('community.posts.destroy');
+    Route::post('/community/posts/{postId}/like', [CommunityController::class, 'toggleLike'])->whereNumber('postId')->name('community.posts.like');
+    Route::post('/community/posts/{postId}/save', [CommunityController::class, 'toggleSave'])->whereNumber('postId')->name('community.posts.save');
+    Route::post('/community/posts/{postId}/comments', [CommunityController::class, 'storeComment'])->whereNumber('postId')->name('community.posts.comments.store');
+    Route::put('/community/comments/{commentId}', [CommunityController::class, 'updateComment'])->whereNumber('commentId')->name('community.comments.update');
+    Route::delete('/community/comments/{commentId}', [CommunityController::class, 'destroyComment'])->whereNumber('commentId')->name('community.comments.destroy');
+    Route::post('/community/posts/{postId}/report', [CommunityController::class, 'report'])->whereNumber('postId')->name('community.posts.report');
+    Route::post('/community/posts/{postId}/hide', [CommunityController::class, 'hide'])->whereNumber('postId')->name('community.posts.hide');
 });

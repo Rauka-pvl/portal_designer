@@ -18,6 +18,7 @@ class UserNotification extends Model
         'related_supplier_id',
         'action_key',
         'related_order_id',
+        'related_post_id',
     ];
 
     protected $casts = [
@@ -25,6 +26,7 @@ class UserNotification extends Model
         'read_at' => 'datetime',
         'related_supplier_id' => 'integer',
         'related_order_id' => 'integer',
+        'related_post_id' => 'integer',
     ];
 
     public function user(): BelongsTo

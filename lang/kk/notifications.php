@@ -50,4 +50,12 @@ return [
     'rate_designer_title' => 'Дизайнерді бағалаңыз',
     'rate_designer_comment' => '№:order жеткізуі аяқталды. :designer дизайнерінің жұмысын бағалаңыз.',
     'rate_action' => 'Бағалау',
+    'community_like_title' => 'Жазбаға жаңа баға',
+    'community_like_comment' => ':name сіздің жазбаңызды бағалады',
+    'community_like_comment_grouped' => ':name және тағы :count пайдаланушы жазбаңызды бағалады',
+    'community_comment_title' => 'Жаңа пікір',
+    'community_comment_comment' => ':name сіздің жазбаңызға пікір жазды',
+    'community_reply_title' => 'Пікірге жауап',
+    'community_reply_comment' => ':name сіздің пікіріңізге жауап берді',
+    'community_view_post' => 'Жазбаға',
 ];

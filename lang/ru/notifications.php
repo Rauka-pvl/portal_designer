@@ -50,4 +50,12 @@ return [
     'rate_designer_title' => 'Оцените дизайнера',
     'rate_designer_comment' => 'Поставка №:order завершена. Пожалуйста, оцените работу дизайнера :designer.',
     'rate_action' => 'Оценить',
+    'community_like_title' => 'Новая оценка публикации',
+    'community_like_comment' => ':name оценил(а) вашу публикацию',
+    'community_like_comment_grouped' => ':name и ещё :count пользователей оценили вашу публикацию',
+    'community_comment_title' => 'Новый комментарий',
+    'community_comment_comment' => ':name прокомментировал(а) вашу публикацию',
+    'community_reply_title' => 'Ответ на комментарий',
+    'community_reply_comment' => ':name ответил(а) на ваш комментарий',
+    'community_view_post' => 'К публикации',
 ];

@@ -1,4 +1,4 @@
-@extends('layouts.supplier')
+@extends($layout ?? 'layouts.supplier')
 
 @section('title', __('dashboard.profile'))
 
@@ -33,12 +33,25 @@
 
 @section('content')
     @php
+        $isOwner = $isOwner ?? true;
+        $isPublicView = $isPublicView ?? false;
         $name = trim((string) ($user->name ?? ''));
-        $initials = collect(preg_split('/\s+/', $name))->filter()->take(2)->map(fn ($p) => mb_strtoupper(mb_substr($p, 0, 1)))->implode('');
+        $displayName = trim((string) ($supplier?->name ?: $name));
+        $initials = collect(preg_split('/\s+/', $displayName))->filter()->take(2)->map(fn ($p) => mb_strtoupper(mb_substr($p, 0, 1)))->implode('');
         $initials = $initials !== '' ? $initials : 'U';
     @endphp
 
-    @include('partials.profile-tabs', ['active' => 'profile'])
+    @if ($isPublicView)
+        <div class="mb-4">
+            <a href="{{ route('community.index') }}" class="inline-flex items-center gap-1 text-sm text-[#64748b] dark:text-[#A1A09A] hover:text-[#f59e0b]">
+                ← {{ __('community.back_community') }}
+            </a>
+        </div>
+    @endif
+
+    @if ($isOwner && ! $isPublicView)
+        @include('partials.profile-tabs', ['active' => 'profile'])
+    @endif
 
     <div class="mb-6 profile-shell p-5">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -47,17 +60,19 @@
                     {{ $initials }}
                 </div>
                 <div>
-                    <h1 class="text-2xl font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ __('dashboard.profile') }}</h1>
-                    <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-0.5">{{ $name ?: '-' }}</p>
+                    <h1 class="text-2xl font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ $isPublicView ? ($displayName ?: __('dashboard.profile')) : __('dashboard.profile') }}</h1>
+                    <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-0.5">{{ $isPublicView ? __('community.roles.supplier') : ($name ?: '-') }}</p>
                     <div class="mt-2 flex items-center gap-2 flex-wrap">
                         <span class="profile-chip">{{ __('suppliers.city') }}: {{ $supplier?->city ?: '-' }}</span>
                         <span class="profile-chip">{{ __('suppliers.sphere') }}: {{ $supplier?->sphere ?: '-' }}</span>
                     </div>
                 </div>
             </div>
-            <div>
-                <a href="{{ route('supplier.settings.index', ['tab' => 'profile']) }}" class="add-btn">{{ __('settings.profile_settings') }}</a>
-            </div>
+            @if ($isOwner && ! $isPublicView)
+                <div>
+                    <a href="{{ route('supplier.settings.index', ['tab' => 'profile']) }}" class="add-btn">{{ __('settings.profile_settings') }}</a>
+                </div>
+            @endif
         </div>
     </div>
 
@@ -78,36 +93,40 @@
         <section class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-xl p-6">
             <h2 class="text-sm font-semibold text-[#64748b] dark:text-[#A1A09A] mb-4 uppercase">{{ __('settings.contact_information') }}</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.phone') }}</div><div>{{ $supplier?->phone ?: $user->phone ?: '-' }}</div></div>
-                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.email') }}</div><div>{{ $supplier?->email ?: $user->email ?: '-' }}</div></div>
+                @if ($isOwner && ! $isPublicView)
+                    <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.phone') }}</div><div>{{ $supplier?->phone ?: $user->phone ?: '-' }}</div></div>
+                    <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.email') }}</div><div>{{ $supplier?->email ?: $user->email ?: '-' }}</div></div>
+                @endif
                 <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">Telegram</div><div>{{ $supplier?->telegram ?: '-' }}</div></div>
                 <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">WhatsApp</div><div>{{ $supplier?->whatsapp ?: '-' }}</div></div>
             </div>
         </section>
 
-        <section class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-xl p-6">
-            <h2 class="text-sm font-semibold text-[#64748b] dark:text-[#A1A09A] mb-4 uppercase">{{ __('suppliers.requisites') }}</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.inn') }}</div><div>{{ $supplier?->inn ?: '-' }}</div></div>
-                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.kpp') }}</div><div>{{ $supplier?->kpp ?: '-' }}</div></div>
-                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.ogrn') }}</div><div>{{ $supplier?->ogrn ?: '-' }}</div></div>
-                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.okpo') }}</div><div>{{ $supplier?->okpo ?: '-' }}</div></div>
-                <div class="md:col-span-2"><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.legal_address') }}</div><div>{{ $supplier?->legal_address ?: '-' }}</div></div>
-                <div class="md:col-span-2"><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.actual_address') }}</div><div>{{ $supplier?->actual_address ?: '-' }}</div></div>
-                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.director') }}</div><div>{{ $supplier?->director ?: '-' }}</div></div>
-                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.accountant') }}</div><div>{{ $supplier?->accountant ?: '-' }}</div></div>
-            </div>
-        </section>
+        @if ($isOwner && ! $isPublicView)
+            <section class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-xl p-6">
+                <h2 class="text-sm font-semibold text-[#64748b] dark:text-[#A1A09A] mb-4 uppercase">{{ __('suppliers.requisites') }}</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.inn') }}</div><div>{{ $supplier?->inn ?: '-' }}</div></div>
+                    <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.kpp') }}</div><div>{{ $supplier?->kpp ?: '-' }}</div></div>
+                    <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.ogrn') }}</div><div>{{ $supplier?->ogrn ?: '-' }}</div></div>
+                    <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.okpo') }}</div><div>{{ $supplier?->okpo ?: '-' }}</div></div>
+                    <div class="md:col-span-2"><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.legal_address') }}</div><div>{{ $supplier?->legal_address ?: '-' }}</div></div>
+                    <div class="md:col-span-2"><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.actual_address') }}</div><div>{{ $supplier?->actual_address ?: '-' }}</div></div>
+                    <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.director') }}</div><div>{{ $supplier?->director ?: '-' }}</div></div>
+                    <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.accountant') }}</div><div>{{ $supplier?->accountant ?: '-' }}</div></div>
+                </div>
+            </section>
 
-        <section class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-xl p-6">
-            <h2 class="text-sm font-semibold text-[#64748b] dark:text-[#A1A09A] mb-4 uppercase">{{ __('suppliers.bank_details') }}</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.bik') }}</div><div>{{ $supplier?->bik ?: '-' }}</div></div>
-                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.bank') }}</div><div>{{ $supplier?->bank ?: '-' }}</div></div>
-                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.checking_account') }}</div><div>{{ $supplier?->checking_account ?: '-' }}</div></div>
-                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.corr_account') }}</div><div>{{ $supplier?->corr_account ?: '-' }}</div></div>
-                <div class="md:col-span-2"><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.comment') }}</div><div class="whitespace-pre-wrap">{{ $supplier?->comment ?: '-' }}</div></div>
-            </div>
-        </section>
+            <section class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-xl p-6">
+                <h2 class="text-sm font-semibold text-[#64748b] dark:text-[#A1A09A] mb-4 uppercase">{{ __('suppliers.bank_details') }}</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.bik') }}</div><div>{{ $supplier?->bik ?: '-' }}</div></div>
+                    <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.bank') }}</div><div>{{ $supplier?->bank ?: '-' }}</div></div>
+                    <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.checking_account') }}</div><div>{{ $supplier?->checking_account ?: '-' }}</div></div>
+                    <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.corr_account') }}</div><div>{{ $supplier?->corr_account ?: '-' }}</div></div>
+                    <div class="md:col-span-2"><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('suppliers.comment') }}</div><div class="whitespace-pre-wrap">{{ $supplier?->comment ?: '-' }}</div></div>
+                </div>
+            </section>
+        @endif
     </div>
 @endsection

@@ -112,6 +112,11 @@ class User extends Authenticatable
         return $this->hasMany(DesignerSubscriptionPayment::class)->latest();
     }
 
+    public function communityPosts(): HasMany
+    {
+        return $this->hasMany(CommunityPost::class);
+    }
+
     public function scopeWithDesignerProfile(Builder $query): Builder
     {
         return $query->with('designerProfile');

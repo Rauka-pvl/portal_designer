@@ -1,4 +1,4 @@
-@extends('layouts.dashboard')
+@extends($layout ?? 'layouts.dashboard')
 
 @section('title', __('dashboard.profile'))
 @section('header_title', __('dashboard.profile'))
@@ -33,12 +33,24 @@
 @section('content')
     @php
         $profile = $profile ?? null;
+        $isOwner = $isOwner ?? true;
+        $isPublicView = $isPublicView ?? false;
         $name = trim((string) ($user->name ?? ''));
         $initials = collect(preg_split('/\s+/', $name))->filter()->take(2)->map(fn ($p) => mb_strtoupper(mb_substr($p, 0, 1)))->implode('');
         $initials = $initials !== '' ? $initials : 'U';
     @endphp
 
-    @include('partials.profile-tabs', ['active' => 'profile'])
+    @if ($isPublicView)
+        <div class="mb-4">
+            <a href="{{ route('community.index') }}" class="inline-flex items-center gap-1 text-sm text-[#64748b] dark:text-[#A1A09A] hover:text-[#f59e0b]">
+                ← {{ __('community.back_community') }}
+            </a>
+        </div>
+    @endif
+
+    @if ($isOwner && ! $isPublicView)
+        @include('partials.profile-tabs', ['active' => 'profile'])
+    @endif
 
     <div class="mb-6 profile-shell p-5">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -47,17 +59,19 @@
                     {{ $initials }}
                 </div>
                 <div>
-                    <h1 class="text-2xl font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ __('dashboard.profile') }}</h1>
-                    <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-0.5">{{ $name ?: '-' }}</p>
+                    <h1 class="text-2xl font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ $isPublicView ? ($name ?: __('dashboard.profile')) : __('dashboard.profile') }}</h1>
+                    <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-0.5">{{ $isPublicView ? __('community.roles.designer') : ($name ?: '-') }}</p>
                     <div class="mt-2 flex items-center gap-2 flex-wrap">
                         <span class="profile-chip">{{ __('settings.city') }}: {{ $profile?->city ?: '-' }}</span>
                         <span class="profile-chip">{{ __('settings.experience') }}: {{ $profile?->experience ?: '-' }}</span>
                     </div>
                 </div>
             </div>
-            <div>
-                <a href="{{ route('settings.index', ['tab' => 'profile']) }}" class="add-btn">{{ __('settings.profile_settings') }}</a>
-            </div>
+            @if ($isOwner && ! $isPublicView)
+                <div>
+                    <a href="{{ route('settings.index', ['tab' => 'profile']) }}" class="add-btn">{{ __('settings.profile_settings') }}</a>
+                </div>
+            @endif
         </div>
     </div>
 
@@ -76,8 +90,10 @@
         <section class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-xl p-6">
             <h2 class="text-sm font-semibold text-[#64748b] dark:text-[#A1A09A] mb-4 uppercase">{{ __('settings.contact_information') }}</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('settings.phone') }}</div><div>{{ $profile?->phone ?: '-' }}</div></div>
-                <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('settings.email') }}</div><div>{{ $user->email ?: '-' }}</div></div>
+                @if ($isOwner && ! $isPublicView)
+                    <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('settings.phone') }}</div><div>{{ $profile?->phone ?: '-' }}</div></div>
+                    <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('settings.email') }}</div><div>{{ $user->email ?: '-' }}</div></div>
+                @endif
                 <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('settings.website_portfolio') }}</div><div>{!! $profile?->website_portfolio ? '<a class="text-[#f59e0b] hover:underline" href="'.e($profile->website_portfolio).'" target="_blank">'.e($profile->website_portfolio).'</a>' : '-' !!}</div></div>
                 <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('settings.telegram') }}</div><div>{{ $profile?->telegram ?: '-' }}</div></div>
                 <div><div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('settings.whatsapp') }}</div><div>{{ $profile?->whatsapp ?: '-' }}</div></div>
@@ -98,7 +114,7 @@
             </div>
         </section>
 
-        @if (!empty($referralSupplierUrl))
+        @if (!empty($referralSupplierUrl) && $isOwner && ! $isPublicView)
             <section class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-xl p-6">
                 <h2 class="text-sm font-semibold text-[#64748b] dark:text-[#A1A09A] mb-2 uppercase">{{ __('referrals.link_title') }}</h2>
                 <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-4">{{ __('referrals.link_subtitle') }}</p>
