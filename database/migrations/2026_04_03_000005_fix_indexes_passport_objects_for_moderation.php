@@ -9,9 +9,23 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('passport_objects', function (Blueprint $table) {
-            $table->dropIndex('passport_objects_moderation_duplicate_idx');
-        });
+        $driver = Schema::getConnection()->getDriverName();
+
+        if ($driver === 'sqlite') {
+            DB::statement('DROP INDEX IF EXISTS passport_objects_moderation_duplicate_idx');
+        } else {
+            Schema::table('passport_objects', function (Blueprint $table) {
+                $table->dropIndex('passport_objects_moderation_duplicate_idx');
+            });
+        }
+
+        if ($driver === 'sqlite') {
+            DB::statement(
+                'CREATE INDEX passport_objects_moderation_duplicate_idx ON passport_objects (city, apartment, apartment_entrance, apartment_floor, type)'
+            );
+
+            return;
+        }
 
         DB::statement(
             'CREATE INDEX passport_objects_moderation_duplicate_idx ON passport_objects (city(100), apartment(120), apartment_entrance(80), apartment_floor(80), type(32))'
@@ -20,7 +34,20 @@ return new class extends Migration
 
     public function down(): void
     {
+        $driver = Schema::getConnection()->getDriverName();
+
+        if ($driver === 'sqlite') {
+            DB::statement('DROP INDEX IF EXISTS passport_objects_moderation_duplicate_idx');
+            DB::statement(
+                'CREATE INDEX passport_objects_moderation_duplicate_idx ON passport_objects (city, apartment, apartment_entrance, apartment_floor, type)'
+            );
+
+            return;
+        }
+
         DB::statement('DROP INDEX passport_objects_moderation_duplicate_idx ON passport_objects');
+        DB::statement(
+            'CREATE INDEX passport_objects_moderation_duplicate_idx ON passport_objects (city(100), apartment(120), apartment_entrance(80), apartment_floor(80), type(32))'
+        );
     }
 };
-
