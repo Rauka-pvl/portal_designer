@@ -18,7 +18,7 @@ use Illuminate\Http\Request;
 
 /**
  * Списки и детали кабинета дизайнера (для мобильного приложения).
- * Пока только чтение — без создания/редактирования.
+ * Создание / изменение / удаление — см. DesignerCrudController.
  */
 class DesignerDataController extends Controller
 {
