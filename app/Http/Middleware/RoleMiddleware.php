@@ -34,7 +34,7 @@ class RoleMiddleware
         }
 
         if ($userRole === 'supplier') {
-            return redirect()->route('supplier.index');
+            return redirect()->route(\App\Support\SupplierDeposit::redirectRoute($request->user()));
         }
         abort(403, 'У вас нет доступа');
     }

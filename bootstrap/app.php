@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureDesignerSubscription;
 use App\Http\Middleware\EnsurePasswordIsChanged;
+use App\Http\Middleware\EnsureSupplierDepositPaid;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
@@ -20,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'password.changed' => EnsurePasswordIsChanged::class,
             'subscription.active' => EnsureDesignerSubscription::class,
+            'deposit.paid' => EnsureSupplierDepositPaid::class,
         ]);
         $middleware->web(append: [SetLocale::class]);
     })

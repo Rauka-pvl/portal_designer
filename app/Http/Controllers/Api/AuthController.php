@@ -86,6 +86,8 @@ class AuthController extends Controller
                     'email' => $user->email,
                     'profile_status' => 'draft',
                     'moderation_status' => 'draft',
+                    'account_status' => \App\Support\SupplierDeposit::ACCOUNT_DEPOSIT_REQUIRED,
+                    'guarantee_balance' => 0,
                 ]
             );
         }
@@ -99,6 +101,8 @@ class AuthController extends Controller
             'user' => $this->userPayload($user),
             'subscription_required' => $user->role === 'designer'
                 && ! \App\Support\DesignerSubscription::hasAccess($user),
+            'deposit_required' => $user->role === 'supplier'
+                && ! \App\Support\SupplierDeposit::isDepositPaid($user),
         ], 201);
     }
 

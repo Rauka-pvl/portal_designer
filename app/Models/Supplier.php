@@ -16,6 +16,9 @@ class Supplier extends Model
         'user_id',
         'created_by_user_id',
         'profile_status',
+        'account_status',
+        'guarantee_balance',
+        'deposit_activated_at',
         'temporary_password_encrypted',
         'logo',
         'name',
@@ -64,9 +67,21 @@ class Supplier extends Model
         'is_confirmed_by_designer' => 'boolean',
         'is_referral_submitted' => 'boolean',
         'moderation_reviewed_at' => 'datetime',
+        'deposit_activated_at' => 'datetime',
+        'guarantee_balance' => 'integer',
         'brands' => 'array',
         'cities_presence' => 'array',
     ];
+
+    public function guaranteePayments()
+    {
+        return $this->hasMany(SupplierGuaranteePayment::class);
+    }
+
+    public function guaranteeLedger()
+    {
+        return $this->hasMany(SupplierGuaranteeLedgerEntry::class);
+    }
 
     public function user()
     {

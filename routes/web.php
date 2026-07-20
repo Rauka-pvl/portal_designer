@@ -18,6 +18,7 @@ use App\Http\Controllers\SupplierOrderChatController;
 use App\Http\Controllers\Moderator\ModeratorController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\Supplier\CalendarController as SupplierCalendarController;
+use App\Http\Controllers\Supplier\DepositController as SupplierDepositController;
 use App\Http\Controllers\Supplier\DesignerDirectoryController;
 use App\Http\Controllers\Supplier\ProductController as SupplierProductController;
 use App\Http\Controllers\Supplier\SupplierPortalController;
@@ -37,7 +38,7 @@ Route::get('/', function () {
 
     return match ($user->role) {
         'moderator' => redirect()->route('moderator.index'),
-        'supplier' => redirect()->route('supplier.index'),
+        'supplier' => redirect()->route(\App\Support\SupplierDeposit::redirectRoute($user)),
         default => redirect()->route(\App\Support\DesignerSubscription::redirectRoute($user)),
     };
 });
@@ -59,6 +60,22 @@ Route::get('/faq', function (Request $request) {
 })->name('faq.index');
 
 Route::middleware(['auth', 'role:supplier', 'password.changed'])->group(function () {
+    Route::get('/supplier/deposit', [SupplierDepositController::class, 'index'])->name('supplier.deposit.index');
+    Route::post('/supplier/deposit/create', [SupplierDepositController::class, 'create'])->name('supplier.deposit.create');
+    Route::get('/supplier/deposit/checkout/{payment}', [SupplierDepositController::class, 'checkout'])
+        ->name('supplier.deposit.checkout');
+    Route::get('/supplier/deposit/return/{payment}', [SupplierDepositController::class, 'returnFromProvider'])
+        ->name('supplier.deposit.return');
+    Route::post('/supplier/deposit/confirm/{payment}', [SupplierDepositController::class, 'confirmDemo'])
+        ->name('supplier.deposit.confirm');
+    Route::post('/supplier/deposit/cancel/{payment}', [SupplierDepositController::class, 'cancel'])
+        ->name('supplier.deposit.cancel');
+    Route::get('/supplier/deposit/status/{payment}', [SupplierDepositController::class, 'status'])
+        ->name('supplier.deposit.status');
+    Route::post('/supplier/deposit/retry', [SupplierDepositController::class, 'retry'])->name('supplier.deposit.retry');
+});
+
+Route::middleware(['auth', 'role:supplier', 'password.changed', 'deposit.paid'])->group(function () {
     Route::get('/supplier', [SupplierCalendarController::class, 'index'])->name('supplier.index');
     Route::get('/supplier/orders', [SupplierPortalController::class, 'orders'])->name('supplier.orders');
     Route::get('/supplier/calendar/events', [SupplierCalendarController::class, 'events'])->name('supplier.calendar.events');
@@ -379,7 +396,7 @@ Route::middleware(['auth', 'role:designer'])->group(function () {
     Route::post('/subscription/resume', [SubscriptionController::class, 'resume'])->name('subscription.resume');
 });
 
-Route::middleware(['auth', 'role:designer|supplier', 'password.changed', 'subscription.active'])->group(function () {
+Route::middleware(['auth', 'role:designer|supplier', 'password.changed', 'subscription.active', 'deposit.paid'])->group(function () {
     Route::get('/supplier-orders/{orderId}/chat/messages', [SupplierOrderChatController::class, 'messages'])
         ->whereNumber('orderId')
         ->name('supplier-orders.chat.messages');

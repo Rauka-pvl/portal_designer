@@ -21,7 +21,7 @@ Route::match(['get', 'post'], '/login', function (Request $request) {
 
         return match ($user->role) {
             'moderator' => redirect()->route('moderator.index'),
-            'supplier' => redirect()->route('supplier.index'),
+            'supplier' => redirect()->route(\App\Support\SupplierDeposit::redirectRoute($user)),
             default => redirect()->route(\App\Support\DesignerSubscription::redirectRoute($user)),
         };
     }
@@ -87,7 +87,7 @@ Route::match(['get', 'post'], '/login', function (Request $request) {
     }
 
     if ($user->role === 'supplier') {
-        return redirect()->intended(route('supplier.index'));
+        return redirect()->intended(route(\App\Support\SupplierDeposit::redirectRoute($user)));
     }
 
     $target = \App\Support\DesignerSubscription::redirectRoute($user);
@@ -101,7 +101,7 @@ Route::match(['get', 'post'], '/register', function (Request $request) {
 
         return match ($user->role) {
             'moderator' => redirect()->route('moderator.index'),
-            'supplier' => redirect()->route('supplier.index'),
+            'supplier' => redirect()->route(\App\Support\SupplierDeposit::redirectRoute($user)),
             default => redirect()->route(\App\Support\DesignerSubscription::redirectRoute($user)),
         };
     }
@@ -136,6 +136,8 @@ Route::match(['get', 'post'], '/register', function (Request $request) {
                 'email' => $user->email,
                 'profile_status' => 'draft',
                 'moderation_status' => 'draft',
+                'account_status' => \App\Support\SupplierDeposit::ACCOUNT_DEPOSIT_REQUIRED,
+                'guarantee_balance' => 0,
             ]
         );
     }
@@ -148,9 +150,9 @@ Route::match(['get', 'post'], '/register', function (Request $request) {
         $request->session()->put('locale', config('app.locale', 'ru'));
     }
 
-    // Дизайнер сразу на страницу выбора подписки (триал — только после выбора плана)
+    // Поставщик — на гарантийный взнос; дизайнер — на выбор подписки
     return $isSupplier
-        ? redirect()->route('supplier.index')
+        ? redirect()->route('supplier.deposit.index')
         : redirect()->route('subscription.index');
 })->name('register')->middleware('guest');
 
@@ -181,7 +183,7 @@ Route::middleware(['auth', 'role:supplier'])->group(function () {
         $user->save();
 
         return redirect()
-            ->route('supplier.index')
+            ->route(\App\Support\SupplierDeposit::redirectRoute($user))
             ->with('status', __('auth_labels.password_updated_successfully'));
     })->name('supplier.force-password.update');
 });
