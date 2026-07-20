@@ -55,6 +55,12 @@
     </a>
 @endif
 
+@if (session('status'))
+    <div class="mb-4 rounded-xl border border-[#f59e0b]/30 bg-[#f59e0b]/10 px-4 py-3 text-sm text-[#92400e] dark:text-[#fbbf24]">
+        {{ session('status') }}
+    </div>
+@endif
+
 <form method="POST" action="{{ route('login') }}">
     @csrf
     <input type="hidden" name="portal" value="{{ $authAsSupplier ? 'supplier' : 'designer' }}">

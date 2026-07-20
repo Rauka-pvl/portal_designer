@@ -52,9 +52,16 @@
                 placeholder="{{ __('products.f_description') }}"
                 class="product-edit w-full text-sm text-[#475569] dark:text-[#A1A09A] bg-transparent rounded px-1 -mx-1 resize-none focus:outline-none focus:ring-1 focus:ring-[#f59e0b]">{{ $product->description }}</textarea>
 
-            <div class="mt-auto pt-2 flex items-center justify-between">
+            <div class="mt-auto pt-2 flex items-center justify-between gap-2">
                 <span class="product-save-hint text-xs text-[#22c55e] opacity-0 transition-opacity">{{ __('products.saved') }}</span>
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 flex-wrap justify-end">
+                    <button type="button"
+                        class="product-qr-btn inline-flex min-h-11 items-center gap-1 text-xs text-[#f59e0b] hover:underline"
+                        data-product-id="{{ $product->id }}"
+                        aria-label="{{ __('products.qr_code') }}">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 3h3v3h-3v-3zm3-3h3v3h-3v-3zm-3 0h3v3h-3v-3z"/></svg>
+                        {{ __('products.qr_code') }}
+                    </button>
                     @if ($detailUrl)
                         <a href="{{ $detailUrl }}" class="text-xs text-[#64748b] dark:text-[#A1A09A] hover:text-[#f59e0b] hover:underline">{{ __('products.details') }}</a>
                     @endif

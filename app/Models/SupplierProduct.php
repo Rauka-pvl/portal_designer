@@ -18,11 +18,16 @@ class SupplierProduct extends Model
         'price',
         'unit',
         'image_path',
+        'qr_token',
+        'qr_version',
+        'qr_generated_at',
     ];
 
     protected $casts = [
         'supplier_id' => 'integer',
         'price' => 'decimal:2',
+        'qr_version' => 'integer',
+        'qr_generated_at' => 'datetime',
     ];
 
     protected $appends = ['image_url'];

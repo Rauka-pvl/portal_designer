@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ProductQrController;
 use App\Http\Controllers\CommunityController;
 use App\Http\Controllers\Designer\CashbackController;
 use App\Http\Controllers\Designer\ChecklistStepController;
@@ -59,6 +60,11 @@ Route::get('/faq', function (Request $request) {
     ]);
 })->name('faq.index');
 
+// Stable product QR entry (no auth — redirects to login/card).
+Route::get('/q/{token}', [ProductQrController::class, 'resolve'])
+    ->where('token', '[A-Za-z0-9]{16,64}')
+    ->name('product.qr.resolve');
+
 Route::middleware(['auth', 'role:supplier', 'password.changed'])->group(function () {
     Route::get('/supplier/deposit', [SupplierDepositController::class, 'index'])->name('supplier.deposit.index');
     Route::post('/supplier/deposit/create', [SupplierDepositController::class, 'create'])->name('supplier.deposit.create');
@@ -114,6 +120,19 @@ Route::middleware(['auth', 'role:supplier', 'password.changed', 'deposit.paid'])
     Route::delete('/supplier/products/{productId}', [SupplierProductController::class, 'destroy'])
         ->whereNumber('productId')
         ->name('supplier.products.destroy');
+    Route::get('/supplier/products/{productId}/qr', [ProductQrController::class, 'modalData'])
+        ->whereNumber('productId')
+        ->name('supplier.products.qr');
+    Route::get('/supplier/products/{productId}/qr/download/{format}', [ProductQrController::class, 'download'])
+        ->whereNumber('productId')
+        ->whereIn('format', ['png', 'svg'])
+        ->name('supplier.products.qr.download');
+    Route::get('/supplier/products/{productId}/qr/print', [ProductQrController::class, 'printCard'])
+        ->whereNumber('productId')
+        ->name('supplier.products.qr.print');
+    Route::post('/supplier/products/{productId}/qr/reissue', [ProductQrController::class, 'reissue'])
+        ->whereNumber('productId')
+        ->name('supplier.products.qr.reissue');
 
     Route::get('/supplier/designers', [DesignerDirectoryController::class, 'index'])->name('supplier.designers.index');
     Route::get('/supplier/designers/{designerId}', [DesignerDirectoryController::class, 'show'])

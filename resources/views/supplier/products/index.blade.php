@@ -122,9 +122,12 @@
             </form>
         </div>
     </div>
+
+    @include('supplier.products.partials.qr-modal')
 @endsection
 
 @push('scripts')
+    @include('supplier.products.partials.qr-script')
     <script>
         (function () {
             const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
@@ -142,7 +145,7 @@
             }
             document.getElementById('btn-add-product')?.addEventListener('click', () => openModal('add-product-modal'));
             document.getElementById('btn-import-product')?.addEventListener('click', () => openModal('import-product-modal'));
-            document.querySelectorAll('.modal-close').forEach((b) => b.addEventListener('click', function () {
+            document.querySelectorAll('#add-product-modal .modal-close, #import-product-modal .modal-close').forEach((b) => b.addEventListener('click', function () {
                 closeModal(this.closest('.fixed'));
             }));
             document.querySelectorAll('#add-product-modal, #import-product-modal').forEach((m) => {

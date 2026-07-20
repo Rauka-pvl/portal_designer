@@ -150,10 +150,12 @@ Route::match(['get', 'post'], '/register', function (Request $request) {
         $request->session()->put('locale', config('app.locale', 'ru'));
     }
 
-    // Поставщик — на гарантийный взнос; дизайнер — на выбор подписки
-    return $isSupplier
-        ? redirect()->route('supplier.deposit.index')
-        : redirect()->route('subscription.index');
+    // Поставщик — на гарантийный взнос; дизайнер — intended (QR) или подписка
+    if ($isSupplier) {
+        return redirect()->route('supplier.deposit.index');
+    }
+
+    return redirect()->intended(route('subscription.index'));
 })->name('register')->middleware('guest');
 
 Route::post('/logout', function (Request $request) {
