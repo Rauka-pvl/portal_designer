@@ -486,7 +486,7 @@
         // no-op placeholder
     });
 
-    // Auto-submit search filters on change
-    document.querySelector('select[name="category"]')?.addEventListener('change', (e) => e.target.form.submit());
+    // Do NOT auto-submit select[name="category"]: the create/edit modal uses the same name.
+    // Feed filtering is done via sidebar category links, not a form select.
 })();
 </script>
