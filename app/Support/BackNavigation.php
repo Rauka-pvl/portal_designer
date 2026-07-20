@@ -30,6 +30,9 @@ class BackNavigation
         '/reset-password',
         '/sanctum',
         '/up',
+        // Mutation-only endpoints (POST/PUT/DELETE) — never use as GET "back" targets.
+        '/community/posts',
+        '/community/comments',
     ];
 
     public static function isSafeInternalUrl(?string $url): bool
@@ -134,7 +137,19 @@ class BackNavigation
 
     public static function currentUrlForFrom(): string
     {
-        return self::stripFromParam(request()->getRequestUri());
+        $current = self::stripFromParam(request()->getRequestUri());
+        if (self::isSafeInternalUrl($current)) {
+            return self::normalizeInternalUrl($current);
+        }
+
+        // AJAX/API requests (e.g. POST /community/posts) must not become ?from= —
+        // use the page the user was actually viewing (Referer).
+        $referer = request()->headers->get('referer');
+        if (is_string($referer) && self::isSafeInternalUrl($referer)) {
+            return self::normalizeInternalUrl(self::stripFromParam($referer));
+        }
+
+        return '';
     }
 
     public static function stripFromParam(string $url): string

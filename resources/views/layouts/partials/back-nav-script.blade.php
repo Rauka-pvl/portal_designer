@@ -9,8 +9,24 @@
         }
 
         function isBlockedPath(pathname) {
-            const blocked = ['/login', '/register', '/logout', '/forgot-password', '/reset-password'];
+            const blocked = [
+                '/login',
+                '/register',
+                '/logout',
+                '/forgot-password',
+                '/reset-password',
+                '/community/posts',
+                '/community/comments',
+            ];
             return blocked.some((p) => pathname === p || pathname.startsWith(p + '/'));
+        }
+
+        function pathOf(url) {
+            try {
+                return new URL(url, window.location.origin).pathname;
+            } catch (e) {
+                return '';
+            }
         }
 
         /** Append current page as ?from= for deep links that must restore list/tabs state. */
@@ -42,7 +58,7 @@
             const from = el.getAttribute('data-back-from');
             const fallback = el.getAttribute('data-back-fallback') || el.getAttribute('href');
 
-            if (from && sameOrigin(from)) {
+            if (from && sameOrigin(from) && !isBlockedPath(pathOf(from))) {
                 e.preventDefault();
                 window.location.href = from;
                 return;
@@ -60,7 +76,7 @@
                 } catch (err) {}
             }
 
-            if (fallback) {
+            if (fallback && !isBlockedPath(pathOf(fallback))) {
                 e.preventDefault();
                 window.location.href = fallback;
             }

@@ -10,9 +10,10 @@
     $isOwner = (bool) ($post->is_owner ?? false);
     $isLiked = (bool) ($post->is_liked ?? false);
     $isSaved = (bool) ($post->is_saved ?? false);
-    $profileUrl = \App\Support\BackNavigation::withFrom(route('community.profile', $author->id));
-    $postUrl = \App\Support\BackNavigation::withFrom(route('community.post', $post->id));
-    $postCommentsUrl = \App\Support\BackNavigation::withFrom(route('community.post', $post->id).'#comments');
+    $navFrom = $backFrom ?? null;
+    $profileUrl = \App\Support\BackNavigation::withFrom(route('community.profile', $author->id), $navFrom);
+    $postUrl = \App\Support\BackNavigation::withFrom(route('community.post', $post->id), $navFrom);
+    $postCommentsUrl = \App\Support\BackNavigation::withFrom(route('community.post', $post->id).'#comments', $navFrom);
 
     $linkified = e($text);
     $linkified = preg_replace(

@@ -185,6 +185,7 @@ class CommunityController extends Controller
             'html' => view('community.partials.card', [
                 'post' => $post,
                 'currentUser' => $user,
+                'backFrom' => route('community.index'),
             ])->render(),
         ]);
     }
@@ -236,6 +237,7 @@ class CommunityController extends Controller
             'html' => view('community.partials.card', [
                 'post' => $post,
                 'currentUser' => $user,
+                'backFrom' => route('community.index'),
             ])->render(),
         ]);
     }
