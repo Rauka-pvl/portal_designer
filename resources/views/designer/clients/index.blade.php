@@ -625,7 +625,7 @@
                 </button>
             </div>
             <form id="client-form" method="POST" action="{{ route('clients.add_client') }}"
-                enctype="multipart/form-data" class="flex flex-col flex-1 min-h-0">
+                enctype="multipart/form-data" class="flex flex-col flex-1 min-h-0" data-ajax="1">
                 @csrf
                 <input type="hidden" name="client_id" id="client_id">
                 <div class="flex-1 overflow-y-auto px-6 py-5 space-y-5">
@@ -1275,6 +1275,7 @@
                 e.preventDefault();
 
                 const form = e.target;
+                if (!window.lockSubmit(form)) return;
                 const action = form.getAttribute('action') || form.action;
                 const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
@@ -1303,6 +1304,8 @@
                 } catch (err) {
                     projectAlert('error', '{{ __('clients.error') }}', '', 3000);
                     console.error(err);
+                } finally {
+                    window.unlockSubmit(form);
                 }
             });
 

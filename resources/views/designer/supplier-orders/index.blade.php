@@ -452,7 +452,7 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
-        <form id="order-form" class="flex flex-col flex-1 min-h-0" enctype="multipart/form-data">
+        <form id="order-form" class="flex flex-col flex-1 min-h-0" enctype="multipart/form-data" data-ajax="1">
             @csrf
             <input type="hidden" name="order_id" id="order_id">
             <input type="hidden" name="send_to_supplier" id="send_to_supplier" value="0">
@@ -1626,8 +1626,10 @@ function addOrderLinkField() {
 document.getElementById('order-form')?.addEventListener('submit', function(e) {
     e.preventDefault();
     const form = this;
+    if (!window.lockSubmit(form)) return;
     if (!form.checkValidity()) {
         form.reportValidity();
+        window.unlockSubmit(form);
         return;
     }
     const sendBtn = e.submitter && e.submitter.value === 'send';
@@ -1697,7 +1699,8 @@ document.getElementById('order-form')?.addEventListener('submit', function(e) {
             console.error(err);
             projectAlert('error', '{{ __("supplier-orders.error") }}', '', 3200);
         }
-    });
+    })
+    .finally(() => window.unlockSubmit(form));
 });
 
 // Drag & Drop для воронок

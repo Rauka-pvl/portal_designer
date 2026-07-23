@@ -434,7 +434,7 @@
             </div>
 
             <form id="object-form" method="POST" action="{{ route('objects.add_object') }}"
-                enctype="multipart/form-data" class="flex flex-col flex-1 min-h-0" autocomplete="off">
+                enctype="multipart/form-data" class="flex flex-col flex-1 min-h-0" autocomplete="off" data-ajax="1">
                 @csrf
                 <input type="hidden" name="object_id" id="object_id">
 
@@ -1814,11 +1814,14 @@
             document.getElementById('object-form').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 const form = e.target;
+                if (!window.lockSubmit(form)) return;
+
                 const action = form.getAttribute('action');
                 const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
                 const lat = parseFloat(objectLatEl?.value || '');
                 const lng = parseFloat(objectLngEl?.value || '');
                 if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+                    window.unlockSubmit(form);
                     projectAlert('error', '{{ __('objects.map_point_required') }}', '', 3500);
                     return;
                 }
@@ -1858,6 +1861,8 @@
                 } catch (err) {
                     console.error(err);
                     projectAlert('error', '{{ __('objects.error') }}', '', 3000);
+                } finally {
+                    window.unlockSubmit(form);
                 }
             });
 

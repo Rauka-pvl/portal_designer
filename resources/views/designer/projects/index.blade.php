@@ -932,7 +932,7 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
-        <form id="project-form" class="flex flex-col flex-1 min-h-0" action="{{ route('projects.store') }}" method="POST" enctype="multipart/form-data">
+        <form id="project-form" class="flex flex-col flex-1 min-h-0" action="{{ route('projects.store') }}" method="POST" enctype="multipart/form-data" data-ajax="1">
             @csrf
             <input type="hidden" name="project_id" id="project_id">
             <div class="flex-1 overflow-y-auto px-6 py-5 space-y-5">
@@ -1901,7 +1901,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Обработка формы проекта
     document.getElementById('project-form')?.addEventListener('submit', async function(e) {
         e.preventDefault();
+        if (!window.lockSubmit(this)) return;
         if (!projectSelectedStages || projectSelectedStages.length === 0) {
+            window.unlockSubmit(this);
             projectAlert('warning', '{{ __("projects.select_stage_placeholder") }}', '', 3200);
             return;
         }
@@ -1909,9 +1911,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const projectId = document.getElementById('project_id').value;
         const url = projectId ? '{{ url("projects") }}/' + projectId : '{{ route("projects.store") }}';
         const submitBtn = document.getElementById('project-submit-btn');
-        const origText = submitBtn.textContent;
-        submitBtn.disabled = true;
-        submitBtn.textContent = '...';
+        const origText = submitBtn ? submitBtn.textContent : '';
+        if (submitBtn) submitBtn.textContent = '...';
         try {
             const parseDateInputForServer = (value) => {
                 const str = String(value || '').trim();
@@ -2024,8 +2025,8 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (err) {
             projectAlert('error', err.message || '{{ __('projects.save_error_generic') }}', '', 3200);
         } finally {
-            submitBtn.disabled = false;
-            submitBtn.textContent = origText;
+            if (submitBtn) submitBtn.textContent = origText;
+            window.unlockSubmit(form);
         }
     });
 

@@ -777,7 +777,7 @@
                     </svg>
                 </button>
             </div>
-            <form id="supplier-form" class="flex flex-col flex-1 min-h-0" enctype="multipart/form-data">
+            <form id="supplier-form" class="flex flex-col flex-1 min-h-0" enctype="multipart/form-data" data-ajax="1">
                 @csrf
                 <input type="hidden" name="supplier_id" id="supplier_id">
                 <input type="hidden" name="remove_logo" id="remove_logo" value="0">
@@ -2086,6 +2086,7 @@
                 return;
             }
             const form = e.target;
+            if (!window.lockSubmit(form)) return;
             const id = form.querySelector('#supplier_id').value;
             const url = id ? '{{ url('suppliers') }}/' + id : '{{ route('suppliers.store') }}';
             const fd = new FormData(form);
@@ -2100,8 +2101,6 @@
             }
             const removeLogo = document.getElementById('remove_logo').value;
             if (removeLogo === '1') fd.set('remove_logo', '1');
-            const submitBtn = document.getElementById('supplier-step-submit');
-            submitBtn.disabled = true;
             try {
                 const r = await fetch(url, {
                     method: 'POST',
@@ -2128,7 +2127,7 @@
             } catch (err) {
                 projectAlert('error', '{{ __('objects.error') }}', '', 3200);
             } finally {
-                submitBtn.disabled = false;
+                window.unlockSubmit(form);
             }
         });
     </script>

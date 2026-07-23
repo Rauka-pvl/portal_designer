@@ -55,7 +55,7 @@
                 <h3 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ __('products.add_manual') }}</h3>
                 <button type="button" class="modal-close text-[#94a3b8] hover:text-[#ef4444]">✕</button>
             </div>
-            <form id="add-product-form" class="p-5 space-y-4" enctype="multipart/form-data">
+            <form id="add-product-form" class="p-5 space-y-4" enctype="multipart/form-data" data-ajax="1">
                 <div>
                     <label class="block text-sm text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('products.f_name') }} *</label>
                     <input type="text" name="name" required class="w-full px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#0a0a0a] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
@@ -250,9 +250,11 @@
             // ---- Добавить вручную ----
             document.getElementById('add-product-form')?.addEventListener('submit', function (e) {
                 e.preventDefault();
+                const form = this;
+                if (!window.lockSubmit(form)) return;
                 const errBox = document.getElementById('add-product-error');
                 errBox.classList.add('hidden');
-                const fd = new FormData(this);
+                const fd = new FormData(form);
                 fd.append('_token', csrf);
                 fetch(base, {
                     method: 'POST',
@@ -265,10 +267,12 @@
                     } else {
                         errBox.textContent = data.message || '{{ __('products.error_generic') }}';
                         errBox.classList.remove('hidden');
+                        window.unlockSubmit(form);
                     }
                 }).catch(() => {
                     errBox.textContent = '{{ __('products.error_generic') }}';
                     errBox.classList.remove('hidden');
+                    window.unlockSubmit(form);
                 });
             });
         })();
