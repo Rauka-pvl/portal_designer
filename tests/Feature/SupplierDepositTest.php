@@ -14,6 +14,13 @@ class SupplierDepositTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Production default is demo=false; tests exercise the demo confirmation path.
+        config(['supplier_deposit.demo' => true]);
+    }
+
     private function makeSupplierUser(array $supplierAttrs = []): User
     {
         $user = User::factory()->create([

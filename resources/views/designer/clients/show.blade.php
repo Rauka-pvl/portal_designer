@@ -3,141 +3,155 @@
 @section('title', $client->full_name)
 @section('header_title', $client->full_name)
 
-@push('styles')
-    <style>
-        .panel {
-            background: #ffffff;
-            border: 1px solid #7c8799;
-            border-radius: 12px;
-            padding: 1.25rem;
+@php
+    $statusMap = [
+        'new' => __('clients.new'),
+        'in_work' => __('clients.in_work'),
+        'not_working' => __('clients.not_working'),
+    ];
+    $statusLabel = $statusMap[$client->status] ?? $client->status;
+    $typeLabel = $client->client_type === 'company' ? __('clients.company') : __('clients.person');
+    $nameLabel = $client->client_type === 'company' ? __('clients.company_name') : __('clients.fio');
+    $filePaths = [];
+    if (! empty($client->file_paths)) {
+        $decoded = json_decode($client->file_paths, true);
+        if (is_array($decoded)) {
+            $filePaths = array_values(array_filter($decoded, fn ($p) => is_string($p) && $p !== ''));
         }
-
-        .dark .panel {
-            background: #161615;
-            border-color: #3E3E3A;
-        }
-
-        .field-label {
-            font-size: 0.875rem;
-            color: #64748b;
-        }
-
-        .dark .field-label {
-            color: #A1A09A;
-        }
-
-        .btn {
-            padding: 0.55rem 1rem;
-            border-radius: 10px;
-            border: 1px solid #7c8799;
-            background: #ffffff;
-            color: #64748b;
-            transition: all 0.2s;
-            font-weight: 500;
-        }
-
-        .btn:hover {
-            border-color: #f59e0b;
-            color: #f59e0b;
-        }
-
-        .dark .btn {
-            background: #0a0a0a;
-            border-color: #3E3E3A;
-            color: #A1A09A;
-        }
-
-        .btn-primary {
-            border-color: #f59e0b;
-            background: rgba(245, 158, 11, 0.12);
-            color: #f59e0b;
-        }
-
-        .btn-danger {
-            border-color: rgba(239, 68, 68, 0.35);
-            background: rgba(239, 68, 68, 0.12);
-            color: #dc2626;
-        }
-
-        .dark .btn-danger {
-            color: #f87171;
-        }
-
-        .form-control:disabled {
-            opacity: 0.85;
-            cursor: not-allowed;
-        }
-    </style>
-@endpush
+    }
+    if (empty($filePaths) && ! empty($client->file_path)) {
+        $filePaths = [$client->file_path];
+    }
+@endphp
 
 @section('content')
+<div class="pb-28 max-w-6xl mx-auto">
     @if (session('status'))
-        <div class="mb-4 rounded-lg border border-emerald-200 dark:border-emerald-700/40 bg-emerald-50 dark:bg-emerald-900/10 px-4 py-3 text-emerald-700 dark:text-emerald-300 text-sm">
+        <div class="mb-4 rounded-xl border border-emerald-200 dark:border-emerald-700/40 bg-emerald-50 dark:bg-emerald-900/10 px-4 py-3 text-emerald-700 dark:text-emerald-300 text-sm">
             {{ session('status') }}
         </div>
     @endif
 
-    <div class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-            <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">
-                {{ __('clients.client') }}
-                #{{ $client->id }}
-            </p>
-        </div>
-
-        <div class="flex gap-3">
-            <button id="btn-edit" type="button" class="btn">
-                {{ __('clients.edit') }}
-            </button>
+    <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div class="min-w-0 flex items-start gap-3">
             @include('partials.back-link', [
                 'fallback' => route('clients.index'),
                 'label' => __('clients.close'),
                 'variant' => 'btn',
-                'icon' => false,
+                'icon' => true,
             ])
+            <div class="min-w-0">
+                <h1 class="text-xl sm:text-2xl font-semibold text-[#0f172a] dark:text-[#EDEDEC] truncate">{{ $client->full_name }}</h1>
+                <p class="mt-1 text-sm text-[#64748b] dark:text-[#A1A09A]">{{ __('clients.client') }} #{{ $client->id }}</p>
+            </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <button id="btn-edit" type="button"
+                class="inline-flex items-center justify-center min-h-10 px-4 rounded-xl border border-[#f59e0b] text-[#f59e0b] hover:bg-[#f59e0b]/10 text-sm font-medium transition-colors">
+                {{ __('clients.edit') }}
+            </button>
+            <details class="relative">
+                <summary class="list-none cursor-pointer inline-flex items-center justify-center min-h-10 min-w-10 rounded-xl border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors"
+                    aria-label="{{ __('detail.more_actions') }}">⋯</summary>
+                <div class="absolute right-0 mt-2 w-48 rounded-xl border border-[#7c8799]/50 dark:border-[#3E3E3A] bg-white dark:bg-[#161615] shadow-lg p-1 z-20">
+                    <button type="submit" form="delete-client-form"
+                        onclick="return confirm(@json(__('clients.delete_confirm')))"
+                        class="w-full text-left px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
+                        {{ __('clients.delete') }}
+                    </button>
+                </div>
+            </details>
         </div>
     </div>
 
-    <div class="panel">
-        <form id="client-details-form" method="POST" action="{{ route('clients.add_client') }}"
-            enctype="multipart/form-data">
-            @csrf
-            <input type="hidden" name="client_id" value="{{ $client->id }}">
+    <div data-detail-view class="mb-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="rounded-xl border border-[#7c8799]/40 dark:border-[#3E3E3A] bg-white dark:bg-[#161615] p-4">
+            <p class="text-xs text-[#64748b] dark:text-[#A1A09A]">{{ __('clients.client_type') }}</p>
+            <p class="mt-1 text-base font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ $typeLabel }}</p>
+        </div>
+        <div class="rounded-xl border border-[#7c8799]/40 dark:border-[#3E3E3A] bg-white dark:bg-[#161615] p-4">
+            <p class="text-xs text-[#64748b] dark:text-[#A1A09A]">{{ __('clients.status') }}</p>
+            <p class="mt-1 text-base font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ $statusLabel }}</p>
+        </div>
+        <div class="rounded-xl border border-[#7c8799]/40 dark:border-[#3E3E3A] bg-white dark:bg-[#161615] p-4">
+            <p class="text-xs text-[#64748b] dark:text-[#A1A09A]">{{ __('clients.phone') }}</p>
+            <p class="mt-1 text-base font-medium text-[#0f172a] dark:text-[#EDEDEC] break-all">{{ $client->phone ?: '—' }}</p>
+        </div>
+        <div class="rounded-xl border border-[#7c8799]/40 dark:border-[#3E3E3A] bg-white dark:bg-[#161615] p-4">
+            <p class="text-xs text-[#64748b] dark:text-[#A1A09A]">{{ __('clients.email') }}</p>
+            <p class="mt-1 text-base font-medium text-[#0f172a] dark:text-[#EDEDEC] break-all">{{ $client->email ?: '—' }}</p>
+        </div>
+    </div>
 
+    <section data-detail-view class="rounded-2xl border border-[#7c8799]/40 dark:border-[#3E3E3A] bg-white dark:bg-[#161615] p-5 space-y-4">
+        <dl class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+                <dt class="text-[#64748b] dark:text-[#A1A09A]">{{ $nameLabel }}</dt>
+                <dd class="mt-1 text-[#0f172a] dark:text-[#EDEDEC] font-medium">{{ $client->full_name }}</dd>
+            </div>
+            <div>
+                <dt class="text-[#64748b] dark:text-[#A1A09A]">{{ __('clients.link') }}</dt>
+                <dd class="mt-1 text-[#0f172a] dark:text-[#EDEDEC] break-all">
+                    @if ($client->link)
+                        <a href="{{ $client->link }}" target="_blank" rel="noopener" class="text-[#f59e0b] hover:underline">{{ $client->link }}</a>
+                    @else
+                        —
+                    @endif
+                </dd>
+            </div>
+            <div class="md:col-span-2">
+                <dt class="text-[#64748b] dark:text-[#A1A09A]">{{ __('clients.comment') }}</dt>
+                <dd class="mt-1 text-[#0f172a] dark:text-[#EDEDEC] whitespace-pre-wrap">{{ $client->comment ?: '—' }}</dd>
+            </div>
+            <div class="md:col-span-2">
+                <dt class="text-[#64748b] dark:text-[#A1A09A] mb-2">{{ __('clients.files') }}</dt>
+                <dd>
+                    @include('partials.file-actions-list', [
+                        'filePaths' => $filePaths,
+                        'deleteCallback' => 'window.deleteClientFileFromShow',
+                        'deleteEntityId' => $client->id,
+                    ])
+                </dd>
+            </div>
+        </dl>
+    </section>
+
+    <form id="client-details-form" method="POST" action="{{ route('clients.add_client') }}"
+        enctype="multipart/form-data" data-ajax="1" class="space-y-4">
+        @csrf
+        <input type="hidden" name="client_id" value="{{ $client->id }}">
+
+        <section data-detail-edit class="hidden rounded-2xl border border-[#7c8799]/40 dark:border-[#3E3E3A] bg-white dark:bg-[#161615] p-5">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                    <div class="field-label mb-2">{{ __('clients.client_type') }}</div>
-                    <select id="client_type" name="client_type"
-                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] form-control"
-                        disabled required>
+                    <label class="block text-sm text-[#64748b] dark:text-[#A1A09A] mb-2" for="client_type">{{ __('clients.client_type') }}</label>
+                    <select id="client_type" name="client_type" required
+                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC]">
                         <option value="person" @selected($client->client_type === 'person')>{{ __('clients.person') }}</option>
                         <option value="company" @selected($client->client_type === 'company')>{{ __('clients.company') }}</option>
                     </select>
 
-                    <div class="field-label mb-2 mt-4" id="full_name_label">
-                        {{ $client->client_type === 'person' ? __('clients.fio') : __('clients.company_name') }}
-                    </div>
-                    <input id="full_name" name="full_name" type="text" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] form-control"
-                        value="{{ $client->full_name }}" disabled required>
+                    <label class="block text-sm text-[#64748b] dark:text-[#A1A09A] mb-2 mt-4" id="full_name_label" for="full_name">{{ $nameLabel }}</label>
+                    <input id="full_name" name="full_name" type="text" required value="{{ $client->full_name }}"
+                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC]">
                 </div>
 
                 <div>
-                    <div class="field-label mb-2">{{ __('clients.phone') }}</div>
-                    <input id="phone" name="phone" type="text" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] form-control"
-                        value="{{ $client->phone }}" disabled required>
+                    <label class="block text-sm text-[#64748b] dark:text-[#A1A09A] mb-2" for="phone">{{ __('clients.phone') }}</label>
+                    <input id="phone" name="phone" type="text" required value="{{ $client->phone }}"
+                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC]">
                 </div>
 
                 <div>
-                    <div class="field-label mb-2">{{ __('clients.email') }}</div>
-                    <input id="email" name="email" type="email" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] form-control"
-                        value="{{ $client->email }}" disabled required>
+                    <label class="block text-sm text-[#64748b] dark:text-[#A1A09A] mb-2" for="email">{{ __('clients.email') }}</label>
+                    <input id="email" name="email" type="email" required value="{{ $client->email }}"
+                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC]">
                 </div>
 
                 <div>
-                    <div class="field-label mb-2">{{ __('clients.status') }}</div>
-                    <select id="status" name="status"
-                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] form-control"
-                        disabled required>
+                    <label class="block text-sm text-[#64748b] dark:text-[#A1A09A] mb-2" for="status">{{ __('clients.status') }}</label>
+                    <select id="status" name="status" required
+                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC]">
                         <option value="new" @selected($client->status === 'new')>{{ __('clients.new') }}</option>
                         <option value="in_work" @selected($client->status === 'in_work')>{{ __('clients.in_work') }}</option>
                         <option value="not_working" @selected($client->status === 'not_working')>{{ __('clients.not_working') }}</option>
@@ -145,152 +159,95 @@
                 </div>
 
                 <div class="md:col-span-2">
-                    <div class="field-label mb-2">{{ __('clients.comment') }}</div>
+                    <label class="block text-sm text-[#64748b] dark:text-[#A1A09A] mb-2" for="comment">{{ __('clients.comment') }}</label>
                     <textarea id="comment" name="comment" rows="5"
-                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] form-control resize-none"
-                        disabled>{{ $client->comment }}</textarea>
+                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] resize-none">{{ $client->comment }}</textarea>
                 </div>
 
                 <div class="md:col-span-2">
-                    <div class="field-label mb-2">{{ __('clients.link') }}</div>
-                    <input id="link" name="link" type="url"
-                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] form-control"
-                        value="{{ $client->link }}" disabled>
+                    <label class="block text-sm text-[#64748b] dark:text-[#A1A09A] mb-2" for="link">{{ __('clients.link') }}</label>
+                    <input id="link" name="link" type="url" value="{{ $client->link }}"
+                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC]">
                 </div>
 
                 <div class="md:col-span-2">
-                    <div class="field-label mb-2">{{ __('clients.files') }}</div>
+                    <label class="block text-sm text-[#64748b] dark:text-[#A1A09A] mb-2" for="files">{{ __('clients.files') }}</label>
                     <input id="files" name="files[]" type="file"
-                        class="w-full text-sm text-[#64748b] dark:text-[#A1A09A] form-control"
-                        disabled>
-                    @php
-                        $filePaths = [];
-                        if (!empty($client->file_paths)) {
-                            $decoded = json_decode($client->file_paths, true);
-                            if (is_array($decoded)) {
-                                $filePaths = array_values(array_filter($decoded, fn($p) => is_string($p) && $p !== ''));
-                            }
-                        }
-                        if (empty($filePaths) && !empty($client->file_path)) {
-                            $filePaths = [$client->file_path];
-                        }
-                    @endphp
-
+                        class="w-full text-sm text-[#64748b] dark:text-[#A1A09A]">
                     @include('partials.file-actions-list', [
                         'filePaths' => $filePaths,
                         'deleteCallback' => 'window.deleteClientFileFromShow',
                         'deleteEntityId' => $client->id,
+                        'includeExistingHidden' => true,
                     ])
                 </div>
             </div>
-
-            <div class="mt-6 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-                <div class="flex gap-3">
-                    <button id="btn-save" type="submit" class="btn btn-primary hidden">
-                        {{ __('clients.save') }}
-                    </button>
-                    <button id="btn-cancel" type="button" class="btn hidden">
-                        {{ __('clients.cancel') }}
-                    </button>
-                </div>
-
-                <button type="submit" form="delete-client-form"
-                    onclick="return confirm('{{ __('clients.delete_confirm') }}')"
-                    class="btn btn-danger">
-                    {{ __('clients.delete') }}
-                </button>
-            </div>
-        </form>
-    </div>
+        </section>
+    </form>
 
     <form id="delete-client-form" method="POST" action="{{ route('clients.delete_client', $client->id) }}" class="hidden">
         @csrf
         @method('DELETE')
     </form>
+</div>
+
+@include('partials.detail-sticky-actions', [
+    'formId' => 'client-details-form',
+    'saveLabel' => __('clients.save'),
+    'cancelLabel' => __('clients.cancel'),
+])
+@include('partials.detail-confirm-modal')
 @endsection
 
 @section('scripts')
-    <script>
-        (function() {
-            const btnEdit = document.getElementById('btn-edit');
-            const btnSave = document.getElementById('btn-save');
-            const btnCancel = document.getElementById('btn-cancel');
-            const form = document.getElementById('client-details-form');
-            const phoneInput = document.getElementById('phone');
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+<script>
+(function () {
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const phoneInput = document.getElementById('phone');
+    const clientTypeSelect = document.getElementById('client_type');
+    const fullNameLabel = document.getElementById('full_name_label');
 
-            // Удаление конкретного файла клиента (по индексу в file_paths).
-            window.deleteClientFileFromShow = async function(clientId, fileIndex) {
-                if (!confirm('{{ __('clients.delete_file_confirm') }}')) return;
-                try {
-                    const r = await fetch(`/clients/${clientId}/files/${fileIndex}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Accept': 'application/json',
-                            ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {})
-                        }
-                    });
-                    const data = await r.json().catch(() => ({}));
-                    if (!r.ok || !data.success) {
-                        projectAlert('error', data.message || '{{ __('clients.error') }}', '', 3200);
-                        return;
-                    }
-                    location.reload();
-                } catch (e) {
-                    projectAlert('error', '{{ __('clients.error') }}', '', 3200);
-                    console.error(e);
-                }
-            };
-
-            // Маска телефона для редактирования клиента
-            if (phoneInput && typeof IMask !== 'undefined') {
-                IMask(phoneInput, {
-                    mask: '+{7} (000) 000-00-00'
-                });
+    window.deleteClientFileFromShow = async function (clientId, fileIndex) {
+        if (!confirm(@json(__('clients.delete_file_confirm')))) return;
+        try {
+            const r = await fetch(`/clients/${clientId}/files/${fileIndex}`, {
+                method: 'DELETE',
+                headers: { Accept: 'application/json', ...(csrf ? { 'X-CSRF-TOKEN': csrf } : {}) },
+            });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok || !data.success) {
+                projectAlert?.('error', data.message || @json(__('clients.error')), '', 3200);
+                return;
             }
+            location.reload();
+        } catch (e) {
+            projectAlert?.('error', @json(__('clients.error')), '', 3200);
+        }
+    };
 
-            // Подпись к полю `full_name` зависит от типа клиента (ФИО / Название компании).
-            const clientTypeSelect = document.getElementById('client_type');
-            const fullNameLabel = document.getElementById('full_name_label');
+    if (phoneInput && typeof IMask !== 'undefined') {
+        IMask(phoneInput, { mask: '+{7} (000) 000-00-00' });
+    }
 
-            function updateFullNameLabel() {
-                if (!clientTypeSelect || !fullNameLabel) return;
-                fullNameLabel.textContent = clientTypeSelect.value === 'company'
-                    ? '{{ __('clients.company_name') }}'
-                    : '{{ __('clients.fio') }}';
-            }
+    function updateFullNameLabel() {
+        if (!clientTypeSelect || !fullNameLabel) return;
+        fullNameLabel.textContent = clientTypeSelect.value === 'company'
+            ? @json(__('clients.company_name'))
+            : @json(__('clients.fio'));
+    }
+    clientTypeSelect?.addEventListener('change', updateFullNameLabel);
 
-            if (clientTypeSelect && fullNameLabel) {
-                updateFullNameLabel();
-                clientTypeSelect.addEventListener('change', updateFullNameLabel);
-            }
-
-            const toggleEdit = (enabled) => {
-                const controls = form.querySelectorAll('input, select, textarea');
-                controls.forEach(el => {
-                    // Hidden input `client_id` не трогаем, у него type hidden.
-                    if (el.type === 'hidden') return;
-                    el.disabled = !enabled;
-                });
-
-                if (btnSave) btnSave.classList.toggle('hidden', !enabled);
-                if (btnCancel) btnCancel.classList.toggle('hidden', !enabled);
-
-                if (btnEdit) btnEdit.classList.toggle('hidden', enabled);
-
-                document.querySelectorAll('.edit-only-control').forEach((el) => {
-                    el.classList.toggle('hidden', !enabled);
-                });
-            };
-
-            if (btnEdit) {
-                btnEdit.addEventListener('click', () => toggleEdit(true));
-            }
-
-            if (btnCancel) {
-                btnCancel.addEventListener('click', () => location.reload());
-            }
-        })();
-    </script>
+    (function waitBoot(n) {
+        if (typeof window.bootDetailEditPage === 'function') {
+            window.bootDetailEditPage({
+                form: '#client-details-form',
+                successMessage: @json(__('clients.saved')),
+                errorMessage: @json(__('clients.error')),
+            });
+            return;
+        }
+        if (n > 0) setTimeout(function () { waitBoot(n - 1); }, 40);
+    })(50);
+})();
+</script>
 @endsection
-

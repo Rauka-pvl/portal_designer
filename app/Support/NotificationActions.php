@@ -86,6 +86,7 @@ class NotificationActions
                 break;
 
             case 'supplier_order':
+            case 'supplier_order_updated':
                 if ($isSupplier) {
                     $orderUrl = self::orderUrl($notification, false, true, preferShow: true);
                     if ($orderUrl && (int) $notification->related_order_id > 0) {

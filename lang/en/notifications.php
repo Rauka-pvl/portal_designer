@@ -45,6 +45,8 @@ return [
     'new_order_comment' => 'A new delivery order #:order was sent to you.',
     'order_withdrawn_title' => 'Order updated',
     'order_withdrawn_comment' => ':designer changed delivery order #:order. The order is no longer sent and was saved as a draft.',
+    'order_updated_title' => 'Order details changed',
+    'order_updated_comment' => 'Designer :designer updated order #:order for project :project.',
     'offer_new_title' => 'New delivery offer',
     'offer_new_comment' => 'Designer sent an offer for delivery #:order (bonus :percent%). Accept, decline, or propose your percent.',
     'offer_accepted_title' => 'Offer accepted',

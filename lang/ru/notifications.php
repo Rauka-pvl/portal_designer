@@ -45,6 +45,8 @@ return [
     'new_order_comment' => 'Вам отправлена новая поставка №:order.',
     'order_withdrawn_title' => 'Поставка изменена',
     'order_withdrawn_comment' => ':designer изменил(а) поставку №:order. Заказ сейчас не отправлен и сохранён как черновик.',
+    'order_updated_title' => 'Изменены данные заказа',
+    'order_updated_comment' => 'Дизайнер :designer изменил данные заказа №:order по проекту :project.',
     'offer_new_title' => 'Новое предложение по поставке',
     'offer_new_comment' => 'Дизайнер отправил предложение по поставке №:order (бонус :percent%). Примите, отклоните или предложите свой процент.',
     'offer_accepted_title' => 'Предложение принято',

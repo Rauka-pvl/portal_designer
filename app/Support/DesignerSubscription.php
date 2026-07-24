@@ -17,13 +17,34 @@ class DesignerSubscription
 
     public const TRIAL_DAYS = 7;
 
-    public const PROMO_CODE = 'DesignPortal-2026!';
+    /** @deprecated Use config('subscription.promo_code') — kept empty so old references do not leak a secret. */
+    public const PROMO_CODE = '';
 
     public const METHOD_KASPI = 'kaspi';
 
     public const METHOD_CARD = 'card';
 
     public const METHOD_PROMO = 'promo';
+
+    public static function periodDays(): int
+    {
+        return max(1, (int) config('subscription.period_days', self::PERIOD_DAYS));
+    }
+
+    public static function trialDays(): int
+    {
+        return max(1, (int) config('subscription.trial_days', self::TRIAL_DAYS));
+    }
+
+    public static function configuredPromoCode(): string
+    {
+        return trim((string) config('subscription.promo_code', ''));
+    }
+
+    public static function allowsStubPayments(): bool
+    {
+        return (bool) config('subscription.allow_stub_payments', false);
+    }
 
     /**
      * Single source of truth for designer tariffs.
@@ -44,7 +65,7 @@ class DesignerSubscription
             self::PLAN_STANDARD => [
                 'key' => self::PLAN_STANDARD,
                 'price' => 5000,
-                'period_days' => self::PERIOD_DAYS,
+                'period_days' => self::periodDays(),
                 'recommended' => false,
                 'feature_keys' => [
                     'feature_clients',
@@ -59,7 +80,7 @@ class DesignerSubscription
             self::PLAN_PRO => [
                 'key' => self::PLAN_PRO,
                 'price' => 9990,
-                'period_days' => self::PERIOD_DAYS,
+                'period_days' => self::periodDays(),
                 'recommended' => true,
                 'feature_keys' => [
                     'feature_unlimited',
@@ -123,7 +144,12 @@ class DesignerSubscription
 
     public static function isValidPromo(?string $code): bool
     {
-        return is_string($code) && hash_equals(self::PROMO_CODE, trim($code));
+        $expected = self::configuredPromoCode();
+        if ($expected === '' || ! is_string($code)) {
+            return false;
+        }
+
+        return hash_equals($expected, trim($code));
     }
 
     public static function canUseTrial(User $user): bool
@@ -180,7 +206,7 @@ class DesignerSubscription
         }
 
         $ends = $user->subscription_trial_ends_at->copy();
-        $starts = $ends->copy()->subDays(self::TRIAL_DAYS);
+        $starts = $ends->copy()->subDays(self::trialDays());
         $total = max(1, $ends->getTimestamp() - $starts->getTimestamp());
         $elapsed = now()->getTimestamp() - $starts->getTimestamp();
 
@@ -341,8 +367,15 @@ class DesignerSubscription
         $amount = ($usePromo || self::canUseTrial($user)) ? 0 : $price;
         $useTrial = self::canUseTrial($user);
 
+        // Paid (non-trial, non-promo) checkout requires a real PSP — stub completion is gated.
+        if (! $useTrial && ! $usePromo && $amount > 0 && ! self::allowsStubPayments()) {
+            throw ValidationException::withMessages([
+                'payment_method' => [__('subscription.payment_provider_unavailable')],
+            ]);
+        }
+
         $startsAt = now();
-        $periodDays = $useTrial ? self::TRIAL_DAYS : (int) $plan['period_days'];
+        $periodDays = $useTrial ? self::trialDays() : (int) $plan['period_days'];
 
         if (! $useTrial && $user->subscription_ends_at && $user->subscription_ends_at->isFuture()) {
             $startsAt = $user->subscription_ends_at->copy();
@@ -360,7 +393,7 @@ class DesignerSubscription
             'status' => $useTrial ? 'trial' : 'completed',
             'meta' => [
                 'payment_method' => $paymentMethod,
-                'promo_code' => $usePromo ? self::PROMO_CODE : null,
+                'promo_code' => $usePromo ? self::configuredPromoCode() : null,
                 'discount_percent' => $usePromo ? 100 : 0,
                 'is_trial' => $useTrial,
                 'list_price' => $price,

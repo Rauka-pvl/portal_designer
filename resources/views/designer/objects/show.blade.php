@@ -3,75 +3,35 @@
 @section('title', $object->address)
 @section('header_title', $object->address)
 
+@php
+    $typeMap = [
+        'apartment' => __('objects.apartment'),
+        'house' => __('objects.house'),
+        'commercial' => __('objects.commercial'),
+        'other' => __('objects.other'),
+    ];
+    $statusMap = [
+        'new' => __('objects.new'),
+        'in_work' => __('objects.in_work'),
+        'not_working' => __('objects.not_working'),
+    ];
+    $typeLabel = $typeMap[$object->type] ?? $object->type;
+    $statusLabel = $statusMap[$object->status] ?? $object->status;
+    $links = is_array($object->links) ? $object->links : [];
+    $filePaths = is_array($object->file_paths) ? $object->file_paths : [];
+    if (empty($filePaths) && ! empty($object->file_paths)) {
+        $decoded = json_decode((string) $object->file_paths, true);
+        $filePaths = is_array($decoded) ? $decoded : [];
+    }
+    $passportCities = trans('cities.passport');
+    $passportCities = is_array($passportCities) ? $passportCities : [];
+    $hasCustomCity = $object->city && ! in_array($object->city, $passportCities, true);
+@endphp
+
 @push('styles')
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <style>
-        .panel {
-            background: #ffffff;
-            border: 1px solid #7c8799;
-            border-radius: 12px;
-            padding: 1.25rem;
-        }
-
-        .dark .panel {
-            background: #161615;
-            border-color: #3E3E3A;
-        }
-
-        .field-label {
-            font-size: 0.875rem;
-            color: #64748b;
-        }
-
-        .dark .field-label {
-            color: #A1A09A;
-        }
-
-        .btn {
-            padding: 0.55rem 1rem;
-            border-radius: 10px;
-            border: 1px solid #7c8799;
-            background: #ffffff;
-            color: #64748b;
-            transition: all 0.2s;
-            font-weight: 600;
-        }
-
-        .btn:hover {
-            border-color: #f59e0b;
-            color: #f59e0b;
-        }
-
-        .dark .btn {
-            background: #0a0a0a;
-            border-color: #3E3E3A;
-            color: #A1A09A;
-        }
-
-        .btn-primary {
-            border-color: #f59e0b;
-            background: rgba(245, 158, 11, 0.12);
-            color: #f59e0b;
-        }
-
-        .btn-danger {
-            border-color: rgba(239, 68, 68, 0.35);
-            background: rgba(239, 68, 68, 0.12);
-            color: #dc2626;
-        }
-
-        .dark .btn-danger {
-            color: #f87171;
-        }
-
-        .form-control:disabled,
-        .modal-input:disabled,
-        textarea:disabled {
-            opacity: 0.85;
-            cursor: not-allowed;
-        }
-
         .object-map {
             height: 280px;
             border-radius: 10px;
@@ -131,45 +91,148 @@
 @endpush
 
 @section('content')
+<div class="pb-28 max-w-6xl mx-auto">
     @if (session('status'))
-        <div class="mb-4 rounded-lg border border-emerald-200 dark:border-emerald-700/40 bg-emerald-50 dark:bg-emerald-900/10 px-4 py-3 text-emerald-700 dark:text-emerald-300 text-sm">
+        <div class="mb-4 rounded-xl border border-emerald-200 dark:border-emerald-700/40 bg-emerald-50 dark:bg-emerald-900/10 px-4 py-3 text-emerald-700 dark:text-emerald-300 text-sm">
             {{ session('status') }}
         </div>
     @endif
 
-    <div class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-            <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">
-                {{ __('objects.client') }}: {{ $object->client?->full_name ?? $object->client_id }}
-            </p>
-        </div>
-        <div class="flex gap-3">
-            <button id="btn-edit" type="button" class="btn">
-                {{ __('objects.edit') }}
-            </button>
+    <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div class="min-w-0 flex items-start gap-3">
             @include('partials.back-link', [
                 'fallback' => route('objects.index'),
                 'label' => __('objects.close'),
                 'variant' => 'btn',
-                'icon' => false,
+                'icon' => true,
             ])
+            <div class="min-w-0">
+                <h1 class="text-xl sm:text-2xl font-semibold text-[#0f172a] dark:text-[#EDEDEC] truncate">{{ $object->address }}</h1>
+                <p class="mt-1 text-sm text-[#64748b] dark:text-[#A1A09A]">
+                    {{ __('objects.client') }}: {{ $object->client?->full_name ?? $object->client_id }}
+                </p>
+            </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <button id="btn-edit" type="button"
+                class="inline-flex items-center justify-center min-h-10 px-4 rounded-xl border border-[#f59e0b] text-[#f59e0b] hover:bg-[#f59e0b]/10 text-sm font-medium transition-colors">
+                {{ __('objects.edit') }}
+            </button>
+            <details class="relative">
+                <summary class="list-none cursor-pointer inline-flex items-center justify-center min-h-10 min-w-10 rounded-xl border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors"
+                    aria-label="{{ __('detail.more_actions') }}">⋯</summary>
+                <div class="absolute right-0 mt-2 w-48 rounded-xl border border-[#7c8799]/50 dark:border-[#3E3E3A] bg-white dark:bg-[#161615] shadow-lg p-1 z-20">
+                    <button type="submit" form="delete-object-form"
+                        onclick="return confirm(@json(__('objects.delete_confirm')))"
+                        class="w-full text-left px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
+                        {{ __('objects.delete') }}
+                    </button>
+                </div>
+            </details>
         </div>
     </div>
 
-    <div class="panel">
-        <form id="object-details-form" method="POST" action="{{ route('objects.add_object') }}" enctype="multipart/form-data" autocomplete="off">
-            @csrf
-            <input type="hidden" name="object_id" value="{{ $object->id }}">
+    <div data-detail-view class="mb-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="rounded-xl border border-[#7c8799]/40 dark:border-[#3E3E3A] bg-white dark:bg-[#161615] p-4">
+            <p class="text-xs text-[#64748b] dark:text-[#A1A09A]">{{ __('objects.city') }}</p>
+            <p class="mt-1 text-base font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ $object->city ?: '—' }}</p>
+        </div>
+        <div class="rounded-xl border border-[#7c8799]/40 dark:border-[#3E3E3A] bg-white dark:bg-[#161615] p-4">
+            <p class="text-xs text-[#64748b] dark:text-[#A1A09A]">{{ __('objects.type') }}</p>
+            <p class="mt-1 text-base font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ $typeLabel }}</p>
+        </div>
+        <div class="rounded-xl border border-[#7c8799]/40 dark:border-[#3E3E3A] bg-white dark:bg-[#161615] p-4">
+            <p class="text-xs text-[#64748b] dark:text-[#A1A09A]">{{ __('objects.status') }}</p>
+            <p class="mt-1 text-base font-medium text-[#0f172a] dark:text-[#EDEDEC]">{{ $statusLabel }}</p>
+        </div>
+        <div class="rounded-xl border border-[#7c8799]/40 dark:border-[#3E3E3A] bg-white dark:bg-[#161615] p-4">
+            <p class="text-xs text-[#64748b] dark:text-[#A1A09A]">{{ __('objects.area') }}</p>
+            <p class="mt-1 text-base font-medium text-[#0f172a] dark:text-[#EDEDEC]">
+                {{ $object->area !== null && $object->area !== '' ? $object->area.' '.__('objects.area_m2') : '—' }}
+            </p>
+        </div>
+    </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                @php
-                    $passportCities = trans('cities.passport');
-                    $passportCities = is_array($passportCities) ? $passportCities : [];
-                    $hasCustomCity = $object->city && !in_array($object->city, $passportCities, true);
-                @endphp
+    <section data-detail-view class="rounded-2xl border border-[#7c8799]/40 dark:border-[#3E3E3A] bg-white dark:bg-[#161615] p-5 space-y-4 mb-4">
+        <dl class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div class="md:col-span-2">
+                <dt class="text-[#64748b] dark:text-[#A1A09A]">{{ __('objects.address') }}</dt>
+                <dd class="mt-1 text-[#0f172a] dark:text-[#EDEDEC] font-medium">{{ $object->address ?: '—' }}</dd>
+            </div>
+            @if ($object->type === 'apartment')
                 <div>
-                    <div class="field-label mb-2">{{ __('objects.city') }}</div>
-                    <select id="object_city" name="city" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input" disabled required>
+                    <dt class="text-[#64748b] dark:text-[#A1A09A]">{{ __('objects.apartment_floor') }}</dt>
+                    <dd class="mt-1 text-[#0f172a] dark:text-[#EDEDEC]">{{ $object->apartment_floor ?: '—' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-[#64748b] dark:text-[#A1A09A]">{{ __('objects.apartment_entrance') }}</dt>
+                    <dd class="mt-1 text-[#0f172a] dark:text-[#EDEDEC]">{{ $object->apartment_entrance ?: '—' }}</dd>
+                </div>
+                <div>
+                    <dt class="text-[#64748b] dark:text-[#A1A09A]">{{ __('objects.apartment_number') }}</dt>
+                    <dd class="mt-1 text-[#0f172a] dark:text-[#EDEDEC]">{{ $object->apartment ?: '—' }}</dd>
+                </div>
+            @endif
+            <div>
+                <dt class="text-[#64748b] dark:text-[#A1A09A]">{{ __('objects.repair_budget') }} — {{ __('objects.planned') }}</dt>
+                <dd class="mt-1 text-[#0f172a] dark:text-[#EDEDEC]">{{ $object->repair_budget_planned !== null && $object->repair_budget_planned !== '' ? $object->repair_budget_planned : '—' }}</dd>
+            </div>
+            <div>
+                <dt class="text-[#64748b] dark:text-[#A1A09A]">{{ __('objects.repair_budget') }} — {{ __('objects.actual') }}</dt>
+                <dd class="mt-1 text-[#0f172a] dark:text-[#EDEDEC]">{{ $object->repair_budget_actual !== null && $object->repair_budget_actual !== '' ? $object->repair_budget_actual : '—' }}</dd>
+            </div>
+            <div>
+                <dt class="text-[#64748b] dark:text-[#A1A09A]">{{ __('objects.repair_budget_per_m2') }} — {{ __('objects.planned') }}</dt>
+                <dd class="mt-1 text-[#0f172a] dark:text-[#EDEDEC]">{{ $object->repair_budget_per_m2_planned !== null && $object->repair_budget_per_m2_planned !== '' ? $object->repair_budget_per_m2_planned : '—' }}</dd>
+            </div>
+            <div>
+                <dt class="text-[#64748b] dark:text-[#A1A09A]">{{ __('objects.repair_budget_per_m2') }} — {{ __('objects.actual') }}</dt>
+                <dd class="mt-1 text-[#0f172a] dark:text-[#EDEDEC]">{{ $object->repair_budget_per_m2_actual !== null && $object->repair_budget_per_m2_actual !== '' ? $object->repair_budget_per_m2_actual : '—' }}</dd>
+            </div>
+            <div class="md:col-span-2">
+                <dt class="text-[#64748b] dark:text-[#A1A09A]">{{ __('objects.links') }}</dt>
+                <dd class="mt-1 text-[#0f172a] dark:text-[#EDEDEC]">
+                    @if (count($links))
+                        <ul class="space-y-1 break-all">
+                            @foreach ($links as $link)
+                                <li>
+                                    <a href="{{ $link }}" target="_blank" rel="noopener" class="text-[#f59e0b] hover:underline">{{ $link }}</a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @else
+                        —
+                    @endif
+                </dd>
+            </div>
+            <div class="md:col-span-2">
+                <dt class="text-[#64748b] dark:text-[#A1A09A] mb-2">{{ __('objects.files') }}</dt>
+                <dd>
+                    @include('partials.file-actions-list', [
+                        'filePaths' => $filePaths,
+                        'deleteCallback' => 'window.deleteObjectFileFromShow',
+                        'deleteEntityId' => $object->id,
+                        'containerId' => 'object-show-files-list-view',
+                    ])
+                </dd>
+            </div>
+        </dl>
+    </section>
+
+    <form id="object-details-form" method="POST" action="{{ route('objects.add_object') }}"
+        enctype="multipart/form-data" data-ajax="1" autocomplete="off" class="space-y-4">
+        @csrf
+        <input type="hidden" name="object_id" value="{{ $object->id }}">
+        <input type="hidden" name="client_id" value="{{ $object->client_id }}">
+        <input type="hidden" name="latitude" id="object_latitude" value="{{ $object->latitude }}">
+        <input type="hidden" name="longitude" id="object_longitude" value="{{ $object->longitude }}">
+
+        <section data-detail-edit class="hidden rounded-2xl border border-[#7c8799]/40 dark:border-[#3E3E3A] bg-white dark:bg-[#161615] p-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <label class="block text-sm text-[#64748b] dark:text-[#A1A09A] mb-2" for="object_city">{{ __('objects.city') }}</label>
+                    <select id="object_city" name="city" required
+                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input">
                         @if ($hasCustomCity)
                             <option value="{{ $object->city }}" selected data-map-city-option="1">{{ $object->city }}</option>
                         @endif
@@ -181,37 +244,38 @@
                 </div>
 
                 <div class="md:col-span-2 address-suggest">
-                    <div class="field-label mb-2">{{ __('objects.address') }}</div>
-                    <input id="object_address" name="address" type="text"
+                    <label class="block text-sm text-[#64748b] dark:text-[#A1A09A] mb-2" for="object_address">{{ __('objects.address') }}</label>
+                    <input id="object_address" name="address" type="text" required
                         class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
-                        value="{{ $object->address }}" disabled required autocomplete="off" autocorrect="off" spellcheck="false">
+                        value="{{ $object->address }}" autocomplete="off" autocorrect="off" spellcheck="false">
                     <div id="object-address-suggest-list" class="address-suggest-list hidden"></div>
                 </div>
 
                 <div id="object_floor_wrap" class="object-apartment-field {{ $object->type === 'apartment' ? '' : 'hidden' }}">
-                    <div class="field-label mb-2">{{ __('objects.apartment_floor') }}</div>
+                    <label class="block text-sm text-[#64748b] dark:text-[#A1A09A] mb-2" for="object_apartment_floor">{{ __('objects.apartment_floor') }}</label>
                     <input id="object_apartment_floor" name="apartment_floor" type="text"
                         class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
-                        value="{{ $object->apartment_floor }}" disabled autocomplete="off" autocorrect="off" spellcheck="false">
+                        value="{{ $object->apartment_floor }}" autocomplete="off" autocorrect="off" spellcheck="false">
                 </div>
 
                 <div id="object_entrance_wrap" class="object-apartment-field {{ $object->type === 'apartment' ? '' : 'hidden' }}">
-                    <div class="field-label mb-2">{{ __('objects.apartment_entrance') }}</div>
+                    <label class="block text-sm text-[#64748b] dark:text-[#A1A09A] mb-2" for="object_apartment_entrance">{{ __('objects.apartment_entrance') }}</label>
                     <input id="object_apartment_entrance" name="apartment_entrance" type="text"
                         class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
-                        value="{{ $object->apartment_entrance }}" disabled autocomplete="off" autocorrect="off" spellcheck="false">
+                        value="{{ $object->apartment_entrance }}" autocomplete="off" autocorrect="off" spellcheck="false">
                 </div>
 
                 <div id="object_apartment_wrap" class="object-apartment-field {{ $object->type === 'apartment' ? '' : 'hidden' }}">
-                    <div class="field-label mb-2">{{ __('objects.apartment_number') }}</div>
+                    <label class="block text-sm text-[#64748b] dark:text-[#A1A09A] mb-2" for="object_apartment">{{ __('objects.apartment_number') }}</label>
                     <input id="object_apartment" name="apartment" type="text"
                         class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
-                        value="{{ $object->apartment }}" disabled autocomplete="off" autocorrect="off" spellcheck="false">
+                        value="{{ $object->apartment }}" autocomplete="off" autocorrect="off" spellcheck="false">
                 </div>
 
                 <div>
-                    <div class="field-label mb-2">{{ __('objects.type') }}</div>
-                    <select id="object_type" name="type" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input" disabled required>
+                    <label class="block text-sm text-[#64748b] dark:text-[#A1A09A] mb-2" for="object_type">{{ __('objects.type') }}</label>
+                    <select id="object_type" name="type" required
+                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input">
                         <option value="apartment" @selected($object->type === 'apartment')>{{ __('objects.apartment') }}</option>
                         <option value="house" @selected($object->type === 'house')>{{ __('objects.house') }}</option>
                         <option value="commercial" @selected($object->type === 'commercial')>{{ __('objects.commercial') }}</option>
@@ -220,8 +284,9 @@
                 </div>
 
                 <div>
-                    <div class="field-label mb-2">{{ __('objects.status') }}</div>
-                    <select id="object_status" name="status" class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input" disabled required>
+                    <label class="block text-sm text-[#64748b] dark:text-[#A1A09A] mb-2" for="object_status">{{ __('objects.status') }}</label>
+                    <select id="object_status" name="status" required
+                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input">
                         <option value="new" @selected($object->status === 'new')>{{ __('objects.new') }}</option>
                         <option value="in_work" @selected($object->status === 'in_work')>{{ __('objects.in_work') }}</option>
                         <option value="not_working" @selected($object->status === 'not_working')>{{ __('objects.not_working') }}</option>
@@ -229,100 +294,80 @@
                 </div>
 
                 <div>
-                    <div class="field-label mb-2">{{ __('objects.area') }} ({{ __('objects.area_m2') }})</div>
-                    <input id="object_area" name="area" type="number" step="0.01"
+                    <label class="block text-sm text-[#64748b] dark:text-[#A1A09A] mb-2" for="object_area">{{ __('objects.area') }} ({{ __('objects.area_m2') }})</label>
+                    <input id="object_area" name="area" type="number" step="0.01" required
                         class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
-                        value="{{ $object->area }}" disabled required>
+                        value="{{ $object->area }}">
                 </div>
 
                 <div>
-                    <div class="field-label mb-2">{{ __('objects.planned') }}</div>
+                    <label class="block text-sm text-[#64748b] dark:text-[#A1A09A] mb-2" for="repair_budget_planned">{{ __('objects.planned') }}</label>
                     <input id="repair_budget_planned" name="repair_budget_planned" type="number" step="0.01"
                         class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
-                        value="{{ $object->repair_budget_planned }}" disabled>
+                        value="{{ $object->repair_budget_planned }}">
                 </div>
 
                 <div>
-                    <div class="field-label mb-2">{{ __('objects.actual') }}</div>
+                    <label class="block text-sm text-[#64748b] dark:text-[#A1A09A] mb-2" for="repair_budget_actual">{{ __('objects.actual') }}</label>
                     <input id="repair_budget_actual" name="repair_budget_actual" type="number" step="0.01"
                         class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
-                        value="{{ $object->repair_budget_actual }}" disabled>
+                        value="{{ $object->repair_budget_actual }}">
                 </div>
 
                 <div>
-                    <div class="field-label mb-2">{{ __('objects.repair_budget_per_m2') }} - {{ __('objects.planned') }}</div>
+                    <label class="block text-sm text-[#64748b] dark:text-[#A1A09A] mb-2" for="repair_budget_per_m2_planned">{{ __('objects.repair_budget_per_m2') }} - {{ __('objects.planned') }}</label>
                     <input id="repair_budget_per_m2_planned" name="repair_budget_per_m2_planned" type="number" step="0.01"
                         class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
-                        value="{{ $object->repair_budget_per_m2_planned }}" disabled>
+                        value="{{ $object->repair_budget_per_m2_planned }}">
                 </div>
 
                 <div>
-                    <div class="field-label mb-2">{{ __('objects.repair_budget_per_m2') }} - {{ __('objects.actual') }}</div>
+                    <label class="block text-sm text-[#64748b] dark:text-[#A1A09A] mb-2" for="repair_budget_per_m2_actual">{{ __('objects.repair_budget_per_m2') }} - {{ __('objects.actual') }}</label>
                     <input id="repair_budget_per_m2_actual" name="repair_budget_per_m2_actual" type="number" step="0.01"
                         class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input"
-                        value="{{ $object->repair_budget_per_m2_actual }}" disabled>
+                        value="{{ $object->repair_budget_per_m2_actual }}">
                 </div>
 
                 <div class="md:col-span-2">
-                    <div class="field-label mb-2">{{ __('objects.map_point') }}</div>
+                    <div class="text-sm text-[#64748b] dark:text-[#A1A09A] mb-2">{{ __('objects.map_point') }}</div>
                     <p class="text-xs mb-2 text-[#64748b] dark:text-[#A1A09A]">{{ __('objects.map_hint') }}</p>
                     <div id="object-map" class="object-map"></div>
-                    <input type="hidden" name="latitude" id="object_latitude" value="{{ $object->latitude }}">
-                    <input type="hidden" name="longitude" id="object_longitude" value="{{ $object->longitude }}">
                 </div>
 
                 <div class="md:col-span-2">
-                    <div class="field-label mb-2">{{ __('objects.links') }}</div>
+                    <label class="block text-sm text-[#64748b] dark:text-[#A1A09A] mb-2" for="links_text">{{ __('objects.links') }}</label>
                     <textarea id="links_text" name="links_text" rows="4"
-                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input resize-none"
-                        disabled>{{ is_array($object->links) ? implode("\n", $object->links) : '' }}</textarea>
+                        class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] modal-input resize-none">{{ implode("\n", $links) }}</textarea>
                 </div>
 
                 <div class="md:col-span-2">
-                    <div class="field-label mb-2">{{ __('objects.files') }}</div>
+                    <label class="block text-sm text-[#64748b] dark:text-[#A1A09A] mb-2" for="files">{{ __('objects.files') }}</label>
                     <input id="files" name="files[]" type="file" multiple
-                        class="w-full text-sm text-[#64748b] dark:text-[#A1A09A] form-control"
-                        disabled>
-
-                    @php
-                        $filePaths = is_array($object->file_paths) ? $object->file_paths : [];
-                        if (empty($filePaths) && !empty($object->file_paths)) {
-                            $decoded = json_decode((string)$object->file_paths, true);
-                            $filePaths = is_array($decoded) ? $decoded : [];
-                        }
-                    @endphp
-
+                        class="w-full text-sm text-[#64748b] dark:text-[#A1A09A]">
                     @include('partials.file-actions-list', [
                         'filePaths' => $filePaths,
                         'deleteCallback' => 'window.deleteObjectFileFromShow',
                         'deleteEntityId' => $object->id,
+                        'containerId' => 'object-show-files-list-edit',
+                        'includeExistingHidden' => true,
                     ])
                 </div>
             </div>
-
-            <div class="mt-6 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-                <div class="flex gap-3">
-                    <button id="btn-save" type="submit" class="btn btn-primary hidden">
-                        {{ __('objects.save') }}
-                    </button>
-                    <button id="btn-cancel" type="button" class="btn hidden">
-                        {{ __('objects.cancel') }}
-                    </button>
-                </div>
-
-                <button type="submit" form="delete-object-form"
-                    onclick="return confirm('{{ __('objects.delete_confirm') }}')"
-                    class="btn btn-danger">
-                    {{ __('objects.delete') }}
-                </button>
-            </div>
-        </form>
-    </div>
+        </section>
+    </form>
 
     <form id="delete-object-form" method="POST" action="{{ route('objects.delete_object', $object->id) }}" class="hidden">
         @csrf
         @method('DELETE')
     </form>
+</div>
+
+@include('partials.detail-sticky-actions', [
+    'formId' => 'object-details-form',
+    'saveLabel' => __('objects.save'),
+    'cancelLabel' => __('objects.cancel'),
+])
+@include('partials.detail-confirm-modal')
 @endsection
 
 @section('scripts')
@@ -330,10 +375,6 @@
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
         (function() {
-            const btnEdit = document.getElementById('btn-edit');
-            const btnSave = document.getElementById('btn-save');
-            const btnCancel = document.getElementById('btn-cancel');
-            const form = document.getElementById('object-details-form');
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
             const typeSelect = document.getElementById('object_type');
             const apartmentFields = document.querySelectorAll('.object-apartment-field');
@@ -352,6 +393,7 @@
             const defaultMapZoom = 5;
             let map = null;
             let marker = null;
+            let isEditing = false;
 
             function syncApartmentVisibility() {
                 const isApartment = typeSelect?.value === 'apartment';
@@ -398,7 +440,7 @@
                 updateMarker(Number(latInput?.value), Number(lngInput?.value));
 
                 map.on('click', function(e) {
-                    if (typeSelect?.disabled) return;
+                    if (!isEditing) return;
                     const lat = e.latlng.lat;
                     const lng = e.latlng.lng;
                     if (latInput) latInput.value = String(lat);
@@ -615,7 +657,7 @@
             }
 
             window.deleteObjectFileFromShow = async function(objectId, fileIndex) {
-                if (!confirm('{{ __('objects.delete_file_confirm') }}')) return;
+                if (!confirm(@json(__('objects.delete_file_confirm')))) return;
                 try {
                     const r = await fetch(`/objects/${objectId}/files/${fileIndex}`, {
                         method: 'DELETE',
@@ -623,45 +665,19 @@
                     });
                     const data = await r.json().catch(() => ({}));
                     if (!r.ok || !data.success) {
-                        projectAlert('error', data.message || '{{ __('objects.error') }}', '', 3200);
+                        projectAlert?.('error', data.message || @json(__('objects.error')), '', 3200);
                         return;
                     }
                     location.reload();
                 } catch (e) {
                     console.error(e);
-                    projectAlert('error', '{{ __('objects.error') }}', '', 3200);
+                    projectAlert?.('error', @json(__('objects.error')), '', 3200);
                 }
             };
-
-            const toggleEdit = (enabled) => {
-                const controls = form.querySelectorAll('input, select, textarea');
-                controls.forEach(el => {
-                    if (el.type === 'hidden') return;
-                    el.disabled = !enabled;
-                });
-
-                if (btnSave) btnSave.classList.toggle('hidden', !enabled);
-                if (btnCancel) btnCancel.classList.toggle('hidden', !enabled);
-                if (btnEdit) btnEdit.classList.toggle('hidden', enabled);
-                document.querySelectorAll('.edit-only-control').forEach((el) => {
-                    el.classList.toggle('hidden', !enabled);
-                });
-                if (map) {
-                    setTimeout(() => map.invalidateSize(), 80);
-                }
-            };
-
-            if (btnEdit) {
-                btnEdit.addEventListener('click', () => toggleEdit(true));
-            }
-
-            if (btnCancel) {
-                btnCancel.addEventListener('click', () => location.reload());
-            }
 
             typeSelect?.addEventListener('change', syncApartmentVisibility);
             addressInput?.addEventListener('input', function() {
-                if (addressInput.disabled) return;
+                if (!isEditing) return;
                 if (!addressFieldInternalUpdate) {
                     clearMapCoords();
                 }
@@ -682,22 +698,39 @@
                 centerMapToSelectedCity(citySelect.value).catch(() => {});
             });
 
-            form?.addEventListener('submit', function(e) {
-                const lat = parseFloat(latInput?.value || '');
-                const lng = parseFloat(lngInput?.value || '');
-                if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-                    e.preventDefault();
-                    projectAlert('warning', '{{ __('objects.map_point_required') }}', '', 3500);
-                }
-            });
             document.addEventListener('click', function(e) {
                 if (!suggestList || !addressInput) return;
                 if (e.target === addressInput || suggestList.contains(e.target)) return;
                 hideAddressSuggestions();
             });
+
             syncApartmentVisibility();
             initMap();
+
+            (function waitBoot(n) {
+                if (typeof window.bootDetailEditPage === 'function') {
+                    window.bootDetailEditPage({
+                        form: '#object-details-form',
+                        successMessage: @json(__('objects.object_updated')),
+                        errorMessage: @json(__('objects.error')),
+                        beforeSave: (form) => {
+                            const lat = parseFloat(document.getElementById('object_latitude')?.value || '');
+                            const lng = parseFloat(document.getElementById('object_longitude')?.value || '');
+                            if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+                                projectAlert?.('warning', @json(__('objects.map_point_required')), '', 3500);
+                                return false;
+                            }
+                            return true;
+                        },
+                        onModeChange: (editing) => {
+                            isEditing = !!editing;
+                            if (editing && map) setTimeout(() => map.invalidateSize(), 80);
+                        },
+                    });
+                    return;
+                }
+                if (n > 0) setTimeout(() => waitBoot(n - 1), 40);
+            })(50);
         })();
     </script>
 @endsection
-

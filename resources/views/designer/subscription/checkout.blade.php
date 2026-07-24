@@ -6,7 +6,7 @@
 @php
     $listPrice = (int) $plan['price'];
     $isOnboarding = $isOnboarding ?? false;
-    $trialTotalDays = $trialTotalDays ?? \App\Support\DesignerSubscription::TRIAL_DAYS;
+    $trialTotalDays = $trialTotalDays ?? \App\Support\DesignerSubscription::trialDays();
 @endphp
 
 @push('styles')

@@ -152,6 +152,7 @@ return [
     'promo_apply' => 'Apply',
     'promo_ok' => 'Promo code gives 100% off',
     'promo_invalid' => 'Invalid promo code',
+    'payment_provider_unavailable' => 'Payment is temporarily unavailable: no payment provider is connected. Use the trial or contact support.',
     'card_number' => 'Card number',
     'card_expiry' => 'MM/YY',
     'card_cvc' => 'CVC',

@@ -100,16 +100,22 @@ class SupplierOrderController extends Controller
             ->where('user_id', $userId)
             ->findOrFail($orderId);
 
-        $this->fillAndSave($request, $order);
+        $meta = DB::transaction(fn () => $this->fillAndSave($request, $order));
+
+        $order->load(['project:id,name', 'supplier:id,name']);
+        $payload = $this->payload($order, null);
 
         if (! ($request->expectsJson() || $request->wantsJson())) {
-            return redirect()->route('supplier-orders.show', $order->id)->with('status', __('supplier-orders.saved'));
+            return redirect()
+                ->route('supplier-orders.show', $order->id)
+                ->with('status', __('supplier-orders.saved'));
         }
 
         return response()->json([
             'success' => true,
-            'message' => __('supplier-orders.updated'),
-            'order' => $this->payload($order->load(['project:id,name', 'supplier:id,name']), null),
+            'message' => __('supplier-orders.saved'),
+            'order' => $payload,
+            'meta' => $meta,
         ]);
     }
 
@@ -275,12 +281,16 @@ class SupplierOrderController extends Controller
         return null;
     }
 
-    private function fillAndSave(Request $request, Supplier_orders $order): void
+    /**
+     * @return array{changed_fields: list<string>, status_only: bool, renegotiated: bool, notified: bool}
+     */
+    private function fillAndSave(Request $request, Supplier_orders $order): array
     {
         $userId = (int) $request->user()->id;
         $wasSentToSupplier = $order->exists && (bool) $order->is_sent_to_supplier;
+        $isDetailUpdate = $request->input('intent') === 'update' || $request->boolean('detail_update');
 
-        if ($request->has('action')) {
+        if ($request->has('action') && ! $request->has('intent')) {
             $request->merge([
                 'send_to_supplier' => $request->input('action') === 'send',
             ]);
@@ -321,11 +331,13 @@ class SupplierOrderController extends Controller
             'existing_files' => ['nullable', 'array'],
             'existing_files.*' => ['nullable', 'string', 'max:1000'],
             'files' => ['nullable', 'array'],
-            'files.*' => ['nullable', 'file', 'max:10240'],
+            'files.*' => ['nullable', 'file', 'max:10240', 'mimes:jpg,jpeg,png,webp,pdf,doc,docx,xls,xlsx,zip'],
             'comment' => ['nullable', 'string'],
             'product_items' => ['nullable', 'string'],
             'included_step_ids' => ['sometimes', 'nullable', 'array'],
             'included_step_ids.*' => ['nullable', 'integer', 'min:1'],
+            'intent' => ['nullable', 'string', Rule::in(['save', 'send', 'update'])],
+            'detail_update' => ['nullable', 'boolean'],
         ]);
 
         $projectId = (int) $data['project_id'];
@@ -339,8 +351,6 @@ class SupplierOrderController extends Controller
             ]);
         }
 
-        $links = array_values(array_filter(array_map(fn ($v) => trim((string) $v), (array) ($data['links'] ?? []))));
-        $existingFiles = array_values(array_filter(array_map(fn ($v) => trim((string) $v), (array) ($data['existing_files'] ?? []))));
         $supplierId = (int) $data['supplier_id'];
 
         $supplierAllowed = Supplier::query()
@@ -361,6 +371,20 @@ class SupplierOrderController extends Controller
             abort(422, __('supplier-orders.supplier_not_linked'));
         }
 
+        $before = $order->exists ? $this->orderSnapshot($order) : null;
+
+        $ownedFiles = array_values(array_filter(
+            (array) ($order->files ?? []),
+            fn ($p) => is_string($p) && $p !== ''
+        ));
+        $requestedExisting = array_values(array_filter(array_map(
+            fn ($v) => trim((string) $v),
+            (array) ($data['existing_files'] ?? [])
+        )));
+        // Only keep paths already owned by this order (prevents attaching/deleting foreign storage paths).
+        $existingFiles = $order->exists
+            ? array_values(array_intersect($requestedExisting, $ownedFiles))
+            : [];
         $uploadedFiles = [];
         foreach ($request->file('files', []) as $file) {
             if ($file) {
@@ -368,7 +392,7 @@ class SupplierOrderController extends Controller
             }
         }
 
-        $oldFiles = (array) ($order->files ?? []);
+        $oldFiles = $ownedFiles;
         $newFiles = array_values(array_unique(array_merge($existingFiles, $uploadedFiles)));
         foreach ($oldFiles as $oldFile) {
             if (is_string($oldFile) && $oldFile !== '' && ! in_array($oldFile, $newFiles, true)) {
@@ -381,13 +405,13 @@ class SupplierOrderController extends Controller
             $order->included_step_ids = $stepIds;
         }
         $order->supplier_id = $supplierId;
-        $selectedStatus = (string) ($data['status'] ?? 'order_created');
+
+        $selectedStatus = (string) ($data['status'] ?? ($order->status ?: 'order_created'));
         if ($selectedStatus === 'draft') {
             $selectedStatus = 'order_created';
         }
-        $order->status = $selectedStatus;
+
         $order->summa = (int) $data['summa'];
-        $order->bonus_percent = isset($data['bonus_percent']) && $data['bonus_percent'] !== '' ? (float) $data['bonus_percent'] : null;
         $order->category = $data['category'] ?? null;
         $order->mark = $data['mark'] ?? null;
         $order->room = $data['room'] ?? null;
@@ -397,17 +421,95 @@ class SupplierOrderController extends Controller
         $order->payment_date = $data['payment_date'] ?? null;
         $order->prepayment_amount = isset($data['prepayment_amount']) ? (int) $data['prepayment_amount'] : null;
         $order->payment_amount = isset($data['payment_amount']) ? (int) $data['payment_amount'] : null;
-        $order->links = $links;
         $order->files = $newFiles;
         $order->comment = $data['comment'] ?? null;
+
+        if ($request->has('bonus_percent')) {
+            $order->bonus_percent = isset($data['bonus_percent']) && $data['bonus_percent'] !== ''
+                ? (float) $data['bonus_percent']
+                : null;
+        } elseif (! $order->exists) {
+            $order->bonus_percent = null;
+        }
+
+        if ($request->has('links')) {
+            $order->links = array_values(array_filter(array_map(
+                fn ($v) => trim((string) $v),
+                (array) ($data['links'] ?? [])
+            )));
+        } elseif (! $order->exists) {
+            $order->links = [];
+        }
 
         $productItems = $this->normalizeProductItems($data['product_items'] ?? null, $supplierId);
         if ($productItems !== null) {
             $order->product_items = $productItems;
         }
 
+        $renegotiated = false;
+        $notified = false;
         $sendToSupplier = $request->boolean('send_to_supplier');
 
+        if ($isDetailUpdate && $order->exists) {
+            $funnelStatuses = [
+                'order_created',
+                'order_confirmed',
+                'advance_payment',
+                'full_payment',
+                'delivery_completed',
+            ];
+            if (in_array($selectedStatus, $funnelStatuses, true) && ! $order->isInFunnel()) {
+                throw ValidationException::withMessages([
+                    'status' => [__('supplier-orders.offer_not_accepted_yet')],
+                ]);
+            }
+
+            $order->status = $selectedStatus;
+
+            $oldPercent = $before['bonus_percent'] ?? null;
+            $newPercent = $order->bonus_percent !== null ? (float) $order->bonus_percent : null;
+            $percentChanged = $this->normalizePercent($oldPercent) !== $this->normalizePercent($newPercent);
+
+            if ($percentChanged && $wasSentToSupplier && $order->effectiveOfferStatus() === Supplier_orders::OFFER_ACCEPTED) {
+                $order->offer_status = Supplier_orders::OFFER_PENDING_SUPPLIER;
+                $order->is_sent_to_supplier = true;
+                $order->offer_message = null;
+                $order->appendOfferHistory('designer', $newPercent, 'renegotiate');
+                $renegotiated = true;
+            }
+
+            $order->save();
+
+            $changed = $this->diffOrderSnapshot($before, $this->orderSnapshot($order));
+            $statusOnly = $changed === ['status'];
+
+            if ($renegotiated) {
+                OrderOfferNotifier::notify($order, 'new', 'supplier');
+                $notified = true;
+            } elseif ($wasSentToSupplier && $changed !== [] && ! $statusOnly) {
+                OrderOfferNotifier::notifyOrderUpdated(
+                    $order,
+                    (string) ($request->user()->name ?? ''),
+                    $changed
+                );
+                $notified = true;
+            }
+
+            if ($order->status === 'delivery_completed' && $order->effectiveOfferStatus() === Supplier_orders::OFFER_ACCEPTED) {
+                $order->load('supplier:id,user_id,name', 'designer:id,name');
+                \App\Models\Review::requestReviewsForCompletedOrder($order);
+                \App\Support\CashbackAccrual::forCompletedOrder($order);
+            }
+
+            return [
+                'changed_fields' => $changed,
+                'status_only' => $statusOnly,
+                'renegotiated' => $renegotiated,
+                'notified' => $notified,
+            ];
+        }
+
+        // Create / index modal: save (draft) or send
         if ($sendToSupplier) {
             $order->is_sent_to_supplier = true;
 
@@ -416,7 +518,6 @@ class SupplierOrderController extends Controller
                 Supplier_orders::OFFER_PENDING_SUPPLIER,
                 Supplier_orders::OFFER_PENDING_DESIGNER,
             ], true)) {
-                // Первая отправка или повторная после отзыва — новое предложение поставщику
                 $order->offer_status = Supplier_orders::OFFER_PENDING_SUPPLIER;
                 $order->status = 'order_created';
                 $order->offer_message = null;
@@ -438,12 +539,15 @@ class SupplierOrderController extends Controller
 
         if ($sendToSupplier && ! $wasSentToSupplier) {
             OrderOfferNotifier::notify($order, 'new', 'supplier');
+            $notified = true;
         } elseif ($sendToSupplier && $wasSentToSupplier && $order->offer_status === Supplier_orders::OFFER_PENDING_SUPPLIER
             && $order->wasChanged('offer_status')) {
             OrderOfferNotifier::notify($order, 'new', 'supplier');
+            $notified = true;
         } elseif (! $sendToSupplier && $wasSentToSupplier) {
             $designerName = (string) ($request->user()->name ?? '');
             OrderOfferNotifier::notifyWithdrawn($supplierId, $order->id, $designerName);
+            $notified = true;
         }
 
         if ($sendToSupplier && $order->offer_status === Supplier_orders::OFFER_ACCEPTED && $order->status === 'delivery_completed') {
@@ -451,6 +555,84 @@ class SupplierOrderController extends Controller
             \App\Models\Review::requestReviewsForCompletedOrder($order);
             \App\Support\CashbackAccrual::forCompletedOrder($order);
         }
+
+        return [
+            'changed_fields' => [],
+            'status_only' => false,
+            'renegotiated' => false,
+            'notified' => $notified,
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function orderSnapshot(Supplier_orders $order): array
+    {
+        return [
+            'project_id' => (int) $order->project_id,
+            'supplier_id' => (int) $order->supplier_id,
+            'status' => (string) $order->status,
+            'summa' => (int) $order->summa,
+            'bonus_percent' => $order->bonus_percent !== null ? (float) $order->bonus_percent : null,
+            'category' => (string) ($order->category ?? ''),
+            'mark' => (string) ($order->mark ?? ''),
+            'room' => (string) ($order->room ?? ''),
+            'date_planned' => optional($order->date_planned)->format('Y-m-d'),
+            'date_actual' => optional($order->date_actual)->format('Y-m-d'),
+            'prepayment_date' => optional($order->prepayment_date)->format('Y-m-d'),
+            'payment_date' => optional($order->payment_date)->format('Y-m-d'),
+            'prepayment_amount' => $order->prepayment_amount !== null ? (int) $order->prepayment_amount : null,
+            'payment_amount' => $order->payment_amount !== null ? (int) $order->payment_amount : null,
+            'comment' => (string) ($order->comment ?? ''),
+            'files' => array_values(array_filter((array) ($order->files ?? []), fn ($f) => is_string($f) && $f !== '')),
+            'links' => array_values(array_filter((array) ($order->links ?? []), fn ($l) => is_string($l) && $l !== '')),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $before
+     * @param  array<string, mixed>  $after
+     * @return list<string>
+     */
+    private function diffOrderSnapshot(?array $before, array $after): array
+    {
+        if ($before === null) {
+            return array_keys($after);
+        }
+
+        $changed = [];
+        foreach ($after as $key => $value) {
+            $old = $before[$key] ?? null;
+            if ($key === 'bonus_percent') {
+                if ($this->normalizePercent($old) !== $this->normalizePercent($value)) {
+                    $changed[] = $key;
+                }
+                continue;
+            }
+            if ($key === 'files' || $key === 'links') {
+                $a = array_values((array) $old);
+                $b = array_values((array) $value);
+                sort($a);
+                sort($b);
+                if ($a !== $b) {
+                    $changed[] = $key;
+                }
+                continue;
+            }
+            if ((string) ($old ?? '') !== (string) ($value ?? '')) {
+                $changed[] = $key;
+            }
+        }
+
+        return $changed;
+    }
+
+    private function normalizePercent(mixed $value): string
+    {
+        if ($value === null || $value === '') {
+            return '';
+        }
+
+        return number_format((float) $value, 2, '.', '');
     }
 
     public function acceptOffer(Request $request, int $orderId): JsonResponse

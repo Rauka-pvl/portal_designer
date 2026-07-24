@@ -39,7 +39,7 @@ class SubscriptionController extends Controller
             'isOnTrial' => DesignerSubscription::isOnTrial($user),
             'trialDaysLeft' => DesignerSubscription::trialDaysLeft($user),
             'trialProgress' => DesignerSubscription::trialProgressPercent($user),
-            'trialTotalDays' => DesignerSubscription::TRIAL_DAYS,
+            'trialTotalDays' => DesignerSubscription::trialDays(),
             'canUseTrial' => DesignerSubscription::canUseTrial($user),
             'trialRequiresCard' => DesignerSubscription::trialRequiresCard(),
             'currentPlan' => $currentPlan,
@@ -83,7 +83,7 @@ class SubscriptionController extends Controller
             'planKey' => $plan,
             'plan' => DesignerSubscription::plans()[$plan],
             'canUseTrial' => DesignerSubscription::canUseTrial($user),
-            'trialTotalDays' => DesignerSubscription::TRIAL_DAYS,
+            'trialTotalDays' => DesignerSubscription::trialDays(),
             'trialRequiresCard' => DesignerSubscription::trialRequiresCard(),
             'hasAccess' => $hasAccess,
             'isOnboarding' => DesignerSubscription::needsOnboardingLayout($user),
@@ -128,7 +128,7 @@ class SubscriptionController extends Controller
         );
 
         $message = $wasTrialEligible
-            ? __('subscription.trial_started', ['days' => DesignerSubscription::TRIAL_DAYS])
+            ? __('subscription.trial_started', ['days' => DesignerSubscription::trialDays()])
             : __('subscription.purchase_success');
 
         // After first activation, send the designer into the unlocked cabinet.

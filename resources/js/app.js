@@ -1,4 +1,5 @@
 import './bootstrap';
+import './detail-edit';
 
 // Простая защита от двойного клика
 function submitButtons(form) {

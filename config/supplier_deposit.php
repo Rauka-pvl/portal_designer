@@ -25,7 +25,7 @@ return [
     | server-side demo webhook simulation only.
     |--------------------------------------------------------------------------
     */
-    'demo' => (bool) env('SUPPLIER_DEPOSIT_DEMO', true),
+    'demo' => (bool) env('SUPPLIER_DEPOSIT_DEMO', false),
 
     'support_email' => env('SUPPLIER_DEPOSIT_SUPPORT_EMAIL', 'support@example.com'),
 ];

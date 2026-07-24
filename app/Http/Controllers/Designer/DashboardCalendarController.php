@@ -223,7 +223,7 @@ class DashboardCalendarController extends Controller
                 'project_name' => (string) $project->name,
                 'supplier_name' => (string) $supplier->name,
                 'amount' => (int) ($order->payment_amount ?? 0),
-                'url_show' => route('supplier-orders.show', $order->id),
+                'url_show' => route('supplier-orders.show', $order->id).'?source=dashboard&focus=payment',
                 'event_meta' => [
                     'order_status' => (string) $order->status,
                 ],

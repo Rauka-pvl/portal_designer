@@ -93,7 +93,7 @@ Route::match(['get', 'post'], '/login', function (Request $request) {
     $target = \App\Support\DesignerSubscription::redirectRoute($user);
 
     return redirect()->intended(route($target));
-})->name('login')->middleware('guest');
+})->name('login')->middleware(['guest', 'throttle:login']);
 
 Route::match(['get', 'post'], '/register', function (Request $request) {
     if (Auth::check()) {
@@ -156,7 +156,7 @@ Route::match(['get', 'post'], '/register', function (Request $request) {
     }
 
     return redirect()->intended(route('subscription.index'));
-})->name('register')->middleware('guest');
+})->name('register')->middleware(['guest', 'throttle:register']);
 
 Route::post('/logout', function (Request $request) {
     Auth::logout();
@@ -202,7 +202,7 @@ Route::post('/password/email', function (Request $request) {
     return $status === Password::RESET_LINK_SENT
         ? back()->with('status', __($status))
         : back()->withErrors(['email' => __($status)]);
-})->name('password.email')->middleware('guest');
+})->name('password.email')->middleware(['guest', 'throttle:password-email']);
 
 Route::get('/password/reset/{token}', function (string $token, Request $request) {
     // Передаем весь $request, чтобы в reset-view работал $request->email

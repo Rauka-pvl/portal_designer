@@ -88,4 +88,33 @@ class OrderOfferNotifier
             'action_key' => 'supplier_order',
         ]);
     }
+
+    /**
+     * @param  list<string>  $changedFields
+     */
+    public static function notifyOrderUpdated(Supplier_orders $order, string $designerName, array $changedFields = []): void
+    {
+        $order->loadMissing(['supplier:id,user_id,name', 'project:id,name']);
+
+        $userId = (int) ($order->supplier?->user_id ?? 0);
+        if ($userId <= 0) {
+            return;
+        }
+
+        $projectName = (string) ($order->project?->name ?? '');
+
+        UserNotification::query()->create([
+            'user_id' => $userId,
+            'title' => __('notifications.order_updated_title'),
+            'comment' => __('notifications.order_updated_comment', [
+                'order' => (string) $order->id,
+                'project' => $projectName !== '' ? $projectName : '—',
+                'designer' => $designerName !== '' ? $designerName : __('supplier-orders.designer'),
+            ]),
+            'is_read' => false,
+            'related_supplier_id' => (int) ($order->supplier_id ?? 0) ?: null,
+            'related_order_id' => (int) $order->id,
+            'action_key' => 'supplier_order_updated',
+        ]);
+    }
 }

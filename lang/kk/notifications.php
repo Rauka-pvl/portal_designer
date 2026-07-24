@@ -45,6 +45,8 @@ return [
     'new_order_comment' => 'Сізге жаңа жеткізу тапсырысы №:order жіберілді.',
     'order_withdrawn_title' => 'Жеткізу өзгертілді',
     'order_withdrawn_comment' => ':designer №:order жеткізуін өзгертті. Тапсырыс қазір жіберілмеген және жоба ретінде сақталды.',
+    'order_updated_title' => 'Тапсырыс деректері өзгертілді',
+    'order_updated_comment' => ':designer дизайнері :project жобасы бойынша №:order тапсырыс деректерін өзгертті.',
     'offer_new_title' => 'Жеткізу бойынша жаңа ұсыныс',
     'offer_new_comment' => 'Дизайнер №:order жеткізуіне ұсыныс жіберді (бонус :percent%). Қабылдаңыз, бас тартыңыз немесе өз пайызыңызды ұсыныңыз.',
     'offer_accepted_title' => 'Ұсыныс қабылданды',
