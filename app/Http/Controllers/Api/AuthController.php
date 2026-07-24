@@ -114,7 +114,7 @@ class AuthController extends Controller
     {
         return response()->json([
             'success' => true,
-            'user' => $this->userPayload($request->user()),
+            'user' => self::userPayloadPublic($request->user()),
         ]);
     }
 
@@ -132,6 +132,14 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    public static function userPayloadPublic(User $user): array
+    {
+        return (new self)->userPayload($user);
+    }
+
     private function portalMatchesRole(string $portal, string $role): bool
     {
         return match ($portal) {
@@ -141,6 +149,9 @@ class AuthController extends Controller
         };
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function userPayload(User $user): array
     {
         $payload = [
@@ -148,10 +159,12 @@ class AuthController extends Controller
             'name' => $user->name,
             'email' => $user->email,
             'role' => $user->role,
+            'phone' => $user->phone,
+            'city' => $user->city,
             'must_change_password' => (bool) $user->must_change_password,
         ];
 
-        if ($user->role === 'designer') {
+        if ($user->role === 'designer' || $user->role === 'moderator') {
             $payload['subscription'] = [
                 'has_access' => \App\Support\DesignerSubscription::hasAccess($user),
                 'status' => \App\Support\DesignerSubscription::status($user),
@@ -160,6 +173,46 @@ class AuthController extends Controller
                 'trial_days_left' => \App\Support\DesignerSubscription::trialDaysLeft($user),
                 'ends_at' => optional(\App\Support\DesignerSubscription::accessEndsAt($user))->toIso8601String(),
             ];
+
+            $profile = $user->designerProfile;
+            $payload['profile'] = $profile ? [
+                'phone' => $profile->phone,
+                'city' => $profile->city,
+                'short_description' => $profile->short_description,
+                'work_regions' => $profile->work_regions,
+                'about_designer' => $profile->about_designer,
+                'website_portfolio' => $profile->website_portfolio,
+                'telegram' => $profile->telegram,
+                'whatsapp' => $profile->whatsapp,
+                'vk' => $profile->vk,
+                'instagram' => $profile->instagram,
+                'experience' => $profile->experience,
+                'price_per_m2' => $profile->price_per_m2,
+                'education' => $profile->education,
+                'awards' => $profile->awards,
+                'specialization' => $profile->specialization,
+                'styles' => $profile->styles,
+            ] : null;
+        }
+
+        if ($user->role === 'supplier') {
+            $supplier = $user->supplierProfile;
+            $payload['deposit_required'] = ! \App\Support\SupplierDeposit::isDepositPaid($user);
+            $payload['supplier'] = $supplier ? [
+                'id' => $supplier->id,
+                'name' => $supplier->name,
+                'phone' => $supplier->phone,
+                'email' => $supplier->email,
+                'city' => $supplier->city,
+                'address' => $supplier->address,
+                'website' => $supplier->website,
+                'telegram' => $supplier->telegram,
+                'whatsapp' => $supplier->whatsapp,
+                'sphere' => $supplier->sphere,
+                'profile_status' => $supplier->profile_status,
+                'moderation_status' => $supplier->moderation_status,
+                'account_status' => $supplier->account_status,
+            ] : null;
         }
 
         return $payload;

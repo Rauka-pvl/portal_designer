@@ -3,6 +3,8 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DesignerCrudController;
 use App\Http\Controllers\Api\DesignerDataController;
+use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,11 +20,25 @@ use Illuminate\Support\Facades\Route;
 // ——— Авторизация (публичные) ———
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:register');
+Route::post('/forgot-password', [ProfileController::class, 'forgotPassword'])->middleware('throttle:password-email');
+Route::post('/reset-password', [ProfileController::class, 'resetPassword'])->middleware('throttle:password-email');
 
 // ——— С токеном ———
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
+    Route::match(['put', 'patch'], '/me/profile', [ProfileController::class, 'update']);
+    Route::post('/me/password', [ProfileController::class, 'updatePassword']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // Уведомления — доступны без активной подписки (чтобы видеть важные сообщения)
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications', [NotificationController::class, 'store']);
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->whereNumber('id');
+    Route::post('/notifications/{id}/unread', [NotificationController::class, 'markUnread'])->whereNumber('id');
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->whereNumber('id');
+    Route::post('/notifications/{id}/confirm-referral', [NotificationController::class, 'confirmReferralSupplier'])->whereNumber('id');
 
     // Данные дизайнера — только при активной подписке / триале
     Route::middleware('subscription.active')->group(function () {
