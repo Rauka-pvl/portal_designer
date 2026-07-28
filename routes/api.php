@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ChatApiController;
 use App\Http\Controllers\Api\DesignerCrudController;
 use App\Http\Controllers\Api\DesignerDataController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\SupplierApiController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -40,6 +42,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->whereNumber('id');
     Route::post('/notifications/{id}/confirm-referral', [NotificationController::class, 'confirmReferralSupplier'])->whereNumber('id');
 
+    // Чат по заказу — дизайнер (подписка) / поставщик (депозит)
+    Route::middleware(['subscription.active', 'deposit.paid'])->group(function () {
+        Route::get('/supplier-orders/chat/unread-map', [ChatApiController::class, 'unreadMap']);
+        Route::get('/chat/unread-count', [ChatApiController::class, 'unreadCount']);
+        Route::get('/supplier-orders/{id}/chat/messages', [ChatApiController::class, 'messages'])->whereNumber('id');
+        Route::post('/supplier-orders/{id}/chat/messages', [ChatApiController::class, 'store'])->whereNumber('id');
+        Route::post('/supplier-orders/{id}/chat/read', [ChatApiController::class, 'markRead'])->whereNumber('id');
+    });
+
     // Данные дизайнера — только при активной подписке / триале
     Route::middleware('subscription.active')->group(function () {
         // —— Read ——
@@ -48,6 +59,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/projects', [DesignerDataController::class, 'projects']);
         Route::get('/supplier-orders', [DesignerDataController::class, 'supplierOrders']);
         Route::get('/suppliers', [DesignerDataController::class, 'suppliers']);
+        Route::get('/templates', [DesignerCrudController::class, 'listTemplates']);
 
         Route::get('/clients/{id}', [DesignerDataController::class, 'client'])->whereNumber('id');
         Route::get('/objects/{id}', [DesignerDataController::class, 'object'])->whereNumber('id');
@@ -68,12 +80,30 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::match(['put', 'patch'], '/projects/{id}', [DesignerCrudController::class, 'updateProject'])->whereNumber('id');
         Route::delete('/projects/{id}', [DesignerCrudController::class, 'destroyProject'])->whereNumber('id');
 
+        Route::post('/templates', [DesignerCrudController::class, 'storeTemplate']);
+        Route::delete('/templates/{id}', [DesignerCrudController::class, 'destroyTemplate'])->whereNumber('id');
+
         Route::post('/supplier-orders', [DesignerCrudController::class, 'storeSupplierOrder']);
         Route::match(['put', 'patch'], '/supplier-orders/{id}', [DesignerCrudController::class, 'updateSupplierOrder'])->whereNumber('id');
         Route::delete('/supplier-orders/{id}', [DesignerCrudController::class, 'destroySupplierOrder'])->whereNumber('id');
 
+        // —— Offer negotiation (designer) ——
+        Route::post('/supplier-orders/{id}/offer/send', [DesignerCrudController::class, 'sendOffer'])->whereNumber('id');
+        Route::post('/supplier-orders/{id}/offer/accept', [DesignerCrudController::class, 'acceptOffer'])->whereNumber('id');
+        Route::post('/supplier-orders/{id}/offer/reject', [DesignerCrudController::class, 'rejectOffer'])->whereNumber('id');
+        Route::post('/supplier-orders/{id}/offer/counter', [DesignerCrudController::class, 'counterOffer'])->whereNumber('id');
+
         Route::post('/suppliers', [DesignerCrudController::class, 'storeSupplier']);
         Route::match(['put', 'patch'], '/suppliers/{id}', [DesignerCrudController::class, 'updateSupplier'])->whereNumber('id');
         Route::delete('/suppliers/{id}', [DesignerCrudController::class, 'destroySupplier'])->whereNumber('id');
+    });
+
+    // Данные поставщика — только при оплаченном гарантийном депозите
+    Route::middleware('deposit.paid')->group(function () {
+        Route::get('/supplier/orders', [SupplierApiController::class, 'orders']);
+        Route::get('/supplier/orders/{id}', [SupplierApiController::class, 'order'])->whereNumber('id');
+        Route::post('/supplier/orders/{id}/offer/accept', [SupplierApiController::class, 'acceptOffer'])->whereNumber('id');
+        Route::post('/supplier/orders/{id}/offer/reject', [SupplierApiController::class, 'rejectOffer'])->whereNumber('id');
+        Route::post('/supplier/orders/{id}/offer/counter', [SupplierApiController::class, 'counterOffer'])->whereNumber('id');
     });
 });

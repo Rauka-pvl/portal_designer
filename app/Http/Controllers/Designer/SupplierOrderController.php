@@ -635,6 +635,91 @@ class SupplierOrderController extends Controller
         return number_format((float) $value, 2, '.', '');
     }
 
+    /**
+     * Send (or re-open) an offer to the supplier for an existing order.
+     * Optional body: bonus_percent, message.
+     */
+    public function sendOffer(Request $request, int $orderId): JsonResponse
+    {
+        $data = $request->validate([
+            'bonus_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'message' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $order = $this->findDesignerOrder($request, $orderId);
+
+        if ($order->supplier_id === null || (int) $order->supplier_id < 1) {
+            abort(422, __('supplier-orders.supplier_not_linked'));
+        }
+
+        $wasSentToSupplier = (bool) $order->is_sent_to_supplier;
+
+        if (array_key_exists('bonus_percent', $data) && $data['bonus_percent'] !== null && $data['bonus_percent'] !== '') {
+            $order->bonus_percent = (float) $data['bonus_percent'];
+        }
+
+        $message = isset($data['message']) ? trim((string) $data['message']) : null;
+        $order->offer_message = $message !== null && $message !== '' ? $message : null;
+        $order->is_sent_to_supplier = true;
+
+        if (! $wasSentToSupplier || ! in_array($order->offer_status, [
+            Supplier_orders::OFFER_ACCEPTED,
+            Supplier_orders::OFFER_PENDING_SUPPLIER,
+            Supplier_orders::OFFER_PENDING_DESIGNER,
+        ], true)) {
+            $order->offer_status = Supplier_orders::OFFER_PENDING_SUPPLIER;
+            $order->status = 'order_created';
+            $order->appendOfferHistory(
+                'designer',
+                $order->bonus_percent !== null ? (float) $order->bonus_percent : null,
+                $order->offer_message
+            );
+            $notifyEvent = 'new';
+        } elseif ($order->offer_status === Supplier_orders::OFFER_ACCEPTED) {
+            $order->offer_status = Supplier_orders::OFFER_PENDING_SUPPLIER;
+            $order->appendOfferHistory(
+                'designer',
+                $order->bonus_percent !== null ? (float) $order->bonus_percent : null,
+                $order->offer_message ?: 'renegotiate'
+            );
+            $notifyEvent = 'new';
+        } elseif ($order->offer_status === Supplier_orders::OFFER_PENDING_DESIGNER) {
+            $order->offer_status = Supplier_orders::OFFER_PENDING_SUPPLIER;
+            $order->appendOfferHistory(
+                'designer',
+                $order->bonus_percent !== null ? (float) $order->bonus_percent : null,
+                $order->offer_message
+            );
+            $notifyEvent = 'counter';
+        } else {
+            // Already pending_supplier — record an update when percent/message changed.
+            if ($order->isDirty(['bonus_percent', 'offer_message'])) {
+                $order->appendOfferHistory(
+                    'designer',
+                    $order->bonus_percent !== null ? (float) $order->bonus_percent : null,
+                    $order->offer_message
+                );
+                $notifyEvent = 'counter';
+            } else {
+                $notifyEvent = null;
+            }
+        }
+
+        $order->save();
+
+        if ($notifyEvent !== null) {
+            OrderOfferNotifier::notify($order, $notifyEvent, 'supplier');
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $wasSentToSupplier
+                ? __('supplier-orders.offer_counter_sent')
+                : __('supplier-orders.sent_to_supplier'),
+            'order' => $this->payload($order->load(['project:id,name', 'supplier:id,name'])),
+        ]);
+    }
+
     public function acceptOffer(Request $request, int $orderId): JsonResponse
     {
         $order = $this->findDesignerOrder($request, $orderId);

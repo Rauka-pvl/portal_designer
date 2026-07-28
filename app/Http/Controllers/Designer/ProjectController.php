@@ -239,6 +239,25 @@ class ProjectController extends Controller
         ]);
     }
 
+    public function templates(Request $request)
+    {
+        $userId = (int) $request->user()->id;
+
+        $templates = Template::query()
+            ->where(function ($q) use ($userId) {
+                $q->whereNull('user_id')->orWhere('user_id', $userId);
+            })
+            ->orderByRaw('CASE WHEN user_id IS NULL THEN 0 ELSE 1 END')
+            ->orderBy('name')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'templates' => $templates->map(fn (Template $template) => $this->templatePayload($template, $userId))->values(),
+            'stage_types' => self::STAGE_TYPES,
+        ]);
+    }
+
     public function saveTemplate(Request $request)
     {
         $data = $request->validate([

@@ -111,6 +111,51 @@ class SupplierPortalController extends Controller
         ]);
     }
 
+    public function apiOrders(Request $request): JsonResponse
+    {
+        $supplier = $this->resolveSupplierForUser((int) $request->user()->id, true);
+
+        $orderModels = Supplier_orders::query()
+            ->where('supplier_id', $supplier->id)
+            ->where('is_sent_to_supplier', true)
+            ->with([
+                'project:id,name',
+                'designer:id,name,email',
+                'supplier:id,name',
+            ])
+            ->orderByDesc('id')
+            ->get();
+
+        $unreadByOrder = $this->chatUnreadMapForSupplier(
+            (int) $request->user()->id,
+            $orderModels->pluck('id')->map(fn ($id) => (int) $id)->all()
+        );
+        $stepsByOrder = Supplier_orders::includedStepsPayloadForMany($orderModels);
+
+        $orders = $orderModels->map(fn (Supplier_orders $order) => $this->orderPayload(
+            $order,
+            $stepsByOrder[(int) $order->id] ?? [],
+            $unreadByOrder[(int) $order->id] ?? 0
+        ))->values();
+
+        return response()->json([
+            'success' => true,
+            'orders' => $orders,
+        ]);
+    }
+
+    public function apiOrder(Request $request, int $orderId): JsonResponse
+    {
+        $supplier = $this->resolveSupplierForUser((int) $request->user()->id, true);
+        $order = $this->findSupplierOrder($supplier->id, $orderId);
+        $unread = $this->chatUnreadMapForSupplier((int) $request->user()->id, [(int) $order->id]);
+
+        return response()->json([
+            'success' => true,
+            'order' => $this->orderPayload($order, null, $unread[(int) $order->id] ?? 0),
+        ]);
+    }
+
     public function acceptOffer(Request $request, int $orderId): JsonResponse
     {
         $supplier = $this->resolveSupplierForUser((int) $request->user()->id, true);

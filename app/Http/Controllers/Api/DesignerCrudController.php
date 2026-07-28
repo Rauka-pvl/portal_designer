@@ -121,6 +121,52 @@ class DesignerCrudController extends Controller
         return $this->forward($request, fn () => app(SupplierController::class)->destroy($request, $id));
     }
 
+    // ─── Templates ─────────────────────────────────────────
+
+    /** GET /api/templates */
+    public function listTemplates(Request $request): Response
+    {
+        return $this->forward($request, fn () => app(ProjectController::class)->templates($request));
+    }
+
+    /** POST /api/templates */
+    public function storeTemplate(Request $request): Response
+    {
+        return $this->forward($request, fn () => app(ProjectController::class)->saveTemplate($request));
+    }
+
+    /** DELETE /api/templates/{id} */
+    public function destroyTemplate(Request $request, int $id): Response
+    {
+        return $this->forward($request, fn () => app(ProjectController::class)->deleteTemplate($request, $id));
+    }
+
+    // ─── Offer negotiation (designer) ──────────────────────
+
+    /** POST /api/supplier-orders/{id}/offer/send */
+    public function sendOffer(Request $request, int $id): Response
+    {
+        return $this->forward($request, fn () => app(SupplierOrderController::class)->sendOffer($request, $id));
+    }
+
+    /** POST /api/supplier-orders/{id}/offer/accept */
+    public function acceptOffer(Request $request, int $id): Response
+    {
+        return $this->forward($request, fn () => app(SupplierOrderController::class)->acceptOffer($request, $id));
+    }
+
+    /** POST /api/supplier-orders/{id}/offer/reject */
+    public function rejectOffer(Request $request, int $id): Response
+    {
+        return $this->forward($request, fn () => app(SupplierOrderController::class)->rejectOffer($request, $id));
+    }
+
+    /** POST /api/supplier-orders/{id}/offer/counter */
+    public function counterOffer(Request $request, int $id): Response
+    {
+        return $this->forward($request, fn () => app(SupplierOrderController::class)->counterOffer($request, $id));
+    }
+
     // ─── Helpers ───────────────────────────────────────────
 
     /**
