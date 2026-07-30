@@ -122,6 +122,7 @@
     @php
         $activeTab = $activeTab ?? 'profile';
         $profile = $profile ?? null;
+        $showFormActions = ! in_array($activeTab, ['team', 'roles'], true);
     @endphp
 
     @if (session('status'))
@@ -145,19 +146,23 @@
             <div class="settings-tabs">
                 <a href="{{ route('settings.index', ['tab' => 'profile']) }}" class="settings-tab {{ $activeTab === 'profile' ? 'active' : '' }}">{{ __('settings.profile_settings') }}</a>
                 <a href="{{ route('settings.index', ['tab' => 'security']) }}" class="settings-tab {{ $activeTab === 'security' ? 'active' : '' }}">{{ __('settings.security') }}</a>
-                <button type="button" class="settings-tab" disabled>{{ __('settings.notifications') }}</button>
-                <button type="button" class="settings-tab" disabled>{{ __('settings.roles_and_access') }}</button>
-                <button type="button" class="settings-tab" disabled>{{ __('settings.team') }}</button>
-                <a href="{{ route('subscription.index') }}" class="settings-tab">{{ __('settings.subscriptions') }}</a>
+                <a href="{{ route('settings.index', ['tab' => 'roles']) }}" class="settings-tab {{ $activeTab === 'roles' ? 'active' : '' }}">{{ __('settings.roles_and_access') }}</a>
+                <a href="{{ route('settings.index', ['tab' => 'team']) }}" class="settings-tab {{ $activeTab === 'team' ? 'active' : '' }}">{{ __('settings.team') }}</a>
             </div>
+            @if ($showFormActions)
             <div class="settings-actions flex items-center gap-2">
                 <button type="button" form="{{ $activeTab === 'security' ? 'security-form' : 'profile-form' }}" class="cancel-btn" onclick="document.getElementById('{{ $activeTab === 'security' ? 'security-form' : 'profile-form' }}').reset()">{{ __('settings.cancel') }}</button>
                 <button type="submit" form="{{ $activeTab === 'security' ? 'security-form' : 'profile-form' }}" class="save-btn">{{ __('settings.save_changes') }}</button>
             </div>
+            @endif
         </div>
 
         <div class="settings-shell">
-            @if ($activeTab === 'security')
+            @if ($activeTab === 'team')
+                @include('designer.settings.partials.team')
+            @elseif ($activeTab === 'roles')
+                @include('designer.settings.partials.roles')
+            @elseif ($activeTab === 'security')
                 <form id="security-form" method="POST" action="{{ route('settings.password.update') }}">
                     @csrf
                     @method('PUT')

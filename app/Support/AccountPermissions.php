@@ -2,12 +2,13 @@
 
 namespace App\Support;
 
+use App\Enums\TeamRole;
+use App\Models\Project;
 use App\Models\User;
+use App\Services\Team\TeamService;
 
 /**
- * Account ownership and extensible permission points.
- * Today every designer user is the account owner of their own data (user_id scope).
- * Later: team members / roles can plug into these methods without rewriting callers.
+ * Account ownership and Corporate team permission points.
  */
 class AccountPermissions
 {
@@ -17,8 +18,16 @@ class AccountPermissions
             return false;
         }
 
-        // Extensible: when team roles exist, check ownership / role here.
-        return ($user->role ?? null) === 'designer';
+        if (($user->role ?? null) !== 'designer') {
+            return false;
+        }
+
+        $role = app(TeamService::class)->roleInActiveTeam($user);
+        if ($role) {
+            return $role === TeamRole::Owner || $role === TeamRole::Admin;
+        }
+
+        return true;
     }
 
     public static function canManageProjectPipeline(?User $user): bool
@@ -31,12 +40,54 @@ class AccountPermissions
         return self::isAccountOwner($user);
     }
 
+    public static function canManageClientPipeline(?User $user): bool
+    {
+        return self::isAccountOwner($user);
+    }
+
     public static function ownsResource(?User $user, ?int $ownerUserId): bool
     {
         if (! $user || $ownerUserId === null) {
             return false;
         }
 
-        return (int) $user->id === (int) $ownerUserId;
+        if ((int) $user->id === (int) $ownerUserId) {
+            return true;
+        }
+
+        // Same Corporate team as the resource owner.
+        $teams = app(TeamService::class);
+        $actorTeam = $teams->activeTeamFor($user);
+        $owner = User::query()->find($ownerUserId);
+        if (! $actorTeam || ! $owner || ! $teams->teamHasCorporateAccess($actorTeam)) {
+            return false;
+        }
+
+        $ownerTeam = $teams->activeTeamFor($owner);
+
+        return $ownerTeam && (int) $ownerTeam->id === (int) $actorTeam->id;
+    }
+
+    public static function canAccessProject(?User $user, Project $project): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        return WorkspaceAccess::canAccessProject($user, $project);
+    }
+
+    public static function canManageBilling(?User $user): bool
+    {
+        if (! $user || ($user->role ?? null) !== 'designer') {
+            return false;
+        }
+
+        $role = app(TeamService::class)->roleInActiveTeam($user);
+        if ($role) {
+            return $role->canManageBilling();
+        }
+
+        return true;
     }
 }

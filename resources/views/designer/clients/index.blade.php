@@ -2,694 +2,355 @@
 
 @section('title', __('clients.my_clients'))
 @section('header_title', __('clients.my_clients'))
+@section('main_class', 'crm-main-fill')
 
 @push('styles')
-    <style>
-        .tab-btn {
-            background: #ffffff;
-            border: 1px solid #7c8799;
-            padding: 0.6rem 1.2rem;
-            border-radius: 8px;
-            cursor: pointer;
-            color: #64748b;
-            transition: all 0.3s;
-            font-weight: 500;
-            font-size: 0.875rem;
+<style>
+    #clients-kanban-panel.crm-board {
+        display: flex;
+        flex-direction: row;
+        align-items: stretch;
+        gap: 0.875rem;
+        flex: 1 1 auto;
+        min-height: 0;
+        height: 100%;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding-bottom: 0.25rem;
+        scrollbar-gutter: stable;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+    #clients-kanban-panel.crm-board.is-hidden {
+        display: none !important;
+    }
+    #clients-list-panel.crm-view-panel {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: auto;
+        background: var(--crm-surface);
+        border-radius: 8px;
+        box-shadow: var(--crm-shadow);
+    }
+    .crm-toolbar-select {
+        width: auto;
+        min-width: 8.5rem;
+        min-height: 38px;
+        height: 38px;
+    }
+    .crm-clients-pagination {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        padding: 0.65rem 0.75rem;
+        border-top: 1px solid color-mix(in srgb, var(--crm-border) 22%, transparent);
+        background: var(--crm-surface);
+    }
+    .crm-clients-pagination-pages {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        flex-wrap: wrap;
+    }
+    .crm-actions-menu {
+        position: relative;
+        display: inline-flex;
+    }
+    .crm-actions-dropdown {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 4px);
+        z-index: 20;
+        min-width: 10rem;
+        background: var(--crm-surface);
+        border: 1px solid color-mix(in srgb, var(--crm-border) 40%, transparent);
+        border-radius: 8px;
+        box-shadow: var(--crm-shadow);
+        padding: 0.25rem;
+        display: none;
+    }
+    .crm-actions-dropdown.open { display: block; }
+    .crm-actions-dropdown button {
+        display: block;
+        width: 100%;
+        text-align: left;
+        padding: 0.45rem 0.65rem;
+        border: none;
+        background: transparent;
+        color: var(--crm-text);
+        font-size: 0.8125rem;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+    .crm-actions-dropdown button:hover {
+        background: color-mix(in srgb, var(--crm-accent) 8%, var(--crm-surface));
+    }
+    .crm-actions-dropdown button.is-danger {
+        color: var(--crm-danger);
+    }
+    .crm-type-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.1rem 0.4rem;
+        border-radius: 999px;
+        font-size: 0.625rem;
+        font-weight: 600;
+        background: color-mix(in srgb, var(--crm-accent) 14%, transparent);
+        color: var(--crm-accent);
+        white-space: nowrap;
+    }
+    .crm-detail-row {
+        display: grid;
+        grid-template-columns: 8rem 1fr;
+        gap: 0.5rem;
+        padding: 0.45rem 0;
+        border-bottom: 1px solid color-mix(in srgb, var(--crm-border) 14%, transparent);
+        font-size: 0.875rem;
+    }
+    .crm-detail-row dt { color: var(--crm-muted); }
+    .crm-detail-row dd { color: var(--crm-text); margin: 0; word-break: break-word; }
+    .crm-related-project {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.65rem 0.75rem;
+        border: 1px solid color-mix(in srgb, var(--crm-border) 28%, transparent);
+        border-radius: 8px;
+        background: var(--crm-surface-2);
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+    }
+    .crm-related-project:hover {
+        border-color: color-mix(in srgb, var(--crm-accent) 40%, var(--crm-border));
+    }
+    #client-form-modal.crm-modal-root {
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+    }
+    #client-form-modal .crm-modal {
+        width: min(820px, 90vw);
+        max-width: 850px;
+        height: auto;
+        max-height: min(90dvh, 92vh);
+        display: flex;
+        flex-direction: column;
+    }
+    #client-form-modal .crm-client-form-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        width: 100%;
+        overflow: auto;
+        padding: 1rem 1.15rem;
+        background: var(--crm-bg);
+    }
+    #client-form-modal .crm-client-form-body .crm-section {
+        max-width: none;
+    }
+    #client-form-modal .crm-modal-footer {
+        justify-content: flex-end;
+    }
+    #client-detail-modal.crm-modal-root {
+        align-items: center;
+        justify-content: center;
+    }
+    #client-detail-modal .crm-modal {
+        width: min(1200px, 92vw);
+        height: auto;
+        max-height: min(92dvh, 94vh);
+    }
+    @media (max-width: 1024px) {
+        #client-form-modal .crm-modal {
+            width: min(90vw, 850px);
         }
-
-        .tab-btn:hover {
-            border-color: #f59e0b;
-            color: #f59e0b;
+    }
+    @media (max-width: 768px) {
+        .crm-toolbar { flex-wrap: wrap; }
+        .crm-toolbar-right { width: 100%; flex-wrap: wrap; }
+        .crm-toolbar-search { width: 100%; max-width: none; }
+        .crm-detail-row { grid-template-columns: 1fr; gap: 0.15rem; }
+        #client-form-modal.crm-modal-root { padding: 0; }
+        #client-form-modal .crm-modal {
+            width: 100vw;
+            max-width: 100vw;
+            height: 100dvh;
+            max-height: 100dvh;
+            border-radius: 0;
+            border: none;
         }
-
-        .tab-btn.active {
-            background: #f1f5f9;
-            border-color: #f59e0b;
-            color: #f59e0b;
+        #client-form-modal .crm-grid-2 {
+            grid-template-columns: 1fr;
         }
-
-        .funnel-column {
-            min-height: 400px;
-            background: #f8fafc;
-            border-radius: 8px;
-            padding: 1rem;
-            border: 2px dashed #7c8799;
+        #client-detail-modal.crm-modal-root { padding: 0; }
+        #client-detail-modal .crm-modal {
+            width: 100vw;
+            max-width: 100vw;
+            height: 100dvh;
+            max-height: 100dvh;
+            border-radius: 0;
+            border: none;
         }
-
-        .funnel-column.drag-over {
-            border-color: #f59e0b;
-            background: #fef3c7;
-        }
-
-        .funnel-card {
-            background: white;
-            border: 1px solid #7c8799;
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 0.5rem;
-            cursor: move;
-            transition: all 0.3s;
-        }
-
-        .funnel-card:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .funnel-card.dragging {
-            opacity: 0.5;
-        }
-
-        .dark .tab-btn {
-            background: #161615;
-            border-color: #3E3E3A;
-            color: #A1A09A;
-        }
-
-        .dark .tab-btn:hover {
-            border-color: #f59e0b;
-            color: #f59e0b;
-        }
-
-        .dark .tab-btn.active {
-            background: #0a0a0a;
-            border-color: #f59e0b;
-            color: #f59e0b;
-        }
-
-        .dark .funnel-column {
-            background: #0a0a0a;
-            border-color: #3E3E3A;
-        }
-
-        .dark .funnel-column.drag-over {
-            border-color: #f59e0b;
-            background: #1D0002;
-        }
-
-        .dark .funnel-card {
-            background: #161615;
-            border-color: #3E3E3A;
-        }
-
-        .sortable-header {
-            cursor: pointer;
-            user-select: none;
-            position: relative;
-            padding-right: 20px;
-        }
-
-        .sortable-header:hover {
-            color: #f59e0b;
-        }
-
-        /* Стрелки сортировки (без эмодзи): треугольники через border */
-        .sortable-header::before,
-        .sortable-header::after {
-            content: '';
-            position: absolute;
-            right: 0;
-            width: 0;
-            height: 0;
-            border-left: 5px solid transparent;
-            border-right: 5px solid transparent;
-            pointer-events: none;
-            opacity: 0.5;
-        }
-
-        /* ↑ */
-        .sortable-header::before {
-            top: calc(50% - 8px);
-            border-bottom: 6px solid currentColor;
-        }
-
-        /* ↓ */
-        .sortable-header::after {
-            top: calc(50% + 2px);
-            border-top: 6px solid currentColor;
-        }
-
-        /* Asc: показываем только верхнюю */
-        .sortable-header.asc::before {
-            opacity: 1;
-        }
-
-        .sortable-header.asc::after {
-            opacity: 0;
-        }
-
-        /* Desc: показываем только нижнюю */
-        .sortable-header.desc::before {
-            opacity: 0;
-        }
-
-        .sortable-header.desc::after {
-            opacity: 1;
-        }
-
-        .pagination {
-            display: flex;
-            gap: 0.5rem;
-            align-items: center;
-            justify-content: center;
-            margin-top: 1.5rem;
-            padding: 1rem;
-        }
-
-        .pagination button {
-            padding: 0.5rem 1rem;
-            border: 1px solid #7c8799;
-            background: white;
-            border-radius: 6px;
-            cursor: pointer;
-            color: #64748b;
-            transition: all 0.3s;
-        }
-
-        .pagination button:hover:not(:disabled) {
-            border-color: #f59e0b;
-            color: #f59e0b;
-        }
-
-        .pagination button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .pagination button.active {
-            background: #f1f5f9;
-            border-color: #f59e0b;
-            color: #f59e0b;
-        }
-
-        .dark .pagination button {
-            background: #161615;
-            border-color: #3E3E3A;
-            color: #A1A09A;
-        }
-
-        .dark .pagination button:hover:not(:disabled) {
-            border-color: #f59e0b;
-            color: #f59e0b;
-        }
-
-        .dark .pagination button.active {
-            background: #0a0a0a;
-            border-color: #f59e0b;
-            color: #f59e0b;
-        }
-    </style>
+    }
+</style>
 @endpush
 
 @section('content')
-    <div class="mb-6 flex flex-col md:flex-row items-start md:items-center justify-end gap-4">
-        <button id="add-client-btn" class="add-btn">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-            </svg>
-            {{ __('clients.add_client') }}
-        </button>
-    </div>
-
-    <!-- Вкладки -->
-    <div class="mb-6 flex gap-2">
-        <button data-tab="table" class="tab-btn active">{{ __('clients.table') }}</button>
-        <button data-tab="list" class="tab-btn">{{ __('clients.list') }}</button>
-        <button data-tab="funnel" class="tab-btn">{{ __('clients.funnel') }}</button>
-    </div>
-
-    <!-- Поиск и фильтры -->
-    <div class="mb-6 flex flex-col md:flex-row gap-4">
-        <div class="flex-1">
-            <input type="text" id="search-input" placeholder="{{ __('clients.search') }}"
-                class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+@php $canManage = (bool) ($canManagePipeline ?? false); @endphp
+<div class="crm-workspace" id="crm-clients-workspace" data-locale="{{ str_replace('_', '-', app()->getLocale()) }}">
+    <div class="crm-toolbar" role="toolbar" aria-label="{{ __('clients.my_clients') }}">
+        <div class="crm-toolbar-left">
+            <button type="button" id="clients-create-btn" class="crm-btn crm-btn-primary crm-btn-sm">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14"/>
+                </svg>
+                {{ __('clients.create_client') }}
+            </button>
+            <div class="crm-view-switch" role="group" aria-label="{{ __('clients.kanban') }}">
+                <button type="button" class="crm-btn crm-btn-sm crm-view-btn" data-view="kanban"
+                    aria-pressed="true" title="{{ __('clients.kanban') }}">{{ __('clients.kanban') }}</button>
+                <button type="button" class="crm-btn crm-btn-sm crm-view-btn" data-view="list"
+                    aria-pressed="false" title="{{ __('clients.list') }}">{{ __('clients.list') }}</button>
+            </div>
+            @if ($canManage)
+                <button type="button" id="pipeline-settings-btn" class="crm-btn crm-btn-secondary crm-btn-sm crm-pipeline-settings-btn"
+                    title="{{ __('projects.pipeline_settings') }}"
+                    aria-label="{{ __('projects.pipeline_settings') }}">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                </button>
+            @endif
         </div>
-        <div class="w-full md:w-48">
-            <select id="status-filter"
-                class="w-full px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
+        <div class="crm-toolbar-right">
+            <div class="relative" style="display:inline-flex;align-items:center;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position:absolute;left:0.7rem;pointer-events:none;color:var(--crm-muted)">
+                    <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
+                </svg>
+                <input type="search" id="clients-search" class="crm-input crm-toolbar-search" style="padding-left:2rem"
+                    placeholder="{{ __('clients.search') }}" autocomplete="off">
+            </div>
+            <select id="clients-status-filter" class="crm-input crm-toolbar-select" aria-label="{{ __('clients.status') }}">
                 <option value="">{{ __('clients.all_statuses') }}</option>
-                <option value="new">{{ __('clients.new') }}</option>
-                <option value="in_work">{{ __('clients.in_work') }}</option>
-                <option value="not_working">{{ __('clients.not_working') }}</option>
+            </select>
+            <select id="clients-type-filter" class="crm-input crm-toolbar-select" aria-label="{{ __('clients.client_type') }}">
+                <option value="">{{ __('clients.all_types') }}</option>
+                <option value="person">{{ __('clients.person') }}</option>
+                <option value="company">{{ __('clients.company') }}</option>
             </select>
         </div>
-
-
     </div>
 
-    <!-- Контент вкладок -->
-    <div id="table-view" class="tab-content">
-        <div class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg">
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead class="bg-[#f8fafc] dark:bg-[#0a0a0a]">
-                        <tr>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header"
-                                data-sort="name">{{ __('clients.full_name') }}</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header"
-                                data-sort="phone">{{ __('clients.phone') }}</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header"
-                                data-sort="email">{{ __('clients.email') }}</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header"
-                                data-sort="status">{{ __('clients.status') }}</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header"
-                                data-sort="objects_count">{{ __('clients.objects_count') }}</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A] sortable-header"
-                                data-sort="total_amount">{{ __('clients.total_amount') }}</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">
-                                {{ __('clients.links') }}</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">
-                                {{ __('clients.comment') }}</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-[#64748b] dark:text-[#A1A09A]">
-                                {{ __('clients.actions') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody id="clients-table-body" class="divide-y divide-[#7c8799] dark:divide-[#3E3E3A]">
-                        @foreach ($clients as $client)
-                            <tr class="hover:bg-[#f8fafc] dark:hover:bg-[#0a0a0a]"
-                                data-client-id="{{ $client->id }}" data-client='@json($client)'>
-                                <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">{{ $client->full_name }}
-                                </td>
-                                <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">{{ $client->phone }}
-                                </td>
-                                <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">{{ $client->email }}
-                                </td>
-                                <td class="px-4 py-3 text-sm" id="client-status-{{ $client->id }}">
-                                    <span class="client-status-badge px-2 py-1 rounded text-xs font-medium
-                                @if ($client->status === 'new') bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200
-                                @elseif($client->status === 'in_work')
-                                    bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200
-                                @else
-                                    bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-200 @endif">
-                                        @if ($client->status === 'new')
-                                            {{ __('clients.new') }}
-                                        @elseif($client->status === 'in_work')
-                                            {{ __('clients.in_work') }}
-                                        @else
-                                            {{ __('clients.not_working') }}
-                                        @endif
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">
-                                    {{ $client->count_objects }}
-                                </td>
-                                <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">
-                                    {{ number_format($client->sum_repair_budget_planned, 0, ',', ' ') }} ₸</td>
-                                <td class="px-4 py-3 text-sm">
-                                    @if ($client->link)
-                                        <a href="{{ $client->link }}" target="_blank"
-                                            class="text-[#f59e0b] hover:underline">
-                                            {{ $client->link }}
-                                        </a>
-                                    @else
-                                        <span class="text-[#64748b] dark:text-[#A1A09A]">-</span>
-                                    @endif
-                                </td>
-                                <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">
-                                    {{ $client->comment ?: '-' }}</td>
-                                <td class="px-4 py-3 text-sm">
-                                    <div class="flex items-center gap-2">
-                                        <button onclick="viewClient('{{ $client->id }}')"
-                                            class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] dark:hover:text-[#f59e0b] transition-colors"
-                                            title="{{ __('clients.view') }}">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                            </svg>
-                                        </button>
-                                        <button onclick="editClient('{{ $client->id }}')"
-                                            class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] dark:hover:text-[#f59e0b] transition-colors"
-                                            title="{{ __('clients.edit') }}">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                            </svg>
-                                        </button>
-                                        <button type="button" onclick="deleteClient('{{ $client->id }}')"
-                                            class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                                            title="{{ __('clients.delete') }}">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
-                                        <button onclick="addObject('{{ $client->id }}')"
-                                            class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] dark:hover:text-[#f59e0b] transition-colors"
-                                            title="{{ __('clients.add_object') }}">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M12 4v16m8-8H4" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-            <div class="flex items-center justify-between px-4 py-2 gap-4">
-                <div class="pagination" id="clients-pagination-table" style="margin-top:0;"></div>
+    <div class="crm-viewport">
+        <div id="clients-kanban-panel" class="crm-board" role="region" aria-label="{{ __('clients.kanban') }}"></div>
 
-                <div class="flex items-center justify-end gap-3">
-                    <div class="text-sm text-[#64748b] dark:text-[#A1A09A] whitespace-nowrap">{{ __('clients.per_page') }}</div>
-
-                    <div class="relative w-40">
-                        <button id="clients-per-page-button" type="button"
-                            class="w-full flex items-center justify-between px-4 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] text-[#0f172a] dark:text-[#EDEDEC] focus:outline-none focus:border-[#f59e0b]">
-                            <span id="clients-per-page-label">10</span>
-                            <svg class="w-4 h-4 text-[#64748b] dark:text-[#A1A09A]" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-
-                        <div id="clients-per-page-menu"
-                            class="hidden absolute left-0 right-0 mt-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] bg-white dark:bg-[#161615] shadow-lg overflow-hidden z-[60]">
-                            <button type="button"
-                                class="w-full px-4 py-2 text-sm text-[#0f172a] dark:text-[#EDEDEC] hover:bg-[#f8fafc] dark:hover:bg-[#0a0a0a] transition-colors text-left clients-per-page-option"
-                                data-value="10">
-                                <span class="clients-per-page-check hidden mr-2 items-center">
-                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M20 6L9 17l-5-5" />
-                                    </svg>
-                                </span>
-                                10
-                            </button>
-
-                            <button type="button"
-                                class="w-full px-4 py-2 text-sm text-[#0f172a] dark:text-[#EDEDEC] hover:bg-[#f8fafc] dark:hover:bg-[#0a0a0a] transition-colors text-left clients-per-page-option"
-                                data-value="30">
-                                <span class="clients-per-page-check hidden mr-2 items-center">
-                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M20 6L9 17l-5-5" />
-                                    </svg>
-                                </span>
-                                30
-                            </button>
-
-                            <button type="button"
-                                class="w-full px-4 py-2 text-sm text-[#0f172a] dark:text-[#EDEDEC] hover:bg-[#f8fafc] dark:hover:bg-[#0a0a0a] transition-colors text-left clients-per-page-option"
-                                data-value="50">
-                                <span class="clients-per-page-check hidden mr-2 items-center">
-                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M20 6L9 17l-5-5" />
-                                    </svg>
-                                </span>
-                                50
-                            </button>
-
-                            <button type="button"
-                                class="w-full px-4 py-2 text-sm text-[#0f172a] dark:text-[#EDEDEC] hover:bg-[#f8fafc] dark:hover:bg-[#0a0a0a] transition-colors text-left clients-per-page-option"
-                                data-value="100">
-                                <span class="clients-per-page-check hidden mr-2 items-center">
-                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                        stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M20 6L9 17l-5-5" />
-                                    </svg>
-                                </span>
-                                100
-                            </button>
-                        </div>
-
-                        <select id="clients-per-page" class="hidden">
-                            <option value="10" selected>10</option>
-                            <option value="30">30</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
-                    </div>
-                </div>
+        <div id="clients-list-panel" class="crm-view-panel is-hidden" role="region" aria-label="{{ __('clients.list') }}">
+            <table class="crm-table">
+                <thead>
+                    <tr>
+                        <th data-sort="full_name">{{ __('clients.client') }}</th>
+                        <th data-sort="phone">{{ __('clients.contacts') }}</th>
+                        <th data-sort="client_type">{{ __('clients.client_type') }}</th>
+                        <th data-sort="status">{{ __('clients.status') }}</th>
+                        <th data-sort="projects_count">{{ __('clients.projects') }}</th>
+                        <th data-sort="projects_budget">{{ __('clients.budget') }}</th>
+                        <th data-sort="updated_at" class="hidden lg:table-cell">{{ __('clients.updated') }}</th>
+                        <th>{{ __('clients.actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody id="clients-table-body"></tbody>
+            </table>
+            <div class="crm-clients-pagination" id="clients-pagination">
+                <label class="inline-flex items-center gap-2 text-xs text-[var(--crm-muted)]">
+                    {{ __('clients.per_page') }}
+                    <select id="clients-per-page" class="crm-input" style="width:auto;min-height:32px;height:32px;padding:0.2rem 0.5rem">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                    </select>
+                </label>
+                <div class="crm-clients-pagination-pages" id="clients-pagination-pages"></div>
             </div>
         </div>
     </div>
+</div>
+@endsection
 
-    <div id="list-view" class="tab-content hidden">
-        <div class="space-y-4" id="clients-list-body">
-            @foreach ($clients as $client)
-                <div class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg p-6"
-                    data-client-id="{{ $client->id }}" data-client='@json($client)'>
-                    <div class="flex items-start justify-between mb-4">
-                        <div>
-                            <h3 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-2">
-                                {{ $client->full_name }}
-                            </h3>
-                            <div class="space-y-1 text-sm text-[#64748b] dark:text-[#A1A09A]">
-                                <p>{{ $client->phone }}</p>
-                                <p>{{ $client->email }}</p>
-                            </div>
-                        </div>
-                        <div id="client-list-status-{{ $client->id }}">
-                            <span class="client-status-badge px-2 py-1 rounded text-xs font-medium
-        @if ($client->status === 'new') bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200
-        @elseif($client->status === 'in_work') bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200
-        @else bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-200 @endif">
-                                @if ($client->status === 'new')
-                                    {{ __('clients.new') }}
-                                @elseif($client->status === 'in_work')
-                                    {{ __('clients.in_work') }}
-                                @else
-                                    {{ __('clients.not_working') }}
-                                @endif
-                            </span>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm">
-                        <div>
-                            <span class="text-[#64748b] dark:text-[#A1A09A]">{{ __('clients.objects_count') }}:</span>
-                            <span
-                                class="text-[#0f172a] dark:text-[#EDEDEC] font-medium ml-2">{{ $client->count_objects }}</span>
-                        </div>
-                        <div>
-                            <span class="text-[#64748b] dark:text-[#A1A09A]">{{ __('clients.total_amount') }}:</span>
-                            <span
-                                class="text-[#0f172a] dark:text-[#EDEDEC] font-medium ml-2">{{ number_format($client->sum_repair_budget_planned, 0, ',', ' ') }}
-                                ₸</span>
-                        </div>
-                    </div>
-                    @if ($client->comment)
-                        <p class="text-sm text-[#0f172a] dark:text-[#EDEDEC] mb-4">{{ $client->comment }}</p>
-                    @endif
-                    <div class="flex items-center gap-2">
-                        <button onclick="viewClient('{{ $client->id }}')"
-                            class="filter-btn">{{ __('clients.view') }}</button>
-                        <button onclick="editClient('{{ $client->id }}')"
-                            class="filter-btn">{{ __('clients.edit') }}</button>
-                        <button type="button" onclick="deleteClient('{{ $client->id }}')"
-                            class="filter-btn text-red-500 hover:text-red-600">{{ __('clients.delete') }}</button>
-                        <button onclick="addObject('{{ $client->id }}')"
-                            class="filter-btn">{{ __('clients.add_object') }}</button>
-                    </div>
-                </div>
-            @endforeach
-        </div>
-        <div class="pagination" id="clients-pagination-list"></div>
-    </div>
-
-    <div id="funnel-view" class="tab-content hidden">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="funnel-column" data-status="new" ondrop="drop(event)" ondragover="allowDrop(event)">
-                <h3 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-4">{{ __('clients.new') }}</h3>
-                <div id="funnel-new" class="funnel-cards">
-                    @foreach ($clients as $client)
-                        @if ($client->status === 'new')
-                            <div class="funnel-card" id="client-{{ $client->id }}" draggable="true"
-                                ondragstart="if(event.target.closest('button')) { event.preventDefault(); return false; } drag(event)"
-                                data-client-id="{{ $client->id }}" data-client='@json($client)'>
-                                <h4 class="font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-1">{{ $client->full_name }}</h4>
-                                <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">{{ $client->phone }}</p>
-                                <div class="flex items-center gap-2 mt-2" onclick="event.stopPropagation()">
-                                    <button type="button"
-                                        onclick="event.stopPropagation(); viewClient('{{ $client->id }}')"
-                                        class="text-xs px-2 py-1 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('clients.view') }}</button>
-                                    <button type="button"
-                                        onclick="event.stopPropagation(); editClient('{{ $client->id }}')"
-                                        class="text-xs px-2 py-1 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('clients.edit') }}</button>
-                                    <button type="button"
-                                        onclick="event.stopPropagation(); deleteClient('{{ $client->id }}')"
-                                        class="text-xs px-2 py-1 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-red-500 hover:border-red-500 hover:text-red-600 transition-colors">{{ __('clients.delete') }}</button>
-                                </div>
-                            </div>
-                        @endif
-                    @endforeach
-                </div>
-            </div>
-            <div class="funnel-column" data-status="in_work" ondrop="drop(event)" ondragover="allowDrop(event)">
-                <h3 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-4">{{ __('clients.in_work') }}</h3>
-                <div id="funnel-in-work" class="funnel-cards">
-                    @foreach ($clients as $client)
-                        @if ($client->status === 'in_work')
-                            <div class="funnel-card" id="client-{{ $client->id }}" draggable="true"
-                                ondragstart="if(event.target.closest('button')) { event.preventDefault(); return false; } drag(event)"
-                                data-client-id="{{ $client->id }}" data-client='@json($client)'>
-                                <h4 class="font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-1">{{ $client->full_name }}</h4>
-                                <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">{{ $client->phone }}</p>
-                                <div class="flex items-center gap-2 mt-2" onclick="event.stopPropagation()">
-                                    <button type="button"
-                                        onclick="event.stopPropagation(); viewClient('{{ $client->id }}')"
-                                        class="text-xs px-2 py-1 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('clients.view') }}</button>
-                                    <button type="button"
-                                        onclick="event.stopPropagation(); editClient('{{ $client->id }}')"
-                                        class="text-xs px-2 py-1 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('clients.edit') }}</button>
-                                    <button type="button"
-                                        onclick="event.stopPropagation(); deleteClient('{{ $client->id }}')"
-                                        class="text-xs px-2 py-1 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-red-500 hover:border-red-500 hover:text-red-600 transition-colors">{{ __('clients.delete') }}</button>
-                                </div>
-                            </div>
-                        @endif
-                    @endforeach
-                </div>
-            </div>
-            <div class="funnel-column" data-status="not_working" ondrop="drop(event)" ondragover="allowDrop(event)">
-                <h3 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-4">{{ __('clients.not_working') }}
-                </h3>
-                <div id="funnel-not-working" class="funnel-cards">
-                    @foreach ($clients as $client)
-                        @if ($client->status === 'not_working')
-                            <div class="funnel-card" id="client-{{ $client->id }}" draggable="true"
-                                ondragstart="if(event.target.closest('button')) { event.preventDefault(); return false; } drag(event)"
-                                data-client-id="{{ $client->id }}" data-client='@json($client)'>
-                                <h4 class="font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-1">{{ $client->full_name }}</h4>
-                                <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">{{ $client->phone }}</p>
-                                <div class="flex items-center gap-2 mt-2" onclick="event.stopPropagation()">
-                                    <button type="button"
-                                        onclick="event.stopPropagation(); viewClient('{{ $client->id }}')"
-                                        class="text-xs px-2 py-1 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('clients.view') }}</button>
-                                    <button type="button"
-                                        onclick="event.stopPropagation(); editClient('{{ $client->id }}')"
-                                        class="text-xs px-2 py-1 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">{{ __('clients.edit') }}</button>
-                                    <button type="button"
-                                        onclick="event.stopPropagation(); deleteClient('{{ $client->id }}')"
-                                        class="text-xs px-2 py-1 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-red-500 hover:border-red-500 hover:text-red-600 transition-colors">{{ __('clients.delete') }}</button>
-                                </div>
-                            </div>
-                        @endif
-                    @endforeach
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Модалка просмотра клиента (справа) -->
-    <div id="view-client-modal" class="fixed inset-0 bg-black/50 z-50 hidden modal-overlay"
-        onmousedown="if(event.target === this) closeViewClientModal()">
-        <div class="absolute right-0 top-0 h-full w-full max-w-lg bg-white dark:bg-[#161615] border-l border-[#7c8799] dark:border-[#3E3E3A] shadow-2xl transform transition-transform duration-300 translate-x-full modal-content"
-            onclick="event.stopPropagation()">
-            <div class="flex flex-col h-full">
-                <div
-                    class="flex items-center justify-between px-6 py-5 border-b border-[#7c8799] dark:border-[#3E3E3A] bg-[#f8fafc] dark:bg-[#0a0a0a]">
-                    <div>
-                        <h2 class="text-xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]">{{ __('clients.view') }}</h2>
-                        <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-0.5">{{ __('clients.view') }}
-                            {{ __('clients.client') }}</p>
-                    </div>
-                    <button onclick="closeViewClientModal()"
-                        class="p-2 rounded-lg text-[#64748b] dark:text-[#A1A09A] hover:bg-[#e5e7eb] dark:hover:bg-[#3E3E3A] hover:text-[#0f172a] dark:hover:text-[#EDEDEC] transition-colors">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-                <div id="view-client-content" class="flex-1 overflow-y-auto p-6 space-y-5"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Модалка добавления/редактирования клиента -->
-    <div id="client-modal"
-        class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center modal-overlay p-4"
-        onmousedown="if(event.target === this) closeClientModal()">
-        <div class="bg-white dark:bg-[#161615] rounded-xl max-w-2xl w-full mx-auto max-h-[90vh] overflow-hidden flex flex-col modal-content border border-[#7c8799] dark:border-[#3E3E3A]"
-            onclick="event.stopPropagation()">
-            <div
-                class="flex items-start justify-between px-6 pt-6 pb-4 border-b border-[#7c8799] dark:border-[#3E3E3A] shrink-0">
+@push('scripts')
+{{-- Form modal --}}
+<div id="client-form-modal" class="crm-modal-root" aria-hidden="true">
+    <div class="crm-modal-backdrop" data-close-backdrop></div>
+    <div class="crm-modal" role="dialog" aria-modal="true" aria-labelledby="client-form-title">
+        <div class="crm-modal-header">
+            <div class="crm-modal-header-row">
                 <div>
-                    <h2 class="text-xl font-semibold text-[#0f172a] dark:text-[#EDEDEC]" id="client-modal-title">
-                        {{ __('clients.add_client') }}</h2>
-                    <p class="text-sm text-[#64748b] dark:text-[#A1A09A] mt-1">{{ __('clients.add_client') }} —
-                        {{ __('clients.my_clients') }}</p>
+                    <div id="client-form-title" class="crm-modal-title-input">{{ __('clients.new_client_title') }}</div>
+                    <p id="client-form-subtitle" class="text-xs text-[var(--crm-muted)] mt-0.5">{{ __('clients.new_client_subtitle') }}</p>
                 </div>
-                <button type="button" onclick="closeClientModal()"
-                    class="p-2 rounded-lg text-[#64748b] dark:text-[#A1A09A] hover:bg-[#e5e7eb] dark:hover:bg-[#3E3E3A] hover:text-[#0f172a] dark:hover:text-[#EDEDEC] transition-colors">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                <button type="button" id="client-form-close" class="crm-btn crm-btn-ghost" aria-label="{{ __('clients.close') }}">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M18 6 6 18M6 6l12 12"/>
                     </svg>
                 </button>
             </div>
-            <form id="client-form" method="POST" action="{{ route('clients.add_client') }}"
-                enctype="multipart/form-data" class="flex flex-col flex-1 min-h-0" data-ajax="1">
-                @csrf
-                <input type="hidden" name="client_id" id="client_id">
-                <div class="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        </div>
+
+        <form id="client-form" class="crm-client-form-body" method="POST" action="{{ route('clients.add_client') }}" enctype="multipart/form-data" novalidate>
+            @csrf
+            <input type="hidden" name="client_id" id="cf-client-id" value="">
+                <div class="crm-section">
+                    <div class="crm-section-title">{{ __('clients.basic_info') }}</div>
+                    <div class="crm-grid-2">
                         <div>
-                            <label class="modal-label modal-label-required">{{ __('clients.client_type') }}</label>
-                            <select name="client_type" id="client_type" required class="modal-input">
-                                <option value="person" selected>{{ __('clients.person') }}</option>
+                            <label class="crm-label" for="cf-client-type">{{ __('clients.client_type') }}</label>
+                            <select id="cf-client-type" name="client_type" class="crm-input crm-select" required>
+                                <option value="person">{{ __('clients.person') }}</option>
                                 <option value="company">{{ __('clients.company') }}</option>
                             </select>
-                            @error('client_type')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
-
-                            <label class="modal-label modal-label-required mt-4" id="client-full-name-label">{{ __('clients.fio') }}</label>
-                            <input type="text" placeholder="Иван Иванов" name="full_name" id="client_name" required
-                                class="modal-input">
-                            @error('full_name')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
+                            <div class="crm-field-error hidden" data-error="client_type"></div>
                         </div>
                         <div>
-                            <label class="modal-label modal-label-required">{{ __('clients.phone') }}</label>
-                            <input type="tel" placeholder="+7 (700) 000-00-00" name="phone" id="client_phone"
-                                required class="modal-input">
-                            @error('phone')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                            @enderror
+                            <label class="crm-label" for="cf-status">{{ __('clients.status') }}</label>
+                            <select id="cf-status" name="status" class="crm-input crm-select" required>
+                                <option value="new">{{ __('clients.new') }}</option>
+                                <option value="in_work">{{ __('clients.in_work') }}</option>
+                                <option value="not_working">{{ __('clients.not_working') }}</option>
+                            </select>
+                            <div class="crm-field-error hidden" data-error="status"></div>
+                        </div>
+                        <div style="grid-column:1 / -1">
+                            <label class="crm-label" for="cf-full-name" id="cf-full-name-label">{{ __('clients.fio') }}</label>
+                            <input type="text" id="cf-full-name" name="full_name" class="crm-input" required autocomplete="name">
+                            <div class="crm-field-error hidden" data-error="full_name"></div>
+                        </div>
+                        <div>
+                            <label class="crm-label" for="cf-phone">{{ __('clients.phone') }}</label>
+                            <input type="tel" id="cf-phone" name="phone" class="crm-input" required autocomplete="tel" placeholder="+7 (700) 000-00-00">
+                            <div class="crm-field-error hidden" data-error="phone"></div>
+                        </div>
+                        <div>
+                            <label class="crm-label" for="cf-email">{{ __('clients.email') }}</label>
+                            <input type="email" id="cf-email" name="email" class="crm-input" required autocomplete="email">
+                            <div class="crm-field-error hidden" data-error="email"></div>
                         </div>
                     </div>
-                    <div>
-                        <label class="modal-label modal-label-required">{{ __('clients.email') }}</label>
-                        <input type="email" placeholder="example@mail.com" name="email" id="client_email" required
-                            class="modal-input">
-                        @error('email')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
+                </div>
+
+                <div class="crm-section">
+                    <div class="crm-section-title">{{ __('clients.additional_info') }}</div>
+                    <div class="mb-3">
+                        <label class="crm-label" for="cf-link">{{ __('clients.link') }}</label>
+                        <input type="url" id="cf-link" name="link" class="crm-input" placeholder="https://...">
+                        <div class="crm-field-error hidden" data-error="link"></div>
                     </div>
-                    <div>
-                        <label class="modal-label modal-label-required">{{ __('clients.status') }}</label>
-                        <select name="status" id="client_status" required class="modal-input">
-                            <option id="new" value="new">{{ __('clients.new') }}</option>
-                            <option id="in_work" value="in_work">{{ __('clients.in_work') }}</option>
-                            <option id="not_working" value="not_working">{{ __('clients.not_working') }}</option>
-                        </select>
-                        @error('status')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    <div>
-                        <label class="modal-label">{{ __('clients.comment') }}</label>
-                        <textarea name="comment" placeholder="{{ __('clients.comment_placeholder') }}" id="client_comment" rows="3"
-                            class="modal-input resize-none"></textarea>
-                        @error('comment')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    <div>
-                        <label class="modal-label">{{ __('clients.link') }}</label>
-                        <input type="url" placeholder="https://..." name="link" id="client_link"
-                            class="modal-input">
-                        @error('link')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
+                    <div class="mb-3">
+                        <label class="crm-label" for="cf-comment">{{ __('clients.comment') }}</label>
+                        <textarea id="cf-comment" name="comment" rows="3" class="crm-input" placeholder="{{ __('clients.comment_placeholder') }}"></textarea>
+                        <div class="crm-field-error hidden" data-error="comment"></div>
                     </div>
                     <div>
                         @include('partials.modal-file-picker', [
@@ -697,994 +358,1115 @@
                             'inputName' => 'files[]',
                             'title' => __('clients.files'),
                             'subtitle' => __('projects.files_subtitle'),
+                            'notSelectedText' => __('clients.choose_file'),
+                            'selectButtonText' => __('clients.upload_files'),
+                            'viewLabel' => __('clients.view'),
+                            'deleteLabel' => __('clients.delete_file'),
                         ])
-                        @error('file')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
+                        <div class="crm-field-error hidden" data-error="files"></div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn-primary">{{ __('clients.save') }}</button>
-                    <button type="button" onclick="closeClientModal()"
-                        class="btn-secondary">{{ __('clients.cancel') }}</button>
-                </div>
-            </form>
+        </form>
 
+        <div class="crm-modal-footer">
+            <button type="button" id="client-form-cancel" class="crm-btn crm-btn-secondary">{{ __('clients.cancel') }}</button>
+            <button type="submit" form="client-form" id="client-form-save" class="crm-btn crm-btn-primary">{{ __('clients.create_client') }}</button>
         </div>
     </div>
-
-
-
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            let currentPage = 1;
-            let itemsPerPage = 10;
-            let sortColumn = null;
-            let sortDirection = 'asc';
-            window.allClients = @json($clients);
-            let allClients = window.allClients;
-
-            const perPageSelect = document.getElementById('clients-per-page');
-            const perPageButton = document.getElementById('clients-per-page-button');
-            const perPageLabel = document.getElementById('clients-per-page-label');
-            const perPageMenu = document.getElementById('clients-per-page-menu');
-
-            if (perPageSelect) {
-                itemsPerPage = parseInt(perPageSelect.value, 10) || 10;
-            }
-
-            if (perPageLabel) {
-                perPageLabel.textContent = String(itemsPerPage);
-            }
-
-            IMask(
-                document.getElementById('client_phone'), {
-                    mask: '+{7} (000) 000-00-00'
-                }
-            );
-
-            // Подпись к полю `full_name` зависит от типа клиента (ФИО / Название компании).
-            const clientTypeSelect = document.getElementById('client_type');
-            const clientFullNameLabel = document.getElementById('client-full-name-label');
-
-            function updateClientFullNameLabel() {
-                if (!clientTypeSelect || !clientFullNameLabel) return;
-                const type = clientTypeSelect.value;
-                clientFullNameLabel.textContent = type === 'company'
-                    ? '{{ __('clients.company_name') }}'
-                    : '{{ __('clients.fio') }}';
-            }
-
-            if (clientTypeSelect && clientFullNameLabel) {
-                clientTypeSelect.addEventListener('change', updateClientFullNameLabel);
-                updateClientFullNameLabel();
-            }
-
-            // Переключение вкладок
-            document.querySelectorAll('[data-tab]').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const tab = this.dataset.tab;
-
-                    // Обновляем кнопки
-                    document.querySelectorAll('[data-tab]').forEach(b => {
-                        b.classList.remove('active');
-                    });
-                    this.classList.add('active');
-
-                    // Показываем нужный контент
-                    document.querySelectorAll('.tab-content').forEach(content => {
-                        content.classList.add('hidden');
-                    });
-                    document.getElementById(tab + '-view').classList.remove('hidden');
-
-                    if (tab === 'table') {
-                        window.renderTable?.();
-                    } else if (tab === 'list') {
-                        window.renderList?.();
-                    } else if (tab === 'funnel') {
-                        window.renderFunnel?.();
-                    }
-                });
-            });
-
-            window.updateFileName = function(input) {
-                const fileName = input.files[0] ? input.files[0].name : "Выберите файл...";
-                document.getElementById('file-name').textContent = fileName;
-            }
-
-            // Сортировка
-            function sortClients(column) {
-                if (sortColumn === column) {
-                    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-                } else {
-                    sortColumn = column;
-                    sortDirection = 'asc';
-                }
-
-                allClients.sort((a, b) => {
-                    let aVal = a[column];
-                    let bVal = b[column];
-
-                    if (typeof aVal === 'string') {
-                        aVal = aVal.toLowerCase();
-                        bVal = bVal.toLowerCase();
-                    }
-
-                    if (sortDirection === 'asc') {
-                        return aVal > bVal ? 1 : -1;
-                    } else {
-                        return aVal < bVal ? 1 : -1;
-                    }
-                });
-
-                currentPage = 1;
-                updateSortHeaders();
-                window.renderAll?.();
-            }
-
-            function updateSortHeaders() {
-                document.querySelectorAll('.sortable-header').forEach(header => {
-                    header.classList.remove('asc', 'desc');
-                    if (header.dataset.sort === sortColumn) {
-                        header.classList.add(sortDirection);
-                    }
-                });
-            }
-
-
-            // Получение отфильтрованных клиентов
-            function getFilteredClients() {
-                const search = document.getElementById('search-input').value.toLowerCase();
-                const status = document.getElementById('status-filter').value;
-
-                return allClients.filter(client => {
-                    const searchStr = Object.values(client).join(' ').toLowerCase();
-                    const matchSearch = !search || searchStr.includes(search);
-                    const matchStatus = !status || client.status === status;
-                    return matchSearch && matchStatus;
-                });
-            }
-
-            // Обработчики событий
-            document.querySelectorAll('.sortable-header').forEach(header => {
-                header.addEventListener('click', () => {
-                    sortClients(header.dataset.sort);
-                });
-            });
-
-            // Открытие модалки добавления клиента
-            document.getElementById('add-client-btn').addEventListener('click', function() {
-                document.getElementById('client-modal').classList.remove('hidden');
-                document.getElementById('client-modal').classList.add('flex');
-                document.getElementById('client-form').reset();
-                document.getElementById('client_id').value = '';
-                document.getElementById('client-modal-title').textContent =
-                    '{{ __('clients.add_client') }}';
-                window.ModalFilePicker?.get('client')?.reset(null);
-                if (typeof updateClientFullNameLabel === 'function') {
-                    updateClientFullNameLabel();
-                }
-            });
-
-
-            // Фильтр по статусу
-            document.getElementById('status-filter').addEventListener('change', function() {
-                window.refreshClients?.();
-            });
-
-            // Кастомный dropdown количества клиентов
-            if (perPageButton && perPageMenu) {
-                const setActivePerPage = (value) => {
-                    perPageMenu.querySelectorAll('.clients-per-page-option').forEach(btn => {
-                        const isActive = parseInt(btn.dataset.value, 10) === value;
-                        btn.classList.toggle('bg-[#fef3c7]', isActive);
-                        btn.classList.toggle('dark:bg-[#1D0002]', isActive);
-                        btn.classList.toggle('text-[#f59e0b]', isActive);
-                        btn.classList.toggle('dark:text-[#f59e0b]', isActive);
-
-                        const check = btn.querySelector('.clients-per-page-check');
-                        if (check) {
-                            check.classList.toggle('hidden', !isActive);
-                            check.classList.toggle('inline-flex', isActive);
-                        }
-                    });
-                };
-
-                // initial active state
-                setActivePerPage(itemsPerPage);
-
-                const toggleMenu = () => perPageMenu.classList.toggle('hidden');
-
-                perPageButton.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    toggleMenu();
-                });
-
-                document.addEventListener('click', function() {
-                    if (!perPageMenu.classList.contains('hidden')) perPageMenu.classList.add('hidden');
-                });
-
-                perPageMenu.querySelectorAll('.clients-per-page-option').forEach(btn => {
-                    btn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const value = parseInt(this.dataset.value, 10);
-                        if (!value) return;
-
-                        itemsPerPage = value;
-                        currentPage = 1;
-                        if (perPageSelect) perPageSelect.value = String(value);
-                        if (perPageLabel) perPageLabel.textContent = String(value);
-
-                        setActivePerPage(value);
-                        perPageMenu.classList.add('hidden');
-                        window.renderAll?.();
-                    });
-                });
-            }
-
-            // Живой поиск
-            let searchDebounceTimer = null;
-            document.getElementById('search-input').addEventListener('input', function() {
-                clearTimeout(searchDebounceTimer);
-                searchDebounceTimer = setTimeout(() => window.refreshClients?.(), 350);
-            });
-
-            // Рендеринг воронки
-            window.renderFunnel = function() {
-                // Очищаем все колонки
-                document.getElementById('funnel-new').innerHTML = '';
-                document.getElementById('funnel-in-work').innerHTML = '';
-                document.getElementById('funnel-not-working').innerHTML = '';
-
-                // Группируем клиентов по статусу
-                const clientsByStatus = {
-                    new: [],
-                    in_work: [],
-                    not_working: []
-                };
-
-                allClients.forEach(client => {
-                    if (clientsByStatus[client.status]) {
-                        clientsByStatus[client.status].push(client);
-                    }
-                });
-
-                // Рендерим карточки в соответствующие колонки
-                const viewLabel = '{{ __('clients.view') }}';
-                const editLabel = '{{ __('clients.edit') }}';
-                const deleteLabel = '{{ __('clients.delete') }}';
-                Object.keys(clientsByStatus).forEach(status => {
-                    const container = document.getElementById(`funnel-${status.replace('_', '-')}`);
-                    const start = (currentPage - 1) * itemsPerPage;
-                    const end = start + itemsPerPage;
-                    const pageClients = clientsByStatus[status].slice(start, end);
-                    container.innerHTML = pageClients.map(client => `
-                        <div class="funnel-card" draggable="true"
-                            ondragstart="if(event.target.closest('button')) { event.preventDefault(); return false; } drag(event)"
-                            data-client-id="${client.id}" data-client='${JSON.stringify(client).replace(/'/g, "&#39;")}'>
-                            <h4 class="font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-1 flex items-center gap-2">
-                                <span>${escapeHtml(client.full_name || '')}</span>
-                                ${renderClientTypeBadge(client)}
-                            </h4>
-                            <p class="text-sm text-[#64748b] dark:text-[#A1A09A]">${client.phone || ''}</p>
-                            <div class="flex items-center gap-2 mt-2" onclick="event.stopPropagation()">
-                                <button type="button" onclick="event.stopPropagation(); viewClient(${client.id})"
-                                    class="text-xs px-2 py-1 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">${viewLabel}</button>
-                                <button type="button" onclick="event.stopPropagation(); editClient(${client.id})"
-                                    class="text-xs px-2 py-1 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] hover:text-[#f59e0b] transition-colors">${editLabel}</button>
-                                <button type="button" onclick="event.stopPropagation(); deleteClient(${client.id})"
-                                    class="text-xs px-2 py-1 rounded border border-[#7c8799] dark:border-[#3E3E3A] text-red-500 hover:border-red-500 hover:text-red-600 transition-colors">${deleteLabel}</button>
-                            </div>
-                        </div>
-                    `).join('');
-                });
-            }
-
-            // Обработка формы клиента
-            const clientStatusBadgeClasses = {
-                new: 'client-status-badge px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200',
-                in_work: 'client-status-badge px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200',
-                not_working: 'client-status-badge px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-200'
-            };
-
-            const clientStatusLabels = {
-                new: '{{ __('clients.new') }}',
-                in_work: '{{ __('clients.in_work') }}',
-                not_working: '{{ __('clients.not_working') }}'
-            };
-
-            function escapeHtml(value) {
-                if (value === null || value === undefined) return '';
-                return String(value).replace(/[&<>"']/g, (c) => ({
-                    '&': '&amp;',
-                    '<': '&lt;',
-                    '>': '&gt;',
-                    '"': '&quot;',
-                    "'": '&#39;'
-                }[c]));
-            }
-
-            function renderClientStatusBadge(client) {
-                const status = client.status || 'new';
-                const cls = clientStatusBadgeClasses[status] || clientStatusBadgeClasses.new;
-                const label = clientStatusLabels[status] || status;
-                return `<span class="${cls}">${escapeHtml(label)}</span>`;
-            }
-
-            function renderClientTypeBadge(client) {
-                if ((client.client_type || 'person') !== 'company') return '';
-                const cls = 'inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#f59e0b]/15 text-[#f59e0b] dark:bg-[#f59e0b]/10 dark:text-[#f59e0b] border border-[#f59e0b]/30 dark:border-[#f59e0b]/20';
-                const label = '{{ __('clients.legal_entity') }}';
-                return `<span class="${cls}">${escapeHtml(label)}</span>`;
-            }
-
-            function clientToDataAttr(client) {
-                // Важно: JSON кладём в атрибут data-*, поэтому аккуратно экранируем одинарные кавычки.
-                return JSON.stringify(client).replace(/'/g, "&#39;");
-            }
-
-            function formatTenge(amount) {
-                return `${new Intl.NumberFormat('kk-KZ').format(amount || 0)} ₸`;
-            }
-
-            window.renderTable = function() {
-                const tbody = document.getElementById('clients-table-body');
-                const viewLabel = '{{ __('clients.view') }}';
-                const editLabel = '{{ __('clients.edit') }}';
-                const deleteLabel = '{{ __('clients.delete') }}';
-                const addObjectLabel = '{{ __('clients.add_object') }}';
-
-                if (!tbody) return;
-
-                if (!allClients.length) {
-                    tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-6 text-center text-[#64748b] dark:text-[#A1A09A]">{{ __('clients.no_clients') }}</td></tr>`;
-                    const p = document.getElementById('clients-pagination-table');
-                    if (p) p.innerHTML = '';
-                    return;
-                }
-
-                const totalPages = Math.max(1, Math.ceil(allClients.length / itemsPerPage));
-                if (currentPage > totalPages) currentPage = 1;
-                const pagedClients = allClients.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-                tbody.innerHTML = pagedClients.map(client => {
-                    const dataJson = clientToDataAttr(client);
-                    const linkHtml = client.link
-                        ? `<a href="${escapeHtml(client.link)}" target="_blank" class="text-[#f59e0b] hover:underline">${escapeHtml(client.link)}</a>`
-                        : `<span class="text-[#64748b] dark:text-[#A1A09A]">-</span>`;
-                    const commentHtml = client.comment ? escapeHtml(client.comment) : '-';
-                    const typeBadgeHtml = renderClientTypeBadge(client);
-
-                    return `
-                        <tr class="hover:bg-[#f8fafc] dark:hover:bg-[#0a0a0a]"
-                            data-client-id="${client.id}" data-client='${dataJson}'>
-                            <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">
-                                <div class="flex items-center gap-2">
-                                    <span>${escapeHtml(client.full_name || '')}</span>
-                                    ${typeBadgeHtml}
-                                </div>
-                            </td>
-                            <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(client.phone || '')}</td>
-                            <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(client.email || '')}</td>
-                            <td class="px-4 py-3 text-sm" id="client-status-${client.id}">${renderClientStatusBadge(client)}</td>
-                            <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(client.count_objects || 0)}</td>
-                            <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${escapeHtml(formatTenge(client.sum_repair_budget_planned || 0))}</td>
-                            <td class="px-4 py-3 text-sm">${linkHtml}</td>
-                            <td class="px-4 py-3 text-sm text-[#0f172a] dark:text-[#EDEDEC]">${commentHtml}</td>
-                            <td class="px-4 py-3 text-sm">
-                                <div class="flex items-center gap-2">
-                                    <button type="button" title="${escapeHtml(viewLabel)}" onclick="viewClient(${client.id})"
-                                        class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] dark:hover:text-[#f59e0b] transition-colors">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                        </svg>
-                                    </button>
-                                    <button type="button" title="${escapeHtml(editLabel)}" onclick="editClient(${client.id})"
-                                        class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] dark:hover:text-[#f59e0b] transition-colors">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
-                                    </button>
-                                    <button type="button" title="${escapeHtml(deleteLabel)}" onclick="deleteClient(${client.id})"
-                                        class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-red-600 dark:hover:text-red-400 transition-colors">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                    </button>
-                                    <button type="button" title="${escapeHtml(addObjectLabel)}" onclick="addObject(${client.id})"
-                                        class="p-1.5 rounded text-[#64748b] dark:text-[#A1A09A] hover:bg-[#f1f5f9] dark:hover:bg-[#0a0a0a] hover:text-[#f59e0b] dark:hover:text-[#f59e0b] transition-colors">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M12 4v16m8-8H4" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-
-                renderPagination('clients-pagination-table', totalPages);
-            };
-
-            window.renderList = function() {
-                const listBody = document.getElementById('clients-list-body');
-                const viewLabel = '{{ __('clients.view') }}';
-                const editLabel = '{{ __('clients.edit') }}';
-                const deleteLabel = '{{ __('clients.delete') }}';
-                const addObjectLabel = '{{ __('clients.add_object') }}';
-
-                if (!listBody) return;
-
-                if (!allClients.length) {
-                    listBody.innerHTML = `<div class="text-center py-8 text-[#64748b] dark:text-[#A1A09A]">{{ __('clients.no_clients') }}</div>`;
-                    const p = document.getElementById('clients-pagination-list');
-                    if (p) p.innerHTML = '';
-                    return;
-                }
-
-                const totalPages = Math.max(1, Math.ceil(allClients.length / itemsPerPage));
-                if (currentPage > totalPages) currentPage = 1;
-                const pagedClients = allClients.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-                listBody.innerHTML = pagedClients.map(client => {
-                    const dataJson = clientToDataAttr(client);
-                    const linkHtml = client.link ? `<a href="${escapeHtml(client.link)}" target="_blank" class="text-[#f59e0b] hover:underline">${escapeHtml(client.link)}</a>` : '-';
-                    const commentHtml = client.comment ? `<p class="text-sm text-[#0f172a] dark:text-[#EDEDEC] mb-4">${escapeHtml(client.comment)}</p>` : '';
-
-                    return `
-                        <div class="bg-white dark:bg-[#161615] border border-[#7c8799] dark:border-[#3E3E3A] rounded-lg p-6"
-                            data-client-id="${client.id}" data-client='${dataJson}'>
-                            <div class="flex items-start justify-between mb-4">
-                                <div>
-                                    <h3 class="text-lg font-medium text-[#0f172a] dark:text-[#EDEDEC] mb-2">
-                                        <span>${escapeHtml(client.full_name || '')}</span>
-                                        ${renderClientTypeBadge(client)}
-                                    </h3>
-                                    <div class="space-y-1 text-sm text-[#64748b] dark:text-[#A1A09A]">
-                                        <p>${escapeHtml(client.phone || '')}</p>
-                                        <p>${escapeHtml(client.email || '')}</p>
-                                    </div>
-                                </div>
-                                <div id="client-list-status-${client.id}">
-                                    ${renderClientStatusBadge(client)}
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm">
-                                <div>
-                                    <span class="text-[#64748b] dark:text-[#A1A09A]">{{ __('clients.objects_count') }}:</span>
-                                    <span class="text-[#0f172a] dark:text-[#EDEDEC] font-medium ml-2">${escapeHtml(client.count_objects || 0)}</span>
-                                </div>
-                                <div>
-                                    <span class="text-[#64748b] dark:text-[#A1A09A]">{{ __('clients.total_amount') }}:</span>
-                                    <span class="text-[#0f172a] dark:text-[#EDEDEC] font-medium ml-2">${escapeHtml(formatTenge(client.sum_repair_budget_planned || 0))}</span>
-                                </div>
-                            </div>
-                            ${commentHtml}
-                            <div class="flex items-center gap-2">
-                                <button type="button" onclick="viewClient(${client.id})" class="filter-btn">${escapeHtml(viewLabel)}</button>
-                                <button type="button" onclick="editClient(${client.id})" class="filter-btn">${escapeHtml(editLabel)}</button>
-                                <button type="button" onclick="deleteClient(${client.id})" class="filter-btn text-red-500 hover:text-red-600">${escapeHtml(deleteLabel)}</button>
-                                <button type="button" onclick="addObject(${client.id})" class="filter-btn">${escapeHtml(addObjectLabel)}</button>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-
-                renderPagination('clients-pagination-list', totalPages);
-            };
-
-            window.renderAll = function() {
-                window.renderTable?.();
-                window.renderList?.();
-                window.renderFunnel?.();
-            };
-
-            function renderActiveTab() {
-                const currentTab = document.querySelector('[data-tab].active')?.dataset.tab || 'table';
-                if (currentTab === 'table') window.renderTable?.();
-                if (currentTab === 'list') window.renderList?.();
-                if (currentTab === 'funnel') window.renderFunnel?.();
-            }
-
-            function renderPagination(containerId, totalPages) {
-                const container = document.getElementById(containerId);
-                if (!container) return;
-
-                const prevLabel = '{{ __('clients.prev') }}';
-                const nextLabel = '{{ __('clients.next') }}';
-
-                // Если данных меньше одной страницы — скрываем пагинацию.
-                if (allClients.length <= itemsPerPage) {
-                    container.innerHTML = '';
-                    return;
-                }
-
-                const pages = [];
-                if (totalPages <= 7) {
-                    for (let i = 1; i <= totalPages; i++) pages.push(i);
-                } else {
-                    pages.push(1);
-                    const start = Math.max(2, currentPage - 1);
-                    const end = Math.min(totalPages - 1, currentPage + 1);
-                    if (start > 2) pages.push('...');
-                    for (let i = start; i <= end; i++) pages.push(i);
-                    if (end < totalPages - 1) pages.push('...');
-                    pages.push(totalPages);
-                }
-
-                const prevDisabled = currentPage <= 1;
-                const nextDisabled = currentPage >= totalPages;
-
-                container.innerHTML = `
-                    <button type="button" ${prevDisabled ? 'disabled' : ''} data-page="${currentPage - 1}" class="px-4">${prevLabel}</button>
-                    ${pages.map(p => {
-                        if (p === '...') {
-                            return `<span class="px-2 text-[#64748b] dark:text-[#A1A09A] opacity-60">...</span>`;
-                        }
-                        const active = p === currentPage;
-                        return `<button type="button" data-page="${p}" class="px-4 ${active ? 'active' : ''}" ${active ? 'disabled' : ''}>${p}</button>`;
-                    }).join('')}
-                    <button type="button" ${nextDisabled ? 'disabled' : ''} data-page="${currentPage + 1}" class="px-4">${nextLabel}</button>
-                `;
-
-                container.querySelectorAll('button[data-page]').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        if (btn.disabled) return;
-                        currentPage = parseInt(btn.dataset.page, 10);
-                        renderActiveTab();
-                    });
-                });
-            }
-
-            window.refreshClients = async function() {
-                currentPage = 1;
-                const search = document.getElementById('search-input')?.value?.trim() || '';
-                const status = document.getElementById('status-filter')?.value?.trim() || '';
-
-                const params = new URLSearchParams();
-                if (search !== '') params.set('search', search);
-                if (status !== '') params.set('status', status);
-
-                const url = params.toString() ? `/clients/search?${params.toString()}` : `/clients/search`;
-
-                const r = await fetch(url, {
-                    method: 'GET',
-                    headers: { 'Accept': 'application/json' }
-                });
-
-                const payload = await r.json().catch(() => ({ data: [] }));
-                window.allClients = payload.data || [];
-                allClients = window.allClients;
-
-                window.renderAll?.();
-            };
-
-            // Первичная отрисовка с учетом пагинации
-            renderActiveTab();
-
-            // AJAX-сохранение (создание / обновление)
-            document.getElementById('client-form').addEventListener('submit', async function(e) {
-                e.preventDefault();
-
-                const form = e.target;
-                if (!window.lockSubmit(form)) return;
-                const action = form.getAttribute('action') || form.action;
-                const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
-
-                try {
-                    const r = await fetch(action, {
-                        method: 'POST',
-                        headers: {
-                            'Accept': 'application/json',
-                            ...(token ? { 'X-CSRF-TOKEN': token } : {})
-                        },
-                        body: new FormData(form)
-                    });
-
-                    const data = await r.json().catch(() => ({}));
-
-                    if (!r.ok || !data.success) {
-                        projectAlert('error', data.message || '{{ __('clients.error') }}', '', 3000);
-                        return;
-                    }
-
-                    projectAlert('success', data.message || '{{ __('clients.saved') }}', '', 2500);
-                    closeClientModal();
-                    form.reset();
-                    document.getElementById('client_id').value = '';
-                    await window.refreshClients?.();
-                } catch (err) {
-                    projectAlert('error', '{{ __('clients.error') }}', '', 3000);
-                    console.error(err);
-                } finally {
-                    window.unlockSubmit(form);
-                }
-            });
-
-
-
-
-
-        });
-
-        @if ($errors->any())
-            const modal = document.getElementById('client-modal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        @endif
-
-        function closeClientModal() {
-            document.getElementById('client-modal').classList.add('hidden');
-            document.getElementById('client-modal').classList.remove('flex');
-            window.ModalFilePicker?.get('client')?.reset(null);
-        }
-
-        function addObject(clientId) {
-            const params = new URLSearchParams({
-                add_object: '1',
-                return_to: 'clients',
-            });
-            if (clientId) {
-                params.set('client_id', String(clientId));
-            }
-            window.location.href = `{{ route('objects.index') }}?${params.toString()}`;
-        }
-
-        function closeViewClientModal() {
-            const modal = document.getElementById('view-client-modal');
-            const panel = modal.querySelector('div[class*="absolute"]');
-            modal.classList.add('hidden');
-            if (panel) {
-                panel.classList.add('translate-x-full');
-                panel.classList.remove('translate-x-0');
-            }
-            window.currentViewedClientId = null;
-        }
-
-        function viewClient(id) {
-            const rows = document.querySelectorAll(`tr[data-client], div[data-client]`);
-            let client = null;
-            rows.forEach(row => {
-                const c = JSON.parse(row.getAttribute('data-client'));
-                if (c.id === id) {
-                    client = c;
-                }
-            });
-            if (client) {
-                window.currentViewedClientId = parseInt(id, 10);
-                const filePaths = Array.isArray(client.file_paths) && client.file_paths.length
-                    ? client.file_paths
-                    : (client.file_path ? [client.file_path] : []);
-
-                const filesHtml = filePaths.length
-                    ? filePaths.map((p, idx) => {
-                        const fileUrl = p ? `/storage/${p}` : '';
-                        const fileName = p ? p.split('/').pop() : '';
-                        const safeFileName = String(fileName || '').replace(/[&<>"']/g, (c) => ({
-                            '&': '&amp;',
-                            '<': '&lt;',
-                            '>': '&gt;',
-                            '"': '&quot;',
-                            "'": '&#39;'
-                        }[c]));
-
-                        return `
-                            <div class="flex items-center justify-between gap-3 flex-wrap">
-                                <span class="text-xs text-[#64748b] dark:text-[#A1A09A]">${safeFileName}</span>
-                                <div class="flex items-center gap-2">
-                                    <a href="${fileUrl}" target="_blank" rel="noopener"
-                                       class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#64748b] dark:text-[#A1A09A] hover:border-[#f59e0b] dark:hover:border-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
-                                       title="{{ __('clients.view') }}">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                        </svg>
-                                        {{ __('clients.view') }}
-                                    </a>
-
-                                    <a href="${fileUrl}" download="${fileName}"
-                                       class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
-                                       title="{{ __('clients.download') }}">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 10l5 5 5-5" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15V3" />
-                                        </svg>
-                                        {{ __('clients.download') }}
-                                    </a>
-
-                                    <button type="button"
-                                        onclick="window.deleteClientFile(${client.id}, ${idx})"
-                                        class="inline-flex items-center justify-center p-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-500 hover:text-red-600 transition-colors"
-                                        title="{{ __('clients.delete_file') }}">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-                        `;
-                    }).join('')
-                    : '';
-                const content = document.getElementById('view-client-content');
-                const statusText = client.status === 'new' ? '{{ __('clients.new') }}' :
-                    client.status === 'in_work' ? '{{ __('clients.in_work') }}' :
-                    '{{ __('clients.not_working') }}';
-                content.innerHTML = `
-                <div>
-                    <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('clients.full_name') }}</label>
-                    <p class="text-[#0f172a] dark:text-[#EDEDEC]">${client.full_name}</p>
+</div>
+
+{{-- Detail modal --}}
+<div id="client-detail-modal" class="crm-modal-root" aria-hidden="true">
+    <div class="crm-modal-backdrop" data-close-backdrop></div>
+    <div class="crm-modal" role="dialog" aria-modal="true" aria-labelledby="client-detail-title">
+        <div class="crm-modal-header">
+            <div class="crm-modal-header-row">
+                <div class="min-w-0">
+                    <div id="client-detail-title" class="crm-modal-title-input truncate">{{ __('clients.client') }}</div>
+                    <div id="client-detail-badges" class="flex items-center gap-2 mt-1 flex-wrap"></div>
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('clients.phone') }}</label>
-                    <p class="text-[#0f172a] dark:text-[#EDEDEC]">${client.phone}</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('clients.email') }}</label>
-                    <p class="text-[#0f172a] dark:text-[#EDEDEC]">${client.email}</p>
-                </div>
-                ${client.link ? `
-                <div>
-                    <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('clients.link') }}</label>
-                    <a href="${client.link}" target="_blank" class="text-[#f59e0b] hover:underline">${client.link}</a>
-                </div>
-                ` : ''}
-                <div>
-                    <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('clients.status') }}</label>
-                    <p id="view-client-status-text" class="text-[#0f172a] dark:text-[#EDEDEC]">${statusText}</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('clients.objects_count') }}</label>
-                    <p class="text-[#0f172a] dark:text-[#EDEDEC]">${client.count_objects}</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('clients.total_amount') }}</label>
-                    <p class="text-[#0f172a] dark:text-[#EDEDEC]"> ${new Intl.NumberFormat('kk-KZ').format(client.sum_repair_budget_planned || 0)} ₸</p>
-                </div>
-                ${client.comment ? `
-                                                                                                                                                                                                                                                                                                                                        <div>
-                                                                                                                                                                                                                                                                                                                                            <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-1">{{ __('clients.comment') }}</label>
-                                                                                                                                                                                                                                                                                                                                            <p class="text-[#0f172a] dark:text-[#EDEDEC]">${client.comment}</p>
-                                                                                                                                                                                                                                                                                                                                        </div>
-                                                                                                                                                                                                                                                                                                                                        ` : ''}
-
-                ${filesHtml ? `
-                <div class="pt-4">
-                    <label class="block text-sm font-medium text-[#64748b] dark:text-[#A1A09A] mb-2">
-                        {{ __('clients.files') }}
-                    </label>
-                    <div class="mt-1 flex flex-col gap-2">
-                        ${filesHtml}
-                    </div>
-                </div>
-                ` : ''}
-
-                <div class="pt-4">
-                    <a href="${typeof appWithFrom === 'function' ? appWithFrom('/clients/' + client.id) : ('/clients/' + client.id)}"
-                        class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#7c8799] dark:border-[#3E3E3A] text-[#f59e0b] dark:text-[#f59e0b] hover:bg-[#fef3c7] dark:hover:bg-[#1D0002] transition-colors"
-                        title="{{ __('clients.details') }}">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <div class="flex items-center gap-1 shrink-0">
+                    <button type="button" id="client-detail-edit" class="crm-btn crm-btn-secondary crm-btn-sm">{{ __('clients.edit') }}</button>
+                    <button type="button" id="client-detail-close" class="crm-btn crm-btn-ghost" aria-label="{{ __('clients.close') }}">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M18 6 6 18M6 6l12 12"/>
                         </svg>
-                        {{ __('clients.details') }}
-                    </a>
+                    </button>
                 </div>
-        `;
-                const modal = document.getElementById('view-client-modal');
-                const panel = modal.querySelector('div[class*="absolute"]');
-                modal.classList.remove('hidden');
-                setTimeout(() => {
-                    if (panel) {
-                        panel.classList.remove('translate-x-full');
-                        panel.classList.add('translate-x-0');
-                    }
-                }, 10);
+            </div>
+        </div>
+
+        <div class="crm-modal-tabs">
+            <button type="button" class="crm-modal-tab active" data-dtab="general">{{ __('clients.main_tab') }}</button>
+            <button type="button" class="crm-modal-tab" data-dtab="projects">{{ __('clients.projects_tab') }}</button>
+        </div>
+
+        <div class="crm-modal-work">
+            <div class="crm-modal-main" style="padding:1rem 1.15rem;overflow:auto">
+                <div data-dpanel="general" class="cd-panel">
+                    <dl id="client-detail-general"></dl>
+                    <div id="client-detail-files" class="mt-4"></div>
+                </div>
+                <div data-dpanel="projects" class="cd-panel hidden">
+                    <div class="flex items-center justify-between gap-2 mb-3">
+                        <h3 class="text-sm font-semibold m-0">{{ __('clients.related_projects') }}</h3>
+                        <button type="button" id="client-detail-create-project" class="crm-btn crm-btn-primary crm-btn-sm">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M12 5v14M5 12h14"/>
+                            </svg>
+                            {{ __('clients.create_project') }}
+                        </button>
+                    </div>
+                    <div id="client-detail-projects" class="space-y-2"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="crm-modal-footer">
+            <button type="button" id="client-detail-delete" class="crm-btn crm-btn-secondary" style="color:var(--crm-danger)">{{ __('clients.delete') }}</button>
+            <button type="button" id="client-detail-close-footer" class="crm-btn crm-btn-secondary">{{ __('clients.close') }}</button>
+        </div>
+    </div>
+</div>
+
+{{-- Unsaved confirm --}}
+<div id="client-unsaved-modal" class="crm-confirm-root" aria-hidden="true">
+    <div class="crm-card p-5 w-[min(420px,92vw)] relative z-10">
+        <h3 class="font-semibold mb-3">{{ __('clients.unsaved_leave_title') }}</h3>
+        <div class="flex gap-2 justify-end">
+            <button type="button" id="client-unsaved-continue" class="crm-btn crm-btn-secondary">{{ __('clients.continue_editing') }}</button>
+            <button type="button" id="client-unsaved-leave" class="crm-btn crm-btn-primary">{{ __('clients.leave_without_saving') }}</button>
+        </div>
+    </div>
+</div>
+
+{{-- Delete confirm --}}
+<div id="client-delete-modal" class="crm-confirm-root" aria-hidden="true">
+    <div class="crm-card p-5 w-[min(420px,92vw)] relative z-10">
+        <h3 class="font-semibold mb-1">{{ __('clients.delete') }}</h3>
+        <p id="client-delete-message" class="text-sm text-[var(--crm-muted)] mb-4">{{ __('clients.delete_confirm') }}</p>
+        <div class="flex gap-2 justify-end">
+            <button type="button" id="client-delete-cancel" class="crm-btn crm-btn-secondary">{{ __('clients.cancel') }}</button>
+            <button type="button" id="client-delete-confirm" class="crm-btn crm-btn-primary" style="background:var(--crm-danger);border-color:var(--crm-danger)">{{ __('clients.delete') }}</button>
+        </div>
+    </div>
+</div>
+
+@include('designer.projects.partials.pipeline-settings-modals')
+
+<script>
+(function () {
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    const seed = @json($clientsData ?? []);
+    const pipelineSeed = @json($pipeline ?? ['stages' => []]);
+    const canManagePipeline = @json((bool) ($canManagePipeline ?? false));
+    const locale = document.getElementById('crm-clients-workspace')?.dataset.locale || 'ru-RU';
+    const VIEW_KEY = 'crm.clients.view';
+    const PER_PAGE_KEY = 'crm.clients.perPage';
+
+    const routes = {
+        search: @json(route('clients.search')),
+        save: @json(route('clients.add_client')),
+        show: (id) => @json(url('/clients')) + '/' + id,
+        status: (id) => @json(url('/clients')) + '/' + id + '/status',
+        destroy: (id) => @json(url('/clients/delete')) + '/' + id,
+        deleteFile: (id, idx) => @json(url('/clients')) + '/' + id + '/files/' + idx,
+        projectsIndex: @json(route('projects.index')),
+        projectShow: (id) => @json(url('/projects')) + '/' + id,
+        pipelineSync: @json(route('pipelines.sync')),
+    };
+
+    const i18n = {
+        person: @json(__('clients.person')),
+        company: @json(__('clients.company')),
+        legalEntity: @json(__('clients.legal_entity')),
+        fio: @json(__('clients.fio')),
+        companyName: @json(__('clients.company_name')),
+        newClient: @json(__('clients.new_client_title')),
+        newSubtitle: @json(__('clients.new_client_subtitle')),
+        editClient: @json(__('clients.edit_client_title')),
+        statuses: {
+            new: @json(__('clients.new')),
+            in_work: @json(__('clients.in_work')),
+            not_working: @json(__('clients.not_working')),
+        },
+        statusColors: { new: '#3b82f6', in_work: '#f59e0b', not_working: '#64748b' },
+        open: @json(__('clients.open')),
+        edit: @json(__('clients.edit')),
+        delete: @json(__('clients.delete')),
+        createProject: @json(__('clients.create_project')),
+        moreActions: @json(__('clients.more_actions')),
+        noClients: @json(__('clients.no_clients')),
+        noClientsTitle: @json(__('clients.no_clients_title')),
+        noClientsBody: @json(__('clients.no_clients_body')),
+        emptyFiltered: @json(__('clients.empty_filtered')),
+        currency: @json(__('clients.currency')),
+        error: @json(__('clients.error')),
+        deleteConfirm: @json(__('clients.delete_confirm')),
+        deleteFileConfirm: @json(__('clients.delete_file_confirm')),
+        noRelatedProjects: @json(__('clients.no_related_projects')),
+        phone: @json(__('clients.phone')),
+        email: @json(__('clients.email')),
+        link: @json(__('clients.link')),
+        comment: @json(__('clients.comment')),
+        files: @json(__('clients.files')),
+        projects: @json(__('clients.projects')),
+        budget: @json(__('clients.budget')),
+        download: @json(__('clients.download')),
+        view: @json(__('clients.view')),
+        deleteFile: @json(__('clients.delete_file')),
+        prev: @json(__('clients.prev')),
+        next: @json(__('clients.next')),
+        saved: @json(__('clients.saved')),
+        added: @json(__('clients.added')),
+        client: @json(__('clients.client')),
+        contacts: @json(__('clients.contacts')),
+        type: @json(__('clients.client_type')),
+        status: @json(__('clients.status')),
+        updated: @json(__('clients.updated')),
+        allStatuses: @json(__('clients.all_statuses')),
+    };
+
+    const formModal = document.getElementById('client-form-modal');
+    const detailModal = document.getElementById('client-detail-modal');
+    const unsavedModal = document.getElementById('client-unsaved-modal');
+    const deleteModal = document.getElementById('client-delete-modal');
+    [formModal, detailModal, unsavedModal, deleteModal].forEach((el) => {
+        if (el && el.parentElement !== document.body) document.body.appendChild(el);
+    });
+
+    function readStoredView() {
+        const params = new URLSearchParams(window.location.search);
+        const fromQuery = params.get('view');
+        if (fromQuery === 'kanban' || fromQuery === 'list') return fromQuery;
+        if (fromQuery === 'funnel' || fromQuery === 'table') return fromQuery === 'funnel' ? 'kanban' : 'list';
+        if (fromQuery === 'cards') return 'list';
+        const fromStore = localStorage.getItem(VIEW_KEY);
+        if (fromStore === 'kanban' || fromStore === 'list') return fromStore;
+        if (fromStore === 'funnel' || fromStore === 'table') return fromStore === 'funnel' ? 'kanban' : 'list';
+        if (fromStore === 'cards') return 'list';
+        return 'kanban';
+    }
+
+    const state = {
+        clients: Array.isArray(seed) ? [...seed] : [],
+        pipeline: pipelineSeed && typeof pipelineSeed === 'object'
+            ? { ...pipelineSeed, stages: [...(pipelineSeed.stages || [])] }
+            : { stages: [] },
+        view: readStoredView(),
+        search: '',
+        status: '',
+        type: '',
+        sortKey: 'full_name',
+        sortDir: 'asc',
+        page: 1,
+        perPage: parseInt(localStorage.getItem(PER_PAGE_KEY) || '10', 10) || 10,
+        dirty: false,
+        snapshot: null,
+        editingId: null,
+        detailId: null,
+        detailProjects: [],
+        detailTab: 'general',
+        kanbanScroll: 0,
+        deleteId: null,
+        deleteForce: false,
+        phoneMask: null,
+    };
+
+    const els = {
+        search: document.getElementById('clients-search'),
+        status: document.getElementById('clients-status-filter'),
+        type: document.getElementById('clients-type-filter'),
+        listPanel: document.getElementById('clients-list-panel'),
+        kanbanPanel: document.getElementById('clients-kanban-panel'),
+        tableBody: document.getElementById('clients-table-body'),
+        paginationPages: document.getElementById('clients-pagination-pages'),
+        perPage: document.getElementById('clients-per-page'),
+        form: document.getElementById('client-form'),
+        formTitle: document.getElementById('client-form-title'),
+        formSubtitle: document.getElementById('client-form-subtitle'),
+        fullNameLabel: document.getElementById('cf-full-name-label'),
+        deleteMessage: document.getElementById('client-delete-message'),
+        formStatus: document.getElementById('cf-status'),
+    };
+
+    if (els.perPage) els.perPage.value = String(state.perPage);
+
+    const toast = (msg, type = 'success') => {
+        if (typeof window.projectAlert === 'function') {
+            window.projectAlert(type === 'error' ? 'error' : (type === 'warning' ? 'warning' : 'success'), msg, '', type === 'error' ? 3500 : 2500);
+            return;
+        }
+        if (window.showAppToast) window.showAppToast(msg, type);
+    };
+
+    const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[c]));
+
+    const money = (n) => {
+        const num = Number(n);
+        if (n === null || n === undefined || n === '' || Number.isNaN(num)) return '0 ' + i18n.currency;
+        return num.toLocaleString(locale, { maximumFractionDigits: 0 }) + ' ' + i18n.currency;
+    };
+
+    const formatDate = (iso) => {
+        if (!iso) return '—';
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return '—';
+        return d.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' });
+    };
+
+    const debounce = (fn, ms = 400) => {
+        let t;
+        return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+    };
+
+    function pipelineStages() {
+        return (state.pipeline?.stages || []).slice().sort((a, b) => (a.position || 0) - (b.position || 0));
+    }
+
+    function statusLabel(key) {
+        const stage = pipelineStages().find((s) => s.system_key === key);
+        if (stage?.name) return stage.name;
+        return i18n.statuses[key] || key || '—';
+    }
+
+    function statusColor(key) {
+        const stage = pipelineStages().find((s) => s.system_key === key);
+        return stage?.color || i18n.statusColors[key] || '#64748b';
+    }
+
+    function typeLabel(type) {
+        return type === 'company' ? i18n.company : i18n.person;
+    }
+
+    function typeChip(client) {
+        if ((client.client_type || 'person') !== 'company') return '';
+        return `<span class="crm-type-chip">${escapeHtml(i18n.legalEntity)}</span>`;
+    }
+
+    function statusBadge(status) {
+        const color = statusColor(status);
+        return `<span class="crm-status-badge" style="box-shadow: inset 3px 0 0 ${escapeHtml(color)}">${escapeHtml(statusLabel(status))}</span>`;
+    }
+
+    function fillStatusSelects(selected) {
+        const stages = pipelineStages();
+        const options = stages.map((s) =>
+            `<option value="${escapeHtml(s.system_key)}">${escapeHtml(s.name)}</option>`
+        ).join('');
+        if (els.status) {
+            const cur = selected?.filter ?? state.status ?? '';
+            els.status.innerHTML = `<option value="">${escapeHtml(i18n.allStatuses)}</option>` + options;
+            els.status.value = cur;
+            if (els.status.value !== cur) els.status.value = '';
+        }
+        if (els.formStatus) {
+            const cur = selected?.form ?? els.formStatus.value;
+            els.formStatus.innerHTML = options || `<option value="new">${escapeHtml(i18n.statuses.new)}</option>`;
+            if (cur && [...els.formStatus.options].some((o) => o.value === cur)) els.formStatus.value = cur;
+            else if (els.formStatus.options.length) els.formStatus.selectedIndex = 0;
+        }
+    }
+
+    function syncUrl({ openId } = {}) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('view', state.view);
+        if (openId) url.searchParams.set('open', String(openId));
+        else url.searchParams.delete('open');
+        window.history.replaceState({}, '', url);
+    }
+
+    function setView(view, { persist = true } = {}) {
+        const allowed = view === 'list' ? 'list' : 'kanban';
+        state.view = allowed;
+        document.querySelectorAll('#crm-clients-workspace .crm-view-btn').forEach((btn) => {
+            const on = btn.dataset.view === state.view;
+            btn.classList.toggle('active', on);
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+        els.listPanel.classList.toggle('is-hidden', state.view !== 'list');
+        els.kanbanPanel.classList.toggle('is-hidden', state.view !== 'kanban');
+        if (persist) {
+            localStorage.setItem(VIEW_KEY, state.view);
+            syncUrl(state.detailId ? { openId: state.detailId } : {});
+        }
+        render();
+    }
+
+    function updateCount() { /* unused */ }
+
+    function sortedClients(list) {
+        const key = state.sortKey;
+        const dir = state.sortDir === 'desc' ? -1 : 1;
+        return [...list].sort((a, b) => {
+            let av; let bv;
+            if (key === 'projects_count' || key === 'projects_budget') {
+                av = Number(a[key] || 0);
+                bv = Number(b[key] || 0);
+            } else if (key === 'updated_at') {
+                av = a.updated_at ? new Date(a.updated_at).getTime() : 0;
+                bv = b.updated_at ? new Date(b.updated_at).getTime() : 0;
+            } else if (key === 'status') {
+                av = statusLabel(a.status);
+                bv = statusLabel(b.status);
+            } else if (key === 'client_type') {
+                av = typeLabel(a.client_type);
+                bv = typeLabel(b.client_type);
+            } else if (key === 'phone') {
+                av = `${a.phone || ''} ${a.email || ''}`;
+                bv = `${b.phone || ''} ${b.email || ''}`;
+            } else {
+                av = a[key] ?? '';
+                bv = b[key] ?? '';
             }
-        }
+            if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+            return String(av).localeCompare(String(bv), locale, { sensitivity: 'base' }) * dir;
+        });
+    }
 
-        async function deleteClientFile(clientId, fileIndex) {
-            if (!confirm('{{ __('clients.delete_file_confirm') }}')) return;
-            const token = document.querySelector('meta[name="csrf-token"]')?.content || document.querySelector('input[name="_token"]')?.value;
-            try {
-                const r = await fetch(`/clients/${clientId}/files/${fileIndex}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': token,
-                        'Accept': 'application/json'
-                    }
-                });
+    function closeActionMenus(except) {
+        document.querySelectorAll('.crm-actions-dropdown.open').forEach((el) => {
+            if (el !== except) el.classList.remove('open');
+        });
+    }
 
-                const data = await r.json().catch(() => ({}));
-                if (!r.ok || !data.success) {
-                    projectAlert('error', data.message || '{{ __('clients.error') }}', '', 3000);
-                    return;
-                }
+    function actionsMenuHtml(id) {
+        return `
+            <div class="crm-actions-menu" data-stop>
+                <button type="button" class="crm-btn crm-btn-ghost crm-btn-sm" data-menu-toggle="${id}" aria-label="${escapeHtml(i18n.moreActions)}" title="${escapeHtml(i18n.moreActions)}">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>
+                    </svg>
+                </button>
+                <div class="crm-actions-dropdown" data-menu="${id}">
+                    <button type="button" data-action="open" data-id="${id}">${escapeHtml(i18n.open)}</button>
+                    <button type="button" data-action="edit" data-id="${id}">${escapeHtml(i18n.edit)}</button>
+                    <button type="button" data-action="project" data-id="${id}">${escapeHtml(i18n.createProject)}</button>
+                    <button type="button" class="is-danger" data-action="delete" data-id="${id}">${escapeHtml(i18n.delete)}</button>
+                </div>
+            </div>`;
+    }
 
-                await window.refreshClients?.();
-                window.currentViewedClientId = parseInt(clientId, 10);
-                window.renderActiveTab?.();
-                viewClient(parseInt(clientId, 10));
-                projectAlert('success', '{{ __('clients.delete_file') }}', '', 2000);
-            } catch (e) {
-                console.error(e);
-                projectAlert('error', '{{ __('clients.error') }}', '', 3000);
-            }
-        }
-        window.deleteClientFile = deleteClientFile;
-
-        function editClient(id) {
-            const rows = document.querySelectorAll(`tr[data-client], div[data-client]`);
-            let client = null;
-            rows.forEach(row => {
-                const c = JSON.parse(row.getAttribute('data-client'));
-                if (c.id === id) {
-                    client = c;
-                }
-            });
-            if (client) {
-                document.getElementById('client-modal').classList.remove('hidden');
-                document.getElementById('client-modal').classList.add('flex');
-                document.getElementById('client-modal-title').textContent = '{{ __('clients.edit') }}';
-                document.getElementById('client_id').value = client.id;
-                const clientTypeSelectEl = document.getElementById('client_type');
-                if (clientTypeSelectEl) {
-                    clientTypeSelectEl.value = client.client_type || 'person';
-                }
-                document.getElementById('client_name').value = client.full_name || '';
-                document.getElementById('client_phone').value = client.phone;
-                document.getElementById('client_email').value = client.email;
-                document.getElementById('client_status').value = client.status;
-                document.getElementById('client_comment').value = client.comment || '';
-                document.getElementById('client_link').value = client.link || '';
-                if (typeof updateClientFullNameLabel === 'function') {
-                    updateClientFullNameLabel();
-                }
-                window.ModalFilePicker?.get('client')?.reset({
-                    file_paths: client.file_paths,
-                    file_path: client.file_path,
-                });
-            }
-
-
-
-
-
-
-        }
-
-
-
-
-        // Drag & Drop для воронок
-        let draggedElement = null;
-
-        function allowDrop(ev) {
-            ev.preventDefault();
-            ev.currentTarget.classList.add('drag-over');
-        }
-
-        function drag(ev) {
-            draggedElement = ev.target.closest('.funnel-card');
-            if (draggedElement) {
-                draggedElement.classList.add('dragging');
-                ev.dataTransfer.effectAllowed = 'move';
-
-            }
-        }
-
-        function drop(ev) {
-            ev.preventDefault();
-            ev.currentTarget.classList.remove('drag-over');
-
-            if (draggedElement) {
-                const newStatus = ev.currentTarget.dataset.status;
-                const clientId = draggedElement.dataset.clientId;
-
-                ev.currentTarget.querySelector('.funnel-cards').appendChild(draggedElement);
-                draggedElement.classList.remove('dragging');
-
-                let updatedClient = null;
-                try {
-                    updatedClient = JSON.parse(draggedElement.dataset.client || '{}');
-                    updatedClient.status = newStatus;
-                } catch (_) {}
-                updateClientStatus(clientId, newStatus, updatedClient);
-            }
-        }
-
-        const clientStatusBadgeClasses = {
-            new: 'client-status-badge px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200',
-            in_work: 'client-status-badge px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200',
-            not_working: 'client-status-badge px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-200'
-        };
-        const clientStatusLabels = {
-            new: '{{ __("clients.new") }}',
-            in_work: '{{ __("clients.in_work") }}',
-            not_working: '{{ __("clients.not_working") }}'
-        };
-
-        function updateClientStatusInAllViews(clientId, newStatus, updatedClient) {
-            document.querySelectorAll(`[data-client-id="${clientId}"]`).forEach(el => {
-                if (updatedClient) el.dataset.client = JSON.stringify(updatedClient);
-                const badge = el.querySelector('.client-status-badge');
-                if (badge) {
-                    badge.className = clientStatusBadgeClasses[newStatus] || badge.className;
-                    badge.textContent = clientStatusLabels[newStatus] || newStatus;
-                }
-            });
-        }
-
-        function updateClientStatus(clientId, newStatus, updatedClient) {
-            const numericId = parseInt(clientId);
-            fetch(`/clients/${numericId}/status`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    },
-                    body: JSON.stringify({ status: newStatus })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    // Полный rerender таблицы/списка/воронки из актуальных данных.
-                    if (data.success) {
-                        const modal = document.getElementById('view-client-modal');
-                        const isModalOpen = modal && !modal.classList.contains('hidden');
-
-                        // Если открыта модалка "Просмотр" текущего клиента — обновляем только текст статуса.
-                        const shouldUpdateModal = isModalOpen && window.currentViewedClientId === numericId;
-                        if (shouldUpdateModal && data.client?.status) {
-                            const el = document.getElementById('view-client-status-text');
-                            if (el) {
-                                el.textContent = clientStatusLabels[data.client.status] || data.client.status;
-                            }
-                        }
-
-                        window.refreshClients?.();
-                    } else {
-                        console.error('Ошибка при обновлении статуса');
-                        window.refreshClients?.();
-                    }
-
-                    draggedElement = null;
-                })
-                .catch(error => {
-                    console.error('Ошибка:', error);
-                    window.refreshClients?.();
-                    draggedElement = null;
-                });
-        }
-
-        function deleteClient(id) {
-            if (!confirm('{{ __("clients.delete_confirm") }}')) return;
-            const token = document.querySelector('meta[name="csrf-token"]')?.content || document.querySelector('input[name="_token"]')?.value;
-            fetch('{{ url("clients/delete") }}/' + id, {
-                method: 'DELETE',
-                headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' },
-            }).then(r => {
-                if (r.ok) {
-                    window.refreshClients?.();
-                    return;
-                }
-                throw new Error('Delete failed');
-            }).catch(() => projectAlert('error', '{{ __("clients.error") }}', '', 3000));
-        }
-
-        document.querySelectorAll('.funnel-column').forEach(column => {
-            column.addEventListener('dragleave', function(e) {
-                if (!column.contains(e.relatedTarget)) {
-                    column.classList.remove('drag-over');
-                }
+    function bindRowActions(root) {
+        root.querySelectorAll('[data-menu-toggle]').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = btn.dataset.menuToggle;
+                const menu = root.querySelector(`[data-menu="${id}"]`);
+                const willOpen = menu && !menu.classList.contains('open');
+                closeActionMenus();
+                if (willOpen) menu.classList.add('open');
             });
         });
-    </script>
-@endsection
+        root.querySelectorAll('[data-action]').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeActionMenus();
+                const id = Number(btn.dataset.id);
+                const action = btn.dataset.action;
+                if (action === 'open') openDetail(id);
+                else if (action === 'edit') openEdit(id);
+                else if (action === 'project') createProject(id);
+                else if (action === 'delete') askDelete(id);
+            });
+        });
+    }
+
+    function emptyStateHtml(colspan) {
+        const hasFilters = !!(state.search || state.status || state.type);
+        const title = hasFilters ? i18n.emptyFiltered : i18n.noClientsTitle;
+        const body = hasFilters ? '' : i18n.noClientsBody;
+        if (colspan) {
+            return `<tr><td colspan="${colspan}" class="px-3 py-8 text-center text-[var(--crm-muted)]">
+                <div class="font-medium mb-1">${escapeHtml(title)}</div>
+                ${body ? `<div class="text-xs">${escapeHtml(body)}</div>` : ''}
+            </td></tr>`;
+        }
+        return `<div class="crm-empty-inline" style="padding:2.5rem 1rem;text-align:center">
+            <div class="font-medium mb-1">${escapeHtml(title)}</div>
+            ${body ? `<div class="text-xs">${escapeHtml(body)}</div>` : ''}
+        </div>`;
+    }
+
+    function renderPagination(total) {
+        const pagesWrap = els.paginationPages;
+        if (!pagesWrap) return;
+        const totalPages = Math.max(1, Math.ceil(total / state.perPage));
+        if (state.page > totalPages) state.page = totalPages;
+        if (total <= state.perPage) {
+            pagesWrap.innerHTML = '';
+            return;
+        }
+        const pages = [];
+        if (totalPages <= 7) {
+            for (let i = 1; i <= totalPages; i++) pages.push(i);
+        } else {
+            pages.push(1);
+            const start = Math.max(2, state.page - 1);
+            const end = Math.min(totalPages - 1, state.page + 1);
+            if (start > 2) pages.push('…');
+            for (let i = start; i <= end; i++) pages.push(i);
+            if (end < totalPages - 1) pages.push('…');
+            pages.push(totalPages);
+        }
+        pagesWrap.innerHTML = `
+            <button type="button" class="crm-btn crm-btn-sm crm-btn-secondary" data-page="${state.page - 1}" ${state.page <= 1 ? 'disabled' : ''}>${escapeHtml(i18n.prev)}</button>
+            ${pages.map((p) => {
+                if (p === '…') return `<span class="text-xs text-[var(--crm-muted)] px-1">…</span>`;
+                const active = p === state.page;
+                return `<button type="button" class="crm-btn crm-btn-sm ${active ? 'crm-btn-primary' : 'crm-btn-secondary'}" data-page="${p}" ${active ? 'disabled' : ''}>${p}</button>`;
+            }).join('')}
+            <button type="button" class="crm-btn crm-btn-sm crm-btn-secondary" data-page="${state.page + 1}" ${state.page >= totalPages ? 'disabled' : ''}>${escapeHtml(i18n.next)}</button>
+        `;
+        pagesWrap.querySelectorAll('button[data-page]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                if (btn.disabled) return;
+                state.page = Number(btn.dataset.page);
+                renderTable();
+            });
+        });
+    }
+
+    function renderTable() {
+        const items = sortedClients(state.clients);
+        const start = (state.page - 1) * state.perPage;
+        const pageItems = items.slice(start, start + state.perPage);
+        if (!items.length) {
+            els.tableBody.innerHTML = emptyStateHtml(8);
+            renderPagination(0);
+            return;
+        }
+        els.tableBody.innerHTML = pageItems.map((c) => `
+            <tr data-id="${c.id}">
+                <td data-label="${escapeHtml(i18n.client)}">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <span class="font-medium truncate">${escapeHtml(c.full_name || '')}</span>
+                        ${typeChip(c)}
+                    </div>
+                </td>
+                <td data-label="${escapeHtml(i18n.contacts)}">
+                    <div class="text-xs leading-5">
+                        <div>${escapeHtml(c.phone || '—')}</div>
+                        <div class="text-[var(--crm-muted)] truncate">${escapeHtml(c.email || '')}</div>
+                    </div>
+                </td>
+                <td data-label="${escapeHtml(i18n.type)}">${escapeHtml(typeLabel(c.client_type))}</td>
+                <td data-label="${escapeHtml(i18n.status)}">${statusBadge(c.status)}</td>
+                <td data-label="${escapeHtml(i18n.projects)}">${Number(c.projects_count || 0)}</td>
+                <td data-label="${escapeHtml(i18n.budget)}">${escapeHtml(money(c.projects_budget || c.sum_repair_budget_planned || 0))}</td>
+                <td class="hidden lg:table-cell" data-label="${escapeHtml(i18n.updated)}">${escapeHtml(formatDate(c.updated_at))}</td>
+                <td data-label="">${actionsMenuHtml(c.id)}</td>
+            </tr>
+        `).join('');
+
+        document.querySelectorAll('#clients-list-panel .crm-table th[data-sort]').forEach((th) => {
+            th.classList.toggle('is-asc', th.dataset.sort === state.sortKey && state.sortDir === 'asc');
+            th.classList.toggle('is-desc', th.dataset.sort === state.sortKey && state.sortDir === 'desc');
+        });
+
+        els.tableBody.querySelectorAll('tr[data-id]').forEach((tr) => {
+            tr.addEventListener('click', (e) => {
+                if (e.target.closest('[data-stop]')) return;
+                openDetail(Number(tr.dataset.id));
+            });
+        });
+        bindRowActions(els.tableBody);
+        renderPagination(items.length);
+    }
+
+    function renderKanban() {
+        const scrollLeft = els.kanbanPanel.scrollLeft;
+        const items = state.clients;
+        const stages = pipelineStages();
+        els.kanbanPanel.innerHTML = '';
+        stages.forEach((stage) => {
+            const cards = items.filter((c) => c.status === stage.system_key);
+            const col = document.createElement('div');
+            col.className = 'crm-board-col';
+            col.style.setProperty('--col-color', stage.color || '#64748b');
+            col.innerHTML = `
+                <div class="crm-board-col-head">
+                    <span class="crm-board-col-title" title="${escapeHtml(stage.name)}">${escapeHtml(stage.name)}</span>
+                    <span class="crm-board-col-count">${cards.length}</span>
+                </div>
+                <div class="crm-board-col-body" data-drop="${escapeHtml(stage.system_key)}"></div>`;
+            const body = col.querySelector('[data-drop]');
+            const highlight = (on) => col.classList.toggle('is-drop-target', on);
+            const onDragOver = (e) => { e.preventDefault(); highlight(true); };
+            const onDragLeave = (e) => {
+                if (!col.contains(e.relatedTarget)) highlight(false);
+            };
+            const onDrop = async (e) => {
+                e.preventDefault();
+                highlight(false);
+                const id = Number(e.dataTransfer.getData('text/plain'));
+                if (id) await moveClient(id, stage.system_key);
+            };
+            body.addEventListener('dragover', onDragOver);
+            col.addEventListener('dragover', onDragOver);
+            body.addEventListener('dragleave', onDragLeave);
+            col.addEventListener('dragleave', onDragLeave);
+            body.addEventListener('drop', onDrop);
+            col.addEventListener('drop', onDrop);
+
+            if (!cards.length) {
+                body.innerHTML = `<div class="crm-board-empty">${escapeHtml(i18n.noClients)}</div>`;
+            } else {
+                cards.forEach((c) => {
+                    const el = document.createElement('div');
+                    el.className = 'crm-board-card';
+                    el.draggable = true;
+                    el.innerHTML = `
+                        <div class="crm-board-card-title" title="${escapeHtml(c.full_name || '')}">
+                            ${escapeHtml(c.full_name || '')} ${typeChip(c)}
+                        </div>
+                        <div class="crm-board-card-meta">
+                            <div>${escapeHtml(c.phone || '—')}</div>
+                            <div>${escapeHtml(c.email || '')}</div>
+                            <div>${escapeHtml(i18n.projects)}: <strong>${Number(c.projects_count || 0)}</strong></div>
+                            <div>${escapeHtml(i18n.budget)}: <strong>${escapeHtml(money(c.projects_budget || 0))}</strong></div>
+                        </div>`;
+                    el.addEventListener('dragstart', (e) => {
+                        el.classList.add('is-dragging');
+                        state.kanbanScroll = els.kanbanPanel.scrollLeft;
+                        e.dataTransfer.setData('text/plain', String(c.id));
+                        e.dataTransfer.effectAllowed = 'move';
+                    });
+                    el.addEventListener('dragend', () => el.classList.remove('is-dragging'));
+                    el.addEventListener('click', () => openDetail(c.id));
+                    body.appendChild(el);
+                });
+            }
+            els.kanbanPanel.appendChild(col);
+        });
+        els.kanbanPanel.scrollLeft = state.kanbanScroll || scrollLeft;
+    }
+
+    function render() {
+        fillStatusSelects();
+        if (state.view === 'list') {
+            els.kanbanPanel.innerHTML = '';
+            renderTable();
+        } else {
+            if (els.tableBody) els.tableBody.innerHTML = '';
+            renderKanban();
+        }
+    }
+
+    async function refreshClients() {
+        const params = new URLSearchParams();
+        if (state.search) params.set('search', state.search);
+        if (state.status) params.set('status', state.status);
+        if (state.type) params.set('type', state.type);
+        const url = routes.search + (params.toString() ? '?' + params.toString() : '');
+        try {
+            const res = await fetch(url, { headers: { Accept: 'application/json' } });
+            const data = await res.json();
+            if (!res.ok || !data.success) throw new Error(data.message || i18n.error);
+            state.clients = data.data || [];
+            state.page = 1;
+            render();
+        } catch (e) {
+            toast(e.message || i18n.error, 'error');
+        }
+    }
+
+    const debouncedSearch = debounce(() => refreshClients(), 400);
+
+    async function moveClient(id, status) {
+        const client = state.clients.find((c) => c.id === id);
+        if (!client || client.status === status) return;
+        const prev = client.status;
+        client.status = status;
+        render();
+        try {
+            const res = await fetch(routes.status(id), {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                    Accept: 'application/json',
+                },
+                body: JSON.stringify({ status }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.success) throw new Error(data.message || i18n.error);
+            if (data.client) {
+                const idx = state.clients.findIndex((c) => c.id === id);
+                if (idx >= 0) state.clients[idx] = data.client;
+            }
+            render();
+        } catch (e) {
+            client.status = prev;
+            render();
+            toast(e.message || i18n.error, 'error');
+        }
+    }
+
+    function openRoot(root) {
+        root.classList.add('open');
+        root.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeRoot(root) {
+        root.classList.remove('open');
+        root.setAttribute('aria-hidden', 'true');
+        if (!formModal.classList.contains('open') && !detailModal.classList.contains('open')
+            && !unsavedModal.classList.contains('open') && !deleteModal.classList.contains('open')) {
+            document.body.style.overflow = '';
+        }
+    }
+
+    function clearFieldErrors() {
+        document.querySelectorAll('#client-form-modal [data-error]').forEach((el) => {
+            el.textContent = '';
+            el.classList.add('hidden');
+        });
+    }
+
+    function showFieldErrors(errors) {
+        clearFieldErrors();
+        Object.entries(errors || {}).forEach(([key, msgs]) => {
+            const el = document.querySelector(`#client-form-modal [data-error="${key}"]`);
+            if (el) {
+                el.textContent = Array.isArray(msgs) ? msgs[0] : msgs;
+                el.classList.remove('hidden');
+            }
+        });
+    }
+
+    function updateFullNameLabel() {
+        const type = document.getElementById('cf-client-type')?.value;
+        if (els.fullNameLabel) {
+            els.fullNameLabel.textContent = type === 'company' ? i18n.companyName : i18n.fio;
+        }
+    }
+
+    function readFormSnapshot() {
+        return {
+            client_id: document.getElementById('cf-client-id').value || '',
+            client_type: document.getElementById('cf-client-type').value,
+            status: document.getElementById('cf-status').value,
+            full_name: document.getElementById('cf-full-name').value.trim(),
+            phone: document.getElementById('cf-phone').value.trim(),
+            email: document.getElementById('cf-email').value.trim(),
+            link: document.getElementById('cf-link').value.trim(),
+            comment: document.getElementById('cf-comment').value.trim(),
+        };
+    }
+
+    function markDirty() {
+        if (!state.snapshot) return;
+        state.dirty = JSON.stringify(readFormSnapshot()) !== JSON.stringify(state.snapshot);
+    }
+
+    function applyForm(client) {
+        document.getElementById('cf-client-id').value = client?.id ? String(client.id) : '';
+        document.getElementById('cf-client-type').value = client?.client_type || 'person';
+        document.getElementById('cf-status').value = client?.status || 'new';
+        document.getElementById('cf-full-name').value = client?.full_name || '';
+        document.getElementById('cf-phone').value = client?.phone || '';
+        if (state.phoneMask) state.phoneMask.updateValue();
+        document.getElementById('cf-email').value = client?.email || '';
+        document.getElementById('cf-link').value = client?.link || '';
+        document.getElementById('cf-comment').value = client?.comment || '';
+        updateFullNameLabel();
+        clearFieldErrors();
+        window.ModalFilePicker?.initFromDom?.(formModal);
+        window.ModalFilePicker?.get('client')?.reset(client || null);
+    }
+
+    function openFormModal() {
+        openRoot(formModal);
+    }
+
+    function closeFormModal(force = false) {
+        if (state.dirty && !force) {
+            openRoot(unsavedModal);
+            return;
+        }
+        closeRoot(unsavedModal);
+        closeRoot(formModal);
+        state.dirty = false;
+        state.editingId = null;
+        state.snapshot = null;
+        els.form?.reset();
+        window.ModalFilePicker?.get('client')?.reset(null);
+    }
+
+    function openCreate() {
+        state.editingId = null;
+        state.dirty = false;
+        els.formTitle.textContent = i18n.newClient;
+        els.formSubtitle.textContent = i18n.newSubtitle;
+        const saveBtn = document.getElementById('client-form-save');
+        if (saveBtn) saveBtn.textContent = @json(__('clients.create_client'));
+        applyForm(null);
+        state.snapshot = readFormSnapshot();
+        openFormModal();
+    }
+
+    function openEdit(id) {
+        const client = state.clients.find((c) => c.id === id);
+        if (!client) return;
+        closeRoot(detailModal);
+        state.editingId = id;
+        state.dirty = false;
+        els.formTitle.textContent = i18n.editClient;
+        els.formSubtitle.textContent = client.full_name || '';
+        const saveBtn = document.getElementById('client-form-save');
+        if (saveBtn) saveBtn.textContent = @json(__('clients.save'));
+        applyForm(client);
+        state.snapshot = readFormSnapshot();
+        openFormModal();
+    }
+
+    async function saveClient(e) {
+        e.preventDefault();
+        clearFieldErrors();
+        const fd = new FormData(els.form);
+        if (!fd.get('client_id')) fd.delete('client_id');
+        try {
+            const res = await fetch(routes.save, {
+                method: 'POST',
+                headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrf },
+                body: fd,
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.success) {
+                if (data.errors) showFieldErrors(data.errors);
+                throw new Error(data.message || Object.values(data.errors || {}).flat()[0] || i18n.error);
+            }
+            const client = data.client;
+            const idx = state.clients.findIndex((c) => c.id === client.id);
+            if (idx >= 0) state.clients[idx] = client;
+            else state.clients.unshift(client);
+            state.dirty = false;
+            closeFormModal(true);
+            toast(data.message || (state.editingId ? i18n.saved : i18n.added), 'success');
+            render();
+            if (state.detailId === client.id) openDetail(client.id);
+        } catch (err) {
+            toast(err.message || i18n.error, 'error');
+        }
+    }
+
+    function switchDetailTab(name) {
+        state.detailTab = name;
+        detailModal.querySelectorAll('.crm-modal-tab').forEach((t) => {
+            t.classList.toggle('active', t.dataset.dtab === name);
+        });
+        detailModal.querySelectorAll('.cd-panel').forEach((p) => {
+            p.classList.toggle('hidden', p.dataset.dpanel !== name);
+        });
+    }
+
+    function renderDetail(client, projects) {
+        document.getElementById('client-detail-title').textContent = client.full_name || i18n.client;
+        document.getElementById('client-detail-badges').innerHTML = `
+            ${statusBadge(client.status)}
+            ${typeChip(client) || `<span class="crm-status-badge">${escapeHtml(typeLabel(client.client_type))}</span>`}
+        `;
+
+        const general = document.getElementById('client-detail-general');
+        const rows = [
+            [i18n.phone, client.phone],
+            [i18n.email, client.email],
+            [i18n.link, client.link],
+            [i18n.comment, client.comment],
+            [i18n.projects, String(client.projects_count || 0)],
+            [i18n.budget, money(client.projects_budget || client.sum_repair_budget_planned || 0)],
+            [i18n.updated, formatDate(client.updated_at)],
+        ];
+        general.innerHTML = rows.map(([label, value]) => {
+            let content = escapeHtml(value || '—');
+            if (label === i18n.link && client.link) {
+                content = `<a class="text-[var(--crm-accent)]" href="${escapeHtml(client.link)}" target="_blank" rel="noopener">${escapeHtml(client.link)}</a>`;
+            }
+            return `<div class="crm-detail-row"><dt>${escapeHtml(label)}</dt><dd>${content}</dd></div>`;
+        }).join('');
+
+        const filesBox = document.getElementById('client-detail-files');
+        const paths = Array.isArray(client.file_paths) && client.file_paths.length
+            ? client.file_paths
+            : (client.file_path ? [client.file_path] : []);
+        if (!paths.length) {
+            filesBox.innerHTML = '';
+        } else {
+            filesBox.innerHTML = `
+                <div class="crm-section-title mb-2">${escapeHtml(i18n.files)}</div>
+                <div class="space-y-2">
+                    ${paths.map((path, idx) => {
+                        const name = String(path).split('/').pop();
+                        const url = '/storage/' + String(path).replace(/^\//, '');
+                        return `<div class="flex items-center justify-between gap-2 text-sm">
+                            <a class="text-[var(--crm-accent)] truncate" href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(name)}</a>
+                            <div class="flex gap-1 shrink-0">
+                                <a class="crm-btn crm-btn-ghost crm-btn-sm" href="${escapeHtml(url)}" download>${escapeHtml(i18n.download)}</a>
+                                <button type="button" class="crm-btn crm-btn-ghost crm-btn-sm" data-del-file="${idx}" style="color:var(--crm-danger)">${escapeHtml(i18n.deleteFile)}</button>
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>`;
+            filesBox.querySelectorAll('[data-del-file]').forEach((btn) => {
+                btn.addEventListener('click', () => deleteClientFile(client.id, Number(btn.dataset.delFile)));
+            });
+        }
+
+        const projectsBox = document.getElementById('client-detail-projects');
+        if (!projects.length) {
+            projectsBox.innerHTML = `<div class="crm-empty-inline">${escapeHtml(i18n.noRelatedProjects)}</div>`;
+        } else {
+            projectsBox.innerHTML = projects.map((p) => {
+                const progress = p.checklist_progress || { done: 0, total: 0, percent: 0 };
+                return `<a class="crm-related-project" href="${escapeHtml(routes.projectShow(p.id))}">
+                    <div class="min-w-0">
+                        <div class="font-medium truncate">${escapeHtml(p.name || '')}</div>
+                        <div class="text-xs text-[var(--crm-muted)] mt-0.5">
+                            ${escapeHtml(p.status || '')}
+                            · ${escapeHtml(money(p.planned_cost || 0))}
+                            · ${progress.done}/${progress.total}
+                        </div>
+                    </div>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                </a>`;
+            }).join('');
+        }
+    }
+
+    async function openDetail(id, { tab } = {}) {
+        state.detailId = id;
+        syncUrl({ openId: id });
+        openRoot(detailModal);
+        switchDetailTab(tab || state.detailTab || 'general');
+        document.getElementById('client-detail-general').innerHTML = '<div class="crm-skeleton h-14"></div>';
+        document.getElementById('client-detail-projects').innerHTML = '';
+        try {
+            const res = await fetch(routes.show(id), { headers: { Accept: 'application/json' } });
+            const data = await res.json();
+            if (!res.ok || !data.success) throw new Error(data.message || i18n.error);
+            const client = data.client;
+            const projects = data.projects || [];
+            const idx = state.clients.findIndex((c) => c.id === id);
+            if (idx >= 0) state.clients[idx] = client;
+            state.detailProjects = projects;
+            renderDetail(client, projects);
+            updateCount();
+        } catch (e) {
+            toast(e.message || i18n.error, 'error');
+            closeDetail();
+        }
+    }
+
+    function closeDetail() {
+        closeRoot(detailModal);
+        state.detailId = null;
+        state.detailProjects = [];
+        syncUrl();
+    }
+
+    function createProject(clientId) {
+        const url = new URL(routes.projectsIndex, window.location.origin);
+        url.searchParams.set('create', '1');
+        url.searchParams.set('client_id', String(clientId));
+        window.location.href = url.toString();
+    }
+
+    function askDelete(id, { force = false, message } = {}) {
+        state.deleteId = id;
+        state.deleteForce = !!force;
+        els.deleteMessage.textContent = message || i18n.deleteConfirm;
+        openRoot(deleteModal);
+    }
+
+    async function confirmDelete() {
+        const id = state.deleteId;
+        if (!id) return;
+        try {
+            const body = state.deleteForce ? JSON.stringify({ confirm: true }) : JSON.stringify({});
+            const res = await fetch(routes.destroy(id), {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                    Accept: 'application/json',
+                },
+                body,
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.status === 422 && data.needs_confirm) {
+                closeRoot(deleteModal);
+                askDelete(id, { force: true, message: data.message || i18n.deleteConfirm });
+                return;
+            }
+            if (!res.ok || !data.success) throw new Error(data.message || i18n.error);
+            state.clients = state.clients.filter((c) => c.id !== id);
+            closeRoot(deleteModal);
+            if (state.detailId === id) closeDetail();
+            if (state.editingId === id) closeFormModal(true);
+            state.deleteId = null;
+            state.deleteForce = false;
+            render();
+        } catch (e) {
+            toast(e.message || i18n.error, 'error');
+        }
+    }
+
+    async function deleteClientFile(clientId, fileIndex) {
+        if (!window.confirm(i18n.deleteFileConfirm)) return;
+        try {
+            const res = await fetch(routes.deleteFile(clientId, fileIndex), {
+                method: 'DELETE',
+                headers: { 'X-CSRF-TOKEN': csrf, Accept: 'application/json' },
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.success) throw new Error(data.message || i18n.error);
+            if (data.client) {
+                const idx = state.clients.findIndex((c) => c.id === clientId);
+                if (idx >= 0) state.clients[idx] = data.client;
+                if (state.detailId === clientId) {
+                    renderDetail(data.client, state.detailProjects);
+                }
+            }
+            render();
+        } catch (e) {
+            toast(e.message || i18n.error, 'error');
+        }
+    }
+
+    // Events
+    document.getElementById('clients-create-btn')?.addEventListener('click', openCreate);
+    document.querySelectorAll('#crm-clients-workspace .crm-view-btn').forEach((btn) => {
+        btn.addEventListener('click', () => setView(btn.dataset.view));
+    });
+    els.search?.addEventListener('input', () => {
+        state.search = els.search.value.trim();
+        debouncedSearch();
+    });
+    els.status?.addEventListener('change', () => {
+        state.status = els.status.value;
+        refreshClients();
+    });
+    els.type?.addEventListener('change', () => {
+        state.type = els.type.value;
+        refreshClients();
+    });
+    els.perPage?.addEventListener('change', () => {
+        state.perPage = parseInt(els.perPage.value, 10) || 10;
+        localStorage.setItem(PER_PAGE_KEY, String(state.perPage));
+        state.page = 1;
+        renderTable();
+    });
+    document.querySelectorAll('#clients-list-panel .crm-table th[data-sort]').forEach((th) => {
+        th.addEventListener('click', () => {
+            const key = th.dataset.sort;
+            if (state.sortKey === key) state.sortDir = state.sortDir === 'asc' ? 'desc' : 'asc';
+            else { state.sortKey = key; state.sortDir = 'asc'; }
+            renderTable();
+        });
+    });
+
+    document.getElementById('cf-client-type')?.addEventListener('change', () => {
+        updateFullNameLabel();
+        markDirty();
+    });
+    ['cf-status', 'cf-full-name', 'cf-phone', 'cf-email', 'cf-link', 'cf-comment'].forEach((id) => {
+        document.getElementById(id)?.addEventListener('input', markDirty);
+        document.getElementById(id)?.addEventListener('change', markDirty);
+    });
+    els.form?.addEventListener('submit', saveClient);
+    document.getElementById('client-form-close')?.addEventListener('click', () => closeFormModal(false));
+    document.getElementById('client-form-cancel')?.addEventListener('click', () => closeFormModal(false));
+    formModal.querySelector('[data-close-backdrop]')?.addEventListener('click', () => closeFormModal(false));
+
+    document.getElementById('client-unsaved-continue')?.addEventListener('click', () => closeRoot(unsavedModal));
+    document.getElementById('client-unsaved-leave')?.addEventListener('click', () => closeFormModal(true));
+
+    document.getElementById('client-detail-close')?.addEventListener('click', closeDetail);
+    document.getElementById('client-detail-close-footer')?.addEventListener('click', closeDetail);
+    detailModal.querySelector('[data-close-backdrop]')?.addEventListener('click', closeDetail);
+    document.getElementById('client-detail-edit')?.addEventListener('click', () => {
+        if (state.detailId) openEdit(state.detailId);
+    });
+    document.getElementById('client-detail-delete')?.addEventListener('click', () => {
+        if (state.detailId) askDelete(state.detailId);
+    });
+    document.getElementById('client-detail-create-project')?.addEventListener('click', () => {
+        if (state.detailId) createProject(state.detailId);
+    });
+    detailModal.querySelectorAll('.crm-modal-tab').forEach((tab) => {
+        tab.addEventListener('click', () => switchDetailTab(tab.dataset.dtab));
+    });
+
+    document.getElementById('client-delete-cancel')?.addEventListener('click', () => {
+        closeRoot(deleteModal);
+        state.deleteId = null;
+        state.deleteForce = false;
+    });
+    document.getElementById('client-delete-confirm')?.addEventListener('click', confirmDelete);
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.crm-actions-menu')) closeActionMenus();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if (unsavedModal.classList.contains('open')) { closeRoot(unsavedModal); return; }
+        if (deleteModal.classList.contains('open')) {
+            closeRoot(deleteModal);
+            state.deleteId = null;
+            state.deleteForce = false;
+            return;
+        }
+        if (formModal.classList.contains('open')) { closeFormModal(false); return; }
+        if (detailModal.classList.contains('open')) closeDetail();
+    });
+
+    // Phone mask
+    const phoneEl = document.getElementById('cf-phone');
+    if (phoneEl && typeof window.IMask !== 'undefined') {
+        state.phoneMask = window.IMask(phoneEl, { mask: '+{7} (000) 000-00-00' });
+    }
+
+    window.CrmPipelineSettingsConfig = {
+        csrf,
+        routes,
+        toast,
+        escapeHtml,
+        getProjects: () => state.clients,
+        getPipeline: () => state.pipeline,
+        setPipeline: (p) => { if (p) state.pipeline = p; },
+        renderBoard: () => render(),
+        pipelineType: 'client',
+        i18n: {
+            drag: @json(__('projects.pipeline_drag')),
+            more: @json(__('projects.pipeline_more')),
+            color: @json(__('projects.pipeline_color')),
+            namePlaceholder: @json(__('projects.pipeline_stage_name_placeholder')),
+            deleteMarked: @json(__('projects.pipeline_delete_marked')),
+            deleteStage: @json(__('projects.pipeline_delete_stage')),
+            undoDelete: @json(__('projects.pipeline_undo_delete')),
+            moveTitle: @json(__('projects.pipeline_move_title')),
+            moveCount: @json(__('projects.pipeline_move_count')),
+            nameRequired: @json(__('projects.pipeline_name_required')),
+            saved: @json(__('projects.pipeline_saved')),
+            saveError: @json(__('projects.pipeline_save_error')),
+        },
+    };
+
+    // Init
+    window.ModalFilePicker?.initFromDom?.(document);
+    fillStatusSelects();
+    setView(state.view, { persist: true });
+
+    const openParam = new URLSearchParams(window.location.search).get('open');
+    if (openParam) {
+        const openId = Number(openParam);
+        if (openId) openDetail(openId);
+    }
+})();
+</script>
+@include('designer.projects.partials.pipeline-settings-scripts')
+@endpush

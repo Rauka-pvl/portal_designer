@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Designer;
 
 use App\Http\Controllers\Controller;
 use App\Models\DesignerSubscriptionPayment;
+use App\Services\Team\TeamService;
+use App\Support\AccountPermissions;
 use App\Support\DesignerSubscription;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,6 +33,14 @@ class SubscriptionController extends Controller
 
         $hasRealPayments = DesignerSubscription::hasRealPayments($user);
         $isOnboarding = DesignerSubscription::needsOnboardingLayout($user);
+
+        $teamService = app(TeamService::class);
+        $team = $teamService->activeTeamFor($user)
+            ?? \App\Models\DesignerTeam::query()->where('owner_id', $user->id)->where('status', 'active')->first();
+        $isCorporatePlan = (string) $user->subscription_plan === DesignerSubscription::PLAN_CORPORATE
+            || ($team && $teamService->isCorporateUser($user));
+        $teamRole = $team?->roleFor($user);
+        $canManageBilling = $teamRole?->canManageBilling() ?? true;
 
         return view('designer.subscription.index', [
             'plans' => DesignerSubscription::plans(),
@@ -66,6 +76,11 @@ class SubscriptionController extends Controller
             'billingEmail' => $user->email,
             'payments' => $payments,
             'locked' => ! $hasAccess,
+            'teamSeatsUsed' => $team?->usedSeats(),
+            'teamSeatsMax' => $team?->max_members,
+            'isCorporatePlan' => $isCorporatePlan,
+            'canManageBilling' => $canManageBilling,
+            'teamRole' => $teamRole?->value,
         ]);
     }
 
@@ -105,6 +120,21 @@ class SubscriptionController extends Controller
             'card_cvc' => ['nullable', 'string', 'max:4'],
         ]);
 
+        $user = $request->user();
+
+        // Non-owner team members cannot purchase / change Corporate billing.
+        $team = app(TeamService::class)->activeTeamFor($user)
+            ?? \App\Models\DesignerTeamMember::query()
+                ->where('user_id', $user->id)
+                ->where('status', 'active')
+                ->with('team')
+                ->first()?->team;
+
+        if ($team && (int) $team->owner_id !== (int) $user->id
+            && $data['plan'] === DesignerSubscription::PLAN_CORPORATE) {
+            return back()->withErrors(['plan' => __('team.forbidden_manage_billing')]);
+        }
+
         $method = $data['payment_method'];
         $promo = $data['promo_code'] ?? null;
 
@@ -115,7 +145,6 @@ class SubscriptionController extends Controller
         $cardDigits = preg_replace('/\D+/', '', (string) ($data['card_number'] ?? ''));
         $cardLast4 = $cardDigits && strlen($cardDigits) >= 4 ? substr($cardDigits, -4) : null;
 
-        $user = $request->user();
         $wasTrialEligible = DesignerSubscription::canUseTrial($user);
 
         DesignerSubscription::checkout(
@@ -131,7 +160,6 @@ class SubscriptionController extends Controller
             ? __('subscription.trial_started', ['days' => DesignerSubscription::trialDays()])
             : __('subscription.purchase_success');
 
-        // After first activation, send the designer into the unlocked cabinet.
         if ($wasTrialEligible || DesignerSubscription::hasAccess($user->fresh())) {
             return redirect()
                 ->route('dashboard')
@@ -145,11 +173,28 @@ class SubscriptionController extends Controller
 
     public function changePlan(Request $request): RedirectResponse
     {
+        $planKeys = array_keys(DesignerSubscription::plans());
         $data = $request->validate([
-            'plan' => ['required', 'in:standard,pro'],
+            'plan' => ['required', 'in:'.implode(',', $planKeys)],
+            'confirm_team_downgrade' => ['nullable', 'boolean'],
         ]);
 
-        DesignerSubscription::changePlan($request->user(), $data['plan']);
+        $user = $request->user();
+        if (! AccountPermissions::canManageBilling($user)) {
+            return back()->withErrors(['plan' => __('team.forbidden_manage_billing')]);
+        }
+
+        $previous = (string) $user->subscription_plan;
+        $downgradingFromCorporate = $previous === DesignerSubscription::PLAN_CORPORATE
+            && in_array($data['plan'], [DesignerSubscription::PLAN_STANDARD, DesignerSubscription::PLAN_PRO], true);
+
+        if ($downgradingFromCorporate && ! $request->boolean('confirm_team_downgrade')) {
+            return back()->withErrors([
+                'plan' => __('subscription.confirm_downgrade_from_corporate'),
+            ]);
+        }
+
+        DesignerSubscription::changePlan($user, $data['plan']);
 
         return back()->with('success', __('subscription.plan_changed'));
     }

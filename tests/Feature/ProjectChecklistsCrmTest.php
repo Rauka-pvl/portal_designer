@@ -229,6 +229,72 @@ class ProjectChecklistsCrmTest extends TestCase
         $included = is_array($order->included_step_ids) ? $order->included_step_ids : [];
         $this->assertContains($stepA->id, array_map('intval', $included));
         $this->assertNotContains($stepB->id, array_map('intval', $included));
+
+        $json = $this->actingAs($user)->getJson('/supplier-orders/'.$order->id)->assertOk()->json();
+        $steps = $json['included_steps'] ?? [];
+        $this->assertCount(1, $steps);
+        $this->assertSame('Диван серый 2 шт', $steps[0]['result_comment'] ?? null);
+        $this->assertSame('Диван', $steps[0]['title'] ?? null);
+    }
+
+    public function test_supply_form_markup_shows_checklist_result_ui(): void
+    {
+        $user = $this->designer();
+        app(PipelineService::class)->ensureDefaultsForUser((int) $user->id);
+
+        $html = $this->actingAs($user)->get('/projects')->assertOk()->getContent();
+
+        $this->assertStringContainsString(__('projects.supply_checklist_materials'), $html);
+        $this->assertStringContainsString(__('projects.supply_checklist_hint'), $html);
+        $this->assertStringContainsString('crm-section-title-plain', $html);
+        $this->assertStringContainsString('function renderProjectSteps', $html);
+        $this->assertStringContainsString('crm-supply-step-card', $html);
+        $this->assertStringContainsString('result_comment', $html);
+        $this->assertStringContainsString('stepsSelectedCount', $html);
+        $this->assertStringContainsString('stepsSelectAll', $html);
+        $this->assertStringContainsString(__('projects.supply_checklist_result_label'), $html);
+    }
+
+    public function test_cannot_attach_checklist_steps_from_foreign_project(): void
+    {
+        $owner = $this->designer();
+        $other = $this->designer();
+        app(PipelineService::class)->ensureDefaultsForUser((int) $owner->id);
+        app(PipelineService::class)->ensureDefaultsForUser((int) $other->id);
+
+        $project = $this->seedProject($owner);
+        $foreignProject = $this->seedProject($other);
+        $supplier = Supplier::query()->create([
+            'user_id' => $owner->id,
+            'created_by_user_id' => $owner->id,
+            'name' => 'Поставщик',
+            'profile_status' => 'active',
+            'moderation_status' => 'approved',
+        ]);
+
+        $foreignStage = ProjectStages::query()->create([
+            'project_id' => $foreignProject->id,
+            'stage_type' => 'measurement',
+            'order' => 0,
+        ]);
+        $foreignStep = ProjectStageStep::query()->create([
+            'project_stage_id' => $foreignStage->id,
+            'title' => 'Чужой',
+            'result_status' => 'done',
+            'result_comment' => 'Секрет',
+            'order' => 0,
+        ]);
+
+        $this->actingAs($owner)->postJson('/supplier-orders', [
+            'project_id' => $project->id,
+            'supplier_id' => $supplier->id,
+            'summa' => 1000,
+            'date_planned' => now()->toDateString(),
+            'send_to_supplier' => 0,
+            'action' => 'save',
+            'included_step_ids' => [$foreignStep->id],
+            'product_items' => json_encode([]),
+        ])->assertStatus(422);
     }
 
     public function test_user_template_crud_and_system_protected(): void

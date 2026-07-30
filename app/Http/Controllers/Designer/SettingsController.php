@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Designer;
 
 use App\Http\Controllers\Controller;
 use App\Models\DesignerProfile;
+use App\Services\Team\TeamService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
@@ -12,6 +13,10 @@ use Illuminate\Validation\Rules\Password;
 
 class SettingsController extends Controller
 {
+    public function __construct(
+        private readonly TeamService $teamService,
+    ) {}
+
     public function profile(Request $request)
     {
         $user = $request->user();
@@ -32,10 +37,16 @@ class SettingsController extends Controller
         $tab = $request->query('tab', 'profile');
         $profile = $this->designerProfile($user);
 
+        $allowedTabs = ['profile', 'security', 'team', 'roles'];
+        $activeTab = in_array($tab, $allowedTabs, true) ? $tab : 'profile';
+
+        $teamContext = $this->teamTabContext($user);
+
         return view('designer.settings.index', [
-            'activeTab' => in_array($tab, ['profile', 'security'], true) ? $tab : 'profile',
+            'activeTab' => $activeTab,
             'user' => $user,
             'profile' => $profile,
+            ...$teamContext,
         ]);
     }
 
@@ -115,6 +126,59 @@ class SettingsController extends Controller
         return $user->designerProfile ?? new DesignerProfile([
             'user_id' => $user->id,
         ]);
+    }
+
+    /** @return array<string, mixed> */
+    private function teamTabContext($user): array
+    {
+        $membership = \App\Models\DesignerTeamMember::query()
+            ->where('user_id', $user->id)
+            ->where('status', \App\Enums\TeamMemberStatus::Active->value)
+            ->with('team.owner')
+            ->latest('id')
+            ->first();
+
+        $team = $membership?->team;
+        if ($team && ! $team->isActive()) {
+            $team = null;
+        }
+
+        $isCorporate = $team
+            ? $this->teamService->teamHasCorporateAccess($team)
+            : false;
+
+        $role = $team && $membership
+            ? \App\Enums\TeamRole::tryFrom((string) ($membership->role instanceof \App\Enums\TeamRole
+                ? $membership->role->value
+                : $membership->role))
+            : null;
+
+        $members = $team
+            ? $team->members()->with('user')->orderBy('joined_at')->get()
+            : collect();
+
+        $invitations = $team
+            ? $team->invitations()
+                ->where('status', 'pending')
+                ->where(function ($q) {
+                    $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                })
+                ->orderByDesc('created_at')
+                ->get()
+            : collect();
+
+        return [
+            'isCorporate' => $isCorporate,
+            'team' => $team,
+            'members' => $members,
+            'invitations' => $invitations,
+            'canManageMembers' => $isCorporate && ($role?->canManageMembers() ?? false),
+            'seatUsed' => $team?->usedSeats() ?? 0,
+            'seatMax' => (int) ($team?->max_members ?? 5),
+            'assigneeOptions' => $this->teamService->assigneeOptions($user),
+            'teamRole' => $role?->value,
+            'canManageBilling' => $role?->canManageBilling() ?? (! $team),
+        ];
     }
 }
 

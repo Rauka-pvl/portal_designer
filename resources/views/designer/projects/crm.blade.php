@@ -18,9 +18,14 @@
                     aria-pressed="false" title="{{ __('projects.view_list') }}">{{ __('projects.list') }}</button>
             </div>
             @if ($canManage)
-                <button type="button" id="pipeline-settings-btn" class="crm-btn crm-btn-secondary crm-btn-sm"
+                <button type="button" id="pipeline-settings-btn" class="crm-btn crm-btn-secondary crm-btn-sm crm-pipeline-settings-btn"
                     title="{{ __('projects.pipeline_settings') }}"
-                    aria-label="{{ __('projects.pipeline_settings') }}">⚙</button>
+                    aria-label="{{ __('projects.pipeline_settings') }}">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                </button>
             @endif
         </div>
         <div class="crm-toolbar-right">
@@ -220,22 +225,7 @@
     </div>
 </div>
 
-@if ($canManage)
-<div id="pipeline-modal" class="crm-confirm-root" style="z-index:85">
-    <div class="crm-card p-4 w-[min(520px,94vw)] max-h-[80vh] overflow-auto relative z-10">
-        <div class="flex items-center justify-between mb-3">
-            <h3 class="font-semibold">{{ __('projects.pipeline_settings') }}</h3>
-            <button type="button" id="pipeline-close" class="crm-btn crm-btn-ghost">✕</button>
-        </div>
-        <div id="pipeline-stages-list" class="space-y-2 mb-3"></div>
-        <div class="flex gap-2">
-            <input id="pipeline-new-name" class="crm-input" placeholder="{{ __('projects.pipeline_add_column') }}">
-            <input id="pipeline-new-color" type="color" value="#64748b" class="w-10 h-9 rounded cursor-pointer">
-            <button type="button" id="pipeline-add" class="crm-btn crm-btn-primary">+</button>
-        </div>
-    </div>
-</div>
-@endif
+@include('designer.projects.partials.pipeline-settings-modals')
 
 @include('designer.projects.partials.supply-modals')
 @include('designer.projects.partials.checklist-modals')
@@ -258,6 +248,7 @@
         pipelineStage: @json(route('pipelines.stages.store')),
         pipelineUpdate: (id) => @json(url('/pipelines/stages')) + '/' + id,
         pipelineDelete: (id) => @json(url('/pipelines/stages')) + '/' + id,
+        pipelineSync: @json(route('pipelines.sync')),
         supplyIndex: @json(route('supplier-orders.index')),
         clientsIndex: @json(route('clients.index')),
     };
@@ -267,8 +258,6 @@
     const unsaved = document.getElementById('unsaved-modal');
     document.body.appendChild(modalRoot);
     document.body.appendChild(unsaved);
-    const pm = document.getElementById('pipeline-modal');
-    if (pm) document.body.appendChild(pm);
 
     const i18n = {
         noProjectsYet: @json(__('projects.no_projects_yet')),
@@ -706,10 +695,15 @@
         state.currentId = null;
     }
 
-    function openCreate() {
+    function openCreate(opts = {}) {
         state.currentId = null;
         state.dirty = false;
         applyForm({ status: (state.pipeline.stages||[])[0]?.system_key });
+        if (opts.clientId) {
+            fillClients(String(opts.clientId));
+            const sel = document.getElementById('ov-client');
+            if (sel) sel.value = String(opts.clientId);
+        }
         state.snapshot = readForm();
         const cl = document.getElementById('ov-checklists-list');
         if (cl) cl.innerHTML = `<div class="crm-empty-inline">${@json(__('projects.checklists_after_save'))}</div>`;
@@ -958,63 +952,37 @@
         if (res.ok) { document.getElementById('ov-comment-input').value = ''; loadFeed(state.currentId); }
     });
 
-    if (canManage) {
-        const renderPipelineSettings = () => {
-            const list = document.getElementById('pipeline-stages-list');
-            list.innerHTML = (state.pipeline.stages||[]).map(s => `
-                <div class="flex items-center gap-2" data-id="${s.id}">
-                    <input type="color" value="${s.color||'#64748b'}" data-act="color" class="w-8 h-8 rounded">
-                    <input class="crm-input" value="${escapeHtml(s.name)}" data-act="name">
-                    <button type="button" class="crm-btn crm-btn-ghost crm-btn-sm" data-act="del">🗑</button>
-                </div>`).join('');
-            list.querySelectorAll('[data-id]').forEach(row => {
-                const id = Number(row.dataset.id);
-                row.querySelector('[data-act="name"]').addEventListener('change', async e => {
-                    await fetch(routes.pipelineUpdate(id), { method: 'PUT', headers: {'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'}, body: JSON.stringify({ name: e.target.value })});
-                    const st = state.pipeline.stages.find(x => x.id === id); if (st) st.name = e.target.value; render();
-                });
-                row.querySelector('[data-act="color"]').addEventListener('change', async e => {
-                    await fetch(routes.pipelineUpdate(id), { method: 'PUT', headers: {'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'}, body: JSON.stringify({ color: e.target.value })});
-                    const st = state.pipeline.stages.find(x => x.id === id); if (st) st.color = e.target.value; render();
-                });
-                row.querySelector('[data-act="del"]').addEventListener('click', async () => {
-                    const others = (state.pipeline.stages||[]).filter(x => x.id !== id);
-                    let target = null;
-                    if (others.length) {
-                        const pick = prompt(@json(__('projects.pipeline_move_required')) + '\n' + others.map(o => o.id + ': ' + o.name).join('\n'));
-                        if (pick) target = Number(pick);
-                    }
-                    const res = await fetch(routes.pipelineDelete(id), {
-                        method: 'DELETE',
-                        headers: {'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
-                        body: JSON.stringify({ confirm: true, target_stage_id: target })
-                    });
-                    const data = await res.json();
-                    if (!res.ok) { toast(data.message||'Error','error'); return; }
-                    state.pipeline.stages = state.pipeline.stages.filter(x => x.id !== id);
-                    renderPipelineSettings(); render();
-                });
-            });
-        };
-        document.getElementById('pipeline-settings-btn')?.addEventListener('click', () => { renderPipelineSettings(); pm.classList.add('open'); });
-        document.getElementById('pipeline-close')?.addEventListener('click', () => pm.classList.remove('open'));
-        document.getElementById('pipeline-add')?.addEventListener('click', async () => {
-            const name = document.getElementById('pipeline-new-name').value.trim();
-            const color = document.getElementById('pipeline-new-color').value;
-            if (!name) return;
-            const res = await fetch(routes.pipelineStage, {
-                method: 'POST', headers: {'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
-                body: JSON.stringify({ type: 'project', name, color })
-            });
-            const data = await res.json();
-            if (data.stage) { state.pipeline.stages.push(data.stage); document.getElementById('pipeline-new-name').value=''; renderPipelineSettings(); render(); }
-        });
-    }
+    window.CrmPipelineSettingsConfig = {
+        csrf,
+        routes,
+        toast,
+        escapeHtml,
+        getProjects: () => state.projects,
+        getPipeline: () => state.pipeline,
+        setPipeline: (p) => { if (p) state.pipeline = p; },
+        renderBoard: () => render(),
+        pipelineType: 'project',
+        i18n: {
+            drag: @json(__('projects.pipeline_drag')),
+            more: @json(__('projects.pipeline_more')),
+            color: @json(__('projects.pipeline_color')),
+            namePlaceholder: @json(__('projects.pipeline_stage_name_placeholder')),
+            deleteMarked: @json(__('projects.pipeline_delete_marked')),
+            deleteStage: @json(__('projects.pipeline_delete_stage')),
+            undoDelete: @json(__('projects.pipeline_undo_delete')),
+            moveTitle: @json(__('projects.pipeline_move_title')),
+            moveCount: @json(__('projects.pipeline_move_count')),
+            nameRequired: @json(__('projects.pipeline_name_required')),
+            saved: @json(__('projects.pipeline_saved')),
+            saveError: @json(__('projects.pipeline_save_error')),
+        },
+    };
 
     const params = new URLSearchParams(location.search);
     const openId = params.get('open') || params.get('project_id');
     const wantSupplyCreate = params.get('create') === '1' && (params.get('tab') === 'supplies' || params.has('project_id'));
-    const wantTab = params.get('tab') || (wantSupplyCreate ? 'supplies' : null);
+    const wantChecklist = params.get('checklist');
+    const wantTab = params.get('tab') || (wantSupplyCreate ? 'supplies' : (wantChecklist ? 'checklists' : null));
 
     window.CrmProjectBridge = {
         csrf,
@@ -1052,12 +1020,23 @@
             if (supplyId && window.CrmSupplies?.openDetail) {
                 setTimeout(() => window.CrmSupplies.openDetail(Number(supplyId)), 80);
             }
+            const checklistId = params.get('checklist');
+            const stepId = params.get('step') || params.get('item');
+            if (checklistId && window.CrmChecklists?.openDetail) {
+                setTimeout(() => {
+                    window.CrmChecklists.openDetail(Number(checklistId), {
+                        stepId: stepId ? Number(stepId) : null,
+                    });
+                }, 100);
+            }
         });
     } else if (params.get('create') === '1' && !wantSupplyCreate) {
-        openCreate();
+        const prefClient = params.get('client_id');
+        openCreate(prefClient ? { clientId: Number(prefClient) } : {});
     }
 })();
 </script>
 @include('designer.projects.partials.supply-scripts')
 @include('designer.projects.partials.checklist-scripts')
+@include('designer.projects.partials.pipeline-settings-scripts')
 @endpush

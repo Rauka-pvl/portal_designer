@@ -22,6 +22,24 @@ return [
     'plan_standard_limit' => 'Базовый набор инструментов',
     'plan_pro_limit' => 'Расширенные возможности без лишних ограничений',
 
+    'plan_corporate' => 'Corporate',
+    'plan_corporate_desc' => 'Для студий и команд дизайнеров',
+    'plan_corporate_limit' => 'До 5 мест · общие проекты',
+
+    'feature_team' => 'Командное пространство (5 мест)',
+    'feature_roles' => 'Роли: владелец, администратор, дизайнер',
+    'feature_assignees' => 'Назначение задач участникам команды',
+    'feature_team_projects' => 'Общие проекты команды',
+
+    'seats_used' => 'Мест занято: :used из :max',
+
+    'corporate_expired_title' => 'Подписка Corporate истекла',
+    'corporate_expired_body' => 'Доступ команды приостановлен. Продлите Corporate, чтобы восстановить рабочее пространство для всех участников.',
+    'corporate_renew' => 'Продлить Corporate',
+    'corporate_contact_owner' => 'Свяжитесь с владельцем команды для продления подписки.',
+
+    'confirm_downgrade_from_corporate' => 'При переходе с Corporate доступ команды будет отключён для всех участников. Общие проекты останутся у владельца аккаунта. Продолжить?',
+
     'feature_clients' => 'Клиенты и объекты',
     'feature_projects' => 'Проекты и чек-листы',
     'feature_orders' => 'Поставки и переговоры',

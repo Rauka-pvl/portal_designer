@@ -1,0 +1,135 @@
+<?php
+
+return [
+    'page_title' => 'Team',
+    'roles_page_title' => 'Roles and access',
+
+    // TeamService / enums
+    'role_owner' => 'Owner',
+    'role_admin' => 'Admin',
+    'role_designer' => 'Designer',
+    'role_self' => 'You',
+    'default_name' => ':name\'s team',
+
+    'forbidden_manage_members' => 'You do not have permission to manage team members.',
+    'user_already_in_team' => 'This user is already a member of another team.',
+    'cannot_assign_owner' => 'The owner role cannot be assigned or changed.',
+    'forbidden_assign_role' => 'You cannot assign this role.',
+    'already_member' => 'This user is already on the team.',
+    'notify_added_title' => 'Added to team',
+    'notify_added_body' => 'You were added to :team as :role.',
+    'notify_role_title' => 'Role updated',
+    'notify_role_body' => 'Your team role was changed to :role.',
+    'invite_already_pending' => 'An invitation for this email is already pending.',
+    'member_not_found' => 'Team member not found.',
+    'cannot_remove_owner' => 'The team owner cannot be removed.',
+    'personal_assignee_only_self' => 'On a personal plan you can only assign tasks to yourself.',
+    'assignee_not_in_team' => 'The selected assignee is not an active team member.',
+    'seat_limit_reached' => 'Corporate plan seat limit reached: 5 users.',
+    'user_not_found' => 'No user found with this email.',
+    'user_not_designer' => 'Only designer accounts can join the team.',
+    'member_added' => 'Member added to the team.',
+    'member_created' => 'Account created and added to the team.',
+    'member_removed' => 'Member removed from the team.',
+    'invite_sent' => 'Invitation sent.',
+    'invite_cancelled' => 'Invitation cancelled.',
+    'role_changed' => 'Role updated.',
+    'corporate_required' => 'Team management requires an active Corporate subscription.',
+    'forbidden_manage_billing' => 'Only the team owner can manage billing and subscription.',
+    'notify_invite_title' => 'Team invitation',
+    'notify_invite_body' => 'You were invited to join :team.',
+    'notify_checklist_assigned_title' => 'Checklist assigned',
+    'notify_checklist_assigned_body' => ':actor assigned you checklist “:checklist” in project “:project”. Deadline: :deadline.',
+
+    // Statuses
+    'status_active' => 'Active',
+    'status_blocked' => 'Blocked',
+    'status_inactive' => 'Inactive',
+    'status_pending' => 'Pending invitation',
+
+    // Team tab — header & seats
+    'seats_used' => 'Seats used: :used of :max',
+    'member_count' => ':count members',
+    'add_member' => 'Add member',
+    'team_name' => 'Team',
+
+    // Table columns
+    'col_name' => 'Name',
+    'col_email' => 'Email',
+    'col_role' => 'Role',
+    'col_status' => 'Status',
+    'col_joined_at' => 'Joined',
+    'col_actions' => 'Actions',
+    'col_invited_at' => 'Invited',
+    'col_expires_at' => 'Expires',
+
+    // Actions
+    'actions' => 'Actions',
+    'change_role' => 'Change role',
+    'remove_member' => 'Remove from team',
+    'cancel_invitation' => 'Cancel invitation',
+    'confirm_remove_title' => 'Remove team member?',
+    'confirm_remove_body' => ':name will lose access to the Corporate workspace.',
+    'confirm_cancel_invite_title' => 'Cancel invitation?',
+    'confirm_cancel_invite_body' => 'The invitation to :email will be revoked.',
+
+    // Sections
+    'members_section' => 'Members',
+    'invitations_section' => 'Pending invitations',
+    'invitations_empty' => 'No pending invitations.',
+
+    // Locked state (Standard / Pro)
+    'locked_title' => 'Corporate team workspace',
+    'locked_body' => 'Invite up to 4 colleagues, assign roles, and share projects on the Corporate plan.',
+    'go_to_corporate' => 'Go to Corporate',
+
+    'roles_locked_title' => 'Role-based access',
+    'roles_locked_body' => 'Fine-grained permissions for owners, admins, and designers are available on the Corporate plan.',
+    'roles_locked_cta' => 'Go to Corporate',
+
+    // Corporate subscription expired (member view)
+    'corporate_expired_title' => 'Corporate subscription expired',
+    'corporate_expired_body' => 'Team access is paused until the owner renews the Corporate plan.',
+    'corporate_renew' => 'Renew subscription',
+    'corporate_contact_owner' => 'Contact the team owner to restore access.',
+
+    // Add member modal
+    'modal_title' => 'Add team member',
+    'tab_find' => 'Find existing user',
+    'tab_invite' => 'Invite by email',
+    'tab_create' => 'Create account',
+    'find_user_label' => 'User email',
+    'find_user_placeholder' => 'colleague@example.com',
+    'find_user_hint' => 'The person must already have a portal account.',
+    'invite_email_label' => 'Email address',
+    'invite_email_hint' => 'We will send an invitation link valid for 14 days.',
+    'create_name' => 'Full name',
+    'create_email' => 'Email',
+    'create_password' => 'Password',
+    'create_password_confirmation' => 'Confirm password',
+    'select_role' => 'Role',
+    'submit_add' => 'Add to team',
+    'submit_invite' => 'Send invitation',
+    'submit_create' => 'Create and add',
+    'modal_cancel' => 'Cancel',
+    'no_seats_left' => 'No seats available',
+
+    // Roles matrix
+    'matrix_title' => 'Permission matrix',
+    'matrix_hint' => 'Read-only overview of what each role can do in a Corporate workspace.',
+    'matrix_role_owner' => 'Owner',
+    'matrix_role_admin' => 'Admin',
+    'matrix_role_designer' => 'Designer',
+    'perm_view_projects' => 'View all team projects',
+    'perm_edit_projects' => 'Edit projects',
+    'perm_view_tasks' => 'View all team tasks',
+    'perm_create_tasks' => 'Create tasks',
+    'perm_manage_members' => 'Manage members',
+    'perm_assign_roles' => 'Assign roles',
+    'perm_manage_subscription' => 'Manage subscription & billing',
+    'perm_checklists' => 'Manage checklists',
+    'perm_financial' => 'View financial data',
+    'perm_yes' => 'Yes',
+    'perm_no' => 'No',
+    'perm_limited' => 'Limited',
+];

@@ -13,6 +13,8 @@ class DesignerSubscription
 
     public const PLAN_PRO = 'pro';
 
+    public const PLAN_CORPORATE = 'corporate';
+
     public const PERIOD_DAYS = 30;
 
     public const TRIAL_DAYS = 7;
@@ -76,6 +78,7 @@ class DesignerSubscription
                 ],
                 'limit_key' => 'plan_standard_limit',
                 'desc_key' => 'plan_standard_desc',
+                'max_members' => 1,
             ],
             self::PLAN_PRO => [
                 'key' => self::PLAN_PRO,
@@ -92,6 +95,28 @@ class DesignerSubscription
                 ],
                 'limit_key' => 'plan_pro_limit',
                 'desc_key' => 'plan_pro_desc',
+                'max_members' => 1,
+            ],
+            self::PLAN_CORPORATE => [
+                'key' => self::PLAN_CORPORATE,
+                'price' => 29990,
+                'period_days' => self::periodDays(),
+                'recommended' => false,
+                'feature_keys' => [
+                    'feature_unlimited',
+                    'feature_analytics',
+                    'feature_priority',
+                    'feature_pro_tools',
+                    'feature_cashback',
+                    'feature_suppliers',
+                    'feature_team',
+                    'feature_roles',
+                    'feature_assignees',
+                    'feature_team_projects',
+                ],
+                'limit_key' => 'plan_corporate_limit',
+                'desc_key' => 'plan_corporate_desc',
+                'max_members' => 5,
             ],
         ];
     }
@@ -157,7 +182,8 @@ class DesignerSubscription
         return $user->role === 'designer' && ! (bool) $user->subscription_trial_used;
     }
 
-    public static function hasAccess(User $user): bool
+    /** Personal dates only (owner Corporate billing). */
+    public static function hasPersonalAccess(User $user): bool
     {
         if ($user->role !== 'designer') {
             return true;
@@ -169,6 +195,29 @@ class DesignerSubscription
 
         if ($user->subscription_trial_ends_at && $user->subscription_trial_ends_at->isFuture()) {
             return true;
+        }
+
+        return false;
+    }
+
+    public static function hasAccess(User $user): bool
+    {
+        if ($user->role !== 'designer') {
+            return true;
+        }
+
+        if (self::hasPersonalAccess($user)) {
+            return true;
+        }
+
+        // Corporate team member: access via owner's active Corporate subscription
+        try {
+            $teams = app(\App\Services\Team\TeamService::class);
+            if ($teams->isCorporateUser($user)) {
+                return true;
+            }
+        } catch (\Throwable) {
+            // Service may be unavailable during early boot / migrations
         }
 
         return false;
@@ -419,6 +468,10 @@ class DesignerSubscription
 
         $user->save();
 
+        if ($planKey === self::PLAN_CORPORATE) {
+            app(\App\Services\Team\TeamService::class)->activateCorporateForOwner($user);
+        }
+
         return $payment;
     }
 
@@ -436,10 +489,22 @@ class DesignerSubscription
             ]);
         }
 
+        $previous = (string) $user->subscription_plan;
         $user->subscription_plan = $planKey;
         $user->subscription_cancelled_at = null;
         $user->subscription_cancel_reason = null;
         $user->save();
+
+        if ($planKey === self::PLAN_CORPORATE) {
+            app(\App\Services\Team\TeamService::class)->activateCorporateForOwner($user);
+        } elseif (in_array($planKey, [self::PLAN_STANDARD, self::PLAN_PRO], true)
+            && $previous === self::PLAN_CORPORATE) {
+            // Downgrade: archive active teams owned by this user (data kept).
+            \App\Models\DesignerTeam::query()
+                ->where('owner_id', $user->id)
+                ->where('status', 'active')
+                ->update(['status' => 'inactive']);
+        }
     }
 
     public static function updatePaymentMethod(User $user, string $method): void

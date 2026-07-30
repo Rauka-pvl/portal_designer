@@ -188,6 +188,12 @@ Route::middleware(['auth', 'role:designer', 'subscription.active'])->group(funct
 
     Route::get('/tasks', [TasksController::class, 'index'])->name('tasks.index');
     Route::get('/tasks/events', [DashboardCalendarController::class, 'events'])->name('tasks.events');
+    Route::get('/tasks/data', [TasksController::class, 'data'])->name('tasks.data');
+    Route::post('/tasks', [TasksController::class, 'store'])->name('tasks.store');
+    Route::get('/tasks/{task}', [TasksController::class, 'show'])->whereNumber('task')->name('tasks.show');
+    Route::put('/tasks/{task}', [TasksController::class, 'update'])->whereNumber('task')->name('tasks.update');
+    Route::patch('/tasks/{task}/status', [TasksController::class, 'updateStatus'])->whereNumber('task')->name('tasks.status');
+    Route::delete('/tasks/{task}', [TasksController::class, 'destroy'])->whereNumber('task')->name('tasks.destroy');
 
     Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
 
@@ -296,11 +302,13 @@ Route::middleware(['auth', 'role:designer', 'subscription.active'])->group(funct
 
     Route::get('/pipelines/project', [PipelineController::class, 'showProjectPipeline'])->name('pipelines.project');
     Route::get('/pipelines/supply', [PipelineController::class, 'showSupplyPipeline'])->name('pipelines.supply');
+    Route::get('/pipelines/client', [PipelineController::class, 'showClientPipeline'])->name('pipelines.client');
     Route::post('/pipelines/stages', [PipelineController::class, 'storeStage'])->name('pipelines.stages.store');
     Route::put('/pipelines/stages/{stageId}', [PipelineController::class, 'updateStage'])
         ->whereNumber('stageId')
         ->name('pipelines.stages.update');
     Route::post('/pipelines/reorder', [PipelineController::class, 'reorder'])->name('pipelines.reorder');
+    Route::post('/pipelines/sync', [PipelineController::class, 'sync'])->name('pipelines.sync');
     Route::delete('/pipelines/stages/{stageId}', [PipelineController::class, 'destroyStage'])
         ->whereNumber('stageId')
         ->name('pipelines.stages.destroy');
@@ -407,12 +415,25 @@ Route::middleware(['auth', 'role:designer|moderator', 'subscription.active'])->g
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::put('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile.update');
     Route::put('/settings/password', [SettingsController::class, 'updatePassword'])->name('settings.password.update');
+
+    Route::post('/settings/team/members', [\App\Http\Controllers\Designer\TeamController::class, 'addMember'])
+        ->name('settings.team.add-member');
+    Route::post('/settings/team/invite', [\App\Http\Controllers\Designer\TeamController::class, 'invite'])
+        ->name('settings.team.invite');
+    Route::post('/settings/team/create', [\App\Http\Controllers\Designer\TeamController::class, 'createMember'])
+        ->name('settings.team.create');
+    Route::patch('/settings/team/members/{member}', [\App\Http\Controllers\Designer\TeamController::class, 'changeRole'])
+        ->name('settings.team.change-role');
+    Route::delete('/settings/team/members/{member}', [\App\Http\Controllers\Designer\TeamController::class, 'removeMember'])
+        ->name('settings.team.remove');
+    Route::delete('/settings/team/invitations/{invitation}', [\App\Http\Controllers\Designer\TeamController::class, 'cancelInvitation'])
+        ->name('settings.team.cancel-invitation');
 });
 
 Route::middleware(['auth', 'role:designer'])->group(function () {
     Route::get('/subscription', [SubscriptionController::class, 'index'])->name('subscription.index');
     Route::get('/subscription/checkout/{plan}', [SubscriptionController::class, 'checkout'])
-        ->whereIn('plan', ['standard', 'pro'])
+        ->whereIn('plan', ['standard', 'pro', 'corporate'])
         ->name('subscription.checkout');
     Route::post('/subscription/purchase', [SubscriptionController::class, 'purchase'])->name('subscription.purchase');
     Route::post('/subscription/change-plan', [SubscriptionController::class, 'changePlan'])->name('subscription.change-plan');

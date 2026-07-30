@@ -21,6 +21,9 @@ use App\Services\Crm\ActivityFeedService;
 use App\Services\Crm\PipelineService;
 use App\Support\AccountPermissions;
 use App\Support\PublicFileStorage;
+use App\Support\WorkspaceAccess;
+use App\Services\Team\AssignmentNotifier;
+use App\Services\Team\TeamService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -36,11 +39,11 @@ class ProjectController extends Controller
 
     public function index(Request $request)
     {
-        $userId = $request->user()->id;
+        $user = $request->user();
+        $userId = $user->id;
         $this->pipelines->ensureDefaultsForUser((int) $userId);
 
-        $projects = Project::query()
-            ->where('user_id', $userId)
+        $projects = WorkspaceAccess::scopeProjects(Project::query(), $user)
             ->with([
                 'user:id,name',
                 'client:id,full_name',
@@ -55,8 +58,14 @@ class ProjectController extends Controller
             ->orderByDesc('id')
             ->get();
 
+        $clientOwnerIds = [(int) $userId];
+        $team = app(TeamService::class)->activeTeamFor($user);
+        if ($team && app(TeamService::class)->teamHasCorporateAccess($team)) {
+            $clientOwnerIds[] = (int) $team->owner_id;
+        }
+
         $clients = \App\Models\Client::query()
-            ->where('user_id', $userId)
+            ->whereIn('user_id', array_values(array_unique($clientOwnerIds)))
             ->orderBy('full_name')
             ->get(['id', 'full_name']);
 
@@ -110,14 +119,21 @@ class ProjectController extends Controller
                 ['id' => 'office', 'label' => __('objects.office')],
                 ['id' => 'other', 'label' => __('objects.other')],
             ],
-            'users' => User::query()
-                ->whereKey($userId)
-                ->get(['id', 'name', 'email']),
+            'users' => collect(app(TeamService::class)->assigneeOptions($user))
+                ->map(fn (array $o) => [
+                    'id' => $o['id'],
+                    'name' => $o['name'],
+                    'email' => $o['email'],
+                    'role' => $o['role'] ?? null,
+                    'role_label' => $o['role_label'] ?? null,
+                ])
+                ->values(),
             'templatesData' => $templates->map(fn (Template $template) => $this->templatePayload($template, $userId))->values(),
             'stageTypes' => self::STAGE_TYPES,
             'pipeline' => $this->pipelinePayload($projectPipeline),
             'supplyPipeline' => $this->pipelinePayload($supplyPipeline),
-            'canManagePipeline' => AccountPermissions::canManageProjectPipeline($request->user()),
+            'canManagePipeline' => AccountPermissions::canManageProjectPipeline($user),
+            'isCorporate' => WorkspaceAccess::isCorporate($user),
         ];
 
         // Legacy view compatibility
@@ -135,8 +151,7 @@ class ProjectController extends Controller
 
     public function show(Request $request, int $projectId)
     {
-        $project = Project::query()
-            ->where('user_id', $request->user()->id)
+        $project = WorkspaceAccess::scopeProjects(Project::query(), $request->user())
             ->with(['client', 'user:id,name', 'object.client', 'objectDetails.client', 'stages.steps', 'stages.template', 'stages.responsible:id,name', 'supplierOrders.supplier'])
             ->findOrFail($projectId);
         $payload = $this->projectPayload($project);
@@ -150,10 +165,12 @@ class ProjectController extends Controller
 
     public function store(\App\Http\Requests\Designer\ProjectSaveRequest $request)
     {
-        $userId = (int) $request->user()->id;
+        $user = $request->user();
+        $userId = (int) $user->id;
 
         $project = new Project;
         $project->user_id = $userId;
+        WorkspaceAccess::attachTeamOnCreate($user, $project);
 
         $this->fillAndSave($request, $project);
 
@@ -180,10 +197,10 @@ class ProjectController extends Controller
 
     public function update(\App\Http\Requests\Designer\ProjectSaveRequest $request, int $projectId)
     {
-        $userId = (int) $request->user()->id;
+        $user = $request->user();
+        $userId = (int) $user->id;
 
-        $project = Project::query()
-            ->where('user_id', $userId)
+        $project = WorkspaceAccess::scopeProjects(Project::query(), $user)
             ->findOrFail($projectId);
 
         $this->fillAndSave($request, $project);
@@ -208,8 +225,7 @@ class ProjectController extends Controller
 
     public function destroy(Request $request, int $projectId)
     {
-        $project = Project::query()
-            ->where('user_id', $request->user()->id)
+        $project = WorkspaceAccess::scopeProjects(Project::query(), $request->user())
             ->with('stages.steps')
             ->findOrFail($projectId);
 
@@ -233,8 +249,7 @@ class ProjectController extends Controller
 
     public function deleteFile(Request $request, int $projectId, int $fileIndex)
     {
-        $project = Project::query()
-            ->where('user_id', $request->user()->id)
+        $project = WorkspaceAccess::scopeProjects(Project::query(), $request->user())
             ->with(['object.client', 'stages.steps', 'stages.template'])
             ->findOrFail($projectId);
 
@@ -279,8 +294,7 @@ class ProjectController extends Controller
             'status' => ['required', Rule::in($allowedKeys)],
         ]);
 
-        $project = Project::query()
-            ->where('user_id', $userId)
+        $project = WorkspaceAccess::scopeProjects(Project::query(), $request->user())
             ->findOrFail($projectId);
 
         $from = (string) $project->status;
@@ -542,12 +556,21 @@ class ProjectController extends Controller
             }
 
             $customName = isset($stageRow['name']) ? trim((string) $stageRow['name']) : '';
+            $previousResponsibleId = $stage?->responsible_id ? (int) $stage->responsible_id : null;
+            $resolvedResponsibleId = null;
+            if (array_key_exists('responsible_id', $stageRow) && $stageRow['responsible_id'] !== null && $stageRow['responsible_id'] !== '') {
+                $resolvedResponsibleId = app(TeamService::class)->assertAssigneeAllowed(
+                    request()->user(),
+                    (int) $stageRow['responsible_id']
+                );
+            }
+
             $attrs = [
                 'stage_type' => $type,
                 'name' => $customName !== '' ? $customName : null,
                 'template_id' => $templateId,
                 'deadline' => $stageRow['deadline'] ?? null,
-                'responsible_id' => $stageRow['responsible_id'] ?? null,
+                'responsible_id' => $resolvedResponsibleId,
                 'assign_task' => ! empty($stageRow['assign_task']),
                 'order' => $index,
             ];
@@ -557,11 +580,20 @@ class ProjectController extends Controller
             } else {
                 $stage = ProjectStages::create(array_merge($attrs, [
                     'project_id' => $project->id,
+                    'created_by' => $userId,
                 ]));
             }
 
             $keepStageIds[] = (int) $stage->id;
             $keepStepIds = [];
+
+            app(AssignmentNotifier::class)->notifyChecklistAssigned(
+                request()->user(),
+                $previousResponsibleId,
+                $resolvedResponsibleId,
+                $project,
+                $stage
+            );
 
             foreach ((array) ($stageRow['steps'] ?? []) as $stepIdx => $stepRow) {
                 $title = is_array($stepRow)
@@ -625,6 +657,16 @@ class ProjectController extends Controller
 
     private function projectPayload(Project $project): array
     {
+        if (! $project->relationLoaded('stages')) {
+            $project->load([
+                'stages.steps',
+                'stages.template:id,user_id,name,type,steps',
+                'stages.responsible:id,name',
+            ]);
+        } elseif ($project->stages->isNotEmpty()) {
+            $project->stages->loadMissing(['steps', 'template:id,user_id,name,type,steps', 'responsible:id,name']);
+        }
+
         $workflowStatus = match ((string) ($project->moderation_status ?? '')) {
             'pending' => 'in_moderation',
             'rejected' => 'rejected',

@@ -13,6 +13,7 @@ class Project extends Model
 
     protected $fillable = [
         'user_id',
+        'team_id',
         'client_id',
         'object_id',
         'name',
@@ -43,6 +44,11 @@ class Project extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function team()
+    {
+        return $this->belongsTo(DesignerTeam::class, 'team_id');
     }
 
     public function client()

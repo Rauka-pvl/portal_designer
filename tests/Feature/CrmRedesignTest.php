@@ -300,6 +300,132 @@ class CrmRedesignTest extends TestCase
         $this->assertSame($client->id, (int) $snapshot['client_id']);
     }
 
+    public function test_pipeline_sync_updates_reorder_create_and_delete_with_move(): void
+    {
+        $user = $this->designer();
+        app(PipelineService::class)->ensureDefaultsForUser((int) $user->id);
+
+        $from = ProjectStatus::ContractNegotiation->value;
+        $to = ProjectStatus::InWork->value;
+
+        $project = Project::query()->create([
+            'user_id' => $user->id,
+            'name' => 'Move me',
+            'status' => $from,
+            'start_date' => now()->toDateString(),
+            'planned_end_date' => now()->addMonth()->toDateString(),
+            'planned_cost' => 0,
+            'actual_cost' => 0,
+            'moderation_status' => 'approved',
+        ]);
+
+        $stages = PipelineStage::query()
+            ->whereHas('pipeline', fn ($q) => $q->where('user_id', $user->id)->where('type', 'project'))
+            ->orderBy('position')
+            ->get();
+
+        $fromStage = $stages->firstWhere('system_key', $from);
+        $toStage = $stages->firstWhere('system_key', $to);
+        $this->assertNotNull($fromStage);
+        $this->assertNotNull($toStage);
+
+        $remaining = $stages->reject(fn ($s) => (int) $s->id === (int) $fromStage->id)->values();
+        // Reverse order + rename first remaining + create new
+        $payloadStages = $remaining->reverse()->values()->map(fn ($s, $i) => [
+            'id' => $s->id,
+            'name' => $i === 0 ? 'Переименованный' : $s->name,
+            'color' => $s->color,
+        ])->all();
+        $payloadStages[] = [
+            'id' => null,
+            'name' => 'Архив sync',
+            'color' => '#0ea5e9',
+        ];
+
+        $this->actingAs($user)->postJson('/pipelines/sync', [
+            'type' => 'project',
+            'stages' => $payloadStages,
+            'deletions' => [
+                ['id' => $fromStage->id, 'target_stage_id' => $toStage->id],
+            ],
+        ])->assertOk()->assertJsonPath('success', true);
+
+        $this->assertDatabaseMissing('pipeline_stages', ['id' => $fromStage->id]);
+        $this->assertSame($to, $project->fresh()->status);
+        $this->assertDatabaseHas('pipeline_stages', [
+            'name' => 'Архив sync',
+            'color' => '#0ea5e9',
+        ]);
+        $this->assertDatabaseHas('pipeline_stages', [
+            'id' => $remaining->last()->id,
+            'name' => 'Переименованный',
+        ]);
+
+        $ordered = PipelineStage::query()
+            ->whereHas('pipeline', fn ($q) => $q->where('user_id', $user->id)->where('type', 'project'))
+            ->orderBy('position')
+            ->pluck('id')
+            ->all();
+        $expectedIds = collect($payloadStages)->map(function ($row) {
+            if (! empty($row['id'])) {
+                return (int) $row['id'];
+            }
+
+            return (int) PipelineStage::query()->where('name', 'Архив sync')->value('id');
+        })->all();
+        $this->assertSame($expectedIds, $ordered);
+    }
+
+    public function test_pipeline_sync_rejects_empty_stage_name(): void
+    {
+        $user = $this->designer();
+        app(PipelineService::class)->ensureDefaultsForUser((int) $user->id);
+        $stage = PipelineStage::query()
+            ->whereHas('pipeline', fn ($q) => $q->where('user_id', $user->id)->where('type', 'project'))
+            ->firstOrFail();
+
+        $this->actingAs($user)->postJson('/pipelines/sync', [
+            'type' => 'project',
+            'stages' => [
+                ['id' => $stage->id, 'name' => '', 'color' => '#64748b'],
+            ],
+            'deletions' => [],
+        ])->assertStatus(422);
+    }
+
+    public function test_non_owner_cannot_sync_foreign_pipeline_stages(): void
+    {
+        $owner = $this->designer();
+        $intruder = $this->designer();
+        app(PipelineService::class)->ensureDefaultsForUser((int) $owner->id);
+        app(PipelineService::class)->ensureDefaultsForUser((int) $intruder->id);
+
+        $foreign = PipelineStage::query()
+            ->whereHas('pipeline', fn ($q) => $q->where('user_id', $owner->id)->where('type', 'project'))
+            ->firstOrFail();
+
+        $this->actingAs($intruder)->postJson('/pipelines/sync', [
+            'type' => 'project',
+            'stages' => [
+                ['id' => $foreign->id, 'name' => 'Hacked', 'color' => '#64748b'],
+            ],
+            'deletions' => [],
+        ])->assertNotFound();
+    }
+
+    public function test_crm_page_includes_pipeline_settings_draft_ui(): void
+    {
+        $user = $this->designer();
+        app(PipelineService::class)->ensureDefaultsForUser((int) $user->id);
+
+        $html = $this->actingAs($user)->get('/projects')->assertOk()->getContent();
+        $this->assertStringContainsString('crm-pipeline-modal', $html);
+        $this->assertStringContainsString('pipeline-save', $html);
+        $this->assertStringContainsString('CrmPipelineSettingsConfig', $html);
+        $this->assertStringContainsString('pipelineSync', $html);
+        $this->assertStringContainsString(__('projects.pipeline_settings_subtitle'), $html);
+    }
+
     public function test_supplier_orders_index_redirects_to_projects(): void
     {
         $user = $this->designer();

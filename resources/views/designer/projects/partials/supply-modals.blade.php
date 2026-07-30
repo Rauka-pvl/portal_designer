@@ -69,8 +69,11 @@
                 </div>
 
                 <div class="crm-section">
-                    <div class="crm-section-title">{{ __('projects.supply_checklist_materials') }}</div>
-                    <div id="supply-steps-box" class="space-y-2 text-sm text-[var(--crm-muted)]">—</div>
+                    <div class="crm-supply-steps-head">
+                        <div class="crm-section-title crm-section-title-plain mb-0">{{ __('projects.supply_checklist_materials') }}</div>
+                        <p class="crm-supply-steps-hint">{{ __('projects.supply_checklist_hint') }}</p>
+                    </div>
+                    <div id="supply-steps-box" class="crm-supply-steps-box"></div>
                 </div>
 
                 <div class="crm-section">

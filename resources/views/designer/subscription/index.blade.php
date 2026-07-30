@@ -172,7 +172,7 @@
             <a href="{{ route('subscription.index') }}" class="sub-btn sub-btn-secondary mt-4 inline-flex">{{ __('subscription.retry') }}</a>
         </div>
     @else
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch" role="listbox" aria-label="{{ __('subscription.choose_plan') }}">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch" role="listbox" aria-label="{{ __('subscription.choose_plan') }}">
             @foreach ($plans as $key => $plan)
                 @php
                     $isRecommended = ! empty($plan['recommended']);
@@ -382,6 +382,19 @@
     </div>
 
     <section class="sub-card" aria-labelledby="sub-current-heading">
+        @if (request('reason') === 'corporate_expired' || (($locked ?? false) && ($isCorporatePlan ?? false)))
+            <div class="mb-5 rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3">
+                <div class="text-sm font-semibold text-red-300">{{ __('subscription.corporate_expired_title') }}</div>
+                <p class="mt-1 text-sm sub-muted">{{ __('subscription.corporate_expired_body') }}</p>
+                @if ($canManageBilling ?? true)
+                    <a href="{{ route('subscription.checkout', ['plan' => 'corporate']) }}" class="sub-btn sub-btn-primary mt-3 inline-flex">
+                        {{ __('subscription.corporate_renew') }}
+                    </a>
+                @else
+                    <p class="mt-2 text-sm text-amber-300">{{ __('subscription.corporate_contact_owner') }}</p>
+                @endif
+            </div>
+        @endif
         <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-5">
             <div>
                 <div class="flex flex-wrap items-center gap-2.5">
@@ -468,6 +481,16 @@
             <p class="mb-4 text-xs sub-muted">{{ __('subscription.auto_renew_off') }} · {{ __('subscription.access_until', ['date' => $accessEndsAtLabel ?? '—']) }}</p>
         @endif
 
+        @if (isset($teamSeatsUsed, $teamSeatsMax) && $currentPlan === 'corporate')
+            <div class="mb-5">
+                <p class="text-[11px] uppercase tracking-wide sub-muted mb-1.5">{{ __('subscription.seats_used', ['used' => $teamSeatsUsed, 'max' => $teamSeatsMax]) }}</p>
+                @php $seatsPct = $teamSeatsMax > 0 ? min(100, round(($teamSeatsUsed / $teamSeatsMax) * 100)) : 0; @endphp
+                <div class="sub-progress" role="progressbar" aria-valuenow="{{ $teamSeatsUsed }}" aria-valuemin="0" aria-valuemax="{{ $teamSeatsMax }}">
+                    <span style="width: {{ $seatsPct }}%"></span>
+                </div>
+            </div>
+        @endif
+
         <div class="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
             @if (($primaryAction['key'] ?? '') === 'resume' && $hasAccess)
                 <form method="POST" action="{{ route('subscription.resume') }}" class="contents" data-sub-busy-form>
@@ -495,7 +518,7 @@
             <h2 id="plans-heading" class="text-lg font-semibold sub-title">{{ __('subscription.choose_plan') }}</h2>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             @foreach ($plans as $key => $plan)
                 @php
                     $isCurrent = $currentPlan === $key && $hasAccess;
@@ -671,7 +694,8 @@
 </div>
 
 {{-- Change plan modal --}}
-<div id="change-plan-modal" class="sub-modal fixed inset-0 z-[90] items-center justify-center p-4 bg-black/60" role="dialog" aria-modal="true" aria-labelledby="change-plan-title">
+<div id="change-plan-modal" class="sub-modal fixed inset-0 z-[90] items-center justify-center p-4 bg-black/60" role="dialog" aria-modal="true" aria-labelledby="change-plan-title"
+     data-current-plan="{{ $currentPlan ?? '' }}">
     <div class="w-full max-w-md rounded-2xl border border-white/10 bg-[#161615] p-6 shadow-xl" role="document">
         <h3 id="change-plan-title" class="text-lg font-semibold text-[#EDEDEC]">{{ __('subscription.confirm_plan_title') }}</h3>
         <dl class="mt-4 space-y-2 text-sm">
@@ -680,9 +704,13 @@
             <div class="flex justify-between gap-3"><dt class="sub-muted">{{ __('subscription.confirm_plan_price') }}</dt><dd class="text-[#EDEDEC]" id="change-plan-price">—</dd></div>
             <div class="flex justify-between gap-3"><dt class="sub-muted">{{ __('subscription.confirm_plan_date') }}</dt><dd class="text-[#EDEDEC]">{{ __('subscription.confirm_plan_date_now') }}</dd></div>
         </dl>
+        <p id="change-plan-corporate-warning" class="mt-4 hidden rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-sm text-amber-200">
+            {{ __('subscription.confirm_downgrade_from_corporate') }}
+        </p>
         <form method="POST" action="{{ route('subscription.change-plan') }}" class="mt-6 space-y-3" data-sub-busy-form>
             @csrf
             <input type="hidden" name="plan" id="change-plan-input" value="">
+            <input type="hidden" name="confirm_team_downgrade" id="change-plan-confirm-downgrade" value="0">
             <button type="submit" class="sub-btn sub-btn-primary w-full">{{ __('subscription.confirm_plan_submit') }}</button>
             <button type="button" class="sub-btn sub-btn-secondary w-full" data-close-modal="change-plan-modal">{{ __('subscription.confirm_plan_cancel') }}</button>
         </form>
@@ -823,9 +851,22 @@
 
     document.querySelectorAll('[data-open-change-plan]').forEach((btn) => {
         btn.addEventListener('click', () => {
-            document.getElementById('change-plan-input').value = btn.getAttribute('data-open-change-plan');
+            const modal = document.getElementById('change-plan-modal');
+            const nextPlan = btn.getAttribute('data-open-change-plan') || '';
+            const currentPlan = modal?.dataset.currentPlan || '';
+            const isCorporateDowngrade = currentPlan === 'corporate'
+                && (nextPlan === 'standard' || nextPlan === 'pro');
+
+            document.getElementById('change-plan-input').value = nextPlan;
             document.getElementById('change-plan-new').textContent = btn.getAttribute('data-plan-label') || '—';
             document.getElementById('change-plan-price').textContent = btn.getAttribute('data-plan-price') || '—';
+
+            const warning = document.getElementById('change-plan-corporate-warning');
+            const confirmInput = document.getElementById('change-plan-confirm-downgrade');
+            if (warning) warning.classList.toggle('hidden', !isCorporateDowngrade);
+            // Confirming this modal = accepting team access loss when leaving Corporate.
+            if (confirmInput) confirmInput.value = isCorporateDowngrade ? '1' : '0';
+
             openModal('change-plan-modal');
         });
     });

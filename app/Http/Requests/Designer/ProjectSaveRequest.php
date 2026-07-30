@@ -5,8 +5,10 @@ namespace App\Http\Requests\Designer;
 use App\Enums\PipelineType;
 use App\Enums\ProjectStageType;
 use App\Models\Pipeline;
+use App\Services\Team\TeamService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class ProjectSaveRequest extends FormRequest
 {
@@ -39,6 +41,15 @@ class ProjectSaveRequest extends FormRequest
     public function rules(): array
     {
         $userId = (int) $this->user()->id;
+        $teamService = app(TeamService::class);
+        $allowedIds = collect($teamService->assigneeOptions($this->user()))
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        if ($allowedIds === []) {
+            $allowedIds = [$userId];
+        }
 
         return [
             'name' => ['required', 'string', 'max:255'],
@@ -46,14 +57,20 @@ class ProjectSaveRequest extends FormRequest
             'client_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('clients', 'id')->where(fn ($q) => $q->where('user_id', $userId)),
+                Rule::exists('clients', 'id')->where(function ($q) use ($userId, $teamService) {
+                    $ownerIds = [$userId];
+                    $team = $teamService->activeTeamFor($this->user());
+                    if ($team && $teamService->teamHasCorporateAccess($team)) {
+                        $ownerIds[] = (int) $team->owner_id;
+                    }
+                    $q->whereIn('user_id', array_values(array_unique($ownerIds)));
+                }),
             ],
             'start_date' => ['nullable', 'date'],
             'planned_end_date' => ['nullable', 'date'],
             'actual_end_date' => ['nullable', 'date'],
             'comment' => ['nullable', 'string'],
 
-            // Legacy property fields (optional; no longer required by UI)
             'city' => ['nullable', 'string', 'max:255'],
             'object_type' => ['nullable', Rule::in(['apartment', 'house', 'commercial', 'office', 'other'])],
             'object_address' => ['nullable', 'string', 'max:500'],
@@ -64,7 +81,6 @@ class ProjectSaveRequest extends FormRequest
             'repair_budget_planned' => ['nullable', 'numeric', 'min:0'],
             'repair_budget_actual' => ['nullable', 'numeric', 'min:0'],
 
-            // Links as [{title, url}]
             'links' => ['nullable', 'array'],
             'links.*.title' => ['nullable', 'string', 'max:255'],
             'links.*.url' => ['required_with:links.*.title', 'nullable', 'url', 'max:1000'],
@@ -84,7 +100,7 @@ class ProjectSaveRequest extends FormRequest
             'stages.*.responsible_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('users', 'id')->where(fn ($q) => $q->where('id', $userId)),
+                Rule::in($allowedIds),
             ],
             'stages.*.steps' => ['nullable', 'array'],
             'stages.*.steps.*.id' => ['nullable', 'integer'],
@@ -93,11 +109,54 @@ class ProjectSaveRequest extends FormRequest
             'stages.*.steps.*.responsible_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('users', 'id')->where(fn ($q) => $q->where('id', $userId)),
+                Rule::in($allowedIds),
             ],
             'stages.*.steps.*.link' => ['nullable', 'url', 'max:1000'],
             'stages.*.steps.*.result_status' => ['nullable', 'string', Rule::in(['pending', 'done'])],
             'stages.*.steps.*.result_comment' => ['nullable', 'string', 'max:5000'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $teamService = app(TeamService::class);
+            $user = $this->user();
+
+            foreach ((array) $this->input('stages', []) as $i => $stage) {
+                if (! is_array($stage)) {
+                    continue;
+                }
+                try {
+                    if (array_key_exists('responsible_id', $stage) && $stage['responsible_id'] !== null && $stage['responsible_id'] !== '') {
+                        $teamService->assertAssigneeAllowed($user, (int) $stage['responsible_id']);
+                    }
+                } catch (\Illuminate\Validation\ValidationException $e) {
+                    foreach ($e->errors() as $messages) {
+                        foreach ($messages as $message) {
+                            $validator->errors()->add("stages.$i.responsible_id", $message);
+                        }
+                    }
+                }
+
+                foreach ((array) ($stage['steps'] ?? []) as $j => $step) {
+                    if (! is_array($step) || ! array_key_exists('responsible_id', $step)) {
+                        continue;
+                    }
+                    if ($step['responsible_id'] === null || $step['responsible_id'] === '') {
+                        continue;
+                    }
+                    try {
+                        $teamService->assertAssigneeAllowed($user, (int) $step['responsible_id']);
+                    } catch (\Illuminate\Validation\ValidationException $e) {
+                        foreach ($e->errors() as $messages) {
+                            foreach ($messages as $message) {
+                                $validator->errors()->add("stages.$i.steps.$j.responsible_id", $message);
+                            }
+                        }
+                    }
+                }
+            }
+        });
     }
 }

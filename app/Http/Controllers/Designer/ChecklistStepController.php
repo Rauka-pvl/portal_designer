@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Designer;
 
 use App\Http\Controllers\Controller;
 use App\Models\ProjectStageStep;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -22,17 +21,19 @@ class ChecklistStepController extends Controller
             ])
             ->findOrFail($stepId);
 
-        $responsible = null;
-        if ((int) $step->responsible_id > 0) {
-            $responsible = User::query()->find((int) $step->responsible_id);
+        $stage = $step->stage;
+        $project = $stage?->project;
+        if (! $stage || ! $project) {
+            abort(404);
         }
 
-        return view('designer.checklist-steps.show', [
-            'step' => $step,
-            'project' => $step->stage?->project,
-            'stage_type' => $step->stage?->stage_type,
-            'responsible' => $responsible,
-        ]);
+        // Legacy single-step page → new checklist card (calendar deep link).
+        return redirect()->route('tasks.index', array_filter([
+            'project' => (int) $project->id,
+            'checklist' => (int) $stage->id,
+            'item' => (int) $step->id,
+            'date' => $step->deadline ? (string) $step->deadline : null,
+        ], fn ($v) => $v !== null && $v !== ''));
     }
 
     public function update(Request $request, int $stepId)
@@ -46,6 +47,7 @@ class ChecklistStepController extends Controller
             ->whereHas('stage.project', function ($q) use ($request) {
                 $q->where('user_id', (int) $request->user()->id);
             })
+            ->with(['stage:id,project_id'])
             ->findOrFail($stepId);
 
         $step->result_status = $data['result_status'];
@@ -65,7 +67,14 @@ class ChecklistStepController extends Controller
             ]);
         }
 
-        return redirect()->route('checklist-steps.show', $step->id);
+        $stageId = (int) ($step->project_stage_id ?: $step->stage?->id);
+        $projectId = (int) ($step->stage?->project_id);
+
+        return redirect()->route('tasks.index', array_filter([
+            'project' => $projectId ?: null,
+            'checklist' => $stageId ?: null,
+            'item' => (int) $step->id,
+        ], fn ($v) => $v !== null && $v !== '' && $v !== 0));
     }
 }
 

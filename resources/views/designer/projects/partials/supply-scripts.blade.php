@@ -155,6 +155,118 @@
     font-size: 0.75rem;
     background: transparent;
 }
+.crm-supply-steps-head { margin-bottom: 0.65rem; }
+.crm-supply-steps-hint {
+    margin: 0.35rem 0 0;
+    font-size: 0.75rem;
+    color: var(--crm-muted);
+    line-height: 1.35;
+}
+.crm-supply-steps-box { display: flex; flex-direction: column; gap: 0.85rem; }
+.crm-supply-steps-summary { font-size: 0.75rem; color: var(--crm-muted); }
+.crm-supply-steps-group {
+    border: 1px solid color-mix(in srgb, var(--crm-border) 30%, transparent);
+    border-radius: 0.65rem;
+    background: color-mix(in srgb, var(--crm-surface-2) 40%, var(--crm-surface));
+    padding: 0.65rem 0.7rem;
+}
+.crm-supply-steps-group-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.55rem;
+}
+.crm-supply-steps-group-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--crm-text);
+}
+.crm-supply-steps-group-meta {
+    margin-top: 0.2rem;
+    font-size: 0.7rem;
+    color: var(--crm-muted);
+    line-height: 1.35;
+}
+.crm-supply-step-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    width: 100%;
+    text-align: left;
+    padding: 0.65rem 0.7rem;
+    margin-bottom: 0.4rem;
+    border-radius: 0.55rem;
+    border: 1px solid color-mix(in srgb, var(--crm-border) 32%, transparent);
+    background: var(--crm-surface);
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+}
+.crm-supply-step-card:last-child { margin-bottom: 0; }
+.crm-supply-step-card:hover:not(.is-disabled) {
+    border-color: color-mix(in srgb, var(--crm-accent) 35%, var(--crm-border));
+    background: color-mix(in srgb, var(--crm-surface-2) 50%, var(--crm-surface));
+}
+.crm-supply-step-card:focus-within {
+    outline: 2px solid color-mix(in srgb, var(--crm-accent) 45%, transparent);
+    outline-offset: 1px;
+}
+.crm-supply-step-card.is-selected {
+    border-color: color-mix(in srgb, var(--crm-accent) 55%, var(--crm-border));
+    background: color-mix(in srgb, var(--crm-accent) 7%, var(--crm-surface));
+    box-shadow: inset 3px 0 0 var(--crm-accent);
+}
+.crm-supply-step-card.is-disabled {
+    opacity: 0.72;
+    cursor: not-allowed;
+    background: color-mix(in srgb, var(--crm-surface-2) 55%, transparent);
+}
+.crm-supply-step-card input[type=checkbox] {
+    margin-top: 0.15rem;
+    flex-shrink: 0;
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--crm-accent);
+}
+.crm-supply-step-body { min-width: 0; flex: 1; }
+.crm-supply-step-result {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--crm-text);
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.crm-supply-step-result.is-clamped {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+}
+.crm-supply-step-result.is-empty {
+    color: var(--crm-muted);
+    font-style: italic;
+}
+.crm-supply-step-toggle {
+    margin-top: 0.3rem;
+    border: 0;
+    background: transparent;
+    color: var(--crm-accent);
+    font-size: 0.7rem;
+    padding: 0;
+    cursor: pointer;
+}
+.crm-supply-step-toggle:hover { text-decoration: underline; }
+.crm-supply-step-disabled-hint {
+    margin-top: 0.35rem;
+    font-size: 0.65rem;
+    color: var(--crm-muted);
+}
+.crm-supply-steps-empty {
+    font-size: 0.8rem;
+    color: var(--crm-muted);
+    padding: 0.35rem 0;
+}
 .crm-supply-board .crm-board-empty {
     font-size: 0.75rem;
     color: var(--crm-muted);
@@ -256,7 +368,22 @@
         changeSupplierWarn: @json(__('projects.supply_change_supplier_warn')),
         bonusHint: @json(__('supplier-orders.bonus_percent_hint')),
         stepsEmpty: @json(__('supplier-orders.project_steps_empty')),
+        stepsNoChecklists: @json(__('projects.supply_checklist_no_checklists')),
+        stepsNoResults: @json(__('projects.supply_checklist_no_results')),
+        stepsGoChecklists: @json(__('projects.supply_checklist_go_checklists')),
+        stepsResultLabel: @json(__('projects.supply_checklist_result_label')),
+        stepsResultEmpty: @json(__('projects.supply_checklist_result_empty')),
+        stepsResultRequired: @json(__('projects.supply_checklist_result_required')),
+        stepsSelectAll: @json(__('projects.supply_checklist_select_all')),
+        stepsClearAll: @json(__('projects.supply_checklist_clear_all')),
+        stepsSelectedCount: @json(__('projects.supply_checklist_selected_count')),
+        stepsNoneSelected: @json(__('projects.supply_checklist_none_selected')),
+        stepsShowMore: @json(__('projects.supply_checklist_show_more')),
+        stepsShowLess: @json(__('projects.supply_checklist_show_less')),
+        stepsGroupMeta: @json(__('projects.supply_checklist_group_meta')),
         stepsSection: @json(__('supplier-orders.project_steps_for_supplier')),
+        responsible: @json(__('projects.responsible')),
+        deadline: @json(__('projects.deadline')),
         sectionMain: @json(__('supplier-orders.section_main')),
         sectionFinance: @json(__('supplier-orders.section_finance')),
         sectionDates: @json(__('supplier-orders.section_dates')),
@@ -732,29 +859,149 @@
         hint.textContent = i18n.bonusHint + ' ' + bonus.toLocaleString(locale, { maximumFractionDigits: 0 }) + ' ' + i18n.currency;
     }
 
+    function stepHasResult(step) {
+        return step && step.result_comment != null && String(step.result_comment).trim() !== '';
+    }
+
+    function updateSupplyStepsSelectedCount(box) {
+        const summary = box?.querySelector('[data-steps-summary]');
+        if (!summary) return;
+        const count = box.querySelectorAll('input[type=checkbox]:checked:not(:disabled)').length;
+        summary.textContent = count > 0
+            ? i18n.stepsSelectedCount.replace(':count', String(count))
+            : i18n.stepsNoneSelected;
+    }
+
+    function syncSupplyStepGroupActions(group) {
+        const btn = group.querySelector('[data-select-all]');
+        if (!btn) return;
+        const enabled = [...group.querySelectorAll('input[type=checkbox]:not(:disabled)')];
+        if (!enabled.length) {
+            btn.classList.add('hidden');
+            return;
+        }
+        btn.classList.remove('hidden');
+        const allOn = enabled.every((cb) => cb.checked);
+        btn.textContent = allOn ? i18n.stepsClearAll : i18n.stepsSelectAll;
+        btn.dataset.mode = allOn ? 'clear' : 'select';
+    }
+
     function renderProjectSteps(project, preselected) {
         const box = document.getElementById('supply-steps-box');
         if (!box) return;
         const pre = new Set((preselected || []).map((x) => Number(x)));
         const stages = project?.stages || [];
-        let html = '';
-        let has = false;
-        stages.forEach((st) => {
-            const steps = (st.steps || []).filter((s) => s.result_comment != null && String(s.result_comment).trim() !== '' && s.id != null);
-            if (!steps.length) return;
-            has = true;
-            html += `<div class="mb-2"><div class="text-xs font-semibold text-[var(--crm-muted)] mb-1">${escapeHtml(st.stage_type_label || st.stage_type || '')}</div>`;
-            steps.forEach((step) => {
-                const checked = pre.has(Number(step.id)) ? ' checked' : '';
-                html += `<label class="flex items-start gap-2 cursor-pointer mb-1">
-                    <input type="checkbox" class="mt-0.5" name="included_step_ids[]" value="${step.id}"${checked}>
-                    <span>${escapeHtml(step.title || '')}</span>
-                </label>`;
+
+        if (!stages.length) {
+            box.innerHTML = `<div class="crm-supply-steps-empty">
+                <div>${escapeHtml(i18n.stepsNoChecklists)}</div>
+                <button type="button" class="crm-btn crm-btn-ghost crm-btn-sm mt-2" data-go-checklists>${escapeHtml(i18n.stepsGoChecklists)}</button>
+            </div>`;
+            box.querySelector('[data-go-checklists]')?.addEventListener('click', () => {
+                if (typeof bridge.switchTab === 'function') bridge.switchTab('checklists');
             });
-            html += '</div>';
+            return;
+        }
+
+        let anyFilled = false;
+        let html = `<div class="crm-supply-steps-summary" data-steps-summary></div>`;
+
+        stages.forEach((st) => {
+            const filled = (st.steps || []).filter((s) => s && s.id != null && stepHasResult(s));
+            if (!filled.length) return;
+            anyFilled = true;
+            const title = st.name || st.stage_type_label || st.stage_type || '';
+            html += `<section class="crm-supply-steps-group" data-stage-group="${st.id || ''}">
+                <div class="crm-supply-steps-group-head">
+                    <div class="min-w-0">
+                        <div class="crm-supply-steps-group-title truncate">${escapeHtml(title)}</div>
+                    </div>
+                    <button type="button" class="crm-btn crm-btn-ghost crm-btn-sm shrink-0" data-select-all>${escapeHtml(i18n.stepsSelectAll)}</button>
+                </div>
+                <div class="crm-supply-steps-cards">`;
+
+            filled.forEach((step) => {
+                const checked = pre.has(Number(step.id));
+                const resultText = String(step.result_comment);
+                const long = resultText.length > 160;
+                html += `<div class="crm-supply-step-card ${checked ? 'is-selected' : ''}" data-step-card="${step.id}" tabindex="0">
+                    <input type="checkbox" name="included_step_ids[]" value="${step.id}" ${checked ? 'checked' : ''} aria-label="${escapeHtml(resultText.slice(0, 80))}">
+                    <div class="crm-supply-step-body">
+                        <div class="crm-supply-step-result ${long ? 'is-clamped' : ''}" data-result-text>${escapeHtml(resultText)}</div>
+                        ${long ? `<button type="button" class="crm-supply-step-toggle" data-expand>${escapeHtml(i18n.stepsShowMore)}</button>` : ''}
+                    </div>
+                </div>`;
+            });
+
+            html += `</div></section>`;
         });
-        box.innerHTML = has ? html : `<div class="text-xs text-[var(--crm-muted)]">${escapeHtml(i18n.stepsEmpty)}</div>`;
-        box.querySelectorAll('input[type=checkbox]').forEach((cb) => cb.addEventListener('change', markFormDirty));
+
+        if (!anyFilled) {
+            box.innerHTML = `<div class="crm-supply-steps-empty">
+                <div>${escapeHtml(i18n.stepsNoResults)}</div>
+                <button type="button" class="crm-btn crm-btn-ghost crm-btn-sm mt-2" data-go-checklists>${escapeHtml(i18n.stepsGoChecklists)}</button>
+            </div>`;
+            box.querySelector('[data-go-checklists]')?.addEventListener('click', () => {
+                if (typeof bridge.switchTab === 'function') bridge.switchTab('checklists');
+            });
+            return;
+        }
+
+        box.innerHTML = html;
+        updateSupplyStepsSelectedCount(box);
+        box.querySelectorAll('[data-stage-group]').forEach((group) => syncSupplyStepGroupActions(group));
+
+        box.querySelectorAll('[data-step-card]').forEach((card) => {
+            const cb = card.querySelector('input[type=checkbox]');
+            if (!cb) return;
+
+            const applySelected = () => {
+                card.classList.toggle('is-selected', cb.checked);
+                updateSupplyStepsSelectedCount(box);
+                syncSupplyStepGroupActions(card.closest('[data-stage-group]'));
+                markFormDirty();
+            };
+
+            card.addEventListener('click', (e) => {
+                if (e.target.closest('input, button, a')) return;
+                cb.checked = !cb.checked;
+                applySelected();
+            });
+            card.addEventListener('keydown', (e) => {
+                if (e.key !== ' ' && e.key !== 'Enter') return;
+                if (e.target.closest('input, button')) return;
+                e.preventDefault();
+                cb.checked = !cb.checked;
+                applySelected();
+            });
+            cb.addEventListener('change', applySelected);
+        });
+
+        box.querySelectorAll('[data-expand]').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const text = btn.parentElement?.querySelector('[data-result-text]');
+                if (!text) return;
+                text.classList.toggle('is-clamped');
+                btn.textContent = text.classList.contains('is-clamped') ? i18n.stepsShowMore : i18n.stepsShowLess;
+            });
+        });
+
+        box.querySelectorAll('[data-select-all]').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const group = btn.closest('[data-stage-group]');
+                if (!group) return;
+                const enable = btn.dataset.mode !== 'clear';
+                group.querySelectorAll('input[type=checkbox]').forEach((cb) => {
+                    cb.checked = enable;
+                    cb.closest('[data-step-card]')?.classList.toggle('is-selected', enable);
+                });
+                syncSupplyStepGroupActions(group);
+                updateSupplyStepsSelectedCount(box);
+                markFormDirty();
+            });
+        });
     }
 
     function renderLinks(links) {

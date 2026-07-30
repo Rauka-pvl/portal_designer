@@ -4,10 +4,12 @@ namespace App\Http\Controllers\Designer;
 
 use App\Enums\PipelineType;
 use App\Http\Controllers\Controller;
+use App\Models\Client;
 use App\Models\Pipeline;
 use App\Models\PipelineStage;
 use App\Models\Project;
 use App\Models\Supplier_orders;
+use App\Models\User;
 use App\Services\Crm\ActivityFeedService;
 use App\Services\Crm\PipelineService;
 use App\Support\AccountPermissions;
@@ -20,6 +22,20 @@ class PipelineController extends Controller
         private PipelineService $pipelines,
         private ActivityFeedService $activity,
     ) {}
+
+    private function pipelineTypes(): array
+    {
+        return ['project', 'supply', 'client'];
+    }
+
+    private function canManageType(?User $user, string $type): bool
+    {
+        return match ($type) {
+            'supply' => AccountPermissions::canManageSupplyPipeline($user),
+            'client' => AccountPermissions::canManageClientPipeline($user),
+            default => AccountPermissions::canManageProjectPipeline($user),
+        };
+    }
 
     public function showProjectPipeline(Request $request)
     {
@@ -45,16 +61,29 @@ class PipelineController extends Controller
         ]);
     }
 
+    public function showClientPipeline(Request $request)
+    {
+        $user = $request->user();
+        $this->pipelines->ensureDefaultsForUser((int) $user->id);
+        $pipeline = Pipeline::defaultForUser((int) $user->id, PipelineType::Client);
+
+        return response()->json([
+            'pipeline' => $this->pipelinePayload($pipeline),
+            'can_manage' => AccountPermissions::canManageClientPipeline($user),
+        ]);
+    }
+
     public function storeStage(Request $request)
     {
         $user = $request->user();
-        abort_unless(AccountPermissions::canManageProjectPipeline($user), 403);
 
         $data = $request->validate([
-            'type' => ['required', Rule::in(['project', 'supply'])],
+            'type' => ['required', Rule::in($this->pipelineTypes())],
             'name' => ['required', 'string', 'max:120'],
             'color' => ['nullable', 'string', 'max:32'],
         ]);
+
+        abort_unless($this->canManageType($user, $data['type']), 403);
 
         $this->pipelines->ensureDefaultsForUser((int) $user->id);
         $pipeline = Pipeline::defaultForUser((int) $user->id, PipelineType::from($data['type']));
@@ -66,11 +95,13 @@ class PipelineController extends Controller
     public function updateStage(Request $request, int $stageId)
     {
         $user = $request->user();
-        abort_unless(AccountPermissions::canManageProjectPipeline($user), 403);
 
         $stage = PipelineStage::query()
             ->whereHas('pipeline', fn ($q) => $q->where('user_id', $user->id))
+            ->with('pipeline')
             ->findOrFail($stageId);
+
+        abort_unless($this->canManageType($user, $stage->pipeline->type->value), 403);
 
         $data = $request->validate([
             'name' => ['sometimes', 'string', 'max:120'],
@@ -85,13 +116,14 @@ class PipelineController extends Controller
     public function reorder(Request $request)
     {
         $user = $request->user();
-        abort_unless(AccountPermissions::canManageProjectPipeline($user), 403);
 
         $data = $request->validate([
-            'type' => ['required', Rule::in(['project', 'supply'])],
+            'type' => ['required', Rule::in($this->pipelineTypes())],
             'stage_ids' => ['required', 'array', 'min:1'],
             'stage_ids.*' => ['integer'],
         ]);
+
+        abort_unless($this->canManageType($user, $data['type']), 403);
 
         $pipeline = Pipeline::defaultForUser((int) $user->id, PipelineType::from($data['type']));
         $this->pipelines->reorderStages($pipeline, $data['stage_ids']);
@@ -99,15 +131,67 @@ class PipelineController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function sync(Request $request)
+    {
+        $user = $request->user();
+
+        $data = $request->validate([
+            'type' => ['required', Rule::in($this->pipelineTypes())],
+            'stages' => ['required', 'array', 'min:1'],
+            'stages.*.id' => ['nullable', 'integer'],
+            'stages.*.name' => ['required', 'string', 'max:120'],
+            'stages.*.color' => ['nullable', 'string', 'max:32'],
+            'deletions' => ['nullable', 'array'],
+            'deletions.*.id' => ['required', 'integer'],
+            'deletions.*.target_stage_id' => ['nullable', 'integer'],
+        ]);
+
+        abort_unless($this->canManageType($user, $data['type']), 403);
+
+        $this->pipelines->ensureDefaultsForUser((int) $user->id);
+        $pipeline = Pipeline::defaultForUser((int) $user->id, PipelineType::from($data['type']));
+
+        $synced = $this->pipelines->syncPipeline(
+            $pipeline,
+            $data['stages'],
+            $data['deletions'] ?? [],
+            fn (PipelineStage $stage) => $this->countCards($stage),
+            function (string $fromKey, string $toKey) use ($pipeline, $user) {
+                return $this->moveCards($pipeline->type->value, (int) $user->id, $fromKey, $toKey);
+            },
+            function (PipelineStage $from, ?PipelineStage $to, int $moved) use ($user) {
+                $this->activity->record(
+                    (int) $user->id,
+                    'pipeline',
+                    (int) $from->pipeline_id,
+                    'pipeline.stage_deleted',
+                    $user,
+                    null,
+                    [
+                        'from' => $from->system_key,
+                        'to' => $to?->system_key,
+                        'moved' => $moved,
+                    ]
+                );
+            }
+        );
+
+        return response()->json([
+            'success' => true,
+            'pipeline' => $this->pipelinePayload($synced),
+        ]);
+    }
+
     public function destroyStage(Request $request, int $stageId)
     {
         $user = $request->user();
-        abort_unless(AccountPermissions::canManageProjectPipeline($user), 403);
 
         $stage = PipelineStage::query()
             ->whereHas('pipeline', fn ($q) => $q->where('user_id', $user->id))
             ->with('pipeline')
             ->findOrFail($stageId);
+
+        abort_unless($this->canManageType($user, $stage->pipeline->type->value), 403);
 
         $data = $request->validate([
             'target_stage_id' => ['nullable', 'integer'],
@@ -173,22 +257,27 @@ class PipelineController extends Controller
         return match ($stage->pipeline->type) {
             PipelineType::Project => Project::query()->where('user_id', $userId)->where('status', $key)->count(),
             PipelineType::Supply => Supplier_orders::query()->where('user_id', $userId)->where('status', $key)->count(),
+            PipelineType::Client => Client::query()->where('user_id', $userId)->where('status', $key)->count(),
         };
     }
 
     private function moveCards(string $type, int $userId, string $fromKey, string $toKey): int
     {
-        if ($type === 'project') {
-            return Project::query()
+        return match ($type) {
+            'project' => Project::query()
                 ->where('user_id', $userId)
                 ->where('status', $fromKey)
-                ->update(['status' => $toKey]);
-        }
-
-        return Supplier_orders::query()
-            ->where('user_id', $userId)
-            ->where('status', $fromKey)
-            ->update(['status' => $toKey]);
+                ->update(['status' => $toKey]),
+            'supply' => Supplier_orders::query()
+                ->where('user_id', $userId)
+                ->where('status', $fromKey)
+                ->update(['status' => $toKey]),
+            'client' => Client::query()
+                ->where('user_id', $userId)
+                ->where('status', $fromKey)
+                ->update(['status' => $toKey]),
+            default => 0,
+        };
     }
 
     private function pipelinePayload(Pipeline $pipeline): array

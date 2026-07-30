@@ -22,6 +22,24 @@ return [
     'plan_standard_limit' => 'Essential tools included',
     'plan_pro_limit' => 'Advanced features with fewer limits',
 
+    'plan_corporate' => 'Corporate',
+    'plan_corporate_desc' => 'For design studios and teams',
+    'plan_corporate_limit' => 'Up to 5 seats · shared projects',
+
+    'feature_team' => 'Team workspace (5 seats)',
+    'feature_roles' => 'Owner, Admin, Designer roles',
+    'feature_assignees' => 'Assign tasks to team members',
+    'feature_team_projects' => 'Shared team projects',
+
+    'seats_used' => 'Seats used: :used of :max',
+
+    'corporate_expired_title' => 'Corporate subscription expired',
+    'corporate_expired_body' => 'Team access is paused. Renew Corporate to restore the workspace for all members.',
+    'corporate_renew' => 'Renew Corporate',
+    'corporate_contact_owner' => 'Contact your team owner to renew the subscription.',
+
+    'confirm_downgrade_from_corporate' => 'Switching from Corporate will remove team access for all members. Shared projects stay with the account owner. Continue?',
+
     'feature_clients' => 'Clients and objects',
     'feature_projects' => 'Projects and checklists',
     'feature_orders' => 'Deliveries and offers',

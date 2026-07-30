@@ -22,6 +22,24 @@ return [
     'plan_standard_limit' => 'Негізгі құралдар жиынтығы',
     'plan_pro_limit' => 'Кеңейтілген мүмкіндіктер',
 
+    'plan_corporate' => 'Corporate',
+    'plan_corporate_desc' => 'Дизайн студиялары мен командалар үшін',
+    'plan_corporate_limit' => '5 орынға дейін · ортақ жобалар',
+
+    'feature_team' => 'Командалық кеңістік (5 орын)',
+    'feature_roles' => 'Ие, әкімші, дизайнер рөлдері',
+    'feature_assignees' => 'Тапсырмаларды команда мүшелеріне тағайындау',
+    'feature_team_projects' => 'Ортақ командалық жобалар',
+
+    'seats_used' => 'Орындар: :used / :max',
+
+    'corporate_expired_title' => 'Corporate жазылымы аяқталды',
+    'corporate_expired_body' => 'Командaға қол жеткізу тоқтатылды. Барлық мүшелер үшін Corporate жазылымын ұзартыңыз.',
+    'corporate_renew' => 'Corporate ұзарту',
+    'corporate_contact_owner' => 'Жazылымды ұзарту үшін команда иесімен байланысыңыз.',
+
+    'confirm_downgrade_from_corporate' => 'Corporate-тан басқа тарифке өтсеңіз, команда мүшелерінің барлығының қол жеткізуі өшіріледі. Ортақ жобалар аккаунт иесінде қалады. Жалғастыру керек пе?',
+
     'feature_clients' => 'Клиенттер мен нысандар',
     'feature_projects' => 'Жобалар және чек-парақтар',
     'feature_orders' => 'Жеткізулер және ұсыныстар',

@@ -100,6 +100,7 @@
                 <p id="checklist-detail-meta" class="text-xs text-[var(--crm-muted)] truncate mt-0.5"></p>
             </div>
             <div class="crm-checklist-header-actions">
+                <a href="#" id="checklist-detail-open-project" class="crm-btn crm-btn-ghost crm-btn-sm hidden">{{ __('projects.checklist_open_project') }}</a>
                 <button type="button" id="checklist-detail-edit" class="crm-btn crm-btn-secondary crm-btn-sm">{{ __('projects.checklist_edit') }}</button>
                 <button type="button" id="checklist-detail-close" class="crm-checklist-close" aria-label="{{ __('projects.cancel') }}">✕</button>
             </div>
@@ -115,7 +116,6 @@
                 <div id="checklist-detail-result-box" class="hidden space-y-2">
                     <div id="checklist-detail-step-title" class="text-sm font-medium"></div>
                     <textarea id="checklist-detail-result" class="crm-input" rows="8" placeholder="{{ __('projects.step_result_comment_placeholder') }}"></textarea>
-                    <button type="button" id="checklist-detail-save-result" class="crm-btn crm-btn-primary crm-btn-sm">{{ __('projects.checklist_save_result') }}</button>
                     <div id="checklist-detail-result-hint" class="text-xs text-[var(--crm-muted)]"></div>
                 </div>
             </aside>

@@ -15,6 +15,7 @@ class ProjectStages extends Model
         'template_id',
         'deadline',
         'responsible_id',
+        'created_by',
         'assign_task',
         'order',
     ];

@@ -446,6 +446,7 @@
         saved: @json(__('projects.checklist_saved')),
         deleted: @json(__('projects.checklist_deleted')),
         resultSaved: @json(__('projects.checklist_result_saved')),
+        resultSaving: @json(__('projects.checklist_result_saving')),
         noResult: @json(__('projects.checklist_no_result')),
         selectStage: @json(__('projects.select_stage_placeholder')),
         selectTemplate: @json(__('projects.select_template')),
@@ -456,6 +457,8 @@
         deleteTemplateConfirm: @json(__('projects.delete_template_confirm')),
         stepPlaceholder: @json(__('projects.step_title_placeholder')),
         error: @json(__('projects.save_error_generic')),
+        notFound: @json(__('projects.checklist_not_found')),
+        openProject: @json(__('projects.checklist_open_project')),
         stageLabels: {
             measurement: @json(__('projects.stage_measurement')),
             planning: @json(__('projects.stage_planning')),
@@ -486,10 +489,40 @@
             if (Number.isNaN(d.getTime())) return i18n.notSpecified;
             return d.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
         };
-    const getCurrentProject = typeof bridge.getCurrentProject === 'function' ? bridge.getCurrentProject : () => null;
-    const refreshCurrentProject = typeof bridge.refreshCurrentProject === 'function'
-        ? bridge.refreshCurrentProject
-        : async () => getCurrentProject();
+    let standaloneProject = null;
+    const getCurrentProject = () => {
+        if (typeof bridge.getCurrentProject === 'function') {
+            const fromBridge = bridge.getCurrentProject();
+            if (fromBridge) return fromBridge;
+        }
+        return standaloneProject;
+    };
+    const setStandaloneProject = (project) => {
+        standaloneProject = project || null;
+        if (typeof bridge.setCurrentProject === 'function') {
+            bridge.setCurrentProject(project || null);
+        }
+    };
+    const refreshCurrentProject = async () => {
+        if (typeof bridge.refreshCurrentProject === 'function') {
+            const refreshed = await bridge.refreshCurrentProject();
+            if (refreshed) {
+                standaloneProject = refreshed;
+                return refreshed;
+            }
+        }
+        const current = getCurrentProject();
+        if (!current?.id) return current;
+        try {
+            const res = await fetch(routes.show(current.id), { headers: { Accept: 'application/json' } });
+            const data = await res.json();
+            if (data?.id) {
+                setStandaloneProject(data);
+                return data;
+            }
+        } catch (_) {}
+        return current;
+    };
 
     const debounce = (fn, ms = 350) => {
         let t;
@@ -509,6 +542,9 @@
         selectedStepId: null,
         editMode: false,
         existingConflictId: null,
+        detailDirty: false,
+        unsavedTarget: null,
+        detailContext: null,
     };
 
     const els = {
@@ -1099,23 +1135,96 @@
         return (getCurrentProject()?.stages || []).find((s) => Number(s.id) === Number(stageId)) || null;
     }
 
-    function openDetail(stageId) {
+    function openDetail(stageId, opts = {}) {
         const stage = getStage(stageId);
-        if (!stage) return;
-        state.detailStageId = stageId;
+        if (!stage) return false;
+        const project = getCurrentProject();
+        state.detailStageId = Number(stageId);
         state.selectedStepId = null;
         state.editMode = false;
+        state.detailDirty = false;
+        state.detailContext = {
+            projectId: project?.id ? Number(project.id) : null,
+            checklistId: Number(stageId),
+            stepId: opts.stepId ? Number(opts.stepId) : null,
+        };
         document.getElementById('checklist-edit-footer')?.classList.add('hidden');
         document.getElementById('checklist-detail-title').textContent = stage.name || stageLabel(stage.stage_type);
+        const projectName = project?.name ? String(project.name) : '';
         document.getElementById('checklist-detail-meta').textContent = [
+            projectName || null,
             stageLabel(stage.stage_type),
             `${i18n.responsible}: ${stage.responsible_name || i18n.notSpecified}`,
             `${i18n.deadline}: ${formatDate(stage.deadline)}`,
-        ].join(' · ');
+        ].filter(Boolean).join(' · ');
+
+        const openProjectBtn = document.getElementById('checklist-detail-open-project');
+        if (openProjectBtn) {
+            if (project?.id) {
+                const q = new URLSearchParams({
+                    open: String(project.id),
+                    tab: 'checklists',
+                    checklist: String(stageId),
+                });
+                if (opts.stepId) q.set('step', String(opts.stepId));
+                openProjectBtn.href = @json(url('/projects')) + '?' + q.toString();
+                openProjectBtn.classList.remove('hidden');
+            } else {
+                openProjectBtn.href = '#';
+                openProjectBtn.classList.add('hidden');
+            }
+        }
+
         renderDetailProgress(stage);
         renderDetailSteps(stage);
         showResultPanel(null);
         openModal(els.detailRoot());
+
+        const wantStep = opts.stepId ? Number(opts.stepId) : null;
+        if (wantStep && (stage.steps || []).some((s) => Number(s.id) === wantStep)) {
+            selectStep(wantStep, { scroll: true });
+            if (state.detailContext) state.detailContext.stepId = wantStep;
+        }
+        return true;
+    }
+
+    async function openByIds({ projectId, checklistId, stepId } = {}) {
+        const pid = Number(projectId);
+        const cid = Number(checklistId);
+        if (!pid || !cid) {
+            toast(i18n.notFound, 'error');
+            return false;
+        }
+
+        let project = getCurrentProject();
+        if (!project || Number(project.id) !== pid) {
+            try {
+                const res = await fetch(routes.show(pid), { headers: { Accept: 'application/json' } });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || !data?.id) {
+                    toast(data.message || i18n.notFound, 'error');
+                    return false;
+                }
+                setStandaloneProject(data);
+                project = data;
+            } catch (e) {
+                toast(e.message || i18n.notFound, 'error');
+                return false;
+            }
+        }
+
+        const stage = (project.stages || []).find((s) => Number(s.id) === cid);
+        if (!stage) {
+            toast(i18n.notFound, 'error');
+            return false;
+        }
+
+        let resolvedStep = stepId ? Number(stepId) : null;
+        if (resolvedStep && !(stage.steps || []).some((s) => Number(s.id) === resolvedStep)) {
+            resolvedStep = null;
+        }
+
+        return openDetail(cid, { stepId: resolvedStep });
     }
 
     function renderDetailProgress(stage) {
@@ -1157,12 +1266,32 @@
         });
     }
 
-    function selectStep(stepId) {
+    function isDetailDirty() {
+        if (!state.selectedStepId) return false;
+        const stage = getStage(state.detailStageId);
+        const step = (stage?.steps || []).find((x) => Number(x.id) === Number(state.selectedStepId));
+        const ta = document.getElementById('checklist-detail-result');
+        if (!ta || !step) return false;
+        return String(ta.value || '') !== String(step.result_comment || '');
+    }
+
+    async function selectStep(stepId, opts = {}) {
+        if (state.selectedStepId && Number(state.selectedStepId) !== Number(stepId) && isDetailDirty()) {
+            await autosaveSelectedResult();
+        }
         state.selectedStepId = stepId;
+        state.detailDirty = false;
+        if (state.detailContext) state.detailContext.stepId = Number(stepId);
         const stage = getStage(state.detailStageId);
         const step = (stage?.steps || []).find((x) => Number(x.id) === Number(stepId));
         renderDetailSteps(stage);
         showResultPanel(step);
+        if (opts.scroll) {
+            requestAnimationFrame(() => {
+                const row = document.querySelector(`#checklist-detail-steps [data-step="${stepId}"]`);
+                row?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            });
+        }
     }
 
     function showResultPanel(step) {
@@ -1176,13 +1305,36 @@
         empty?.classList.add('hidden');
         box?.classList.remove('hidden');
         document.getElementById('checklist-detail-step-title').textContent = step.title || '';
-        document.getElementById('checklist-detail-result').value = step.result_comment || '';
-        document.getElementById('checklist-detail-result-hint').textContent = step.has_result || step.result_comment
-            ? i18n.resultSaved
-            : i18n.noResult;
+        const ta = document.getElementById('checklist-detail-result');
+        if (ta && document.activeElement !== ta) {
+            ta.value = step.result_comment || '';
+        }
+        setResultHint(step.has_result || step.result_comment ? i18n.resultSaved : i18n.noResult);
     }
 
-    async function updateStep(stepId, status, comment) {
+    function setResultHint(text) {
+        const hint = document.getElementById('checklist-detail-result-hint');
+        if (hint) hint.textContent = text || '';
+    }
+
+    function closeDetail(force, opts = {}) {
+        if (!force && isDetailDirty()) {
+            state.unsavedTarget = 'detail';
+            openModal(els.unsaved());
+            return;
+        }
+        state.detailDirty = false;
+        state.detailStageId = null;
+        state.selectedStepId = null;
+        state.detailContext = null;
+        closeModal(els.detailRoot());
+        closeModal(els.unsaved());
+        if (!opts.skipClosedHook && typeof bridge.onChecklistDetailClosed === 'function') {
+            bridge.onChecklistDetailClosed();
+        }
+    }
+
+    async function updateStep(stepId, status, comment, { preserveEditor = false } = {}) {
         try {
             const res = await fetch(routes.stepUpdate(stepId), {
                 method: 'PUT',
@@ -1200,6 +1352,7 @@
                 step.result_comment = data.step?.result_comment ?? comment;
                 step.has_result = !!(step.result_comment && String(step.result_comment).trim());
             }
+            state.detailDirty = false;
             if (stage) {
                 const total = (stage.steps || []).length;
                 const done = (stage.steps || []).filter((x) => x.result_status === 'done').length;
@@ -1209,37 +1362,51 @@
                 stage.state = stage.progress_percent >= 100 ? 'done' : (done > 0 ? 'in_progress' : 'not_started');
                 renderDetailProgress(stage);
                 renderDetailSteps(stage);
-                if (Number(state.selectedStepId) === Number(stepId)) showResultPanel(step);
+                if (Number(state.selectedStepId) === Number(stepId)) {
+                    if (preserveEditor) {
+                        setResultHint(step?.has_result ? i18n.resultSaved : i18n.noResult);
+                    } else {
+                        showResultPanel(step);
+                    }
+                }
             }
             renderChecklists(project);
             if (typeof bridge.refreshCurrentProject === 'function') {
-                // soft refresh in background for consistency
                 refreshCurrentProject().then((p) => { if (p) renderChecklists(p); });
             }
         } catch (e) {
             toast(e.message || i18n.error, 'error');
+            setResultHint(i18n.error);
             const stage = getStage(state.detailStageId);
             if (stage) renderDetailSteps(stage);
         }
     }
 
-    async function saveSelectedResult() {
+    async function autosaveSelectedResult() {
         const stepId = state.selectedStepId;
         if (!stepId) return;
         const stage = getStage(state.detailStageId);
         const step = (stage?.steps || []).find((x) => Number(x.id) === Number(stepId));
         const comment = document.getElementById('checklist-detail-result')?.value || '';
+        if ((step?.result_comment || '') === comment) {
+            setResultHint(comment.trim() ? i18n.resultSaved : i18n.noResult);
+            return;
+        }
         const status = step?.result_status === 'done' ? 'done' : 'pending';
-        await updateStep(stepId, status, comment);
-        toast(i18n.resultSaved, 'success');
+        setResultHint(i18n.resultSaving);
+        await updateStep(stepId, status, comment, { preserveEditor: true });
     }
+
+    const autosaveResult = debounce(() => { autosaveSelectedResult(); }, 450);
 
     function closeCreate(force) {
         if (!force && state.formDirty) {
+            state.unsavedTarget = 'create';
             openModal(els.unsaved());
             return;
         }
         state.formDirty = false;
+        state.unsavedTarget = null;
         closeModal(els.root());
         closeModal(els.unsaved());
     }
@@ -1250,7 +1417,12 @@
         document.getElementById('checklist-cancel')?.addEventListener('click', () => closeCreate(false));
         els.root()?.querySelector('[data-checklist-close-backdrop]')?.addEventListener('click', () => closeCreate(false));
         document.getElementById('checklist-unsaved-continue')?.addEventListener('click', () => closeModal(els.unsaved()));
-        document.getElementById('checklist-unsaved-leave')?.addEventListener('click', () => closeCreate(true));
+        document.getElementById('checklist-unsaved-leave')?.addEventListener('click', () => {
+            const target = state.unsavedTarget;
+            state.unsavedTarget = null;
+            if (target === 'detail') closeDetail(true);
+            else closeCreate(true);
+        });
 
         document.getElementById('checklist-stage-type')?.addEventListener('change', onStageTypeChange);
         document.getElementById('checklist-responsible')?.addEventListener('change', markDirty);
@@ -1292,9 +1464,16 @@
         });
         document.getElementById('checklist-cancel-create')?.addEventListener('click', () => closeCreate(true));
 
-        document.getElementById('checklist-detail-close')?.addEventListener('click', () => closeModal(els.detailRoot()));
-        els.detailRoot()?.querySelector('[data-checklist-detail-backdrop]')?.addEventListener('click', () => closeModal(els.detailRoot()));
-        document.getElementById('checklist-detail-save-result')?.addEventListener('click', saveSelectedResult);
+        document.getElementById('checklist-detail-close')?.addEventListener('click', () => closeDetail(false));
+        els.detailRoot()?.querySelector('[data-checklist-detail-backdrop]')?.addEventListener('click', () => closeDetail(false));
+        document.getElementById('checklist-detail-result')?.addEventListener('input', () => {
+            state.detailDirty = isDetailDirty();
+            setResultHint(i18n.resultSaving);
+            autosaveResult();
+        });
+        document.getElementById('checklist-detail-result')?.addEventListener('blur', () => {
+            autosaveSelectedResult();
+        });
         document.getElementById('checklist-detail-edit')?.addEventListener('click', () => {
             const stage = getStage(state.detailStageId);
             if (!stage) return;
@@ -1414,6 +1593,8 @@
         renderChecklists,
         openCreate,
         openDetail,
+        openByIds,
+        closeDetail,
         onProjectOpened,
     };
 })();

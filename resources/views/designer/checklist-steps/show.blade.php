@@ -1,3 +1,4 @@
+{{-- Legacy view: designer.checklist-steps.show — kept for reference; ChecklistStepController::show redirects to tasks deep link. --}}
 @extends('layouts.dashboard')
 
 @section('title', __('projects.stage_checklist'))
