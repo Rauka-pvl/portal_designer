@@ -30,6 +30,14 @@ class PassportObject extends Controller
 
     public function index(Request $request)
     {
+        // Passport objects are now edited as "Данные объекта" inside a project.
+        // Keep the page available via ?manage=1 for transitional admin/moderation needs.
+        if (! $request->boolean('manage')) {
+            return redirect()
+                ->route('projects.index')
+                ->with('status', __('objects.moved_into_projects'));
+        }
+
         $userId = $request->user()->id;
 
         $clients = Client::where('user_id', $userId)

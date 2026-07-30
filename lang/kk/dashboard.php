@@ -2,6 +2,9 @@
 
 return [
     'dashboard' => 'Басқару панелі',
+    'dark_theme' => 'Қараңғы тема',
+    'light_theme' => 'Жарық тема',
+    'theme_toggle' => 'Теманы ауыстыру',
     'clients' => 'Клиенттер',
     'orders_in_work' => 'Жұмыс істеп жатқан жеткізулер',
     'tasks_today' => 'Бүгінгі тапсырмалар',

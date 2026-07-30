@@ -69,4 +69,6 @@ return [
     'choose_file' => 'Выберите файл...',
     'link' => 'Ссылка',
     'comment_placeholder' => 'Дополнительная информация...',
+    'related_projects' => 'Связанные проекты',
+    'no_related_projects' => 'Нет связанных проектов',
 ];

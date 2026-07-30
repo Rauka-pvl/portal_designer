@@ -6,8 +6,11 @@ use App\Http\Controllers\Designer\CashbackController;
 use App\Http\Controllers\Designer\ChecklistStepController;
 use App\Http\Controllers\Designer\ClientController;
 use App\Http\Controllers\Designer\DashboardCalendarController;
+use App\Http\Controllers\Designer\DashboardController;
 use App\Http\Controllers\Designer\NotificationController;
 use App\Http\Controllers\Designer\PassportObject;
+use App\Http\Controllers\Designer\PipelineController;
+use App\Http\Controllers\Designer\ProjectActivityController;
 use App\Http\Controllers\Designer\ProjectController;
 use App\Http\Controllers\Designer\ReferralSupplierController;
 use App\Http\Controllers\Designer\SettingsController;
@@ -15,6 +18,7 @@ use App\Http\Controllers\Designer\SubscriptionController;
 use App\Http\Controllers\Designer\SupplierCatalogController;
 use App\Http\Controllers\Designer\SupplierController;
 use App\Http\Controllers\Designer\SupplierOrderController;
+use App\Http\Controllers\Designer\TasksController;
 use App\Http\Controllers\SupplierOrderChatController;
 use App\Http\Controllers\Moderator\ModeratorController;
 use App\Http\Controllers\ReviewController;
@@ -177,44 +181,13 @@ Route::post('/referrals/suppliers', [ReferralSupplierController::class, 'store']
     ->name('referrals.suppliers.store');
 
 Route::middleware(['auth', 'role:designer', 'subscription.active'])->group(function () {
-    Route::get('/dashboard', function (Request $request) {
-        $userId = (int) $request->user()->id;
-        $today = now()->toDateString();
-
-        $clientsCount = \App\Models\Client::query()
-            ->where('user_id', $userId)
-            ->count();
-
-        $ordersInWork = \App\Models\Supplier_orders::query()
-            ->where('user_id', $userId)
-            ->where('is_sent_to_supplier', true)
-            ->where('status', '!=', 'delivery_completed')
-            ->count();
-
-        $tasksToday =
-            \App\Models\ProjectStageStep::query()
-                ->whereDate('deadline', $today)
-                ->whereHas('stage.project', function ($q) use ($userId) {
-                    $q->where('user_id', $userId);
-                })
-                ->count()
-            + \App\Models\Supplier_orders::query()->where('user_id', $userId)->whereDate('date_planned', $today)->count()
-            + \App\Models\Supplier_orders::query()->where('user_id', $userId)->whereDate('date_actual', $today)->count()
-            + \App\Models\Supplier_orders::query()->where('user_id', $userId)->whereDate('prepayment_date', $today)->count()
-            + \App\Models\Supplier_orders::query()->where('user_id', $userId)->whereDate('payment_date', $today)->count();
-
-        return view('designer.dashboard', [
-            'stats' => [
-                'clients' => (int) $clientsCount,
-                'orders_in_work' => (int) $ordersInWork,
-                'tasks_today' => (int) $tasksToday,
-                'accumulated_bonuses' => \App\Models\DesignerCashbackTransaction::availableBalance($userId),
-            ],
-        ]);
-    })->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/dashboard/events', [DashboardCalendarController::class, 'events'])
         ->name('dashboard.events');
+
+    Route::get('/tasks', [TasksController::class, 'index'])->name('tasks.index');
+    Route::get('/tasks/events', [DashboardCalendarController::class, 'events'])->name('tasks.events');
 
     Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
 
@@ -283,6 +256,9 @@ Route::middleware(['auth', 'role:designer', 'subscription.active'])->group(funct
     Route::get('/suppliers/{supplierId}/products', [SupplierCatalogController::class, 'index'])
         ->whereNumber('supplierId')
         ->name('suppliers.products.index');
+    Route::get('/suppliers/{supplierId}/products.json', [SupplierCatalogController::class, 'productsJson'])
+        ->whereNumber('supplierId')
+        ->name('suppliers.products.json');
     Route::get('/suppliers/{supplierId}/products/{productId}', [SupplierCatalogController::class, 'show'])
         ->whereNumber('supplierId')
         ->whereNumber('productId')
@@ -290,6 +266,11 @@ Route::middleware(['auth', 'role:designer', 'subscription.active'])->group(funct
 
     Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
     Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
+    Route::get('/projects/templates', [ProjectController::class, 'templates'])->name('projects.templates.index');
+    Route::post('/projects/templates', [ProjectController::class, 'saveTemplate'])->name('projects.templates.store');
+    Route::delete('/projects/templates/{templateId}', [ProjectController::class, 'deleteTemplate'])
+        ->whereNumber('templateId')
+        ->name('projects.templates.destroy');
     Route::get('/projects/{projectId}', [ProjectController::class, 'show'])
         ->whereNumber('projectId')
         ->name('projects.show');
@@ -306,10 +287,23 @@ Route::middleware(['auth', 'role:designer', 'subscription.active'])->group(funct
     Route::patch('/projects/{projectId}/status', [ProjectController::class, 'updateStatus'])
         ->whereNumber('projectId')
         ->name('projects.update_status');
-    Route::post('/projects/templates', [ProjectController::class, 'saveTemplate'])->name('projects.templates.store');
-    Route::delete('/projects/templates/{templateId}', [ProjectController::class, 'deleteTemplate'])
-        ->whereNumber('templateId')
-        ->name('projects.templates.destroy');
+    Route::get('/projects/{projectId}/activity', [ProjectActivityController::class, 'index'])
+        ->whereNumber('projectId')
+        ->name('projects.activity');
+    Route::post('/projects/{projectId}/comments', [ProjectActivityController::class, 'storeComment'])
+        ->whereNumber('projectId')
+        ->name('projects.comments.store');
+
+    Route::get('/pipelines/project', [PipelineController::class, 'showProjectPipeline'])->name('pipelines.project');
+    Route::get('/pipelines/supply', [PipelineController::class, 'showSupplyPipeline'])->name('pipelines.supply');
+    Route::post('/pipelines/stages', [PipelineController::class, 'storeStage'])->name('pipelines.stages.store');
+    Route::put('/pipelines/stages/{stageId}', [PipelineController::class, 'updateStage'])
+        ->whereNumber('stageId')
+        ->name('pipelines.stages.update');
+    Route::post('/pipelines/reorder', [PipelineController::class, 'reorder'])->name('pipelines.reorder');
+    Route::delete('/pipelines/stages/{stageId}', [PipelineController::class, 'destroyStage'])
+        ->whereNumber('stageId')
+        ->name('pipelines.stages.destroy');
 
     Route::get('/checklist-steps/{stepId}', [ChecklistStepController::class, 'show'])
         ->whereNumber('stepId')
@@ -318,7 +312,19 @@ Route::middleware(['auth', 'role:designer', 'subscription.active'])->group(funct
         ->whereNumber('stepId')
         ->name('checklist-steps.update');
 
-    Route::get('/supplier-orders', [SupplierOrderController::class, 'index'])->name('supplier-orders.index');
+    Route::get('/supplier-orders', function (\Illuminate\Http\Request $request) {
+        // Global supplies menu removed — keep route for deep links / legacy redirects into Projects CRM.
+        $projectId = $request->query('project_id');
+        if ($projectId) {
+            return redirect()->route('projects.index', [
+                'open' => $projectId,
+                'tab' => 'supplies',
+                'create' => $request->query('create'),
+            ]);
+        }
+
+        return redirect()->route('projects.index')->with('status', __('supplier-orders.moved_into_projects'));
+    })->name('supplier-orders.index');
     Route::post('/supplier-orders', [SupplierOrderController::class, 'store'])->name('supplier-orders.store');
     Route::get('/supplier-orders/{orderId}', [SupplierOrderController::class, 'show'])
         ->whereNumber('orderId')

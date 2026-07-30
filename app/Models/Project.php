@@ -13,6 +13,7 @@ class Project extends Model
 
     protected $fillable = [
         'user_id',
+        'client_id',
         'object_id',
         'name',
         'status',
@@ -44,6 +45,11 @@ class Project extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function client()
+    {
+        return $this->belongsTo(Client::class);
+    }
+
     public function object()
     {
         return $this->belongsTo(PassportObject::class);
@@ -54,11 +60,86 @@ class Project extends Model
         return $this->hasMany(ProjectStages::class, 'project_id');
     }
 
+    public function objectDetails()
+    {
+        return $this->hasOne(ProjectObjectDetail::class);
+    }
+
+    public function supplierOrders()
+    {
+        return $this->hasMany(Supplier_orders::class, 'project_id');
+    }
+
+    public function activityEvents()
+    {
+        return $this->hasMany(ActivityEvent::class, 'subject_id')
+            ->where('subject_type', 'project')
+            ->orderByDesc('id');
+    }
+
+    public function checklistProgress(): array
+    {
+        $steps = $this->stages->flatMap->steps;
+        $total = $steps->count();
+        $done = $steps->where('result_status', 'done')->count();
+
+        return [
+            'total' => $total,
+            'done' => $done,
+            'percent' => $total > 0 ? (int) round(($done / $total) * 100) : 0,
+        ];
+    }
+
+    /**
+     * Resolve property/client display data preferring project_object_details, falling back to legacy passport.
+     */
+    public function propertySnapshot(): array
+    {
+        $details = $this->objectDetails;
+        $legacy = $this->object;
+
+        $area = $details?->area ?? $legacy?->area;
+        $budgetPlan = $details?->repair_budget_planned ?? null;
+        $budgetFact = $details?->repair_budget_actual ?? null;
+
+        // Fall back to project planned/actual cost for older records without details budgets
+        if ($budgetPlan === null && $details === null) {
+            $budgetPlan = $this->planned_cost;
+        }
+        if ($budgetFact === null && $details === null) {
+            $budgetFact = $this->actual_cost;
+        }
+
+        $areaFloat = is_numeric($area) ? (float) $area : 0.0;
+        $planFloat = is_numeric($budgetPlan) ? (float) $budgetPlan : null;
+        $factFloat = is_numeric($budgetFact) ? (float) $budgetFact : null;
+
+        return [
+            'client_id' => $this->client_id ?? $details?->client_id ?? $legacy?->client_id,
+            'client_name' => $this->client?->full_name
+                ?? $details?->client?->full_name
+                ?? $legacy?->client?->full_name,
+            'city' => $details?->city ?? $legacy?->city,
+            'address' => $details?->address ?? $legacy?->address,
+            'apartment' => $details?->apartment ?? $legacy?->apartment,
+            'apartment_floor' => $details?->apartment_floor ?? $legacy?->apartment_floor,
+            'apartment_entrance' => $details?->apartment_entrance ?? $legacy?->apartment_entrance,
+            'type' => $details?->type ?? $legacy?->type,
+            'area' => $areaFloat > 0 ? $areaFloat : ($area !== null ? (float) $area : null),
+            'repair_budget_planned' => $planFloat,
+            'repair_budget_actual' => $factFloat,
+            'repair_budget_per_m2_planned' => ($areaFloat > 0 && $planFloat !== null)
+                ? round($planFloat / $areaFloat, 2)
+                : null,
+            'repair_budget_per_m2_actual' => ($areaFloat > 0 && $factFloat !== null)
+                ? round($factFloat / $areaFloat, 2)
+                : null,
+        ];
+    }
+
     protected static function booted(): void
     {
         static::deleting(function (Project $project) {
-            // Project uses SoftDeletes, so DB-level cascade is not triggered.
-            // Manually remove child stages to avoid orphaned stage/step rows.
             $project->stages()->get()->each->delete();
         });
     }

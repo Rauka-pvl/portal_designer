@@ -131,28 +131,12 @@ class SupplierOrderController extends Controller
             return response()->json($payload);
         }
 
-        if ($request->query('section') === 'offer') {
-            UserNotification::query()
-                ->where('user_id', (int) $request->user()->id)
-                ->where('related_order_id', $orderId)
-                ->where('action_key', 'order_offer')
-                ->where(function ($q) {
-                    $q->where('is_read', false)->orWhereNull('is_read');
-                })
-                ->update([
-                    'is_read' => true,
-                    'read_at' => now(),
-                ]);
-        }
-
-        return view('designer.supplier-orders.show', [
-            'order' => $order,
-            'orderData' => $this->payload($order, null, $this->chatUnreadMapForDesigner((int) $request->user()->id, [(int) $order->id])[(int) $order->id] ?? 0),
-            'projects' => Project::query()->where('user_id', $request->user()->id)->orderBy('name')->get(['id', 'name']),
-            'suppliers' => $this->availableSuppliers((int) $request->user()->id),
-            'categoryOptions' => $this->categoryOptions(),
-            'roomOptions' => $this->roomOptions(),
-            'focusOfferSection' => $request->query('section') === 'offer',
+        // HTML: open inside Projects CRM supplies tab instead of legacy full page.
+        return redirect()->route('projects.index', [
+            'open' => $order->project_id,
+            'tab' => 'supplies',
+            'supply' => $order->id,
+            'section' => $request->query('section'),
         ]);
     }
 
@@ -412,9 +396,9 @@ class SupplierOrderController extends Controller
         }
 
         $order->summa = (int) $data['summa'];
-        $order->category = $data['category'] ?? null;
-        $order->mark = $data['mark'] ?? null;
-        $order->room = $data['room'] ?? null;
+        $order->category = (string) ($data['category'] ?? '');
+        $order->mark = (string) ($data['mark'] ?? '');
+        $order->room = (string) ($data['room'] ?? '');
         $order->date_planned = $data['date_planned'];
         $order->date_actual = $data['date_actual'] ?? null;
         $order->prepayment_date = $data['prepayment_date'] ?? null;
@@ -955,6 +939,8 @@ class SupplierOrderController extends Controller
                 ->values(),
             'product_service' => (string) ($order->comment ?? ''),
             'comment' => (string) ($order->comment ?? ''),
+            'product_items' => is_array($order->product_items) ? array_values($order->product_items) : [],
+            'products_count' => is_array($order->product_items) ? count($order->product_items) : 0,
             'unread_chat_count' => max(0, $unreadChatCount),
             ...$order->offerPayload('designer'),
         ];

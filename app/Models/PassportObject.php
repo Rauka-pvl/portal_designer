@@ -89,4 +89,9 @@ class PassportObject extends Model
     {
         return $this->belongsTo(self::class, 'moderation_duplicate_of_object_id');
     }
+
+    public function projects()
+    {
+        return $this->hasMany(Project::class, 'object_id');
+    }
 }

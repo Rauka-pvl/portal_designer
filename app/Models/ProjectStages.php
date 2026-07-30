@@ -11,6 +11,7 @@ class ProjectStages extends Model
     protected $fillable = [
         'project_id',
         'stage_type',
+        'name',
         'template_id',
         'deadline',
         'responsible_id',

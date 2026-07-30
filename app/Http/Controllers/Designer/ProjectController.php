@@ -2,13 +2,24 @@
 
 namespace App\Http\Controllers\Designer;
 
+use App\Enums\PipelineType;
+use App\Enums\ProjectStatus;
+use App\Enums\SupplyStatus;
 use App\Http\Controllers\Controller;
 use App\Models\PassportObject;
+use App\Models\Pipeline;
+use App\Models\PipelineStage;
 use App\Models\Project;
+use App\Models\ProjectObjectDetail;
 use App\Models\ProjectStages;
 use App\Models\ProjectStageStep;
+use App\Models\Supplier;
+use App\Models\Supplier_orders;
 use App\Models\Template;
 use App\Models\User;
+use App\Services\Crm\ActivityFeedService;
+use App\Services\Crm\PipelineService;
+use App\Support\AccountPermissions;
 use App\Support\PublicFileStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -18,26 +29,39 @@ class ProjectController extends Controller
 {
     private const STAGE_TYPES = ['measurement', 'planning', 'drawings', 'equipment', 'estimate', 'visualization'];
 
+    public function __construct(
+        private PipelineService $pipelines,
+        private ActivityFeedService $activity,
+    ) {}
+
     public function index(Request $request)
     {
         $userId = $request->user()->id;
+        $this->pipelines->ensureDefaultsForUser((int) $userId);
 
         $projects = Project::query()
             ->where('user_id', $userId)
             ->with([
-                'object:id,address,city,client_id',
+                'user:id,name',
+                'client:id,full_name',
+                'object:id,address,city,client_id,area',
                 'object.client:id,full_name',
+                'objectDetails.client:id,full_name',
                 'stages.steps',
                 'stages.template:id,user_id,name,type,steps',
+                'stages.responsible:id,name',
+                'supplierOrders.supplier:id,name',
             ])
             ->orderByDesc('id')
             ->get();
 
-        $objects = PassportObject::query()
+        $clients = \App\Models\Client::query()
             ->where('user_id', $userId)
-            ->with('client:id,full_name')
-            ->orderByDesc('id')
-            ->get(['id', 'address', 'city', 'client_id']);
+            ->orderBy('full_name')
+            ->get(['id', 'full_name']);
+
+        $cities = trans('cities.passport');
+        $cities = is_array($cities) ? array_values($cities) : [];
 
         $templates = Template::query()
             ->where(function ($q) use ($userId) {
@@ -47,44 +71,73 @@ class ProjectController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('designer.projects.index', [
-            // Legacy variables kept for current Blade JS initialization
-            'projects' => $projects->map(fn (Project $project) => $this->projectPayload($project))->values(),
+        $projectPipeline = Pipeline::defaultForUser((int) $userId, PipelineType::Project);
+        $supplyPipeline = Pipeline::defaultForUser((int) $userId, PipelineType::Supply);
+
+        $suppliers = Supplier::query()
+            ->where(function ($q) use ($userId) {
+                $q->where('created_by_user_id', $userId)
+                    ->orWhere(function ($legacy) use ($userId) {
+                        $legacy->whereNull('created_by_user_id')
+                            ->where('user_id', $userId);
+                    })
+                    ->orWhere(function ($q2) {
+                        $q2->where('profile_status', 'active')
+                            ->where('moderation_status', 'approved');
+                    });
+            })
+            ->orderBy('name')
+            ->get(['id', 'name', 'moderation_status']);
+
+        $categoryOptions = is_array(trans('categories')) ? trans('categories') : [];
+        $roomOptions = is_array(trans('type_room')) ? trans('type_room') : [];
+
+        $payload = [
+            'projectsData' => $projects->map(fn (Project $project) => $this->projectPayload($project))->values(),
+            'clientsData' => $clients->map(fn ($c) => ['id' => $c->id, 'name' => $c->full_name])->values(),
+            'suppliersData' => $suppliers->map(fn (Supplier $s) => [
+                'id' => $s->id,
+                'name' => $s->name,
+                'moderation_status' => $s->moderation_status,
+            ])->values(),
+            'categoryOptions' => $categoryOptions,
+            'roomOptions' => $roomOptions,
+            'cities' => $cities,
+            'objectTypes' => [
+                ['id' => 'apartment', 'label' => __('objects.apartment')],
+                ['id' => 'house', 'label' => __('objects.house')],
+                ['id' => 'commercial', 'label' => __('objects.commercial')],
+                ['id' => 'office', 'label' => __('objects.office')],
+                ['id' => 'other', 'label' => __('objects.other')],
+            ],
             'users' => User::query()
                 ->whereKey($userId)
                 ->get(['id', 'name', 'email']),
-            'projectsData' => $projects->map(fn (Project $project) => $this->projectPayload($project))->values(),
-            'objectsData' => $objects->map(function (PassportObject $object) {
-                return [
-                    'id' => $object->id,
-                    'address' => $object->address,
-                    'city' => $object->city,
-                    'client_name' => $object->client?->full_name,
-                ];
-            })->values(),
-            // Backward compatibility for existing Blade loops in projects/index.blade.php
-            'objects' => $objects->map(function (PassportObject $object) {
-                return [
-                    'id' => $object->id,
-                    'address' => $object->address,
-                    'city' => $object->city,
-                ];
-            })->values(),
-            'clients' => $objects
-                ->filter(fn (PassportObject $object) => $object->client !== null)
-                ->map(fn (PassportObject $object) => ['id' => $object->client->id, 'name' => $object->client->full_name])
-                ->unique('id')
-                ->values(),
             'templatesData' => $templates->map(fn (Template $template) => $this->templatePayload($template, $userId))->values(),
             'stageTypes' => self::STAGE_TYPES,
-        ]);
+            'pipeline' => $this->pipelinePayload($projectPipeline),
+            'supplyPipeline' => $this->pipelinePayload($supplyPipeline),
+            'canManagePipeline' => AccountPermissions::canManageProjectPipeline($request->user()),
+        ];
+
+        // Legacy view compatibility
+        $payload['projects'] = $payload['projectsData'];
+        $payload['clients'] = $payload['clientsData'];
+        $payload['objects'] = collect();
+        $payload['objectsData'] = collect();
+
+        if ($request->boolean('legacy')) {
+            return view('designer.projects.index', $payload);
+        }
+
+        return view('designer.projects.crm', $payload);
     }
 
     public function show(Request $request, int $projectId)
     {
         $project = Project::query()
             ->where('user_id', $request->user()->id)
-            ->with(['object.client', 'stages.steps', 'stages.template'])
+            ->with(['client', 'user:id,name', 'object.client', 'objectDetails.client', 'stages.steps', 'stages.template', 'stages.responsible:id,name', 'supplierOrders.supplier'])
             ->findOrFail($projectId);
         $payload = $this->projectPayload($project);
 
@@ -92,26 +145,12 @@ class ProjectController extends Controller
             return response()->json($payload);
         }
 
-        $objects = PassportObject::query()
-            ->where('user_id', $request->user()->id)
-            ->orderByDesc('id')
-            ->get(['id', 'address', 'city']);
-
-        return view('designer.projects.show', [
-            'project' => $project,
-            'projectData' => $payload,
-            'objects' => $objects,
-            'stageTypes' => self::STAGE_TYPES,
-        ]);
+        return redirect()->route('projects.index', ['open' => $project->id]);
     }
 
-    public function store(Request $request)
+    public function store(\App\Http\Requests\Designer\ProjectSaveRequest $request)
     {
         $userId = (int) $request->user()->id;
-
-        if ($msg = $this->passportObjectModerationError($request, $userId)) {
-            return response()->json(['success' => false, 'message' => $msg], 422);
-        }
 
         $project = new Project;
         $project->user_id = $userId;
@@ -122,39 +161,48 @@ class ProjectController extends Controller
         $project->moderation_reason = null;
         $project->save();
 
+        $this->activity->record(
+            $userId,
+            'project',
+            $project->id,
+            'project.created',
+            $request->user(),
+            null,
+            ['name' => $project->name]
+        );
+
         return response()->json([
             'success' => true,
             'message' => __('projects.created'),
-            'project' => $this->projectPayload($project->load(['object.client', 'stages.steps', 'stages.template'])),
+            'project' => $this->projectPayload($project->load(['client', 'object.client', 'objectDetails.client', 'stages.steps', 'stages.template', 'stages.responsible:id,name', 'supplierOrders.supplier'])),
         ]);
     }
 
-    public function update(Request $request, int $projectId)
+    public function update(\App\Http\Requests\Designer\ProjectSaveRequest $request, int $projectId)
     {
         $userId = (int) $request->user()->id;
-
-        if ($msg = $this->passportObjectModerationError($request, $userId)) {
-            if ($request->expectsJson() || $request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => $msg], 422);
-            }
-
-            return redirect()->back()->withErrors(['object_id' => $msg])->withInput();
-        }
 
         $project = Project::query()
             ->where('user_id', $userId)
             ->findOrFail($projectId);
 
         $this->fillAndSave($request, $project);
+        $this->activity->record(
+            $userId,
+            'project',
+            $project->id,
+            'project.updated',
+            $request->user()
+        );
 
         if (! ($request->expectsJson() || $request->wantsJson())) {
-            return redirect()->route('projects.show', $project->id)->with('status', __('projects.updated'));
+            return redirect()->route('projects.index', ['open' => $project->id])->with('status', __('projects.updated'));
         }
 
         return response()->json([
             'success' => true,
             'message' => __('projects.updated'),
-            'project' => $this->projectPayload($project->load(['object.client', 'stages.steps', 'stages.template'])),
+            'project' => $this->projectPayload($project->load(['client', 'object.client', 'objectDetails.client', 'stages.steps', 'stages.template', 'stages.responsible:id,name', 'supplierOrders.supplier'])),
         ]);
     }
 
@@ -215,27 +263,58 @@ class ProjectController extends Controller
 
     public function updateStatus(Request $request, int $projectId)
     {
+        $userId = (int) $request->user()->id;
+        $this->pipelines->ensureDefaultsForUser($userId);
+
+        $allowedKeys = PipelineStage::query()
+            ->whereHas('pipeline', fn ($q) => $q->where('user_id', $userId)->where('type', PipelineType::Project))
+            ->pluck('system_key')
+            ->all();
+
+        if ($allowedKeys === []) {
+            $allowedKeys = ProjectStatus::values();
+        }
+
         $data = $request->validate([
-            'status' => ['required', Rule::in([
-                'contract_negotiation',
-                'contract_signed',
-                'prepayment_received',
-                'tz_signed',
-                'documents_signed',
-                'in_work',
-            ])],
+            'status' => ['required', Rule::in($allowedKeys)],
         ]);
 
         $project = Project::query()
-            ->where('user_id', $request->user()->id)
+            ->where('user_id', $userId)
             ->findOrFail($projectId);
 
-        $project->status = $data['status'];
-        $project->save();
+        $from = (string) $project->status;
+        $to = (string) $data['status'];
+
+        if ($from !== $to) {
+            $project->status = $to;
+            $project->save();
+
+            $labels = PipelineStage::query()
+                ->whereHas('pipeline', fn ($q) => $q->where('user_id', $userId)->where('type', PipelineType::Project))
+                ->whereIn('system_key', [$from, $to])
+                ->pluck('name', 'system_key');
+
+            $this->activity->record(
+                $userId,
+                'project',
+                $project->id,
+                'project.status_changed',
+                $request->user(),
+                null,
+                [
+                    'from' => $from,
+                    'to' => $to,
+                    'from_label' => $labels[$from] ?? $from,
+                    'to_label' => $labels[$to] ?? $to,
+                ]
+            );
+        }
 
         return response()->json([
             'success' => true,
-            'project' => $this->projectPayload($project->load(['object.client', 'stages.steps', 'stages.template'])),
+            'message' => __('projects.status_updated'),
+            'project' => $this->projectPayload($project->load(['client', 'object.client', 'objectDetails.client', 'stages.steps', 'stages.template', 'stages.responsible:id,name', 'supplierOrders.supplier'])),
         ]);
     }
 
@@ -297,79 +376,19 @@ class ProjectController extends Controller
     }
 
     /**
-     * Не создавать/не привязывать проект к объекту на модерации или отклонённому модератором.
+     * @deprecated Object selection removed from UI; kept for legacy API payloads.
      */
     private function passportObjectModerationError(Request $request, int $userId): ?string
     {
-        $objectId = $request->input('object_id');
-        if ($objectId === null || $objectId === '') {
-            return null;
-        }
-
-        $object = PassportObject::query()
-            ->where('user_id', $userId)
-            ->find((int) $objectId);
-
-        if (! $object) {
-            return null;
-        }
-
-        $status = (string) ($object->moderation_status ?? '');
-
-        if ($status === 'pending') {
-            return __('projects.object_moderation_pending');
-        }
-
-        if ($status === 'rejected') {
-            return __('projects.object_moderation_rejected');
-        }
-
         return null;
     }
 
-    private function fillAndSave(Request $request, Project $project): void
+    private function fillAndSave(\App\Http\Requests\Designer\ProjectSaveRequest $request, Project $project): void
     {
-        $userId = $request->user()->id;
-        $data = $request->validate([
-            'object_id' => ['required', Rule::exists('passport_objects', 'id')->where(fn ($q) => $q->where('user_id', $userId))],
-            'name' => ['required', 'string', 'max:255'],
-            'status' => ['required', 'string', 'max:255'],
-            'start_date' => ['nullable', 'date'],
-            'planned_end_date' => ['nullable', 'date'],
-            'actual_end_date' => ['nullable', 'date'],
-            'planned_cost' => ['nullable', 'numeric'],
-            'actual_cost' => ['nullable', 'numeric'],
-            'links' => ['nullable', 'array'],
-            'links.*' => ['nullable', 'url', 'max:1000'],
-            'existing_files' => ['nullable', 'array'],
-            'existing_files.*' => ['nullable', 'string', 'max:1000'],
-            'files' => ['nullable', 'array'],
-            'files.*' => ['nullable', 'file', 'max:10240'],
-            'comment' => ['nullable', 'string'],
-            'stages' => ['nullable', 'array'],
-            'stages.*.stage_type' => ['required_with:stages', Rule::in(self::STAGE_TYPES)],
-            'stages.*.template_id' => ['nullable', 'integer'],
-            'stages.*.deadline' => ['nullable', 'date'],
-            'stages.*.assign_task' => ['nullable', 'boolean'],
-            'stages.*.responsible_id' => [
-                'nullable',
-                'integer',
-                Rule::exists('users', 'id')->where(fn ($q) => $q->where('id', $userId)),
-            ],
-            'stages.*.steps' => ['nullable', 'array'],
-            'stages.*.steps.*.title' => ['nullable', 'string', 'max:1000'],
-            'stages.*.steps.*.deadline' => ['nullable', 'date'],
-            'stages.*.steps.*.responsible_id' => [
-                'nullable',
-                'integer',
-                Rule::exists('users', 'id')->where(fn ($q) => $q->where('id', $userId)),
-            ],
-            'stages.*.steps.*.link' => ['nullable', 'url', 'max:1000'],
-            'stages.*.steps.*.result_status' => ['nullable', 'string', Rule::in(['pending', 'done'])],
-            'stages.*.steps.*.result_comment' => ['nullable', 'string', 'max:5000'],
-        ]);
+        $userId = (int) $request->user()->id;
+        $data = $request->validated();
 
-        $links = array_values(array_filter(array_map(fn ($v) => trim((string) $v), (array) ($data['links'] ?? []))));
+        $links = $this->normalizeLinks($data['links'] ?? []);
         $existingFiles = array_values(array_filter(array_map(fn ($v) => trim((string) $v), (array) ($data['existing_files'] ?? []))));
 
         $uploadedFiles = [];
@@ -387,23 +406,116 @@ class ProjectController extends Controller
             }
         }
 
-        $project->object_id = (int) $data['object_id'];
+        $budgetPlan = array_key_exists('repair_budget_planned', $data) && $data['repair_budget_planned'] !== null
+            ? (float) $data['repair_budget_planned']
+            : (float) ($project->planned_cost ?? 0);
+        $budgetFact = array_key_exists('repair_budget_actual', $data) && $data['repair_budget_actual'] !== null
+            ? (float) $data['repair_budget_actual']
+            : (float) ($project->actual_cost ?? 0);
+
+        $project->client_id = ! empty($data['client_id']) ? (int) $data['client_id'] : null;
         $project->name = trim($data['name']);
         $project->status = trim($data['status']);
-        $project->start_date = $data['start_date'] ?? null;
-        $project->planned_end_date = $data['planned_end_date'] ?? null;
+        $project->start_date = $data['start_date'] ?? ($project->start_date ?: now()->toDateString());
+        $project->planned_end_date = $data['planned_end_date'] ?? ($project->planned_end_date ?: now()->addMonth()->toDateString());
         $project->actual_end_date = $data['actual_end_date'] ?? null;
-        $project->planned_cost = (float) ($data['planned_cost'] ?? 0);
-        $project->actual_cost = (float) ($data['actual_cost'] ?? 0);
+        $project->planned_cost = $budgetPlan;
+        $project->actual_cost = $budgetFact;
         $project->links = $links;
         $project->files = $newFiles;
         $project->comment = $data['comment'] ?? null;
         $project->save();
 
-        $project->stages()->delete();
+        $this->saveObjectDetails($project, $data);
+        $this->saveStages($project, $data, $userId);
+    }
 
-        $stageRows = (array) ($data['stages'] ?? []);
-        foreach ($stageRows as $index => $stageRow) {
+    private function normalizeLinks(array $raw): array
+    {
+        $out = [];
+        foreach ($raw as $item) {
+            if (is_string($item)) {
+                $url = trim($item);
+                if ($url !== '') {
+                    $out[] = ['title' => '', 'url' => $url];
+                }
+                continue;
+            }
+            if (! is_array($item)) {
+                continue;
+            }
+            $url = trim((string) ($item['url'] ?? ''));
+            if ($url === '') {
+                continue;
+            }
+            $out[] = [
+                'title' => trim((string) ($item['title'] ?? '')),
+                'url' => $url,
+            ];
+        }
+
+        return array_values($out);
+    }
+
+    private function saveObjectDetails(Project $project, array $data): void
+    {
+        $existing = ProjectObjectDetail::query()->where('project_id', $project->id)->first();
+
+        // Preserve legacy property fields when UI no longer sends them.
+        $city = array_key_exists('city', $data) ? ($data['city'] ?? null) : $existing?->city;
+        $address = array_key_exists('object_address', $data) ? ($data['object_address'] ?? null) : $existing?->address;
+        $apartment = array_key_exists('apartment', $data) ? ($data['apartment'] ?? null) : $existing?->apartment;
+        $floor = array_key_exists('apartment_floor', $data) ? ($data['apartment_floor'] ?? null) : $existing?->apartment_floor;
+        $entrance = array_key_exists('apartment_entrance', $data) ? ($data['apartment_entrance'] ?? null) : $existing?->apartment_entrance;
+        $type = array_key_exists('object_type', $data) ? ($data['object_type'] ?? null) : $existing?->type;
+        $area = array_key_exists('area', $data)
+            ? (isset($data['area']) && $data['area'] !== '' ? (float) $data['area'] : null)
+            : ($existing?->area !== null ? (float) $existing->area : null);
+
+        $budgetPlan = array_key_exists('repair_budget_planned', $data)
+            ? (isset($data['repair_budget_planned']) && $data['repair_budget_planned'] !== ''
+                ? (float) $data['repair_budget_planned']
+                : null)
+            : ($existing?->repair_budget_planned !== null ? (float) $existing->repair_budget_planned : null);
+        $budgetFact = array_key_exists('repair_budget_actual', $data)
+            ? (isset($data['repair_budget_actual']) && $data['repair_budget_actual'] !== ''
+                ? (float) $data['repair_budget_actual']
+                : null)
+            : ($existing?->repair_budget_actual !== null ? (float) $existing->repair_budget_actual : null);
+
+        ProjectObjectDetail::query()->updateOrCreate(
+            ['project_id' => $project->id],
+            [
+                'passport_object_id' => $project->object_id,
+                'client_id' => $project->client_id,
+                'city' => $city,
+                'address' => $address,
+                'apartment' => $apartment,
+                'apartment_floor' => $floor,
+                'apartment_entrance' => $entrance,
+                'type' => $type,
+                'area' => $area,
+                'repair_budget_planned' => $budgetPlan,
+                'repair_budget_actual' => $budgetFact,
+                'repair_budget_per_m2_planned' => ($area && $area > 0 && $budgetPlan !== null)
+                    ? round($budgetPlan / $area, 2) : null,
+                'repair_budget_per_m2_actual' => ($area && $area > 0 && $budgetFact !== null)
+                    ? round($budgetFact / $area, 2) : null,
+            ]
+        );
+    }
+
+    private function saveStages(Project $project, array $data, int $userId): void
+    {
+        // Preserve previous behaviour: replace stages when payload includes stages key.
+        // Sync by id when provided so checklist step IDs (and supply included_step_ids) stay stable.
+        if (! array_key_exists('stages', $data)) {
+            return;
+        }
+
+        $keepStageIds = [];
+
+        foreach ((array) ($data['stages'] ?? []) as $index => $stageRow) {
             $type = $stageRow['stage_type'] ?? null;
             if (! is_string($type) || $type === '') {
                 continue;
@@ -420,18 +532,38 @@ class ProjectController extends Controller
                 $templateId = $template?->id;
             }
 
-            $stage = ProjectStages::create([
-                'project_id' => $project->id,
+            $stageId = isset($stageRow['id']) && $stageRow['id'] !== '' ? (int) $stageRow['id'] : null;
+            $stage = null;
+            if ($stageId) {
+                $stage = ProjectStages::query()
+                    ->where('project_id', $project->id)
+                    ->whereKey($stageId)
+                    ->first();
+            }
+
+            $customName = isset($stageRow['name']) ? trim((string) $stageRow['name']) : '';
+            $attrs = [
                 'stage_type' => $type,
+                'name' => $customName !== '' ? $customName : null,
                 'template_id' => $templateId,
                 'deadline' => $stageRow['deadline'] ?? null,
                 'responsible_id' => $stageRow['responsible_id'] ?? null,
                 'assign_task' => ! empty($stageRow['assign_task']),
                 'order' => $index,
-            ]);
+            ];
 
-            $steps = (array) ($stageRow['steps'] ?? []);
-            foreach ($steps as $stepIdx => $stepRow) {
+            if ($stage) {
+                $stage->fill($attrs)->save();
+            } else {
+                $stage = ProjectStages::create(array_merge($attrs, [
+                    'project_id' => $project->id,
+                ]));
+            }
+
+            $keepStageIds[] = (int) $stage->id;
+            $keepStepIds = [];
+
+            foreach ((array) ($stageRow['steps'] ?? []) as $stepIdx => $stepRow) {
                 $title = is_array($stepRow)
                     ? trim((string) ($stepRow['title'] ?? ''))
                     : trim((string) $stepRow);
@@ -444,9 +576,11 @@ class ProjectController extends Controller
                 $link = is_array($stepRow) ? trim((string) ($stepRow['link'] ?? '')) : '';
                 $resultStatus = is_array($stepRow) ? (string) ($stepRow['result_status'] ?? 'pending') : 'pending';
                 $resultComment = is_array($stepRow) ? ($stepRow['result_comment'] ?? null) : null;
+                $stepId = is_array($stepRow) && isset($stepRow['id']) && $stepRow['id'] !== ''
+                    ? (int) $stepRow['id']
+                    : null;
 
-                ProjectStageStep::create([
-                    'project_stage_id' => $stage->id,
+                $stepAttrs = [
                     'title' => $title,
                     'deadline' => $deadline ?: null,
                     'responsible_id' => $responsibleId ?: null,
@@ -454,9 +588,39 @@ class ProjectController extends Controller
                     'result_status' => $resultStatus,
                     'result_comment' => is_string($resultComment) && trim($resultComment) !== '' ? $resultComment : null,
                     'order' => $stepIdx,
-                ]);
+                ];
+
+                $step = null;
+                if ($stepId) {
+                    $step = ProjectStageStep::query()
+                        ->where('project_stage_id', $stage->id)
+                        ->whereKey($stepId)
+                        ->first();
+                }
+
+                if ($step) {
+                    $step->fill($stepAttrs)->save();
+                } else {
+                    $step = ProjectStageStep::create(array_merge($stepAttrs, [
+                        'project_stage_id' => $stage->id,
+                    ]));
+                }
+
+                $keepStepIds[] = (int) $step->id;
             }
+
+            $stepsQuery = ProjectStageStep::query()->where('project_stage_id', $stage->id);
+            if ($keepStepIds !== []) {
+                $stepsQuery->whereNotIn('id', $keepStepIds);
+            }
+            $stepsQuery->delete();
         }
+
+        $stagesQuery = $project->stages();
+        if ($keepStageIds !== []) {
+            $stagesQuery->whereNotIn('id', $keepStageIds);
+        }
+        $stagesQuery->delete();
     }
 
     private function projectPayload(Project $project): array
@@ -467,26 +631,69 @@ class ProjectController extends Controller
             default => (string) $project->status,
         };
 
+        $property = $project->propertySnapshot();
+        $links = is_array($project->links) ? $project->links : [];
+        $normalizedLinks = [];
+        foreach ($links as $link) {
+            if (is_string($link)) {
+                $normalizedLinks[] = ['title' => '', 'url' => $link];
+            } elseif (is_array($link) && ! empty($link['url'])) {
+                $normalizedLinks[] = [
+                    'title' => (string) ($link['title'] ?? ''),
+                    'url' => (string) $link['url'],
+                ];
+            }
+        }
+
+        $today = now()->toDateString();
+        $hasDelayedSupply = $project->relationLoaded('supplierOrders')
+            && $project->supplierOrders->contains(function (Supplier_orders $o) use ($today) {
+                $planned = $o->date_planned
+                    ? (\Illuminate\Support\Carbon::parse($o->date_planned)->toDateString())
+                    : null;
+
+                return $planned
+                    && $planned < $today
+                    && (string) $o->status !== SupplyStatus::DeliveryCompleted->value;
+            });
+
         return [
             'id' => $project->id,
+            'client_id' => $property['client_id'],
+            'client_name' => $property['client_name'],
+            'owner_name' => $project->relationLoaded('user')
+                ? ($project->user?->name)
+                : null,
+            'responsible_name' => $project->relationLoaded('user')
+                ? ($project->user?->name)
+                : null,
+            'has_delayed_supply' => (bool) $hasDelayedSupply,
             'object_id' => $project->object_id,
-            'object_address' => $project->object?->address,
-            'object_city' => $project->object?->city,
-            'client_name' => $project->object?->client?->full_name,
+            'object_address' => $property['address'],
+            'object_city' => $property['city'],
             'name' => $project->name,
             'status' => $project->status,
             'workflow_status' => $workflowStatus,
-
-            // Moderation
             'moderation_status' => $project->moderation_status,
             'moderation_reason' => $project->moderation_reason,
             'moderation_comment' => $project->moderation_comment,
             'start_date' => $project->start_date,
             'planned_end_date' => $project->planned_end_date,
             'actual_end_date' => $project->actual_end_date,
-            'planned_cost' => (float) $project->planned_cost,
-            'actual_cost' => (float) $project->actual_cost,
-            'links' => is_array($project->links) ? $project->links : [],
+            'planned_cost' => (float) ($property['repair_budget_planned'] ?? $project->planned_cost ?? 0),
+            'actual_cost' => (float) ($property['repair_budget_actual'] ?? $project->actual_cost ?? 0),
+            'city' => $property['city'],
+            'object_type' => $property['type'],
+            'object_address_field' => $property['address'],
+            'apartment_floor' => $property['apartment_floor'],
+            'apartment_entrance' => $property['apartment_entrance'],
+            'apartment' => $property['apartment'],
+            'area' => $property['area'],
+            'repair_budget_planned' => $property['repair_budget_planned'],
+            'repair_budget_actual' => $property['repair_budget_actual'],
+            'repair_budget_per_m2_planned' => $property['repair_budget_per_m2_planned'],
+            'repair_budget_per_m2_actual' => $property['repair_budget_per_m2_actual'],
+            'links' => $normalizedLinks,
             'files' => is_array($project->files) ? $project->files : [],
             'file_urls' => collect(is_array($project->files) ? $project->files : [])
                 ->map(fn ($f) => is_string($f) ? asset('storage/'.ltrim($f, '/')) : null)
@@ -507,6 +714,44 @@ class ProjectController extends Controller
                 ->filter()
                 ->values(),
             'comment' => $project->comment,
+            'object_details' => $property,
+            'checklist_progress' => $project->relationLoaded('stages')
+                ? (function () use ($project) {
+                    $steps = $project->stages->flatMap->steps;
+                    $total = $steps->count();
+                    $done = $steps->where('result_status', 'done')->count();
+
+                    return [
+                        'total' => $total,
+                        'done' => $done,
+                        'percent' => $total > 0 ? (int) round(($done / $total) * 100) : 0,
+                    ];
+                })()
+                : ['total' => 0, 'done' => 0, 'percent' => 0],
+            'supplier_orders' => $project->relationLoaded('supplierOrders')
+                ? $project->supplierOrders->map(function (Supplier_orders $o) {
+                    $items = is_array($o->product_items) ? $o->product_items : [];
+                    $offer = $o->offerPayload('designer');
+
+                    return array_merge([
+                        'id' => $o->id,
+                        'status' => $o->status,
+                        'workflow_status' => (bool) $o->is_sent_to_supplier ? (string) $o->status : 'draft',
+                        'summa' => (int) ($o->summa ?? 0),
+                        'amount' => (int) ($o->summa ?? 0),
+                        'supplier_id' => $o->supplier_id,
+                        'supplier_name' => $o->supplier?->name,
+                        'bonus_percent' => $o->bonus_percent !== null ? (float) $o->bonus_percent : null,
+                        'products_count' => count($items),
+                        'date_planned' => $o->date_planned
+                            ? \Illuminate\Support\Carbon::parse($o->date_planned)->toDateString()
+                            : null,
+                        'created_date' => optional($o->created_at)->format('Y-m-d'),
+                        'is_sent_to_supplier' => (bool) $o->is_sent_to_supplier,
+                        'product_items' => $items,
+                    ], $offer);
+                })->values()
+                : [],
             'stages' => $project->stages->map(function (ProjectStages $stage) {
                 $type = (string) $stage->stage_type;
                 $labelKey = 'projects.stage_'.$type;
@@ -515,15 +760,39 @@ class ProjectController extends Controller
                     $stageLabel = $type;
                 }
 
+                $steps = $stage->steps->sortBy('order')->values();
+                $total = $steps->count();
+                $done = $steps->where('result_status', 'done')->count();
+                $percent = $total > 0 ? (int) round(($done / $total) * 100) : 0;
+                $deadline = $stage->deadline
+                    ? \Illuminate\Support\Carbon::parse($stage->deadline)->toDateString()
+                    : null;
+                $isOverdue = $deadline
+                    && $percent < 100
+                    && \Illuminate\Support\Carbon::parse($deadline)->endOfDay()->isPast();
+
+                $customName = is_string($stage->name) ? trim($stage->name) : '';
+                $displayName = $customName !== '' ? $customName : $stageLabel;
+
                 return [
                     'id' => $stage->id,
+                    'name' => $displayName,
+                    'custom_name' => $customName !== '' ? $customName : null,
                     'stage_type' => $stage->stage_type,
                     'stage_type_label' => $stageLabel,
                     'template_id' => $stage->template_id,
-                    'deadline' => $stage->deadline,
+                    'deadline' => $deadline,
                     'responsible_id' => $stage->responsible_id,
+                    'responsible_name' => $stage->responsible?->name,
                     'assign_task' => (bool) $stage->assign_task,
-                    'steps' => $stage->steps->sortBy('order')->map(function (ProjectStageStep $step) {
+                    'steps_total' => $total,
+                    'steps_done' => $done,
+                    'progress_percent' => $percent,
+                    'is_overdue' => $isOverdue,
+                    'state' => $percent >= 100 ? 'done' : ($done > 0 ? 'in_progress' : 'not_started'),
+                    'steps' => $steps->map(function (ProjectStageStep $step) {
+                        $comment = $step->result_comment;
+
                         return [
                             'id' => $step->id,
                             'title' => $step->title,
@@ -531,7 +800,8 @@ class ProjectController extends Controller
                             'responsible_id' => $step->responsible_id,
                             'link' => $step->link,
                             'result_status' => $step->result_status ?? 'pending',
-                            'result_comment' => $step->result_comment,
+                            'result_comment' => $comment,
+                            'has_result' => is_string($comment) && trim($comment) !== '',
                         ];
                     })->values(),
                 ];
@@ -548,6 +818,23 @@ class ProjectController extends Controller
             'steps' => is_array($template->steps) ? $template->steps : [],
             'is_shared' => $template->user_id === null,
             'is_owned' => (int) $template->user_id === $userId,
+        ];
+    }
+
+    private function pipelinePayload(Pipeline $pipeline): array
+    {
+        return [
+            'id' => $pipeline->id,
+            'name' => $pipeline->name,
+            'type' => $pipeline->type->value,
+            'stages' => $pipeline->stages->map(fn (PipelineStage $s) => [
+                'id' => $s->id,
+                'system_key' => $s->system_key,
+                'name' => $s->name,
+                'color' => $s->color,
+                'position' => $s->position,
+                'is_system' => $s->is_system,
+            ])->values(),
         ];
     }
 }

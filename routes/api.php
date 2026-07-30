@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ChatApiController;
+use App\Http\Controllers\Api\CommunityApiController;
 use App\Http\Controllers\Api\DesignerCrudController;
 use App\Http\Controllers\Api\DesignerDataController;
 use App\Http\Controllers\Api\NotificationController;
@@ -42,13 +43,27 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->whereNumber('id');
     Route::post('/notifications/{id}/confirm-referral', [NotificationController::class, 'confirmReferralSupplier'])->whereNumber('id');
 
-    // Чат по заказу — дизайнер (подписка) / поставщик (депозит)
+    // Чат по заказу и сообщество — дизайнер (подписка) / поставщик (депозит)
     Route::middleware(['subscription.active', 'deposit.paid'])->group(function () {
         Route::get('/supplier-orders/chat/unread-map', [ChatApiController::class, 'unreadMap']);
         Route::get('/chat/unread-count', [ChatApiController::class, 'unreadCount']);
         Route::get('/supplier-orders/{id}/chat/messages', [ChatApiController::class, 'messages'])->whereNumber('id');
         Route::post('/supplier-orders/{id}/chat/messages', [ChatApiController::class, 'store'])->whereNumber('id');
         Route::post('/supplier-orders/{id}/chat/read', [ChatApiController::class, 'markRead'])->whereNumber('id');
+
+        Route::get('/community', [CommunityApiController::class, 'index']);
+        Route::get('/community/posts/{id}', [CommunityApiController::class, 'show'])->whereNumber('id');
+        Route::get('/community/users/{id}', [CommunityApiController::class, 'profile'])->whereNumber('id');
+        Route::post('/community/posts', [CommunityApiController::class, 'store']);
+        Route::match(['put', 'patch'], '/community/posts/{id}', [CommunityApiController::class, 'update'])->whereNumber('id');
+        Route::delete('/community/posts/{id}', [CommunityApiController::class, 'destroy'])->whereNumber('id');
+        Route::post('/community/posts/{id}/like', [CommunityApiController::class, 'toggleLike'])->whereNumber('id');
+        Route::post('/community/posts/{id}/save', [CommunityApiController::class, 'toggleSave'])->whereNumber('id');
+        Route::post('/community/posts/{id}/comments', [CommunityApiController::class, 'storeComment'])->whereNumber('id');
+        Route::match(['put', 'patch'], '/community/comments/{id}', [CommunityApiController::class, 'updateComment'])->whereNumber('id');
+        Route::delete('/community/comments/{id}', [CommunityApiController::class, 'destroyComment'])->whereNumber('id');
+        Route::post('/community/posts/{id}/report', [CommunityApiController::class, 'report'])->whereNumber('id');
+        Route::post('/community/posts/{id}/hide', [CommunityApiController::class, 'hide'])->whereNumber('id');
     });
 
     // Данные дизайнера — только при активной подписке / триале

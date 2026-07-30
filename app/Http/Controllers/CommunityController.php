@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CommunityPost;
 use App\Models\CommunityPostComment;
+use App\Models\CommunityPostHide;
 use App\Models\CommunityPostLike;
 use App\Models\CommunityPostMedia;
 use App\Models\CommunityPostReport;
@@ -13,6 +14,7 @@ use App\Support\CommunityNotifier;
 use App\Support\PublicFileStorage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Storage;
@@ -148,6 +150,147 @@ class CommunityController extends Controller
         ]);
     }
 
+    public function apiIndex(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $tab = in_array($request->query('tab'), ['all', 'my', 'saved'], true)
+            ? $request->query('tab')
+            : 'all';
+
+        $myCount = CommunityPost::query()
+            ->where('user_id', $user->id)
+            ->where('status', CommunityPost::STATUS_PUBLISHED)
+            ->count();
+
+        $savedCount = CommunityPostSave::query()->where('user_id', $user->id)->count();
+
+        $posts = $this->feedQuery($request, $tab)
+            ->paginate((int) config('community.posts_per_page', 10))
+            ->withQueryString();
+
+        $this->hydrateViewerState($posts->getCollection(), $user->id);
+
+        return response()->json([
+            'success' => true,
+            'tab' => $tab,
+            'my_count' => $myCount,
+            'saved_count' => $savedCount,
+            'categories' => CommunityPost::CATEGORIES,
+            'limits' => $this->communityLimits(),
+            'recommended' => $this->recommendedUsers($user->id)
+                ->map(fn (User $u) => $this->serializeRecommendedUser($u))
+                ->values(),
+            'posts' => $posts->getCollection()
+                ->map(fn (CommunityPost $post) => $this->serializePost($post, (int) $user->id))
+                ->values(),
+            'pagination' => [
+                'current_page' => $posts->currentPage(),
+                'last_page' => $posts->lastPage(),
+                'per_page' => $posts->perPage(),
+                'total' => $posts->total(),
+            ],
+        ]);
+    }
+
+    public function apiShow(Request $request, int $postId): JsonResponse
+    {
+        $user = $request->user();
+        $post = CommunityPost::query()
+            ->with([
+                'author:id,name,role,city',
+                'author.supplierProfile:id,user_id,name,city,logo',
+                'media',
+            ])
+            ->published()
+            ->whereKey($postId)
+            ->first();
+
+        if (! $post) {
+            return response()->json([
+                'success' => false,
+                'message' => __('community.not_found_title'),
+            ], 404);
+        }
+
+        $this->recordView($request, $post);
+        $this->hydrateViewerState(collect([$post]), $user->id);
+
+        $comments = CommunityPostComment::query()
+            ->with([
+                'author:id,name,role,city',
+                'replies' => fn ($q) => $q->with('author:id,name,role,city')->orderBy('id'),
+            ])
+            ->where('community_post_id', $post->id)
+            ->whereNull('parent_id')
+            ->orderBy('id')
+            ->get();
+
+        $authorPosts = CommunityPost::query()
+            ->with(['author:id,name,role,city', 'media'])
+            ->published()
+            ->where('user_id', $post->user_id)
+            ->where('id', '!=', $post->id)
+            ->latest()
+            ->limit(5)
+            ->get();
+
+        $this->hydrateViewerState($authorPosts, $user->id);
+
+        return response()->json([
+            'success' => true,
+            'post' => $this->serializePost($post, (int) $user->id),
+            'comments' => $comments
+                ->map(fn (CommunityPostComment $comment) => $this->serializeComment($comment, (int) $user->id))
+                ->values(),
+            'author_posts' => $authorPosts
+                ->map(fn (CommunityPost $p) => $this->serializePost($p, (int) $user->id))
+                ->values(),
+            'limits' => $this->communityLimits(),
+        ]);
+    }
+
+    public function apiProfile(Request $request, int $userId): JsonResponse
+    {
+        $viewer = $request->user();
+        $author = User::query()
+            ->with(['designerProfile', 'supplierProfile'])
+            ->whereKey($userId)
+            ->whereIn('role', ['designer', 'supplier'])
+            ->firstOrFail();
+
+        $posts = CommunityPost::query()
+            ->with([
+                'author:id,name,role,city',
+                'author.supplierProfile:id,user_id,name,city,logo',
+                'media',
+            ])
+            ->published()
+            ->where('user_id', $author->id)
+            ->latest('id')
+            ->paginate((int) config('community.posts_per_page', 10))
+            ->withQueryString();
+
+        $this->hydrateViewerState($posts->getCollection(), (int) $viewer->id);
+
+        return response()->json([
+            'success' => true,
+            'user' => $this->serializeProfileUser($author, (int) $viewer->id),
+            'posts_count' => CommunityPost::query()
+                ->published()
+                ->where('user_id', $author->id)
+                ->count(),
+            'posts' => $posts->getCollection()
+                ->map(fn (CommunityPost $post) => $this->serializePost($post, (int) $viewer->id))
+                ->values(),
+            'pagination' => [
+                'current_page' => $posts->currentPage(),
+                'last_page' => $posts->lastPage(),
+                'per_page' => $posts->perPage(),
+                'total' => $posts->total(),
+            ],
+        ]);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -178,16 +321,21 @@ class CommunityController extends Controller
         $post->load(['author:id,name,role,city', 'author.supplierProfile:id,user_id,name,city,logo', 'media']);
         $this->hydrateViewerState(collect([$post]), $user->id);
 
-        return response()->json([
+        $payload = [
             'ok' => true,
             'message' => __('community.toasts.created'),
             'post' => $this->serializePost($post, $user->id),
-            'html' => view('community.partials.card', [
+        ];
+
+        if (! $this->isApiRequest($request)) {
+            $payload['html'] = view('community.partials.card', [
                 'post' => $post,
                 'currentUser' => $user,
                 'backFrom' => route('community.index'),
-            ])->render(),
-        ]);
+            ])->render();
+        }
+
+        return response()->json($payload);
     }
 
     public function update(Request $request, int $postId): JsonResponse
@@ -230,16 +378,21 @@ class CommunityController extends Controller
         $post->refresh()->load(['author:id,name,role,city', 'author.supplierProfile:id,user_id,name,city,logo', 'media']);
         $this->hydrateViewerState(collect([$post]), $user->id);
 
-        return response()->json([
+        $payload = [
             'ok' => true,
             'message' => __('community.toasts.updated'),
             'post' => $this->serializePost($post, $user->id),
-            'html' => view('community.partials.card', [
+        ];
+
+        if (! $this->isApiRequest($request)) {
+            $payload['html'] = view('community.partials.card', [
                 'post' => $post,
                 'currentUser' => $user,
                 'backFrom' => route('community.index'),
-            ])->render(),
-        ]);
+            ])->render();
+        }
+
+        return response()->json($payload);
     }
 
     public function destroy(Request $request, int $postId): JsonResponse
@@ -374,16 +527,22 @@ class CommunityController extends Controller
         $comment->load(['author:id,name,role,city', 'replies.author:id,name,role,city']);
         CommunityNotifier::commented($post, $user, $comment);
 
-        return response()->json([
+        $payload = [
             'ok' => true,
             'message' => __('community.toasts.comment_added'),
             'comments_count' => (int) $post->fresh()->comments_count,
-            'html' => view('community.partials.comment', [
+            'comment' => $this->serializeComment($comment, (int) $user->id),
+        ];
+
+        if (! $this->isApiRequest($request)) {
+            $payload['html'] = view('community.partials.comment', [
                 'comment' => $comment,
                 'currentUser' => $user,
                 'post' => $post,
-            ])->render(),
-        ]);
+            ])->render();
+        }
+
+        return response()->json($payload);
     }
 
     public function updateComment(Request $request, int $commentId): JsonResponse
@@ -406,6 +565,7 @@ class CommunityController extends Controller
             'ok' => true,
             'message' => __('community.toasts.comment_updated'),
             'text' => $comment->text,
+            'comment' => $this->serializeComment($comment->fresh()->load('author:id,name,role,city'), (int) $user->id),
         ]);
     }
 
@@ -474,10 +634,16 @@ class CommunityController extends Controller
         $user = $request->user();
         $post = CommunityPost::query()->published()->whereKey($postId)->firstOrFail();
 
-        // Soft hide for current viewer via session
-        $hidden = $request->session()->get('community_hidden_posts', []);
-        $hidden[] = $post->id;
-        $request->session()->put('community_hidden_posts', array_values(array_unique($hidden)));
+        CommunityPostHide::query()->firstOrCreate([
+            'community_post_id' => $post->id,
+            'user_id' => $user->id,
+        ]);
+
+        if ($request->hasSession()) {
+            $hidden = $request->session()->get('community_hidden_posts', []);
+            $hidden[] = $post->id;
+            $request->session()->put('community_hidden_posts', array_values(array_unique($hidden)));
+        }
 
         return response()->json([
             'ok' => true,
@@ -488,7 +654,7 @@ class CommunityController extends Controller
     private function feedQuery(Request $request, string $tab)
     {
         $user = $request->user();
-        $hidden = $request->session()->get('community_hidden_posts', []);
+        $hidden = $this->hiddenPostIds($request, (int) $user->id);
 
         $query = CommunityPost::query()
             ->with([
@@ -648,11 +814,21 @@ class CommunityController extends Controller
 
     private function recordView(Request $request, CommunityPost $post): void
     {
-        $key = 'community_viewed_'.$post->id;
-        if ($request->session()->has($key)) {
+        $userId = (int) $request->user()->id;
+        $cacheKey = 'community_viewed_'.$userId.'_'.$post->id;
+
+        if ($request->hasSession()) {
+            $sessionKey = 'community_viewed_'.$post->id;
+            if ($request->session()->has($sessionKey)) {
+                return;
+            }
+            $request->session()->put($sessionKey, now()->timestamp);
+        } elseif (Cache::has($cacheKey)) {
             return;
+        } else {
+            Cache::put($cacheKey, now()->timestamp, now()->addDay());
         }
-        $request->session()->put($key, now()->timestamp);
+
         $post->increment('views_count');
     }
 
@@ -691,6 +867,136 @@ class CommunityController extends Controller
 
     private function error(string $message, int $status = 422): JsonResponse
     {
-        return response()->json(['ok' => false, 'message' => $message], $status);
+        return response()->json(['ok' => false, 'success' => false, 'message' => $message], $status);
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function hiddenPostIds(Request $request, int $userId): array
+    {
+        $hidden = CommunityPostHide::query()
+            ->where('user_id', $userId)
+            ->pluck('community_post_id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+
+        if ($request->hasSession()) {
+            $sessionHidden = $request->session()->get('community_hidden_posts', []);
+            if (is_array($sessionHidden) && $sessionHidden !== []) {
+                $hidden = array_values(array_unique(array_merge(
+                    $hidden,
+                    array_map('intval', $sessionHidden)
+                )));
+            }
+        }
+
+        return $hidden;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function communityLimits(): array
+    {
+        return [
+            'max_images' => (int) config('community.max_images', 10),
+            'max_image_kb' => (int) config('community.max_image_kb', 5120),
+            'max_text_length' => (int) config('community.max_text_length', 2000),
+            'max_comment_length' => (int) config('community.max_comment_length', 1000),
+            'posts_per_page' => (int) config('community.posts_per_page', 10),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializeComment(CommunityPostComment $comment, int $viewerId): array
+    {
+        return [
+            'id' => (int) $comment->id,
+            'parent_id' => $comment->parent_id !== null ? (int) $comment->parent_id : null,
+            'text' => (string) $comment->text,
+            'created_at' => optional($comment->created_at)->toIso8601String(),
+            'author' => [
+                'id' => $comment->author?->id,
+                'name' => $comment->author?->name,
+                'role' => $comment->author?->role,
+                'city' => $comment->author?->city,
+            ],
+            'can_edit' => (int) $comment->user_id === $viewerId,
+            'can_delete' => (int) $comment->user_id === $viewerId,
+            'replies' => $comment->relationLoaded('replies')
+                ? $comment->replies
+                    ->map(fn (CommunityPostComment $reply) => $this->serializeComment($reply, $viewerId))
+                    ->values()
+                    ->all()
+                : [],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializeRecommendedUser(User $user): array
+    {
+        return [
+            'id' => (int) $user->id,
+            'name' => (string) $user->name,
+            'role' => (string) $user->role,
+            'city' => (string) ($user->city ?? $user->supplierProfile?->city ?? ''),
+            'posts_count' => (int) ($user->posts_count ?? 0),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function serializeProfileUser(User $author, int $viewerId): array
+    {
+        $logo = null;
+        if (($author->role ?? '') === 'supplier' && $author->supplierProfile?->logo) {
+            $logo = asset('storage/'.ltrim((string) $author->supplierProfile->logo, '/'));
+        }
+
+        $profile = null;
+        if (($author->role ?? '') === 'supplier' && $author->supplierProfile) {
+            $sp = $author->supplierProfile;
+            $profile = [
+                'type' => 'supplier',
+                'name' => (string) ($sp->name ?? ''),
+                'city' => (string) ($sp->city ?? ''),
+                'phone' => (string) ($sp->phone ?? ''),
+                'email' => (string) ($sp->email ?? ''),
+                'sphere' => (string) ($sp->sphere ?? ''),
+                'logo_url' => $logo,
+            ];
+        } elseif ($author->designerProfile) {
+            $dp = $author->designerProfile;
+            $profile = [
+                'type' => 'designer',
+                'phone' => (string) ($dp->phone ?? ''),
+                'city' => (string) ($dp->city ?? ''),
+                'short_description' => (string) ($dp->short_description ?? ''),
+                'about_designer' => (string) ($dp->about_designer ?? ''),
+                'website_portfolio' => (string) ($dp->website_portfolio ?? ''),
+                'experience' => (string) ($dp->experience ?? ''),
+                'specialization' => (string) ($dp->specialization ?? ''),
+            ];
+        }
+
+        return [
+            'id' => (int) $author->id,
+            'name' => (string) $author->name,
+            'role' => (string) $author->role,
+            'city' => (string) ($author->city ?? ''),
+            'is_owner' => (int) $author->id === $viewerId,
+            'profile' => $profile,
+        ];
+    }
+
+    private function isApiRequest(Request $request): bool
+    {
+        return $request->is('api/*');
     }
 }

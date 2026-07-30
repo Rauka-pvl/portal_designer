@@ -94,9 +94,13 @@ class ClientController extends Controller
     public function show(Request $request, int $clientId)
     {
         $client = $this->clientForUserOrFail($request, $clientId);
+        $client->load([
+            'projects' => fn ($q) => $q->with(['object:id,address,city'])->orderByDesc('id')->limit(50),
+        ]);
 
         return view('designer.clients.show', [
             'client' => $client,
+            'relatedProjects' => $client->projects,
         ]);
     }
 

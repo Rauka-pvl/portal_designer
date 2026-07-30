@@ -185,6 +185,30 @@
         </section>
     </form>
 
+    <div class="mb-6 crm-card p-4">
+        <h2 class="text-sm font-semibold mb-3">{{ __('clients.related_projects') }}</h2>
+        @php $related = $relatedProjects ?? collect(); @endphp
+        @if ($related->isEmpty())
+            <p class="text-sm text-[var(--crm-muted)]">{{ __('clients.no_related_projects') }}</p>
+        @else
+            <div class="space-y-2">
+                @foreach ($related as $project)
+                    <a href="{{ route('projects.index', ['open' => $project->id]) }}"
+                       class="flex flex-wrap items-center justify-between gap-2 rounded-[var(--crm-radius)] border border-[color-mix(in_srgb,var(--crm-border)_45%,transparent)] px-3 py-2 hover:border-[var(--crm-accent)] transition-colors">
+                        <div class="min-w-0">
+                            <div class="text-sm font-medium truncate">{{ $project->name }}</div>
+                            <div class="text-xs text-[var(--crm-muted)]">{{ $project->object?->address }}</div>
+                        </div>
+                        <div class="text-xs text-[var(--crm-muted)] text-right">
+                            <div>{{ __('projects.status_'.$project->status) }}</div>
+                            <div>{{ $project->planned_end_date ?: '—' }} · {{ number_format((float) $project->planned_cost, 0, ',', ' ') }}</div>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+        @endif
+    </div>
+
     <form id="delete-client-form" method="POST" action="{{ route('clients.delete_client', $client->id) }}" class="hidden">
         @csrf
         @method('DELETE')

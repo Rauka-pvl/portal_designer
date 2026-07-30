@@ -28,4 +28,9 @@ class Client extends Model
     {
         return $this->hasMany(PassportObject::class);
     }
+
+    public function projects()
+    {
+        return $this->hasManyThrough(Project::class, PassportObject::class, 'client_id', 'object_id');
+    }
 }
