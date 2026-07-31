@@ -61,7 +61,6 @@ return [
     'supply_checklist_none_selected' => 'Нәтижелер таңдалмаған',
     'supply_checklist_no_checklists' => 'Жобада әзірге чек-парақтар жоқ',
     'supply_checklist_no_results' => 'Чек-парақтарда толтырылған нәтижелер әзірге жоқ',
-    'supply_checklist_go_checklists' => 'Чек-парақтарға өту',
     'supply_checklist_show_more' => 'Толығымен көрсету',
     'supply_checklist_show_less' => 'Жию',
     'supply_checklist_group_meta' => ':filled / :total нәтижесі бар',

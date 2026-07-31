@@ -1001,44 +1001,51 @@
     async function persistStages(stagesPayload) {
         const project = getCurrentProject();
         if (!project?.id) throw new Error(i18n.error);
-        const fd = new FormData();
-        fd.append('_method', 'PUT');
-        fd.append('name', project.name || '');
-        fd.append('status', project.status || '');
-        if (project.client_id) fd.append('client_id', project.client_id);
-        if (project.start_date) fd.append('start_date', project.start_date);
-        if (project.planned_end_date) fd.append('planned_end_date', project.planned_end_date);
-        if (project.comment) fd.append('comment', project.comment);
-        if (project.repair_budget_planned != null) fd.append('repair_budget_planned', project.repair_budget_planned);
-        if (project.repair_budget_actual != null) fd.append('repair_budget_actual', project.repair_budget_actual);
 
-        stagesPayload.forEach((stage, idx) => {
-            if (stage.id) fd.append(`stages[${idx}][id]`, stage.id);
-            fd.append(`stages[${idx}][stage_type]`, stage.stage_type);
-            if (stage.name) fd.append(`stages[${idx}][name]`, stage.name);
-            if (stage.template_id) fd.append(`stages[${idx}][template_id]`, stage.template_id);
-            if (stage.deadline) fd.append(`stages[${idx}][deadline]`, stage.deadline);
-            if (stage.responsible_id) fd.append(`stages[${idx}][responsible_id]`, stage.responsible_id);
-            fd.append(`stages[${idx}][assign_task]`, stage.assign_task ? '1' : '0');
-            (stage.steps || []).forEach((step, sidx) => {
-                if (typeof step === 'string') {
-                    fd.append(`stages[${idx}][steps][${sidx}][title]`, step);
-                    return;
-                }
-                if (step.id) fd.append(`stages[${idx}][steps][${sidx}][id]`, step.id);
-                fd.append(`stages[${idx}][steps][${sidx}][title]`, step.title || '');
-                if (step.deadline) fd.append(`stages[${idx}][steps][${sidx}][deadline]`, step.deadline);
-                if (step.responsible_id) fd.append(`stages[${idx}][steps][${sidx}][responsible_id]`, step.responsible_id);
-                if (step.link) fd.append(`stages[${idx}][steps][${sidx}][link]`, step.link);
-                fd.append(`stages[${idx}][steps][${sidx}][result_status]`, step.result_status || 'pending');
-                if (step.result_comment) fd.append(`stages[${idx}][steps][${sidx}][result_comment]`, step.result_comment);
-            });
-        });
+        // JSON so empty `stages: []` is always sent (FormData omits it → delete no-ops).
+        const body = {
+            name: project.name || '',
+            status: project.status || '',
+            client_id: project.client_id || null,
+            start_date: project.start_date || null,
+            planned_end_date: project.planned_end_date || null,
+            comment: project.comment || null,
+            repair_budget_planned: project.repair_budget_planned ?? null,
+            repair_budget_actual: project.repair_budget_actual ?? null,
+            stages: (stagesPayload || []).map((stage) => ({
+                id: stage.id || undefined,
+                stage_type: stage.stage_type,
+                name: stage.name || null,
+                template_id: stage.template_id || null,
+                deadline: stage.deadline || null,
+                responsible_id: stage.responsible_id || null,
+                assign_task: !!stage.assign_task,
+                steps: (stage.steps || []).map((step) => {
+                    if (typeof step === 'string') {
+                        return { title: step, result_status: 'pending' };
+                    }
+                    return {
+                        id: step.id || undefined,
+                        title: step.title || '',
+                        deadline: step.deadline || null,
+                        responsible_id: step.responsible_id || null,
+                        link: step.link || null,
+                        result_status: step.result_status || 'pending',
+                        result_comment: step.result_comment || null,
+                    };
+                }),
+            })),
+        };
 
         const res = await fetch(routes.update(project.id), {
-            method: 'POST',
-            headers: { 'X-CSRF-TOKEN': csrf, Accept: 'application/json' },
-            body: fd,
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrf,
+                Accept: 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: JSON.stringify(body),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {

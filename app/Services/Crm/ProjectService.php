@@ -137,8 +137,17 @@ class ProjectService
                     'result_status' => $stepRow['result_status'] ?? 'pending', 'result_comment' => $stepRow['result_comment'] ?? null, 'order' => $stepOrder])->save();
                 $stepKeep[] = $step->id;
             }
-            $stage->steps()->when($stepKeep, fn ($q) => $q->whereNotIn('id', $stepKeep))->delete();
+            $stepsQuery = $stage->steps();
+            if ($stepKeep !== []) {
+                $stepsQuery->whereNotIn('id', $stepKeep);
+            }
+            $stepsQuery->delete();
         }
-        $project->stages()->when($keep, fn ($q) => $q->whereNotIn('id', $keep))->delete();
+
+        $stagesQuery = $project->stages();
+        if ($keep !== []) {
+            $stagesQuery->whereNotIn('id', $keep);
+        }
+        $stagesQuery->delete();
     }
 }

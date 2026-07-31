@@ -235,7 +235,16 @@
 <div class="crm-workspace" id="crm-workspace" data-locale="{{ str_replace('_', '-', app()->getLocale()) }}">
     <div class="crm-toolbar" role="toolbar" aria-label="{{ __('tasks.title') }}">
         <div class="crm-toolbar-left">
-            <h1 class="text-lg font-semibold text-[var(--crm-text)] m-0">{{ __('tasks.title') }}</h1>
+            <button type="button" id="tasks-create-btn" class="crm-btn crm-btn-primary crm-btn-sm">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14"/>
+                </svg>
+                {{ __('tasks.create') }}
+            </button>
+            <div class="crm-view-switch" role="group" aria-label="{{ __('tasks.view_kanban') }}">
+                <button type="button" class="crm-btn crm-btn-sm crm-view-btn" data-view="kanban" aria-pressed="true" title="{{ __('tasks.view_kanban') }}">{{ __('tasks.view_kanban') }}</button>
+                <button type="button" class="crm-btn crm-btn-sm crm-view-btn" data-view="calendar" aria-pressed="false" title="{{ __('tasks.view_calendar') }}">{{ __('tasks.view_calendar') }}</button>
+            </div>
             <span id="tasks-active-badge" class="crm-status-badge">0</span>
         </div>
         <div class="crm-toolbar-right">
@@ -296,18 +305,6 @@
                     </div>
                 </div>
             </div>
-
-            <div class="crm-view-switch" role="group" aria-label="{{ __('tasks.view_kanban') }}">
-                <button type="button" class="crm-btn crm-btn-sm crm-view-btn" data-view="kanban" aria-pressed="true" title="{{ __('tasks.view_kanban') }}">{{ __('tasks.view_kanban') }}</button>
-                <button type="button" class="crm-btn crm-btn-sm crm-view-btn" data-view="calendar" aria-pressed="false" title="{{ __('tasks.view_calendar') }}">{{ __('tasks.view_calendar') }}</button>
-            </div>
-
-            <button type="button" id="tasks-create-btn" class="crm-btn crm-btn-primary crm-btn-sm">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M12 5v14M5 12h14"/>
-                </svg>
-                {{ __('tasks.create') }}
-            </button>
         </div>
     </div>
 

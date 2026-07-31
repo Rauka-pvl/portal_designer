@@ -253,6 +253,8 @@ class ProjectChecklistsCrmTest extends TestCase
         $this->assertStringContainsString('stepsSelectedCount', $html);
         $this->assertStringContainsString('stepsSelectAll', $html);
         $this->assertStringContainsString(__('projects.supply_checklist_result_label'), $html);
+        $this->assertStringNotContainsString('data-go-checklists', $html);
+        $this->assertStringNotContainsString('stepsGoChecklists', $html);
     }
 
     public function test_cannot_attach_checklist_steps_from_foreign_project(): void
@@ -436,5 +438,58 @@ class ProjectChecklistsCrmTest extends TestCase
         $this->assertContains('Обмер кухни', $names);
         $this->assertContains('Планировка зала', $names);
         $this->assertCount(2, collect($payload['stages'])->pluck('deadline')->filter()->unique());
+    }
+
+    public function test_can_delete_checklist_stage_via_project_update(): void
+    {
+        $user = $this->designer();
+        app(PipelineService::class)->ensureDefaultsForUser((int) $user->id);
+        $project = $this->seedProject($user);
+
+        $keep = ProjectStages::query()->create([
+            'project_id' => $project->id,
+            'stage_type' => 'planning',
+            'name' => 'Keep me',
+            'order' => 0,
+            'created_by' => $user->id,
+        ]);
+        $keep->steps()->create(['title' => 'Zone', 'order' => 0, 'result_status' => 'pending']);
+
+        $remove = ProjectStages::query()->create([
+            'project_id' => $project->id,
+            'stage_type' => 'measurement',
+            'name' => 'Remove me',
+            'order' => 1,
+            'created_by' => $user->id,
+        ]);
+        $remove->steps()->create(['title' => 'Walls', 'order' => 0, 'result_status' => 'pending']);
+
+        $this->actingAs($user)->putJson('/projects/'.$project->id, [
+            'name' => $project->name,
+            'status' => $project->status,
+            'stages' => [
+                [
+                    'id' => $keep->id,
+                    'stage_type' => 'planning',
+                    'name' => 'Keep me',
+                    'responsible_id' => $user->id,
+                    'steps' => [
+                        ['id' => $keep->steps()->first()->id, 'title' => 'Zone', 'result_status' => 'pending'],
+                    ],
+                ],
+            ],
+        ])->assertOk()->assertJsonPath('success', true);
+
+        $this->assertDatabaseHas('project_stages', ['id' => $keep->id]);
+        $this->assertDatabaseMissing('project_stages', ['id' => $remove->id]);
+        $this->assertDatabaseMissing('project_stages_steps', ['project_stage_id' => $remove->id]);
+
+        $this->actingAs($user)->putJson('/projects/'.$project->id, [
+            'name' => $project->name,
+            'status' => $project->status,
+            'stages' => [],
+        ])->assertOk();
+
+        $this->assertSame(0, ProjectStages::query()->where('project_id', $project->id)->count());
     }
 }

@@ -61,7 +61,6 @@ return [
     'supply_checklist_none_selected' => 'No results selected',
     'supply_checklist_no_checklists' => 'This project has no checklists yet',
     'supply_checklist_no_results' => 'No filled checklist results yet',
-    'supply_checklist_go_checklists' => 'Go to checklists',
     'supply_checklist_show_more' => 'Show more',
     'supply_checklist_show_less' => 'Show less',
     'supply_checklist_group_meta' => ':filled of :total with a result',

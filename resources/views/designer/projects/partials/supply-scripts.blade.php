@@ -370,7 +370,6 @@
         stepsEmpty: @json(__('supplier-orders.project_steps_empty')),
         stepsNoChecklists: @json(__('projects.supply_checklist_no_checklists')),
         stepsNoResults: @json(__('projects.supply_checklist_no_results')),
-        stepsGoChecklists: @json(__('projects.supply_checklist_go_checklists')),
         stepsResultLabel: @json(__('projects.supply_checklist_result_label')),
         stepsResultEmpty: @json(__('projects.supply_checklist_result_empty')),
         stepsResultRequired: @json(__('projects.supply_checklist_result_required')),
@@ -895,11 +894,7 @@
         if (!stages.length) {
             box.innerHTML = `<div class="crm-supply-steps-empty">
                 <div>${escapeHtml(i18n.stepsNoChecklists)}</div>
-                <button type="button" class="crm-btn crm-btn-ghost crm-btn-sm mt-2" data-go-checklists>${escapeHtml(i18n.stepsGoChecklists)}</button>
             </div>`;
-            box.querySelector('[data-go-checklists]')?.addEventListener('click', () => {
-                if (typeof bridge.switchTab === 'function') bridge.switchTab('checklists');
-            });
             return;
         }
 
@@ -939,11 +934,7 @@
         if (!anyFilled) {
             box.innerHTML = `<div class="crm-supply-steps-empty">
                 <div>${escapeHtml(i18n.stepsNoResults)}</div>
-                <button type="button" class="crm-btn crm-btn-ghost crm-btn-sm mt-2" data-go-checklists>${escapeHtml(i18n.stepsGoChecklists)}</button>
             </div>`;
-            box.querySelector('[data-go-checklists]')?.addEventListener('click', () => {
-                if (typeof bridge.switchTab === 'function') bridge.switchTab('checklists');
-            });
             return;
         }
 

@@ -61,7 +61,6 @@ return [
     'supply_checklist_none_selected' => 'Результаты не выбраны',
     'supply_checklist_no_checklists' => 'В проекте пока нет чек-листов',
     'supply_checklist_no_results' => 'Пока нет заполненных результатов в чек-листах',
-    'supply_checklist_go_checklists' => 'Перейти к чек-листам',
     'supply_checklist_show_more' => 'Показать полностью',
     'supply_checklist_show_less' => 'Свернуть',
     'supply_checklist_group_meta' => ':filled из :total с результатом',
