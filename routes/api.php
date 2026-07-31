@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\ChecklistApiController;
 use App\Http\Controllers\Api\ChecklistItemApiController;
 use App\Http\Controllers\Api\ChecklistTemplateApiController;
 use App\Http\Controllers\Api\ClientApiController;
+use App\Http\Controllers\Api\ClientStageApiController;
 use App\Http\Controllers\Api\CommunityApiController;
 use App\Http\Controllers\Api\DashboardApiController;
 use App\Http\Controllers\Api\DesignerCrudController;
@@ -105,6 +106,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/clients/{client}/projects', [ClientApiController::class, 'projects'])->whereNumber('client');
         Route::post('/clients/{client}/files', [ClientApiController::class, 'storeFiles'])->whereNumber('client')->middleware('throttle:30,1');
         Route::delete('/clients/{client}/files/{file}', [ClientApiController::class, 'destroyFile'])->whereNumber(['client', 'file']);
+
+        // Client pipeline stages (same list as website client funnel)
+        Route::get('/client-stages', [ClientStageApiController::class, 'index']);
+        Route::post('/client-stages', [ClientStageApiController::class, 'store']);
+        Route::match(['put', 'patch'], '/client-stages/{stageId}', [ClientStageApiController::class, 'update'])->whereNumber('stageId');
+        Route::delete('/client-stages/{stageId}', [ClientStageApiController::class, 'destroy'])->whereNumber('stageId');
+        Route::post('/client-stages/reorder', [ClientStageApiController::class, 'reorder']);
 
         // Projects
         Route::get('/projects', [ProjectApiController::class, 'index']);

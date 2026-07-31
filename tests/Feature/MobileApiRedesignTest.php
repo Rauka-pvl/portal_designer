@@ -171,6 +171,29 @@ class MobileApiRedesignTest extends TestCase
         $this->getJson('/api/clients/'.$client->id)->assertNotFound();
     }
 
+    public function test_client_stages_list_includes_custom_and_can_create(): void
+    {
+        $user = $this->designer();
+        Sanctum::actingAs($user);
+
+        $list = $this->getJson('/api/client-stages')->assertOk();
+        $keys = collect($list->json('data'))->pluck('system_key');
+        $this->assertTrue($keys->contains('new'));
+
+        $created = $this->postJson('/api/client-stages', [
+            'name' => 'Ждёт звонка',
+            'color' => '#22c55e',
+        ])->assertCreated();
+
+        $this->assertSame('Ждёт звонка', $created->json('data.name'));
+        $this->assertFalse((bool) $created->json('data.is_system'));
+        $this->assertStringStartsWith('custom_', (string) $created->json('data.system_key'));
+
+        $this->getJson('/api/client-stages')
+            ->assertOk()
+            ->assertJsonFragment(['name' => 'Ждёт звонка']);
+    }
+
     public function test_task_sort_whitelist_rejects_unknown_column_via_safe_default(): void
     {
         $user = $this->designer();

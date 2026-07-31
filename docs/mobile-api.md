@@ -123,6 +123,21 @@ OpenAPI JSON: [`/docs/api.json`](/docs/api.json), [`/api/documentation.json`](/a
 
 `id`, `type`, `name`, `phone`, `email`, `status`, `comment`, `links`, `files` (public URLs), `projects_count`, `total_projects_budget`, `created_at`, `updated_at`. В `GET /clients/{client}` также `projects[]`: `id`, `name`, `status`, `planned_end_date`, `planned_cost`, `actual_cost`.
 
+## Client stages (воронка клиентов)
+
+Та же воронка, что на сайте (`/pipelines/client`). Включает системные и добавленные статусы (`custom_*`).
+
+| Метод | URL | Авторизация | Роли | Назначение |
+|---|---|---|---|---|
+| `GET` | `/client-stages` | Требуется | designer + active | Список всех статусов (в т.ч. добавленных на сайте). |
+| `POST` | `/client-stages` | Требуется | owner (canManageClientPipeline) | Создать статус. Body: `name`, `color?`. |
+| `PUT`, `PATCH` | `/client-stages/{stageId}` | Требуется | owner | Обновить `name` / `color`. |
+| `DELETE` | `/client-stages/{stageId}` | Требуется | owner | Удалить; если есть клиенты — `move_to_stage_id`. |
+| `POST` | `/client-stages/reorder` | Требуется | owner | `stages: [{id, position}]` или `stage_ids[]`. |
+
+Ответ этапа: `id`, `system_key`, `name`, `color`, `position`, `is_system`, `is_active`.  
+Статус клиента задаётся через `PATCH /clients/{id}` полем `status` = `system_key` этапа.
+
 ## Projects
 
 | Метод | URL | Авторизация | Роли | Content-Type | Назначение |
