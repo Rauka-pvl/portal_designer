@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DesignerTeamInvitation;
 use App\Models\DesignerTeamMember;
 use App\Models\User;
+use App\Models\UserNotification;
 use App\Services\Team\TeamService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -41,12 +42,6 @@ class TeamController extends Controller
             ]);
         }
 
-        if (($target->role ?? null) !== 'designer') {
-            throw ValidationException::withMessages([
-                'email' => [__('team.user_not_designer')],
-            ]);
-        }
-
         $this->teams->addExistingUser(
             $team,
             $user,
@@ -56,7 +51,7 @@ class TeamController extends Controller
 
         return redirect()
             ->route('settings.index', ['tab' => 'team'])
-            ->with('status', __('team.member_added'));
+            ->with('status', __('team.invite_sent'));
     }
 
     public function invite(Request $request): RedirectResponse
@@ -69,27 +64,12 @@ class TeamController extends Controller
             'role' => ['required', Rule::in([TeamRole::Admin->value, TeamRole::Designer->value])],
         ]);
 
-        $invitation = $this->teams->inviteByEmail(
+        $this->teams->inviteByEmail(
             $team,
             $user,
             $data['email'],
             TeamRole::from($data['role'])
         );
-
-        $existing = User::query()
-            ->whereRaw('LOWER(email) = ?', [mb_strtolower($invitation->email)])
-            ->first();
-
-        if ($existing) {
-            // Pending invite reserves a seat; notify existing account.
-            \App\Models\UserNotification::query()->create([
-                'user_id' => $existing->id,
-                'title' => __('team.notify_invite_title'),
-                'comment' => __('team.notify_invite_body', ['team' => $team->name]),
-                'action_key' => 'team_invited',
-                'is_read' => false,
-            ]);
-        }
 
         return redirect()
             ->route('settings.index', ['tab' => 'team'])
@@ -122,10 +102,10 @@ class TeamController extends Controller
             'subscription_trial_used' => false,
         ]);
 
-        $this->teams->addExistingUser(
+        $this->teams->inviteByEmail(
             $team,
             $user,
-            $newUser,
+            $newUser->email,
             TeamRole::from($data['role'])
         );
 
@@ -172,6 +152,15 @@ class TeamController extends Controller
         }
 
         $invitation->update(['status' => 'cancelled']);
+
+        UserNotification::query()
+            ->where('related_invitation_id', $invitation->id)
+            ->where('action_key', 'team_invited')
+            ->update([
+                'action_key' => 'team_invite_declined',
+                'is_read' => true,
+                'read_at' => now(),
+            ]);
 
         return redirect()
             ->route('settings.index', ['tab' => 'team'])

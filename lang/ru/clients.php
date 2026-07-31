@@ -14,6 +14,8 @@ return [
     'kanban' => 'Канбан',
     'search' => 'Поиск',
     'filters' => 'Фильтры',
+    'filter_clear' => 'Сбросить фильтры',
+    'filter_all' => 'Все',
     'status' => 'Статус',
     'all_statuses' => 'Все статусы',
     'all_types' => 'Все типы',

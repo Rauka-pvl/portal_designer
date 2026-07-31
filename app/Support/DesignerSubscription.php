@@ -189,6 +189,17 @@ class DesignerSubscription
             return true;
         }
 
+        // Corporate seat members inherit plan label from the team; only the owner is billable.
+        if ((string) $user->subscription_plan === self::PLAN_CORPORATE) {
+            $ownsActiveTeam = \App\Models\DesignerTeam::query()
+                ->where('owner_id', $user->id)
+                ->where('status', 'active')
+                ->exists();
+            if (! $ownsActiveTeam) {
+                return false;
+            }
+        }
+
         if ($user->subscription_ends_at && $user->subscription_ends_at->isFuture()) {
             return true;
         }
@@ -282,12 +293,12 @@ class DesignerSubscription
             return 'payment_pending';
         }
 
-        if ($user->subscription_ends_at && $user->subscription_ends_at->isFuture()) {
-            return 'active';
-        }
-
         if (self::isOnTrial($user)) {
             return 'trial';
+        }
+
+        if (self::hasAccess($user)) {
+            return 'active';
         }
 
         if ($user->subscription_plan || $user->subscription_trial_used) {
@@ -307,6 +318,18 @@ class DesignerSubscription
             return $user->subscription_trial_ends_at;
         }
 
+        // Seat members: show owner's renewal date for Corporate UI.
+        try {
+            $team = app(\App\Services\Team\TeamService::class)->activeTeamFor($user);
+            if ($team && (int) $team->owner_id !== (int) $user->id) {
+                $ownerEnd = $team->owner?->subscription_ends_at;
+
+                return $ownerEnd;
+            }
+        } catch (\Throwable) {
+            // ignore
+        }
+
         return $user->subscription_ends_at ?? $user->subscription_trial_ends_at;
     }
 
@@ -316,6 +339,17 @@ class DesignerSubscription
             return null;
         }
 
+        // Non-owner Corporate members do not get charged personally.
+        if ((string) $user->subscription_plan === self::PLAN_CORPORATE) {
+            $ownsActiveTeam = \App\Models\DesignerTeam::query()
+                ->where('owner_id', $user->id)
+                ->where('status', 'active')
+                ->exists();
+            if (! $ownsActiveTeam) {
+                return null;
+            }
+        }
+
         return self::accessEndsAt($user);
     }
 
@@ -323,6 +357,17 @@ class DesignerSubscription
     {
         if ($user->subscription_cancelled_at) {
             return null;
+        }
+
+        // Non-owner Corporate members do not get charged personally.
+        if ((string) $user->subscription_plan === self::PLAN_CORPORATE) {
+            $ownsActiveTeam = \App\Models\DesignerTeam::query()
+                ->where('owner_id', $user->id)
+                ->where('status', 'active')
+                ->exists();
+            if (! $ownsActiveTeam) {
+                return null;
+            }
         }
 
         $planKey = $user->subscription_plan;

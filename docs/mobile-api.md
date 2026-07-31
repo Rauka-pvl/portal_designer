@@ -369,7 +369,9 @@ Checkout response: `{data:{subscription: Subscription, payment: Payment}}`; plan
 | `POST` | `/team/members/create-account` | Требуется | Team manager | JSON | Создать designer account и добавить в команду. |
 | `PATCH` | `/team/members/{member}/role` | Требуется | Team manager | JSON | Изменить роль. |
 | `DELETE` | `/team/members/{member}` | Требуется | Team manager | — | Деактивировать участника. |
-| `POST` | `/team/invitations/{invitation}/resend` | Требуется | Team manager | JSON | Продлить pending invitation. |
+| `POST` | `/team/invitations/{invitation}/resend` | Требуется | Team manager | JSON | Продлить pending invitation + повторное уведомление. |
+| `POST` | `/team/invitations/{invitation}/accept` | Требуется | Invitee (без личной подписки) | — | Принять приглашение → Active member. |
+| `POST` | `/team/invitations/{invitation}/decline` | Требуется | Invitee (без личной подписки) | — | Отклонить приглашение, освободить seat. |
 | `DELETE` | `/team/invitations/{invitation}` | Требуется | Team manager | — | Отменить invitation. |
 | `GET` | `/team/assignees` | Требуется | Corporate team | — | Допустимые исполнители задач. |
 

@@ -60,6 +60,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->whereNumber('id');
     Route::post('/notifications/{id}/confirm-referral', [NotificationController::class, 'confirmReferralSupplier'])->whereNumber('id');
 
+    // Team invite accept/decline — without personal subscription (seat reserved by pending invite)
+    Route::post('/team/invitations/{invitation}/accept', [TeamApiController::class, 'acceptInvitation'])->whereNumber('invitation')->middleware('throttle:20,1');
+    Route::post('/team/invitations/{invitation}/decline', [TeamApiController::class, 'declineInvitation'])->whereNumber('invitation')->middleware('throttle:20,1');
+
     // Подписка (чтение планов/статуса доступно с токеном; checkout требует billing rights)
     Route::get('/subscription/plans', [SubscriptionApiController::class, 'plans']);
     Route::get('/subscription', [SubscriptionApiController::class, 'show']);

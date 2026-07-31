@@ -24,7 +24,13 @@ class EnsureDesignerSubscription
             return $next($request);
         }
 
-        if ($request->routeIs('subscription.*', 'logout', 'language.switch')) {
+        // Pending team invitees may have no personal plan yet — let them see/accept invites.
+        if ($request->routeIs(
+            'subscription.*',
+            'logout',
+            'language.switch',
+            'notifications.*',
+        )) {
             return $next($request);
         }
 

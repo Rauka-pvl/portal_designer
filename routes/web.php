@@ -381,6 +381,12 @@ Route::middleware(['auth', 'role:designer', 'subscription.active'])->group(funct
     Route::post('/notifications/{notificationId}/confirm-referral-supplier', [NotificationController::class, 'confirmReferralSupplier'])
         ->whereNumber('notificationId')
         ->name('notifications.confirm_referral_supplier');
+    Route::post('/notifications/{notificationId}/team-invite/accept', [NotificationController::class, 'acceptTeamInvite'])
+        ->whereNumber('notificationId')
+        ->name('notifications.team_invite_accept');
+    Route::post('/notifications/{notificationId}/team-invite/decline', [NotificationController::class, 'declineTeamInvite'])
+        ->whereNumber('notificationId')
+        ->name('notifications.team_invite_decline');
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])
         ->name('notifications.unread_count');
 });

@@ -162,53 +162,19 @@ class TeamService
         }
     }
 
-    public function addExistingUser(DesignerTeam $team, User $actor, User $target, TeamRole $role): DesignerTeamMember
+    /**
+     * Invite an existing designer — pending until they accept.
+     * Kept for call-site compatibility; does not grant Active membership.
+     */
+    public function addExistingUser(DesignerTeam $team, User $actor, User $target, TeamRole $role): DesignerTeamInvitation
     {
-        return DB::transaction(function () use ($team, $actor, $target, $role) {
-            $this->assertCanManageMembers($actor, $team);
-            $team = $team->fresh();
-            $this->assertSeatAvailable($team);
-            $this->assertUserNotInAnotherTeam($target, (int) $team->id);
-
-            if ($role === TeamRole::Owner) {
-                throw ValidationException::withMessages([
-                    'role' => [__('team.cannot_assign_owner')],
-                ]);
-            }
-
-            $actorRole = $team->roleFor($actor);
-            if (! $actorRole || ! in_array($role->value, TeamRole::assignableBy($actorRole), true)) {
-                throw ValidationException::withMessages([
-                    'role' => [__('team.forbidden_assign_role')],
-                ]);
-            }
-
-            if ($team->memberFor($target)?->isActive()) {
-                throw ValidationException::withMessages([
-                    'user_id' => [__('team.already_member')],
-                ]);
-            }
-
-            $member = DesignerTeamMember::query()->updateOrCreate(
-                ['team_id' => $team->id, 'user_id' => $target->id],
-                [
-                    'role' => $role->value,
-                    'status' => TeamMemberStatus::Active->value,
-                    'joined_at' => now(),
-                    'invited_by' => $actor->id,
-                ]
-            );
-
-            UserNotification::query()->create([
-                'user_id' => $target->id,
-                'title' => __('team.notify_added_title'),
-                'comment' => __('team.notify_added_body', ['team' => $team->name, 'role' => $role->label()]),
-                'action_key' => 'team_added',
-                'is_read' => false,
+        if (($target->role ?? null) !== 'designer') {
+            throw ValidationException::withMessages([
+                'email' => [__('team.user_not_designer')],
             ]);
+        }
 
-            return $member;
-        });
+        return $this->inviteByEmail($team, $actor, (string) $target->email, $role);
     }
 
     public function inviteByEmail(DesignerTeam $team, User $actor, string $email, TeamRole $role): DesignerTeamInvitation
@@ -234,6 +200,11 @@ class TeamService
             $email = mb_strtolower(trim($email));
             $existingUser = User::query()->whereRaw('LOWER(email) = ?', [$email])->first();
             if ($existingUser) {
+                if ($team->memberFor($existingUser)?->isActive()) {
+                    throw ValidationException::withMessages([
+                        'email' => [__('team.already_member')],
+                    ]);
+                }
                 $this->assertUserNotInAnotherTeam($existingUser, (int) $team->id);
             }
 
@@ -249,7 +220,11 @@ class TeamService
                 ]);
             }
 
-            return DesignerTeamInvitation::query()->create([
+            if ($pending) {
+                $pending->update(['status' => 'expired']);
+            }
+
+            $invitation = DesignerTeamInvitation::query()->create([
                 'team_id' => $team->id,
                 'email' => $email,
                 'role' => $role->value,
@@ -258,7 +233,180 @@ class TeamService
                 'invited_by' => $actor->id,
                 'expires_at' => now()->addDays(14),
             ]);
+
+            $this->notifyInvitee($invitation->fresh('team'));
+
+            return $invitation;
         });
+    }
+
+    public function acceptInvitation(User $user, DesignerTeamInvitation $invitation): DesignerTeamMember
+    {
+        return DB::transaction(function () use ($user, $invitation) {
+            $invitation = DesignerTeamInvitation::query()->lockForUpdate()->findOrFail($invitation->id);
+
+            if (! $invitation->isPending()) {
+                throw ValidationException::withMessages([
+                    'invitation' => [__('team.invite_not_found')],
+                ]);
+            }
+
+            if (mb_strtolower((string) $user->email) !== mb_strtolower((string) $invitation->email)) {
+                throw ValidationException::withMessages([
+                    'invitation' => [__('team.invite_email_mismatch')],
+                ]);
+            }
+
+            if (($user->role ?? null) !== 'designer') {
+                throw ValidationException::withMessages([
+                    'invitation' => [__('team.user_not_designer')],
+                ]);
+            }
+
+            $team = $invitation->team;
+            if (! $team || ! $team->isActive() || ! $this->teamHasCorporateAccess($team)) {
+                throw ValidationException::withMessages([
+                    'invitation' => [__('team.corporate_required')],
+                ]);
+            }
+
+            $this->assertUserNotInAnotherTeam($user, (int) $team->id);
+
+            if ($team->memberFor($user)?->isActive()) {
+                $invitation->update([
+                    'status' => 'accepted',
+                    'accepted_at' => now(),
+                ]);
+                $this->applyCorporatePlanViaTeam($user, $team);
+                $this->finalizeInviteNotifications($invitation, 'team_invite_accepted');
+
+                return $team->memberFor($user);
+            }
+
+            $role = $invitation->role instanceof TeamRole
+                ? $invitation->role
+                : TeamRole::from((string) $invitation->role);
+
+            $member = DesignerTeamMember::query()->updateOrCreate(
+                ['team_id' => $team->id, 'user_id' => $user->id],
+                [
+                    'role' => $role->value,
+                    'status' => TeamMemberStatus::Active->value,
+                    'joined_at' => now(),
+                    'invited_by' => $invitation->invited_by,
+                ]
+            );
+
+            $invitation->update([
+                'status' => 'accepted',
+                'accepted_at' => now(),
+            ]);
+
+            $this->applyCorporatePlanViaTeam($user, $team);
+            $this->finalizeInviteNotifications($invitation, 'team_invite_accepted');
+
+            return $member->fresh('user');
+        });
+    }
+
+    public function declineInvitation(User $user, DesignerTeamInvitation $invitation): void
+    {
+        DB::transaction(function () use ($user, $invitation) {
+            $invitation = DesignerTeamInvitation::query()->lockForUpdate()->findOrFail($invitation->id);
+
+            if (! $invitation->isPending()) {
+                throw ValidationException::withMessages([
+                    'invitation' => [__('team.invite_not_found')],
+                ]);
+            }
+
+            if (mb_strtolower((string) $user->email) !== mb_strtolower((string) $invitation->email)) {
+                throw ValidationException::withMessages([
+                    'invitation' => [__('team.invite_email_mismatch')],
+                ]);
+            }
+
+            $invitation->update(['status' => 'cancelled']);
+            $this->finalizeInviteNotifications($invitation, 'team_invite_declined');
+        });
+    }
+
+    public function resendInvitation(DesignerTeam $team, User $actor, DesignerTeamInvitation $invitation): DesignerTeamInvitation
+    {
+        return DB::transaction(function () use ($team, $actor, $invitation) {
+            $this->assertCanManageMembers($actor, $team);
+
+            if ((int) $invitation->team_id !== (int) $team->id) {
+                throw ValidationException::withMessages([
+                    'invitation' => [__('team.invite_not_found')],
+                ]);
+            }
+
+            if ($invitation->status !== 'pending') {
+                throw ValidationException::withMessages([
+                    'invitation' => [__('team.invite_not_found')],
+                ]);
+            }
+
+            $invitation->update([
+                'token' => DesignerTeamInvitation::makeToken(),
+                'expires_at' => now()->addDays(14),
+            ]);
+
+            $fresh = $invitation->fresh('team');
+            $this->invalidateInviteActionNotifications($fresh);
+            $this->notifyInvitee($fresh);
+
+            return $fresh;
+        });
+    }
+
+    public function notifyInvitee(DesignerTeamInvitation $invitation): void
+    {
+        $email = mb_strtolower((string) $invitation->email);
+        $invitee = User::query()
+            ->whereRaw('LOWER(email) = ?', [$email])
+            ->where('role', 'designer')
+            ->first();
+
+        if (! $invitee) {
+            return;
+        }
+
+        $teamName = $invitation->team?->name ?? __('team.page_title');
+
+        UserNotification::query()->create([
+            'user_id' => $invitee->id,
+            'title' => __('team.notify_invite_title'),
+            'comment' => __('team.notify_invite_body', ['team' => $teamName]),
+            'action_key' => 'team_invited',
+            'related_invitation_id' => $invitation->id,
+            'is_read' => false,
+        ]);
+    }
+
+    private function invalidateInviteActionNotifications(DesignerTeamInvitation $invitation): void
+    {
+        UserNotification::query()
+            ->where('related_invitation_id', $invitation->id)
+            ->where('action_key', 'team_invited')
+            ->update([
+                'action_key' => null,
+                'is_read' => true,
+                'read_at' => now(),
+            ]);
+    }
+
+    private function finalizeInviteNotifications(DesignerTeamInvitation $invitation, string $actionKey): void
+    {
+        UserNotification::query()
+            ->where('related_invitation_id', $invitation->id)
+            ->where('action_key', 'team_invited')
+            ->update([
+                'action_key' => $actionKey,
+                'is_read' => true,
+                'read_at' => now(),
+            ]);
     }
 
     public function removeMember(DesignerTeam $team, User $actor, DesignerTeamMember $member): void
@@ -280,7 +428,53 @@ class TeamService
             }
 
             $member->update(['status' => TeamMemberStatus::Inactive->value]);
+            $removedUser = User::query()->find($member->user_id);
+            if ($removedUser) {
+                $this->clearCorporatePlanViaTeam($removedUser);
+            }
         });
+    }
+
+    /**
+     * Seat members get Corporate plan label; billing stays on the owner.
+     */
+    public function applyCorporatePlanViaTeam(User $user, DesignerTeam $team): void
+    {
+        $owner = $team->owner;
+        $user->forceFill([
+            'subscription_plan' => DesignerSubscription::PLAN_CORPORATE,
+            'subscription_cancelled_at' => null,
+            'subscription_cancel_reason' => null,
+            'subscription_trial_ends_at' => null,
+            // Mirror owner period for UI; access for non-owners is still via team membership.
+            'subscription_ends_at' => $owner?->subscription_ends_at,
+        ])->save();
+    }
+
+    /**
+     * When leaving a Corporate seat, drop inherited Corporate plan (not for team owners).
+     */
+    public function clearCorporatePlanViaTeam(User $user): void
+    {
+        $ownsActiveTeam = DesignerTeam::query()
+            ->where('owner_id', $user->id)
+            ->where('status', 'active')
+            ->exists();
+
+        if ($ownsActiveTeam) {
+            return;
+        }
+
+        if ((string) $user->subscription_plan !== DesignerSubscription::PLAN_CORPORATE) {
+            return;
+        }
+
+        $user->forceFill([
+            'subscription_plan' => null,
+            'subscription_ends_at' => null,
+            'subscription_cancelled_at' => null,
+            'subscription_cancel_reason' => null,
+        ])->save();
     }
 
     public function changeRole(DesignerTeam $team, User $actor, DesignerTeamMember $member, TeamRole $role): void

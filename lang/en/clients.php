@@ -14,6 +14,8 @@ return [
     'kanban' => 'Kanban',
     'search' => 'Search',
     'filters' => 'Filters',
+    'filter_clear' => 'Reset filters',
+    'filter_all' => 'All',
     'status' => 'Status',
     'all_statuses' => 'All statuses',
     'all_types' => 'All types',

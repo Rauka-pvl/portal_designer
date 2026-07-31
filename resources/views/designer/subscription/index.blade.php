@@ -83,6 +83,11 @@
         color: #EDEDEC;
     }
     html:not(.dark) .sub-btn-secondary { color: #0f172a; border-color: #7c8799; }
+    /* Modals stay dark (#161615); keep Cancel readable in light theme */
+    html:not(.dark) .sub-modal .sub-btn-secondary {
+        color: #EDEDEC;
+        border-color: rgba(124,135,153,.55);
+    }
     .sub-btn-secondary:hover:not(:disabled) { border-color: #f59e0b; color: #f59e0b; }
     .sub-btn-text {
         background: transparent; border: 0; color: #A1A09A; height: auto; min-height: 40px; padding: 0 .25rem;

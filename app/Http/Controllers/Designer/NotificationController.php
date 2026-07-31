@@ -3,17 +3,25 @@
 namespace App\Http\Controllers\Designer;
 
 use App\Http\Controllers\Controller;
+use App\Models\DesignerTeamInvitation;
 use App\Models\Supplier;
 use App\Models\UserNotification;
+use App\Services\Team\TeamService;
 use App\Support\NotificationActions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class NotificationController extends Controller
 {
     private const REFERRAL_CONFIRM_ACTION = 'confirm_referral_supplier';
+    private const TEAM_INVITE_ACTION = 'team_invited';
+
+    public function __construct(
+        private readonly TeamService $teams,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -177,6 +185,119 @@ class NotificationController extends Controller
         }
 
         return redirect()->back()->with('status', __('notifications.referral_supplier_confirmed'));
+    }
+
+    public function acceptTeamInvite(Request $request, int $notificationId): JsonResponse|RedirectResponse
+    {
+        if (($request->user()->role ?? '') !== 'designer') {
+            abort(403);
+        }
+
+        $notification = $this->ownedNotification($request, $notificationId);
+        $invitation = $this->invitationFromNotification($notification);
+
+        if (! $invitation) {
+            return $this->actionUnavailable($request);
+        }
+
+        try {
+            $this->teams->acceptInvitation($request->user(), $invitation);
+        } catch (ValidationException $e) {
+            if ($this->wantsJson($request)) {
+                return response()->json([
+                    'ok' => false,
+                    'message' => collect($e->errors())->flatten()->first() ?: __('notifications.action_unavailable'),
+                ], 422);
+            }
+
+            return redirect()->back()->with('status', collect($e->errors())->flatten()->first() ?: __('notifications.action_unavailable'));
+        }
+
+        $notification = $notification->fresh();
+        $actions = NotificationActions::resolve($notification, $request->user());
+
+        if ($this->wantsJson($request)) {
+            return response()->json([
+                'ok' => true,
+                'message' => __('notifications.team_invite_accepted'),
+                'unread_count' => $this->unreadCountValue($request),
+                'notification' => [
+                    'id' => $notification->id,
+                    'is_read' => (bool) $notification->is_read,
+                    'action_key' => $notification->action_key,
+                    'actions' => $actions,
+                ],
+            ]);
+        }
+
+        return redirect()->back()->with('status', __('notifications.team_invite_accepted'));
+    }
+
+    public function declineTeamInvite(Request $request, int $notificationId): JsonResponse|RedirectResponse
+    {
+        if (($request->user()->role ?? '') !== 'designer') {
+            abort(403);
+        }
+
+        $notification = $this->ownedNotification($request, $notificationId);
+        $invitation = $this->invitationFromNotification($notification);
+
+        if (! $invitation) {
+            return $this->actionUnavailable($request);
+        }
+
+        try {
+            $this->teams->declineInvitation($request->user(), $invitation);
+        } catch (ValidationException $e) {
+            if ($this->wantsJson($request)) {
+                return response()->json([
+                    'ok' => false,
+                    'message' => collect($e->errors())->flatten()->first() ?: __('notifications.action_unavailable'),
+                ], 422);
+            }
+
+            return redirect()->back()->with('status', collect($e->errors())->flatten()->first() ?: __('notifications.action_unavailable'));
+        }
+
+        $notification = $notification->fresh();
+        $actions = NotificationActions::resolve($notification, $request->user());
+
+        if ($this->wantsJson($request)) {
+            return response()->json([
+                'ok' => true,
+                'message' => __('notifications.team_invite_declined'),
+                'unread_count' => $this->unreadCountValue($request),
+                'notification' => [
+                    'id' => $notification->id,
+                    'is_read' => (bool) $notification->is_read,
+                    'action_key' => $notification->action_key,
+                    'actions' => $actions,
+                ],
+            ]);
+        }
+
+        return redirect()->back()->with('status', __('notifications.team_invite_declined'));
+    }
+
+    private function invitationFromNotification(UserNotification $notification): ?DesignerTeamInvitation
+    {
+        if ($notification->action_key !== self::TEAM_INVITE_ACTION || (int) $notification->related_invitation_id < 1) {
+            return null;
+        }
+
+        return DesignerTeamInvitation::query()->find((int) $notification->related_invitation_id);
+    }
+
+    private function actionUnavailable(Request $request): JsonResponse|RedirectResponse
+    {
+        if ($this->wantsJson($request)) {
+            return response()->json([
+                'ok' => false,
+                'message' => __('notifications.action_unavailable'),
+            ], 422);
+        }
+
+        return redirect()->back()->with('status', __('notifications.action_unavailable'));
     }
 
     /**

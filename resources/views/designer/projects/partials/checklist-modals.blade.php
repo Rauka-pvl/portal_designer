@@ -120,10 +120,6 @@
                 </div>
             </aside>
         </div>
-        <div class="crm-modal-footer hidden" id="checklist-edit-footer">
-            <button type="button" id="checklist-detail-cancel-edit" class="crm-btn crm-btn-secondary">{{ __('projects.cancel') }}</button>
-            <button type="button" id="checklist-detail-save" class="crm-btn crm-btn-primary">{{ __('projects.save') }}</button>
-        </div>
     </div>
     <div class="crm-confirm-backdrop" data-checklist-detail-backdrop></div>
 </div>

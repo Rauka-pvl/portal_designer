@@ -70,6 +70,27 @@ class NotificationActions
                 }
                 break;
 
+            case 'team_invited':
+                if ($isDesigner && (int) $notification->related_invitation_id > 0 && Route::has('notifications.team_invite_accept')) {
+                    $primary = [
+                        'key' => 'accept_team_invite',
+                        'label' => __('notifications.accept_team_invite'),
+                        'mode' => 'post',
+                        'url' => route('notifications.team_invite_accept', $notification->id),
+                    ];
+                    $accent = true;
+                    if (Route::has('notifications.team_invite_decline')) {
+                        $secondary = [
+                            'key' => 'decline_team_invite',
+                            'label' => __('notifications.decline_team_invite'),
+                            'mode' => 'post',
+                            'url' => route('notifications.team_invite_decline', $notification->id),
+                        ];
+                        $menuSecondary = $secondary;
+                    }
+                }
+                break;
+
             case 'order_offer':
                 if ((int) $notification->related_order_id > 0) {
                     $orderUrl = self::orderUrl($notification, $isDesigner, $isSupplier, preferShow: true);
@@ -278,7 +299,7 @@ class NotificationActions
     private static function iconFor(string $type): string
     {
         return match ($type) {
-            'confirm_referral_supplier' => 'user-plus',
+            'confirm_referral_supplier', 'team_invited', 'team_invite_accepted', 'team_invite_declined' => 'user-plus',
             'order_offer' => 'offer',
             'supplier_order' => 'truck',
             'rate_supplier', 'rate_designer' => 'star',

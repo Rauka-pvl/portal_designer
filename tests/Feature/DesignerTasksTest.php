@@ -45,6 +45,13 @@ class DesignerTasksTest extends TestCase
         return [$owner, $team];
     }
 
+    private function addActiveMember($team, User $owner, User $member, TeamRole $role = TeamRole::Designer): void
+    {
+        $teams = app(TeamService::class);
+        $invitation = $teams->addExistingUser($team, $owner, $member, $role);
+        $teams->acceptInvitation($member, $invitation);
+    }
+
     public function test_tasks_page_has_kanban_and_calendar_switch(): void
     {
         $user = $this->designer();
@@ -98,7 +105,7 @@ class DesignerTasksTest extends TestCase
             'subscription_plan' => null,
             'subscription_trial_ends_at' => null,
         ]);
-        app(TeamService::class)->addExistingUser($team, $owner, $member, TeamRole::Designer);
+        $this->addActiveMember($team, $owner, $member);
 
         $this->actingAs($owner)->postJson(route('tasks.store'), [
             'title' => 'Layout',
@@ -147,8 +154,8 @@ class DesignerTasksTest extends TestCase
             'subscription_plan' => null,
             'subscription_trial_ends_at' => null,
         ]);
-        app(TeamService::class)->addExistingUser($team, $owner, $designer, TeamRole::Designer);
-        app(TeamService::class)->addExistingUser($team, $owner, $other, TeamRole::Designer);
+        $this->addActiveMember($team, $owner, $designer);
+        $this->addActiveMember($team, $owner, $other);
 
         $visible = DesignerTask::query()->create([
             'creator_id' => $owner->id,
@@ -245,8 +252,8 @@ class DesignerTasksTest extends TestCase
         [$owner, $team] = $this->corporateOwner();
         $a = $this->designer(['email' => 'a2@ex.com', 'subscription_ends_at' => null, 'subscription_plan' => null, 'subscription_trial_ends_at' => null]);
         $b = $this->designer(['email' => 'b2@ex.com', 'subscription_ends_at' => null, 'subscription_plan' => null, 'subscription_trial_ends_at' => null]);
-        app(TeamService::class)->addExistingUser($team, $owner, $a, TeamRole::Designer);
-        app(TeamService::class)->addExistingUser($team, $owner, $b, TeamRole::Designer);
+        $this->addActiveMember($team, $owner, $a);
+        $this->addActiveMember($team, $owner, $b);
 
         $task = DesignerTask::query()->create([
             'creator_id' => $owner->id,

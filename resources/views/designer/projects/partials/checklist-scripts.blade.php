@@ -1148,7 +1148,6 @@
             checklistId: Number(stageId),
             stepId: opts.stepId ? Number(opts.stepId) : null,
         };
-        document.getElementById('checklist-edit-footer')?.classList.add('hidden');
         document.getElementById('checklist-detail-title').textContent = stage.name || stageLabel(stage.stage_type);
         const projectName = project?.name ? String(project.name) : '';
         document.getElementById('checklist-detail-meta').textContent = [

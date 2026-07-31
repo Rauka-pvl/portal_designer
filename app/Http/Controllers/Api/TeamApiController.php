@@ -61,15 +61,28 @@ class TeamApiController extends Controller
         $team = $this->requireManageableTeam($request->user());
         $data = $request->validated();
         $this->teams->assertSeatAvailable($team);
-        $memberUser = User::query()->create([
+        User::query()->create([
             'name' => $data['name'], 'email' => $data['email'], 'password' => Hash::make($data['password']),
             'role' => 'designer', 'subscription_plan' => null, 'subscription_ends_at' => null,
             'subscription_trial_ends_at' => null, 'subscription_trial_used' => false,
         ]);
-        $member = $this->teams->addExistingUser($team, $request->user(), $memberUser, TeamRole::from($data['role']));
-        $member->load('user');
+        $invitation = $this->teams->inviteByEmail($team, $request->user(), $data['email'], TeamRole::from($data['role']));
 
-        return response()->json(['data' => new TeamMemberResource($member)], 201);
+        return response()->json(['data' => new TeamInvitationResource($invitation)], 201);
+    }
+
+    public function acceptInvitation(Request $request, DesignerTeamInvitation $invitation): JsonResponse
+    {
+        $member = $this->teams->acceptInvitation($request->user(), $invitation);
+
+        return response()->json(['data' => new TeamMemberResource($member->load('user'))]);
+    }
+
+    public function declineInvitation(Request $request, DesignerTeamInvitation $invitation): JsonResponse
+    {
+        $this->teams->declineInvitation($request->user(), $invitation);
+
+        return response()->json(['data' => ['id' => $invitation->id, 'status' => 'cancelled']]);
     }
 
     public function changeRole(ChangeTeamMemberRoleRequest $request, DesignerTeamMember $member): JsonResponse
@@ -91,13 +104,9 @@ class TeamApiController extends Controller
     public function resendInvitation(Request $request, DesignerTeamInvitation $invitation): JsonResponse
     {
         $team = $this->requireManageableTeam($request->user());
-        $this->assertInvitationInTeam($invitation, $team->id);
-        if ($invitation->status !== 'pending') {
-            throw ValidationException::withMessages(['invitation' => [__('team.invite_not_found')]]);
-        }
-        $invitation->update(['expires_at' => now()->addDays(14)]);
+        $fresh = $this->teams->resendInvitation($team, $request->user(), $invitation);
 
-        return response()->json(['data' => new TeamInvitationResource($invitation->fresh())]);
+        return response()->json(['data' => new TeamInvitationResource($fresh)]);
     }
 
     public function cancelInvitation(Request $request, DesignerTeamInvitation $invitation): JsonResponse
@@ -105,6 +114,15 @@ class TeamApiController extends Controller
         $team = $this->requireManageableTeam($request->user());
         $this->assertInvitationInTeam($invitation, $team->id);
         $invitation->update(['status' => 'cancelled']);
+
+        \App\Models\UserNotification::query()
+            ->where('related_invitation_id', $invitation->id)
+            ->where('action_key', 'team_invited')
+            ->update([
+                'action_key' => 'team_invite_declined',
+                'is_read' => true,
+                'read_at' => now(),
+            ]);
 
         return response()->json(['data' => new TeamInvitationResource($invitation->fresh())]);
     }

@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Enums\TeamMemberStatus;
 use App\Enums\TeamRole;
 use App\Models\DesignerTeam;
+use App\Models\DesignerTeamInvitation;
 use App\Models\DesignerTeamMember;
 use App\Models\Project;
 use App\Models\User;
@@ -13,6 +15,7 @@ use App\Support\DesignerSubscription;
 use App\Support\WorkspaceAccess;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class CorporateSubscriptionTest extends TestCase
@@ -35,6 +38,13 @@ class CorporateSubscriptionTest extends TestCase
             'subscription_ends_at' => now()->addDays(20),
             'subscription_plan' => DesignerSubscription::PLAN_PRO,
         ], $attrs));
+    }
+
+    private function inviteAndAccept(TeamService $teams, DesignerTeam $team, User $owner, User $member, TeamRole $role): DesignerTeamMember
+    {
+        $invitation = $teams->addExistingUser($team, $owner, $member, $role);
+
+        return $teams->acceptInvitation($member, $invitation);
     }
 
     public function test_corporate_is_third_plan_with_price_and_seat_limit(): void
@@ -121,7 +131,7 @@ class CorporateSubscriptionTest extends TestCase
             'subscription_ends_at' => now()->addMonth(),
         ])->save();
 
-        $teams->addExistingUser($teamA, $ownerA, $member, TeamRole::Designer);
+        $this->inviteAndAccept($teams, $teamA, $ownerA, $member, TeamRole::Designer);
 
         $this->expectException(ValidationException::class);
         $teams->addExistingUser($teamB, $ownerB, $member, TeamRole::Designer);
@@ -152,8 +162,16 @@ class CorporateSubscriptionTest extends TestCase
             'subscription_plan' => DesignerSubscription::PLAN_CORPORATE,
             'subscription_ends_at' => now()->addMonth(),
         ])->save();
-        $teams->addExistingUser($team, $owner, $member, TeamRole::Designer);
+        $invitation = $teams->addExistingUser($team, $owner, $member, TeamRole::Designer);
 
+        try {
+            $teams->assertAssigneeAllowed($owner, (int) $member->id);
+            $this->fail('Pending invitee must not be assignable');
+        } catch (ValidationException) {
+            // expected before accept
+        }
+
+        $teams->acceptInvitation($member, $invitation);
         $this->assertSame((int) $member->id, $teams->assertAssigneeAllowed($owner, (int) $member->id));
 
         $this->expectException(ValidationException::class);
@@ -174,7 +192,7 @@ class CorporateSubscriptionTest extends TestCase
             'subscription_plan' => DesignerSubscription::PLAN_CORPORATE,
             'subscription_ends_at' => now()->addMonth(),
         ])->save();
-        $teams->addExistingUser($team, $owner, $designer, TeamRole::Designer);
+        $this->inviteAndAccept($teams, $team, $owner, $designer, TeamRole::Designer);
 
         $project = Project::query()->create([
             'user_id' => $owner->id,
@@ -250,13 +268,26 @@ class CorporateSubscriptionTest extends TestCase
         $created = User::query()->where('email', 'newbie@example.com')->first();
         $this->assertNotNull($created);
         $this->assertFalse((bool) ($created->must_change_password ?? false));
-        $this->assertTrue(
+        $this->assertFalse(
             DesignerTeamMember::query()
                 ->where('team_id', $team->id)
                 ->where('user_id', $created->id)
+                ->where('status', TeamMemberStatus::Active->value)
                 ->exists()
         );
-        $this->assertTrue(UserNotification::query()->where('user_id', $created->id)->exists());
+        $this->assertTrue(
+            DesignerTeamInvitation::query()
+                ->where('team_id', $team->id)
+                ->whereRaw('LOWER(email) = ?', ['newbie@example.com'])
+                ->where('status', 'pending')
+                ->exists()
+        );
+        $this->assertTrue(
+            UserNotification::query()
+                ->where('user_id', $created->id)
+                ->where('action_key', 'team_invited')
+                ->exists()
+        );
     }
 
     public function test_admin_cannot_remove_owner(): void
@@ -273,10 +304,106 @@ class CorporateSubscriptionTest extends TestCase
             'subscription_plan' => DesignerSubscription::PLAN_CORPORATE,
             'subscription_ends_at' => now()->addMonth(),
         ])->save();
-        $teams->addExistingUser($team, $owner, $admin, TeamRole::Admin);
+        $this->inviteAndAccept($teams, $team, $owner, $admin, TeamRole::Admin);
 
         $ownerMember = $team->memberFor($owner);
         $this->expectException(ValidationException::class);
         $teams->removeMember($team, $admin, $ownerMember);
+    }
+
+    public function test_invite_notifies_and_accept_grants_access(): void
+    {
+        $owner = $this->designer();
+        $invitee = $this->designer([
+            'email' => 'invitee@example.com',
+            'subscription_ends_at' => null,
+            'subscription_plan' => null,
+        ]);
+        $teams = app(TeamService::class);
+        $team = $teams->activateCorporateForOwner($owner);
+        $owner->forceFill([
+            'subscription_plan' => DesignerSubscription::PLAN_CORPORATE,
+            'subscription_ends_at' => now()->addMonth(),
+        ])->save();
+
+        $invitation = $teams->inviteByEmail($team, $owner, $invitee->email, TeamRole::Designer);
+
+        $this->assertSame('pending', $invitation->status);
+        $this->assertNull($teams->activeTeamFor($invitee));
+        $notification = UserNotification::query()
+            ->where('user_id', $invitee->id)
+            ->where('action_key', 'team_invited')
+            ->where('related_invitation_id', $invitation->id)
+            ->first();
+        $this->assertNotNull($notification);
+
+        $this->actingAs($invitee)
+            ->post(route('notifications.team_invite_accept', $notification->id))
+            ->assertRedirect();
+
+        $invitee->refresh();
+        $this->assertSame((int) $team->id, (int) $teams->activeTeamFor($invitee)?->id);
+        $this->assertSame('accepted', $invitation->fresh()->status);
+        $this->assertSame(DesignerSubscription::PLAN_CORPORATE, $invitee->subscription_plan);
+        $this->assertTrue(DesignerSubscription::hasAccess($invitee));
+        $this->assertContains(
+            (int) $invitee->id,
+            collect($teams->assigneeOptions($owner))->pluck('id')->all()
+        );
+    }
+
+    public function test_remove_member_clears_inherited_corporate_plan(): void
+    {
+        $owner = $this->designer();
+        $member = $this->designer([
+            'email' => 'seat@example.com',
+            'subscription_ends_at' => null,
+            'subscription_plan' => null,
+        ]);
+        $teams = app(TeamService::class);
+        $team = $teams->activateCorporateForOwner($owner);
+        $owner->forceFill([
+            'subscription_plan' => DesignerSubscription::PLAN_CORPORATE,
+            'subscription_ends_at' => now()->addMonth(),
+        ])->save();
+
+        $this->inviteAndAccept($teams, $team, $owner, $member, TeamRole::Designer);
+        $this->assertSame(DesignerSubscription::PLAN_CORPORATE, $member->fresh()->subscription_plan);
+
+        $seat = $team->memberFor($member);
+        $this->assertNotNull($seat);
+        $teams->removeMember($team, $owner, $seat);
+
+        $member->refresh();
+        $this->assertNull($member->subscription_plan);
+        $this->assertNull($teams->activeTeamFor($member));
+        $this->assertFalse(DesignerSubscription::hasAccess($member));
+    }
+
+    public function test_decline_invitation_frees_seat(): void
+    {
+        $owner = $this->designer();
+        $invitee = $this->designer([
+            'email' => 'decline@example.com',
+            'subscription_ends_at' => null,
+            'subscription_plan' => null,
+        ]);
+        $teams = app(TeamService::class);
+        $team = $teams->activateCorporateForOwner($owner);
+        $owner->forceFill([
+            'subscription_plan' => DesignerSubscription::PLAN_CORPORATE,
+            'subscription_ends_at' => now()->addMonth(),
+        ])->save();
+
+        $invitation = $teams->inviteByEmail($team, $owner, $invitee->email, TeamRole::Designer);
+        $this->assertSame(2, $team->fresh()->usedSeats());
+
+        Sanctum::actingAs($invitee);
+        $this->postJson('/api/team/invitations/'.$invitation->id.'/decline')
+            ->assertOk();
+
+        $this->assertSame('cancelled', $invitation->fresh()->status);
+        $this->assertSame(1, $team->fresh()->usedSeats());
+        $this->assertNull($teams->activeTeamFor($invitee));
     }
 }

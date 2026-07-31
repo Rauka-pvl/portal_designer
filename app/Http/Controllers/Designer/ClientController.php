@@ -60,7 +60,10 @@ class ClientController extends Controller
             ->withSum('crmProjects as projects_budget', 'planned_cost');
 
         $search = trim((string) $request->query('search', ''));
-        $status = (string) $request->query('status', '');
+        $statusRaw = $request->query('status', '');
+        $statuses = is_array($statusRaw)
+            ? array_values(array_filter(array_map('strval', $statusRaw)))
+            : array_values(array_filter(array_map('trim', explode(',', (string) $statusRaw))));
         $type = (string) $request->query('type', '');
         $projectsFilter = (string) $request->query('projects', '');
 
@@ -76,8 +79,10 @@ class ClientController extends Controller
             });
         }
 
-        if ($status !== '') {
-            $query->where('status', $status);
+        if (count($statuses) === 1) {
+            $query->where('status', $statuses[0]);
+        } elseif (count($statuses) > 1) {
+            $query->whereIn('status', $statuses);
         }
 
         if (in_array($type, ['person', 'company'], true)) {

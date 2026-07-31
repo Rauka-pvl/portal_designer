@@ -32,12 +32,84 @@
         border-radius: 8px;
         box-shadow: var(--crm-shadow);
     }
-    .crm-toolbar-select {
-        width: auto;
-        min-width: 8.5rem;
-        min-height: 38px;
-        height: 38px;
+    #crm-clients-workspace .crm-toolbar-search-wrap {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        width: min(260px, 100%);
     }
+    #crm-clients-workspace .crm-toolbar-search {
+        width: 100%;
+        padding-left: 2rem;
+    }
+    #crm-clients-workspace .crm-filters-wrap { position: relative; }
+    #crm-clients-workspace .crm-filters-btn { position: relative; }
+    #crm-clients-workspace .crm-filters-badge {
+        position: absolute;
+        top: -0.35rem;
+        right: -0.35rem;
+        min-width: 1.1rem;
+        height: 1.1rem;
+        padding: 0 0.3rem;
+        border-radius: 999px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        line-height: 1.1rem;
+        text-align: center;
+        background: var(--crm-accent);
+        color: #fff;
+    }
+    #crm-clients-workspace .crm-filters-panel {
+        position: absolute;
+        top: calc(100% + 0.4rem);
+        right: 0;
+        z-index: 40;
+        width: min(300px, calc(100vw - 2rem));
+        background: var(--crm-surface);
+        border: 1px solid color-mix(in srgb, var(--crm-border) 40%, transparent);
+        border-radius: 10px;
+        box-shadow: var(--crm-shadow);
+        padding: 0.85rem;
+        display: none;
+    }
+    #crm-clients-workspace .crm-filters-panel.is-open { display: block; }
+    #crm-clients-workspace .crm-filters-panel .crm-label { margin-bottom: 0.3rem; }
+    #crm-clients-workspace .crm-filters-panel .crm-input { width: 100%; }
+    #crm-clients-workspace .crm-filters-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 35;
+        display: none;
+    }
+    #crm-clients-workspace .crm-filters-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 0.5rem;
+    }
+    #crm-clients-workspace .clients-filter-checks {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        margin-bottom: 0.75rem;
+    }
+    #crm-clients-workspace .clients-filter-check {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8125rem;
+        color: var(--crm-text);
+        cursor: pointer;
+    }
+    #crm-clients-workspace .clients-filter-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8125rem;
+        color: var(--crm-muted);
+        cursor: pointer;
+        margin-bottom: 0.6rem;
+    }
+    #crm-clients-workspace .clients-filter-select-wrap { margin-bottom: 0.75rem; }
     .crm-clients-pagination {
         display: flex;
         align-items: center;
@@ -171,7 +243,19 @@
     @media (max-width: 768px) {
         .crm-toolbar { flex-wrap: wrap; }
         .crm-toolbar-right { width: 100%; flex-wrap: wrap; }
-        .crm-toolbar-search { width: 100%; max-width: none; }
+        #crm-clients-workspace .crm-toolbar-search-wrap { width: 100%; max-width: none; flex: 1 1 100%; }
+        #crm-clients-workspace .crm-filters-panel {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            top: auto;
+            width: 100%;
+            border-radius: 14px 14px 0 0;
+            max-height: min(80vh, 560px);
+            overflow: auto;
+        }
+        #crm-clients-workspace .crm-filters-backdrop.is-open { display: block; }
         .crm-detail-row { grid-template-columns: 1fr; gap: 0.15rem; }
         #client-form-modal.crm-modal-root { padding: 0; }
         #client-form-modal .crm-modal {
@@ -227,21 +311,49 @@
             @endif
         </div>
         <div class="crm-toolbar-right">
-            <div class="relative" style="display:inline-flex;align-items:center;">
+            <div class="crm-toolbar-search-wrap">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position:absolute;left:0.7rem;pointer-events:none;color:var(--crm-muted)">
                     <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
                 </svg>
-                <input type="search" id="clients-search" class="crm-input crm-toolbar-search" style="padding-left:2rem"
+                <input type="search" id="clients-search" class="crm-input crm-toolbar-search"
                     placeholder="{{ __('clients.search') }}" autocomplete="off">
             </div>
-            <select id="clients-status-filter" class="crm-input crm-toolbar-select" aria-label="{{ __('clients.status') }}">
-                <option value="">{{ __('clients.all_statuses') }}</option>
-            </select>
-            <select id="clients-type-filter" class="crm-input crm-toolbar-select" aria-label="{{ __('clients.client_type') }}">
-                <option value="">{{ __('clients.all_types') }}</option>
-                <option value="person">{{ __('clients.person') }}</option>
-                <option value="company">{{ __('clients.company') }}</option>
-            </select>
+            <div class="crm-filters-wrap" id="clients-filters-wrap">
+                <button type="button" id="clients-filters-btn" class="crm-btn crm-btn-secondary crm-btn-sm crm-filters-btn" aria-expanded="false" aria-haspopup="true" aria-controls="clients-filters-panel">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                        <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+                    </svg>
+                    <span>{{ __('clients.filters') }}</span>
+                    <span id="clients-filters-badge" class="crm-filters-badge" hidden>0</span>
+                </button>
+                <div id="clients-filters-backdrop" class="crm-filters-backdrop" hidden></div>
+                <div id="clients-filters-panel" class="crm-filters-panel" role="dialog" aria-label="{{ __('clients.filters') }}" aria-hidden="true">
+                    <label class="crm-label">{{ __('clients.status') }}</label>
+                    <div id="clients-filter-status-list" class="clients-filter-checks"></div>
+
+                    <div class="clients-filter-select-wrap">
+                        <label class="crm-label" for="clients-type-filter">{{ __('clients.client_type') }}</label>
+                        <select id="clients-type-filter" class="crm-input crm-select">
+                            <option value="">{{ __('clients.filter_all') }}</option>
+                            <option value="person">{{ __('clients.person') }}</option>
+                            <option value="company">{{ __('clients.company') }}</option>
+                        </select>
+                    </div>
+
+                    <label class="clients-filter-toggle">
+                        <input type="checkbox" id="clients-filter-with-projects">
+                        {{ __('clients.with_projects') }}
+                    </label>
+                    <label class="clients-filter-toggle">
+                        <input type="checkbox" id="clients-filter-without-projects">
+                        {{ __('clients.without_projects') }}
+                    </label>
+
+                    <div class="crm-filters-actions">
+                        <button type="button" id="clients-filters-reset" class="crm-btn crm-btn-secondary crm-btn-sm">{{ __('clients.filter_clear') }}</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -525,6 +637,7 @@
         status: @json(__('clients.status')),
         updated: @json(__('clients.updated')),
         allStatuses: @json(__('clients.all_statuses')),
+        filterAll: @json(__('clients.filter_all')),
     };
 
     const formModal = document.getElementById('client-form-modal');
@@ -555,8 +668,9 @@
             : { stages: [] },
         view: readStoredView(),
         search: '',
-        status: '',
+        statuses: [],
         type: '',
+        projects: '',
         sortKey: 'full_name',
         sortDir: 'asc',
         page: 1,
@@ -575,8 +689,16 @@
 
     const els = {
         search: document.getElementById('clients-search'),
-        status: document.getElementById('clients-status-filter'),
         type: document.getElementById('clients-type-filter'),
+        filtersWrap: document.getElementById('clients-filters-wrap'),
+        filtersBtn: document.getElementById('clients-filters-btn'),
+        filtersBackdrop: document.getElementById('clients-filters-backdrop'),
+        filtersPanel: document.getElementById('clients-filters-panel'),
+        filtersBadge: document.getElementById('clients-filters-badge'),
+        filterStatusList: document.getElementById('clients-filter-status-list'),
+        filterWithProjects: document.getElementById('clients-filter-with-projects'),
+        filterWithoutProjects: document.getElementById('clients-filter-without-projects'),
+        filtersReset: document.getElementById('clients-filters-reset'),
         listPanel: document.getElementById('clients-list-panel'),
         kanbanPanel: document.getElementById('clients-kanban-panel'),
         tableBody: document.getElementById('clients-table-body'),
@@ -656,11 +778,20 @@
         const options = stages.map((s) =>
             `<option value="${escapeHtml(s.system_key)}">${escapeHtml(s.name)}</option>`
         ).join('');
-        if (els.status) {
-            const cur = selected?.filter ?? state.status ?? '';
-            els.status.innerHTML = `<option value="">${escapeHtml(i18n.allStatuses)}</option>` + options;
-            els.status.value = cur;
-            if (els.status.value !== cur) els.status.value = '';
+        if (els.filterStatusList) {
+            const selectedKeys = new Set(selected?.filter ?? state.statuses ?? []);
+            els.filterStatusList.innerHTML = stages.map((s) => `
+                <label class="clients-filter-check">
+                    <input type="checkbox" class="clients-status-check" value="${escapeHtml(s.system_key)}" ${selectedKeys.has(s.system_key) ? 'checked' : ''}>
+                    ${escapeHtml(s.name)}
+                </label>
+            `).join('');
+            els.filterStatusList.querySelectorAll('.clients-status-check').forEach((cb) => {
+                cb.addEventListener('change', () => {
+                    state.statuses = [...els.filterStatusList.querySelectorAll('.clients-status-check:checked')].map((c) => c.value);
+                    applyFilters();
+                });
+            });
         }
         if (els.formStatus) {
             const cur = selected?.form ?? els.formStatus.value;
@@ -668,6 +799,57 @@
             if (cur && [...els.formStatus.options].some((o) => o.value === cur)) els.formStatus.value = cur;
             else if (els.formStatus.options.length) els.formStatus.selectedIndex = 0;
         }
+    }
+
+    function activeFilterCount() {
+        let count = 0;
+        if (state.statuses.length) count += 1;
+        if (state.type) count += 1;
+        if (state.projects) count += 1;
+        return count;
+    }
+
+    function updateFiltersBadge() {
+        const count = activeFilterCount();
+        if (!els.filtersBadge) return;
+        els.filtersBadge.hidden = count === 0;
+        els.filtersBadge.textContent = String(count);
+    }
+
+    function openFilters() {
+        els.filtersPanel?.classList.add('is-open');
+        if (els.filtersBackdrop) {
+            els.filtersBackdrop.hidden = false;
+            els.filtersBackdrop.classList.add('is-open');
+        }
+        els.filtersBtn?.setAttribute('aria-expanded', 'true');
+        els.filtersPanel?.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeFilters() {
+        els.filtersPanel?.classList.remove('is-open');
+        if (els.filtersBackdrop) {
+            els.filtersBackdrop.hidden = true;
+            els.filtersBackdrop.classList.remove('is-open');
+        }
+        els.filtersBtn?.setAttribute('aria-expanded', 'false');
+        els.filtersPanel?.setAttribute('aria-hidden', 'true');
+    }
+
+    function applyFilters() {
+        updateFiltersBadge();
+        refreshClients();
+    }
+
+    function resetFilters() {
+        state.statuses = [];
+        state.type = '';
+        state.projects = '';
+        els.filterStatusList?.querySelectorAll('.clients-status-check').forEach((c) => { c.checked = false; });
+        if (els.type) els.type.value = '';
+        if (els.filterWithProjects) els.filterWithProjects.checked = false;
+        if (els.filterWithoutProjects) els.filterWithoutProjects.checked = false;
+        applyFilters();
     }
 
     function syncUrl({ openId } = {}) {
@@ -775,7 +957,7 @@
     }
 
     function emptyStateHtml(colspan) {
-        const hasFilters = !!(state.search || state.status || state.type);
+        const hasFilters = !!(state.search || state.statuses.length || state.type || state.projects);
         const title = hasFilters ? i18n.emptyFiltered : i18n.noClientsTitle;
         const body = hasFilters ? '' : i18n.noClientsBody;
         if (colspan) {
@@ -958,8 +1140,9 @@
     async function refreshClients() {
         const params = new URLSearchParams();
         if (state.search) params.set('search', state.search);
-        if (state.status) params.set('status', state.status);
+        if (state.statuses.length) params.set('status', state.statuses.join(','));
         if (state.type) params.set('type', state.type);
+        if (state.projects) params.set('projects', state.projects);
         const url = routes.search + (params.toString() ? '?' + params.toString() : '');
         try {
             const res = await fetch(url, { headers: { Accept: 'application/json' } });
@@ -1346,14 +1529,38 @@
         state.search = els.search.value.trim();
         debouncedSearch();
     });
-    els.status?.addEventListener('change', () => {
-        state.status = els.status.value;
-        refreshClients();
+    els.filtersBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (els.filtersPanel?.classList.contains('is-open')) closeFilters();
+        else openFilters();
+    });
+    els.filtersBackdrop?.addEventListener('click', closeFilters);
+    document.addEventListener('click', (e) => {
+        if (els.filtersWrap && !els.filtersWrap.contains(e.target)) closeFilters();
     });
     els.type?.addEventListener('change', () => {
         state.type = els.type.value;
-        refreshClients();
+        applyFilters();
     });
+    els.filterWithProjects?.addEventListener('change', () => {
+        if (els.filterWithProjects.checked) {
+            state.projects = 'with';
+            if (els.filterWithoutProjects) els.filterWithoutProjects.checked = false;
+        } else if (!els.filterWithoutProjects?.checked) {
+            state.projects = '';
+        }
+        applyFilters();
+    });
+    els.filterWithoutProjects?.addEventListener('change', () => {
+        if (els.filterWithoutProjects.checked) {
+            state.projects = 'without';
+            if (els.filterWithProjects) els.filterWithProjects.checked = false;
+        } else if (!els.filterWithProjects?.checked) {
+            state.projects = '';
+        }
+        applyFilters();
+    });
+    els.filtersReset?.addEventListener('click', resetFilters);
     els.perPage?.addEventListener('change', () => {
         state.perPage = parseInt(els.perPage.value, 10) || 10;
         localStorage.setItem(PER_PAGE_KEY, String(state.perPage));
@@ -1413,6 +1620,7 @@
     });
     document.addEventListener('keydown', (e) => {
         if (e.key !== 'Escape') return;
+        if (els.filtersPanel?.classList.contains('is-open')) { closeFilters(); return; }
         if (unsavedModal.classList.contains('open')) { closeRoot(unsavedModal); return; }
         if (deleteModal.classList.contains('open')) {
             closeRoot(deleteModal);
@@ -1459,6 +1667,7 @@
     // Init
     window.ModalFilePicker?.initFromDom?.(document);
     fillStatusSelects();
+    updateFiltersBadge();
     setView(state.view, { persist: true });
 
     const openParam = new URLSearchParams(window.location.search).get('open');
