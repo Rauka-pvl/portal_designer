@@ -47,10 +47,14 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(120)->by((string) ($request->user()?->id ?: $request->ip()));
         });
 
-        Scramble::configure()
-            ->routes(fn (Route $route) => Str::startsWith($route->uri, 'api/'))
-            ->withDocumentTransformers(function (OpenApi $openApi) {
-                $openApi->secure(SecurityScheme::http('bearer'));
-            });
+        if (class_exists(Scramble::class)) {
+            Scramble::configure()
+                ->routes(fn (Route $route) => Str::startsWith($route->uri, 'api/'))
+                ->withDocumentTransformers(function (OpenApi $openApi) {
+                    if (class_exists(SecurityScheme::class)) {
+                        $openApi->secure(SecurityScheme::http('bearer'));
+                    }
+                });
+        }
     }
 }

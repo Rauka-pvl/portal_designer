@@ -169,11 +169,7 @@ return [
      *     ],
      * ],
      */
-    'security_strategy' => [
-        \Dedoc\Scramble\SecurityDocumentation\MiddlewareAuthSecurityStrategy::class,
-        [
-            'middleware' => ['auth', 'auth:*'],
-            'scheme' => \Dedoc\Scramble\Support\Generator\SecurityScheme::http('bearer'),
-        ],
-    ],
+    // Keep null here: do not instantiate Scramble classes in config (breaks artisan when
+    // vendor is not loaded yet). Bearer security is registered in AppServiceProvider.
+    'security_strategy' => null,
 ];
