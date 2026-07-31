@@ -16,7 +16,9 @@ class ChecklistResource extends JsonResource
             'stage_type' => $this->stage_type,
             'name' => $this->name,
             'template_id' => $this->template_id ? (int) $this->template_id : null,
-            'deadline' => $this->deadline?->toDateString() ?? ($this->deadline ? (string) $this->deadline : null),
+            'deadline' => $this->deadline
+                ? \Carbon\Carbon::parse($this->deadline)->toDateString()
+                : null,
             'responsible_id' => $this->responsible_id ? (int) $this->responsible_id : null,
             'assign_task' => (bool) $this->assign_task,
             'order' => (int) $this->order,

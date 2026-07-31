@@ -22,6 +22,7 @@ class ProjectStages extends Model
 
     protected $casts = [
         'assign_task' => 'boolean',
+        'deadline' => 'date',
     ];
 
     public function project()
