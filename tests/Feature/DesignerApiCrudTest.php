@@ -27,32 +27,34 @@ class DesignerApiCrudTest extends TestCase
 
         $create = $this->postJson('/api/clients', [
             'full_name' => 'Иван Тестов',
+            'name' => 'Иван Тестов',
             'client_type' => 'person',
+            'type' => 'person',
             'phone' => '+77001112233',
             'email' => 'ivan@example.com',
             'status' => 'new',
             'comment' => 'API client',
         ]);
 
-        $create->assertOk()->assertJsonPath('success', true);
-        $id = (int) ($create->json('client.id') ?? Client::query()->where('user_id', $user->id)->value('id'));
+        $create->assertSuccessful()->assertJsonStructure(['data' => ['id', 'name', 'status']]);
+        $id = (int) $create->json('data.id');
         $this->assertGreaterThan(0, $id);
 
         $update = $this->putJson('/api/clients/'.$id, [
             'full_name' => 'Иван Обновлённый',
+            'name' => 'Иван Обновлённый',
             'client_type' => 'person',
+            'type' => 'person',
             'phone' => '+77001112233',
             'email' => 'ivan@example.com',
             'status' => 'in_work',
         ]);
 
-        $update->assertOk()->assertJsonPath('success', true);
+        $update->assertSuccessful()->assertJsonPath('data.status', 'in_work');
         $this->assertSame('Иван Обновлённый', Client::query()->find($id)?->full_name);
-        $this->assertSame('in_work', Client::query()->find($id)?->status);
 
         $this->deleteJson('/api/clients/'.$id)
-            ->assertOk()
-            ->assertJsonPath('success', true);
+            ->assertSuccessful();
 
         $this->assertNull(Client::query()->find($id));
     }

@@ -17,6 +17,7 @@ class Supplier_orders extends Model
     protected $fillable = [
         'user_id',
         'project_id',
+        'client_id',
         'included_step_ids',
         'supplier_id',
         'status',

@@ -8,10 +8,9 @@ use App\Models\Client;
 use App\Models\Pipeline;
 use App\Models\Project;
 use App\Support\AccountPermissions;
-use App\Support\PublicFileStorage;
+use App\Services\Crm\ClientService;
 use App\Services\Crm\PipelineService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class ClientController extends Controller
@@ -148,7 +147,8 @@ class ClientController extends Controller
             $request->merge(['client_id' => null]);
         }
 
-        $allowedStatuses = $this->allowedStatusKeys((int) $request->user()->id);
+        $service = app(ClientService::class);
+        $allowedStatuses = $service->allowedStatusKeys((int) $request->user()->id);
 
         $data = $request->validate([
             'client_id' => ['nullable', 'integer'],
@@ -162,70 +162,20 @@ class ClientController extends Controller
             'files' => ['nullable'],
         ]);
 
-        $userId = $request->user()->id;
-
         $clientId = $data['client_id'] ?? null;
         $isUpdate = (bool) $clientId;
-        $client = null;
-
-        if ($clientId) {
-            $client = Client::where('user_id', $userId)->findOrFail($clientId);
-        } else {
-            $client = new Client;
-            $client->user_id = $userId;
-        }
-
         $existingFiles = array_values(array_filter(array_map(
             fn ($v) => trim((string) $v),
             (array) $request->input('existing_files', [])
         )));
-
-        $uploadedPaths = [];
-        if ($request->hasFile('files')) {
-            $files = $request->file('files');
-            $uploaded = is_array($files) ? $files : [$files];
-            foreach ($uploaded as $file) {
-                if ($file) {
-                    $uploadedPaths[] = PublicFileStorage::store($file, 'clients');
-                }
-            }
-        }
-
-        $oldPaths = [];
-        if (! empty($client->file_paths)) {
-            $decoded = json_decode((string) $client->file_paths, true);
-            if (is_array($decoded)) {
-                $oldPaths = array_values(array_filter($decoded, fn ($p) => is_string($p) && $p !== ''));
-            }
-        } elseif (! empty($client->file_path)) {
-            $oldPaths = [(string) $client->file_path];
-        }
-
-        $newPaths = array_values(array_unique(array_merge($existingFiles, $uploadedPaths)));
-        foreach ($oldPaths as $oldPath) {
-            if ($oldPath !== '' && ! in_array($oldPath, $newPaths, true)) {
-                Storage::disk('public')->delete($oldPath);
-            }
-        }
-
-        $client->file_paths = $newPaths !== [] ? json_encode($newPaths, JSON_UNESCAPED_SLASHES) : null;
-        $client->file_path = $newPaths[0] ?? null;
-
-        $client->full_name = $data['full_name'];
-        $client->client_type = $data['client_type'] ?? 'person';
-        $client->phone = $data['phone'];
-        $client->email = $data['email'];
-        $client->status = $data['status'];
-        $client->comment = $data['comment'] ?? null;
-        $client->link = $data['link'] ?? null;
-        $client->save();
-
-        $client->loadCount([
-            'objects as count_objects',
-            'crmProjects as projects_count',
-        ]);
-        $client->loadSum('objects as sum_repair_budget_planned', 'repair_budget_planned');
-        $client->loadSum('crmProjects as projects_budget', 'planned_cost');
+        $files = $request->file('files', []);
+        $client = $service->save(
+            (int) $request->user()->id,
+            $data,
+            $existingFiles,
+            is_array($files) ? $files : [$files]
+        );
+        $service->loadAggregates($client);
 
         $message = $isUpdate ? __('clients.saved') : __('clients.added');
 
@@ -244,22 +194,16 @@ class ClientController extends Controller
 
     public function updateStatus(Request $request, int $clientId)
     {
-        $allowedStatuses = $this->allowedStatusKeys((int) $request->user()->id);
+        $service = app(ClientService::class);
+        $allowedStatuses = $service->allowedStatusKeys((int) $request->user()->id);
 
         $data = $request->validate([
             'status' => ['required', 'string', 'max:64', Rule::in($allowedStatuses)],
         ]);
 
         $client = Client::where('user_id', $request->user()->id)->findOrFail($clientId);
-        $client->status = $data['status'];
-        $client->save();
-
-        $client->loadCount([
-            'objects as count_objects',
-            'crmProjects as projects_count',
-        ]);
-        $client->loadSum('objects as sum_repair_budget_planned', 'repair_budget_planned');
-        $client->loadSum('crmProjects as projects_budget', 'planned_cost');
+        $service->updateStatus($client, $data['status']);
+        $service->loadAggregates($client);
 
         return response()->json([
             'success' => true,
@@ -271,10 +215,9 @@ class ClientController extends Controller
     {
         $client = Client::where('user_id', $request->user()->id)->findOrFail($clientId);
 
-        $projectsCount = (int) $client->crmProjects()->count()
-            + (int) $client->projects()->count();
+        $projectsCount = app(ClientService::class)->destroy($client, $request->boolean('confirm'));
 
-        if ($projectsCount > 0 && ! $request->boolean('confirm')) {
+        if ($projectsCount !== null) {
             return response()->json([
                 'success' => false,
                 'needs_confirm' => true,
@@ -282,8 +225,6 @@ class ClientController extends Controller
                 'message' => __('clients.delete_with_projects', ['count' => $projectsCount]),
             ], 422);
         }
-
-        $client->delete();
 
         return response()->json([
             'success' => true,
@@ -294,62 +235,20 @@ class ClientController extends Controller
     {
         $client = Client::where('user_id', $request->user()->id)->findOrFail($clientId);
 
-        $filePaths = [];
-        if (! empty($client->file_paths)) {
-            $decoded = json_decode((string) $client->file_paths, true);
-            if (is_array($decoded)) {
-                $filePaths = array_values(array_filter($decoded, fn ($p) => is_string($p) && $p !== ''));
-            }
-        }
-        if (empty($filePaths) && ! empty($client->file_path)) {
-            $filePaths = [$client->file_path];
-        }
-
-        if ($fileIndex < 0 || $fileIndex >= count($filePaths)) {
+        $service = app(ClientService::class);
+        if (! $service->deleteFile($client, $fileIndex)) {
             return response()->json([
                 'success' => false,
                 'message' => __('clients.error'),
             ], 422);
         }
 
-        $pathToDelete = $filePaths[$fileIndex] ?? null;
-        if ($pathToDelete) {
-            Storage::disk('public')->delete($pathToDelete);
-        }
-
-        array_splice($filePaths, $fileIndex, 1);
-
-        if (! empty($filePaths)) {
-            $client->file_paths = json_encode(array_values($filePaths), JSON_UNESCAPED_SLASHES);
-            $client->file_path = $filePaths[0] ?? null;
-        } else {
-            $client->file_paths = null;
-            $client->file_path = null;
-        }
-
-        $client->save();
-
-        $client->loadCount([
-            'objects as count_objects',
-            'crmProjects as projects_count',
-        ]);
-        $client->loadSum('objects as sum_repair_budget_planned', 'repair_budget_planned');
-        $client->loadSum('crmProjects as projects_budget', 'planned_cost');
+        $service->loadAggregates($client);
 
         return response()->json([
             'success' => true,
             'client' => $this->payload($client),
         ]);
-    }
-
-    private function allowedStatusKeys(int $userId): array
-    {
-        app(PipelineService::class)->ensureDefaultsForUser($userId);
-        $pipeline = Pipeline::defaultForUser($userId, PipelineType::Client);
-
-        $keys = $pipeline->stages()->orderBy('position')->pluck('system_key')->filter()->values()->all();
-
-        return $keys !== [] ? $keys : ['new', 'in_work', 'not_working'];
     }
 
     private function pipelinePayload(Pipeline $pipeline): array

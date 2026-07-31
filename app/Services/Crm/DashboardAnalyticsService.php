@@ -7,6 +7,7 @@ use App\Enums\SupplyStatus;
 use App\Models\Project;
 use App\Models\ProjectStageStep;
 use App\Models\Supplier_orders;
+use App\Models\User;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\DB;
@@ -234,6 +235,61 @@ class DashboardAnalyticsService
             ],
             'values' => [$onTime, $delayed, $overdue],
             'colors' => ['#22c55e', '#eab308', '#ef4444'],
+        ];
+    }
+
+    /**
+     * API-oriented dashboard data while retaining the web dashboard's calculations.
+     */
+    public function forApi(User $user, string $period, ?string $from, ?string $to, ?string $timezone): array
+    {
+        $range = $this->resolvePeriod($period, $from, $to, $timezone);
+        $metrics = $this->metrics((int) $user->id, $range['from'], $range['to']);
+        $createdCompleted = $this->createdVsCompleted((int) $user->id, $range['from'], $range['to']);
+        $deadlines = $this->deadlineCompliance((int) $user->id);
+
+        return [
+            'period' => [
+                'type' => $period,
+                'date_from' => $range['from']->toDateString(),
+                'date_to' => $range['to']->toDateString(),
+            ],
+            'metrics' => [
+                'active_projects' => $metrics['active_projects'],
+                'overdue_projects' => $metrics['overdue_projects'],
+                'upcoming_deadlines' => $metrics['deadlines_7_days'],
+                'overdue_checklists' => $metrics['overdue_checklists'],
+                'delayed_supplies' => $metrics['delayed_supplies'],
+                'completed_projects' => $metrics['completed_projects'],
+            ],
+            'charts' => [
+                'projects_by_stage' => collect(ProjectStatus::funnelOrder())
+                    ->map(fn (ProjectStatus $status) => [
+                        'stage' => $status->value,
+                        'count' => (int) (Project::query()->where('user_id', $user->id)->where('status', $status->value)->count()),
+                    ])->values()->all(),
+                'created_and_completed_projects' => collect($createdCompleted['labels'])
+                    ->map(fn (string $label, int $index) => [
+                        'period' => $label,
+                        'created' => (int) ($createdCompleted['created'][$index] ?? 0),
+                        'completed' => (int) ($createdCompleted['completed'][$index] ?? 0),
+                    ])->values()->all(),
+                'supplies_by_status' => collect(SupplyStatus::cases())
+                    ->map(fn (SupplyStatus $status) => [
+                        'status' => $status->value,
+                        'count' => (int) (Supplier_orders::query()->where('user_id', $user->id)->where('status', $status->value)->count()),
+                    ])->values()->all(),
+                'deadline_performance' => [
+                    'on_time' => (int) ($deadlines['values'][0] ?? 0),
+                    'late' => (int) ($deadlines['values'][1] ?? 0),
+                    'overdue' => (int) ($deadlines['values'][2] ?? 0),
+                ],
+                'project_completion_dynamics' => collect($createdCompleted['labels'])
+                    ->map(fn (string $label, int $index) => [
+                        'period' => $label,
+                        'completed' => (int) ($createdCompleted['completed'][$index] ?? 0),
+                    ])->values()->all(),
+            ],
         ];
     }
 }

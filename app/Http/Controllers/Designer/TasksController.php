@@ -10,6 +10,7 @@ use App\Models\Project;
 use App\Models\ProjectStages;
 use App\Services\Team\AssignmentNotifier;
 use App\Services\Team\TeamService;
+use App\Services\Crm\TaskService;
 use App\Support\WorkspaceAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,6 +24,7 @@ class TasksController extends Controller
     public function __construct(
         private readonly TeamService $teams,
         private readonly AssignmentNotifier $notifier,
+        private readonly TaskService $taskService,
     ) {}
 
     public function index(Request $request)
@@ -326,8 +328,7 @@ class TasksController extends Controller
             'status' => ['required', 'string', Rule::in(DesignerTaskStatus::values())],
         ]);
 
-        $task->applyStatus(DesignerTaskStatus::from($data['status']));
-        $task->save();
+        $this->taskService->updateStatus($task, $data['status']);
 
         return response()->json([
             'success' => true,

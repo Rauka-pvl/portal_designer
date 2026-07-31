@@ -8,6 +8,7 @@ use App\Models\Review;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Support\PublicFileStorage;
+use App\Services\Crm\SupplierService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -246,29 +247,7 @@ class SupplierController extends Controller
     public function toggleFavorite(Request $request, int $supplierId)
     {
         $userId = (int) $request->user()->id;
-
-        $supplierAllowed = $this->visibleToDesignerQuery($userId)
-            ->whereKey($supplierId)
-            ->exists();
-        if (! $supplierAllowed) {
-            abort(404);
-        }
-
-        $favorite = DesignerFavoriteSupplier::query()
-            ->where('designer_user_id', $userId)
-            ->where('supplier_id', $supplierId)
-            ->first();
-
-        if ($favorite) {
-            $favorite->delete();
-            $isFavorite = false;
-        } else {
-            DesignerFavoriteSupplier::query()->create([
-                'designer_user_id' => $userId,
-                'supplier_id' => $supplierId,
-            ]);
-            $isFavorite = true;
-        }
+        $isFavorite = app(SupplierService::class)->toggleFavorite($userId, $supplierId);
 
         return response()->json([
             'success' => true,

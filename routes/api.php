@@ -2,38 +2,54 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ChatApiController;
+use App\Http\Controllers\Api\ChecklistApiController;
+use App\Http\Controllers\Api\ChecklistItemApiController;
+use App\Http\Controllers\Api\ChecklistTemplateApiController;
+use App\Http\Controllers\Api\ClientApiController;
 use App\Http\Controllers\Api\CommunityApiController;
+use App\Http\Controllers\Api\DashboardApiController;
 use App\Http\Controllers\Api\DesignerCrudController;
 use App\Http\Controllers\Api\DesignerDataController;
+use App\Http\Controllers\Api\DesignerSupplierApiController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\ProjectApiController;
+use App\Http\Controllers\Api\ProjectStageApiController;
+use App\Http\Controllers\Api\SubscriptionApiController;
 use App\Http\Controllers\Api\SupplierApiController;
+use App\Http\Controllers\Api\SupplyApiController;
+use App\Http\Controllers\Api\SupplyItemApiController;
+use App\Http\Controllers\Api\TaskApiController;
+use App\Http\Controllers\Api\TeamApiController;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| API — для React / мобильного приложения
+| API — мобильное приложение дизайнера
 |--------------------------------------------------------------------------
 |
 | Базовый URL: /api/...
-| Токен: Authorization: Bearer {token}
+| Токен: Authorization: Bearer {token} (Sanctum, без изменений)
 |
 */
 
-// ——— Авторизация (публичные) ———
+// OpenAPI UI / JSON (Scramble). Aliases for mobile clients.
+Route::redirect('/documentation', '/docs/api');
+Route::get('/documentation.json', fn () => redirect('/docs/api.json'));
+
+// ——— Авторизация (публичные) — не менять ———
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:register');
 Route::post('/forgot-password', [ProfileController::class, 'forgotPassword'])->middleware('throttle:password-email');
 Route::post('/reset-password', [ProfileController::class, 'resetPassword'])->middleware('throttle:password-email');
 
-// ——— С токеном ———
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::match(['put', 'patch'], '/me/profile', [ProfileController::class, 'update']);
     Route::post('/me/password', [ProfileController::class, 'updatePassword']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // Уведомления — доступны без активной подписки (чтобы видеть важные сообщения)
+    // Уведомления — без активной подписки
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications', [NotificationController::class, 'store']);
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
@@ -43,7 +59,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->whereNumber('id');
     Route::post('/notifications/{id}/confirm-referral', [NotificationController::class, 'confirmReferralSupplier'])->whereNumber('id');
 
-    // Чат по заказу и сообщество — дизайнер (подписка) / поставщик (депозит)
+    // Подписка (чтение планов/статуса доступно с токеном; checkout требует billing rights)
+    Route::get('/subscription/plans', [SubscriptionApiController::class, 'plans']);
+    Route::get('/subscription', [SubscriptionApiController::class, 'show']);
+    Route::get('/subscription/history', [SubscriptionApiController::class, 'history']);
+    Route::post('/subscription/checkout', [SubscriptionApiController::class, 'checkout'])->middleware('throttle:10,1');
+    Route::post('/subscription/change-plan', [SubscriptionApiController::class, 'changePlan']);
+    Route::post('/subscription/renew', [SubscriptionApiController::class, 'renew']);
+    Route::post('/subscription/resume', [SubscriptionApiController::class, 'resume']);
+    Route::post('/subscription/cancel', [SubscriptionApiController::class, 'cancel']);
+
+    // Чат и сообщество
     Route::middleware(['subscription.active', 'deposit.paid'])->group(function () {
         Route::get('/supplier-orders/chat/unread-map', [ChatApiController::class, 'unreadMap']);
         Route::get('/chat/unread-count', [ChatApiController::class, 'unreadCount']);
@@ -66,54 +92,129 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/community/posts/{id}/hide', [CommunityApiController::class, 'hide'])->whereNumber('id');
     });
 
-    // Данные дизайнера — только при активной подписке / триале
-    Route::middleware('subscription.active')->group(function () {
-        // —— Read ——
-        Route::get('/clients', [DesignerDataController::class, 'clients']);
-        Route::get('/objects', [DesignerDataController::class, 'objects']);
-        Route::get('/projects', [DesignerDataController::class, 'projects']);
+    // Designer business API
+    Route::middleware(['subscription.active', 'throttle:api-business'])->group(function () {
+        Route::get('/dashboard', [DashboardApiController::class, 'index']);
+
+        // Clients
+        Route::get('/clients', [ClientApiController::class, 'index']);
+        Route::post('/clients', [ClientApiController::class, 'store']);
+        Route::get('/clients/{client}', [ClientApiController::class, 'show'])->whereNumber('client');
+        Route::match(['put', 'patch'], '/clients/{client}', [ClientApiController::class, 'update'])->whereNumber('client');
+        Route::delete('/clients/{client}', [ClientApiController::class, 'destroy'])->whereNumber('client');
+        Route::get('/clients/{client}/projects', [ClientApiController::class, 'projects'])->whereNumber('client');
+        Route::post('/clients/{client}/files', [ClientApiController::class, 'storeFiles'])->whereNumber('client')->middleware('throttle:30,1');
+        Route::delete('/clients/{client}/files/{file}', [ClientApiController::class, 'destroyFile'])->whereNumber(['client', 'file']);
+
+        // Projects
+        Route::get('/projects', [ProjectApiController::class, 'index']);
+        Route::post('/projects', [ProjectApiController::class, 'store']);
+        Route::get('/projects/{projectId}', [ProjectApiController::class, 'show'])->whereNumber('projectId');
+        Route::match(['put', 'patch'], '/projects/{projectId}', [ProjectApiController::class, 'update'])->whereNumber('projectId');
+        Route::delete('/projects/{projectId}', [ProjectApiController::class, 'destroy'])->whereNumber('projectId');
+        Route::patch('/projects/{projectId}/stage', [ProjectApiController::class, 'updateStage'])->whereNumber('projectId');
+        Route::get('/projects/{projectId}/activity', [ProjectApiController::class, 'activity'])->whereNumber('projectId');
+        Route::get('/projects/{projectId}/comments', [ProjectApiController::class, 'comments'])->whereNumber('projectId');
+        Route::post('/projects/{projectId}/comments', [ProjectApiController::class, 'storeComment'])->whereNumber('projectId')->middleware('throttle:60,1');
+
+        // Project pipeline stages
+        Route::get('/project-stages', [ProjectStageApiController::class, 'index']);
+        Route::post('/project-stages', [ProjectStageApiController::class, 'store']);
+        Route::match(['put', 'patch'], '/project-stages/{stageId}', [ProjectStageApiController::class, 'update'])->whereNumber('stageId');
+        Route::delete('/project-stages/{stageId}', [ProjectStageApiController::class, 'destroy'])->whereNumber('stageId');
+        Route::post('/project-stages/reorder', [ProjectStageApiController::class, 'reorder']);
+
+        // Tasks (static paths before {taskId})
+        Route::get('/tasks/kanban', [TaskApiController::class, 'kanban']);
+        Route::get('/tasks/calendar', [TaskApiController::class, 'calendar']);
+        Route::get('/tasks', [TaskApiController::class, 'index']);
+        Route::post('/tasks', [TaskApiController::class, 'store']);
+        Route::get('/tasks/{taskId}', [TaskApiController::class, 'show'])->whereNumber('taskId');
+        Route::match(['put', 'patch'], '/tasks/{taskId}', [TaskApiController::class, 'update'])->whereNumber('taskId');
+        Route::delete('/tasks/{taskId}', [TaskApiController::class, 'destroy'])->whereNumber('taskId');
+        Route::patch('/tasks/{taskId}/status', [TaskApiController::class, 'updateStatus'])->whereNumber('taskId');
+
+        // Checklists
+        Route::get('/projects/{project}/checklists', [ChecklistApiController::class, 'index'])->whereNumber('project');
+        Route::post('/projects/{project}/checklists', [ChecklistApiController::class, 'store'])->whereNumber('project');
+        Route::get('/projects/{project}/checklist-results', [ChecklistApiController::class, 'results'])->whereNumber('project');
+        Route::get('/checklists/{checklist}', [ChecklistApiController::class, 'show'])->whereNumber('checklist');
+        Route::match(['put', 'patch'], '/checklists/{checklist}', [ChecklistApiController::class, 'update'])->whereNumber('checklist');
+        Route::delete('/checklists/{checklist}', [ChecklistApiController::class, 'destroy'])->whereNumber('checklist');
+        Route::post('/checklists/{checklist}/items', [ChecklistItemApiController::class, 'store'])->whereNumber('checklist');
+        Route::post('/checklist-items/reorder', [ChecklistItemApiController::class, 'reorder']);
+        Route::match(['put', 'patch'], '/checklist-items/{item}', [ChecklistItemApiController::class, 'update'])->whereNumber('item');
+        Route::delete('/checklist-items/{item}', [ChecklistItemApiController::class, 'destroy'])->whereNumber('item');
+        Route::patch('/checklist-items/{item}/completion', [ChecklistItemApiController::class, 'complete'])->whereNumber('item');
+        Route::put('/checklist-items/{item}/result', [ChecklistItemApiController::class, 'result'])->whereNumber('item');
+
+        // Checklist templates
+        Route::get('/checklist-templates', [ChecklistTemplateApiController::class, 'index']);
+        Route::post('/checklist-templates', [ChecklistTemplateApiController::class, 'store']);
+        Route::get('/checklist-templates/{id}', [ChecklistTemplateApiController::class, 'show'])->whereNumber('id');
+        Route::match(['put', 'patch'], '/checklist-templates/{id}', [ChecklistTemplateApiController::class, 'update'])->whereNumber('id');
+        Route::delete('/checklist-templates/{id}', [ChecklistTemplateApiController::class, 'destroy'])->whereNumber('id');
+
+        // Supplies (primary) + nested create under project
+        Route::get('/projects/{project}/supplies', [SupplyApiController::class, 'index'])->whereNumber('project');
+        Route::post('/projects/{project}/supplies', [SupplyApiController::class, 'store'])->whereNumber('project');
+        Route::get('/supplies/{supply}', [SupplyApiController::class, 'show'])->whereNumber('supply');
+        Route::match(['put', 'patch'], '/supplies/{supply}', [SupplyApiController::class, 'update'])->whereNumber('supply');
+        Route::delete('/supplies/{supply}', [SupplyApiController::class, 'destroy'])->whereNumber('supply');
+        Route::patch('/supplies/{supply}/status', [SupplyApiController::class, 'updateStatus'])->whereNumber('supply');
+        Route::post('/supplies/{supply}/send', [SupplyApiController::class, 'send'])->whereNumber('supply');
+        Route::get('/supplies/{supply}/comments', [SupplyApiController::class, 'comments'])->whereNumber('supply');
+        Route::post('/supplies/{supply}/comments', [SupplyApiController::class, 'storeComment'])->whereNumber('supply')->middleware('throttle:60,1');
+        Route::post('/supplies/{supply}/percentage-proposals', [SupplyApiController::class, 'sendProposal'])->whereNumber('supply');
+        Route::post('/supplies/{supply}/percentage-proposals/accept', [SupplyApiController::class, 'acceptProposal'])->whereNumber('supply');
+        Route::post('/supplies/{supply}/percentage-proposals/reject', [SupplyApiController::class, 'rejectProposal'])->whereNumber('supply');
+        Route::post('/supplies/{supply}/percentage-proposals/counter', [SupplyApiController::class, 'counterProposal'])->whereNumber('supply');
+        Route::post('/supplies/{supply}/items', [SupplyItemApiController::class, 'store'])->whereNumber('supply');
+        Route::match(['put', 'patch'], '/supply-items/{item}', [SupplyItemApiController::class, 'updateTop'])->whereNumber('item');
+        Route::delete('/supply-items/{item}', [SupplyItemApiController::class, 'destroyTop'])->whereNumber('item');
+
+        // Legacy supplier-orders aliases (compat)
         Route::get('/supplier-orders', [DesignerDataController::class, 'supplierOrders']);
-        Route::get('/suppliers', [DesignerDataController::class, 'suppliers']);
-        Route::get('/templates', [DesignerCrudController::class, 'listTemplates']);
-
-        Route::get('/clients/{id}', [DesignerDataController::class, 'client'])->whereNumber('id');
-        Route::get('/objects/{id}', [DesignerDataController::class, 'object'])->whereNumber('id');
-        Route::get('/projects/{id}', [DesignerDataController::class, 'project'])->whereNumber('id');
         Route::get('/supplier-orders/{id}', [DesignerDataController::class, 'supplierOrder'])->whereNumber('id');
-        Route::get('/suppliers/{id}', [DesignerDataController::class, 'supplier'])->whereNumber('id');
+        Route::post('/supplier-orders/{supply}/offer/send', [SupplyApiController::class, 'sendProposal'])->whereNumber('supply');
+        Route::post('/supplier-orders/{supply}/offer/accept', [SupplyApiController::class, 'acceptProposal'])->whereNumber('supply');
+        Route::post('/supplier-orders/{supply}/offer/reject', [SupplyApiController::class, 'rejectProposal'])->whereNumber('supply');
+        Route::post('/supplier-orders/{supply}/offer/counter', [SupplyApiController::class, 'counterProposal'])->whereNumber('supply');
 
-        // —— Write (create / update / delete) ——
-        Route::post('/clients', [DesignerCrudController::class, 'storeClient']);
-        Route::match(['put', 'patch'], '/clients/{id}', [DesignerCrudController::class, 'updateClient'])->whereNumber('id');
-        Route::delete('/clients/{id}', [DesignerCrudController::class, 'destroyClient'])->whereNumber('id');
+        // Suppliers
+        Route::get('/suppliers', [DesignerSupplierApiController::class, 'index']);
+        Route::post('/suppliers', [DesignerSupplierApiController::class, 'store']);
+        Route::get('/suppliers/{supplier}', [DesignerSupplierApiController::class, 'show'])->whereNumber('supplier');
+        Route::match(['put', 'patch'], '/suppliers/{supplier}', [DesignerSupplierApiController::class, 'update'])->whereNumber('supplier');
+        Route::delete('/suppliers/{supplier}', [DesignerSupplierApiController::class, 'destroy'])->whereNumber('supplier');
+        Route::get('/suppliers/{supplier}/products', [DesignerSupplierApiController::class, 'products'])->whereNumber('supplier');
+        Route::post('/suppliers/{supplier}/favorite', [DesignerSupplierApiController::class, 'toggleFavorite'])->whereNumber('supplier');
+        Route::delete('/suppliers/{supplier}/favorite', [DesignerSupplierApiController::class, 'toggleFavorite'])->whereNumber('supplier');
 
+        // Team
+        Route::get('/team', [TeamApiController::class, 'show']);
+        Route::get('/team/members', [TeamApiController::class, 'members']);
+        Route::post('/team/invitations', [TeamApiController::class, 'invite'])->middleware('throttle:20,1');
+        Route::get('/team/invitations', [TeamApiController::class, 'invitations']);
+        Route::post('/team/members/create-account', [TeamApiController::class, 'createAccount'])->middleware('throttle:10,1');
+        Route::patch('/team/members/{member}/role', [TeamApiController::class, 'changeRole'])->whereNumber('member');
+        Route::delete('/team/members/{member}', [TeamApiController::class, 'removeMember'])->whereNumber('member');
+        Route::post('/team/invitations/{invitation}/resend', [TeamApiController::class, 'resendInvitation'])->whereNumber('invitation')->middleware('throttle:20,1');
+        Route::delete('/team/invitations/{invitation}', [TeamApiController::class, 'cancelInvitation'])->whereNumber('invitation');
+        Route::get('/team/assignees', [TeamApiController::class, 'assignees']);
+
+        // Deprecated passport objects + old templates (compat)
+        Route::get('/objects', [DesignerDataController::class, 'objects']);
+        Route::get('/objects/{id}', [DesignerDataController::class, 'object'])->whereNumber('id');
         Route::post('/objects', [DesignerCrudController::class, 'storeObject']);
         Route::match(['put', 'patch'], '/objects/{id}', [DesignerCrudController::class, 'updateObject'])->whereNumber('id');
         Route::delete('/objects/{id}', [DesignerCrudController::class, 'destroyObject'])->whereNumber('id');
-
-        Route::post('/projects', [DesignerCrudController::class, 'storeProject']);
-        Route::match(['put', 'patch'], '/projects/{id}', [DesignerCrudController::class, 'updateProject'])->whereNumber('id');
-        Route::delete('/projects/{id}', [DesignerCrudController::class, 'destroyProject'])->whereNumber('id');
-
-        Route::post('/templates', [DesignerCrudController::class, 'storeTemplate']);
-        Route::delete('/templates/{id}', [DesignerCrudController::class, 'destroyTemplate'])->whereNumber('id');
-
-        Route::post('/supplier-orders', [DesignerCrudController::class, 'storeSupplierOrder']);
-        Route::match(['put', 'patch'], '/supplier-orders/{id}', [DesignerCrudController::class, 'updateSupplierOrder'])->whereNumber('id');
-        Route::delete('/supplier-orders/{id}', [DesignerCrudController::class, 'destroySupplierOrder'])->whereNumber('id');
-
-        // —— Offer negotiation (designer) ——
-        Route::post('/supplier-orders/{id}/offer/send', [DesignerCrudController::class, 'sendOffer'])->whereNumber('id');
-        Route::post('/supplier-orders/{id}/offer/accept', [DesignerCrudController::class, 'acceptOffer'])->whereNumber('id');
-        Route::post('/supplier-orders/{id}/offer/reject', [DesignerCrudController::class, 'rejectOffer'])->whereNumber('id');
-        Route::post('/supplier-orders/{id}/offer/counter', [DesignerCrudController::class, 'counterOffer'])->whereNumber('id');
-
-        Route::post('/suppliers', [DesignerCrudController::class, 'storeSupplier']);
-        Route::match(['put', 'patch'], '/suppliers/{id}', [DesignerCrudController::class, 'updateSupplier'])->whereNumber('id');
-        Route::delete('/suppliers/{id}', [DesignerCrudController::class, 'destroySupplier'])->whereNumber('id');
+        Route::get('/templates', [ChecklistTemplateApiController::class, 'index']);
+        Route::post('/templates', [ChecklistTemplateApiController::class, 'store']);
+        Route::delete('/templates/{id}', [ChecklistTemplateApiController::class, 'destroy'])->whereNumber('id');
     });
 
-    // Данные поставщика — только при оплаченном гарантийном депозите
+    // Кабинет поставщика — не расширять
     Route::middleware('deposit.paid')->group(function () {
         Route::get('/supplier/orders', [SupplierApiController::class, 'orders']);
         Route::get('/supplier/orders/{id}', [SupplierApiController::class, 'order'])->whereNumber('id');

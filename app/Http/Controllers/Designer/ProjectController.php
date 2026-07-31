@@ -18,7 +18,9 @@ use App\Models\Supplier_orders;
 use App\Models\Template;
 use App\Models\User;
 use App\Services\Crm\ActivityFeedService;
+use App\Services\Crm\ChecklistService;
 use App\Services\Crm\PipelineService;
+use App\Services\Crm\ProjectService;
 use App\Support\AccountPermissions;
 use App\Support\PublicFileStorage;
 use App\Support\WorkspaceAccess;
@@ -35,6 +37,8 @@ class ProjectController extends Controller
     public function __construct(
         private PipelineService $pipelines,
         private ActivityFeedService $activity,
+        private ChecklistService $checklists,
+        private ProjectService $projects,
     ) {}
 
     public function index(Request $request)
@@ -172,7 +176,7 @@ class ProjectController extends Controller
         $project->user_id = $userId;
         WorkspaceAccess::attachTeamOnCreate($user, $project);
 
-        $this->fillAndSave($request, $project);
+        $this->projects->fillAndSave($request, $project);
 
         $project->moderation_status = 'approved';
         $project->moderation_reason = null;
@@ -203,7 +207,7 @@ class ProjectController extends Controller
         $project = WorkspaceAccess::scopeProjects(Project::query(), $user)
             ->findOrFail($projectId);
 
-        $this->fillAndSave($request, $project);
+        $this->projects->fillAndSave($request, $project);
         $this->activity->record(
             $userId,
             'project',
@@ -229,13 +233,7 @@ class ProjectController extends Controller
             ->with('stages.steps')
             ->findOrFail($projectId);
 
-        foreach (($project->files ?? []) as $filePath) {
-            if (is_string($filePath) && $filePath !== '') {
-                Storage::disk('public')->delete($filePath);
-            }
-        }
-
-        $project->delete();
+        $this->projects->destroy($project);
 
         if (! ($request->expectsJson() || $request->wantsJson())) {
             return redirect()->route('projects.index')->with('status', __('projects.deleted'));
@@ -360,12 +358,7 @@ class ProjectController extends Controller
             'steps.*' => ['required', 'string', 'max:1000'],
         ]);
 
-        $template = Template::create([
-            'user_id' => $request->user()->id,
-            'name' => trim($data['name']),
-            'type' => $data['type'],
-            'steps' => array_values(array_filter(array_map(fn ($v) => trim((string) $v), $data['steps']))),
-        ]);
+        $template = $this->checklists->createTemplate((int) $request->user()->id, $data);
 
         return response()->json([
             'success' => true,

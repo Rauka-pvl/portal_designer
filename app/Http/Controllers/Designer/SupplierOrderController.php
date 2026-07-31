@@ -9,6 +9,7 @@ use App\Models\Supplier_orders;
 use App\Models\UserNotification;
 use App\Support\OrderOfferNotifier;
 use App\Support\PublicFileStorage;
+use App\Services\Crm\SupplyService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -210,18 +211,7 @@ class SupplierOrderController extends Controller
             ->where('user_id', $request->user()->id)
             ->findOrFail($orderId);
 
-        if (! $order->isInFunnel()) {
-            abort(422, __('supplier-orders.offer_not_accepted_yet'));
-        }
-
-        $order->status = $data['status'];
-        $order->save();
-
-        if ($data['status'] === 'delivery_completed') {
-            $order->load('supplier:id,user_id,name', 'designer:id,name');
-            \App\Models\Review::requestReviewsForCompletedOrder($order);
-            \App\Support\CashbackAccrual::forCompletedOrder($order);
-        }
+        $order = app(SupplyService::class)->updateStatus($order, $data['status']);
 
         return response()->json([
             'success' => true,
@@ -385,6 +375,7 @@ class SupplierOrderController extends Controller
         }
 
         $order->project_id = $projectId;
+        $order->client_id = Project::query()->whereKey($projectId)->value('client_id');
         if (array_key_exists('included_step_ids', $data) || ! $order->exists) {
             $order->included_step_ids = $stepIds;
         }
