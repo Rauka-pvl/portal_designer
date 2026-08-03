@@ -5,6 +5,9 @@ namespace App\Support;
 use App\Models\Supplier;
 use App\Models\SupplierProduct;
 use App\Models\User;
+use chillerlan\QRCode\Common\EccLevel;
+use chillerlan\QRCode\Output\QRGdImagePNG;
+use chillerlan\QRCode\Output\QRMarkupSVG;
 use chillerlan\QRCode\QRCode;
 use chillerlan\QRCode\QROptions;
 use Illuminate\Support\Facades\Log;
@@ -138,14 +141,16 @@ class ProductQr
 
     public static function svg(string $url, int $scale = 10): string
     {
+        self::assertQrLibraryInstalled();
+
         $options = new QROptions([
-            'outputType' => QRCode::OUTPUT_MARKUP_SVG,
-            'eccLevel' => QRCode::ECC_M,
+            'outputInterface' => QRMarkupSVG::class,
+            'eccLevel' => EccLevel::M,
             'scale' => max(4, $scale),
             'addQuietzone' => true,
             'quietzoneSize' => 2,
             'svgAddXmlHeader' => true,
-            'imageBase64' => false,
+            'outputBase64' => false,
         ]);
 
         return (new QRCode($options))->render($url);
@@ -156,20 +161,31 @@ class ProductQr
      */
     public static function png(string $url, int $scale = 20): string
     {
+        self::assertQrLibraryInstalled();
+
         if (! extension_loaded('gd')) {
             throw new RuntimeException('GD extension is required for PNG QR export');
         }
 
         $options = new QROptions([
-            'outputType' => QRCode::OUTPUT_IMAGE_PNG,
-            'eccLevel' => QRCode::ECC_M,
+            'outputInterface' => QRGdImagePNG::class,
+            'eccLevel' => EccLevel::M,
             'scale' => max(8, $scale),
             'addQuietzone' => true,
             'quietzoneSize' => 2,
-            'imageBase64' => false,
+            'outputBase64' => false,
         ]);
 
         return (new QRCode($options))->render($url);
+    }
+
+    private static function assertQrLibraryInstalled(): void
+    {
+        if (! class_exists(QROptions::class) || ! class_exists(QRCode::class)) {
+            throw new RuntimeException(
+                'QR library missing. Run: composer require chillerlan/php-qrcode && composer dump-autoload'
+            );
+        }
     }
 
     public static function pngAvailable(): bool

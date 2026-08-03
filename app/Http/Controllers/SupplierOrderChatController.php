@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Supplier;
 use App\Models\Supplier_orders;
 use App\Models\SupplierOrderMessage;
+use App\Support\WorkspaceAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -150,9 +151,15 @@ class SupplierOrderChatController extends Controller
         $userId = (int) $user->id;
 
         if ($role === 'designer') {
-            return Supplier_orders::query()
-                ->where('user_id', $userId)
+            $order = Supplier_orders::query()
+                ->with('project')
                 ->findOrFail($orderId);
+            $project = $order->project;
+            if (! $project || ! WorkspaceAccess::canAccessProject($user, $project)) {
+                abort(404);
+            }
+
+            return $order;
         }
 
         if ($role === 'supplier') {
@@ -180,7 +187,9 @@ class SupplierOrderChatController extends Controller
 
         if ($role === 'designer') {
             return Supplier_orders::query()
-                ->where('user_id', $userId)
+                ->whereHas('project', function ($q) use ($user) {
+                    WorkspaceAccess::scopeProjects($q, $user);
+                })
                 ->pluck('id')
                 ->map(fn ($id) => (int) $id)
                 ->all();

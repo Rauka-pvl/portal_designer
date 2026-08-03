@@ -619,8 +619,11 @@
                 if (count > 0) {
                     el.textContent = String(count);
                     el.classList.remove('hidden');
+                    el.classList.add('inline-flex');
                 } else {
+                    el.textContent = '';
                     el.classList.add('hidden');
+                    el.classList.remove('inline-flex');
                 }
             });
         } catch (_) {}

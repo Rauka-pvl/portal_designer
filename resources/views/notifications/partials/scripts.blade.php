@@ -13,24 +13,25 @@
         if (typeof projectAlert === 'function') projectAlert(type, message, '', 2600);
     }
 
+    function setUnreadBadge(el, count) {
+        if (!el) return;
+        if (count > 0) {
+            el.textContent = String(count);
+            el.classList.remove('hidden');
+            el.classList.add('inline-flex');
+        } else {
+            el.textContent = '';
+            el.classList.add('hidden');
+            el.classList.remove('inline-flex');
+        }
+    }
+
     function updateSidebarCount(count) {
         app.dataset.unreadTotal = String(count);
         document.querySelectorAll('[data-unread-notifications]').forEach((el) => {
-            if (count > 0) {
-                el.textContent = String(count);
-                el.classList.remove('hidden');
-            } else {
-                el.classList.add('hidden');
-            }
+            setUnreadBadge(el, count);
         });
-        if (unreadTabCount) {
-            if (count > 0) {
-                unreadTabCount.textContent = String(count);
-                unreadTabCount.classList.remove('hidden');
-            } else {
-                unreadTabCount.classList.add('hidden');
-            }
-        }
+        setUnreadBadge(unreadTabCount, count);
         if (readAllBtn) {
             readAllBtn.classList.toggle('hidden', count <= 0);
         }

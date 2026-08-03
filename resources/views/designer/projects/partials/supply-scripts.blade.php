@@ -275,6 +275,74 @@
     pointer-events: none;
     user-select: none;
 }
+.crm-supply-chat-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 10px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    border: 1px solid var(--crm-surface, #fff);
+}
+.crm-supply-chat-badge.is-hidden { display: none; }
+.crm-board-card-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.4rem;
+    gap: 0.25rem;
+}
+.crm-supply-chat-panel {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: min(28rem, 100%);
+    background: var(--crm-surface, #fff);
+    border-left: 1px solid color-mix(in srgb, var(--crm-border) 40%, transparent);
+    box-shadow: -8px 0 24px rgba(0,0,0,.12);
+    display: flex;
+    flex-direction: column;
+    z-index: 2;
+}
+.crm-supply-chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+.crm-supply-chat-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    padding: 0.85rem 1rem;
+    border-top: 1px solid color-mix(in srgb, var(--crm-border) 40%, transparent);
+}
+.crm-supply-chat-bubble-mine {
+    background: color-mix(in srgb, var(--crm-accent, #f59e0b) 18%, transparent);
+    color: var(--crm-text, #0f172a);
+}
+.crm-supply-chat-bubble-other {
+    background: color-mix(in srgb, var(--crm-border) 35%, transparent);
+    color: var(--crm-text, #0f172a);
+}
+#supply-chat-root.crm-modal-root {
+    align-items: stretch;
+    justify-content: flex-end;
+    padding: 0;
+}
+#supply-chat-root .crm-modal-header {
+    border-radius: 0;
+}
 @media (max-width: 1024px) {
     .crm-supply-list .crm-table th:nth-child(6),
     .crm-supply-list .crm-table td:nth-child(6) {
@@ -335,6 +403,10 @@
         offerReject: (id) => @json(url('/supplier-orders')) + '/' + id + '/offer/reject',
         offerCounter: (id) => @json(url('/supplier-orders')) + '/' + id + '/offer/counter',
         productsJson: (supplierId) => @json(url('/suppliers')) + '/' + supplierId + '/products.json',
+        chatBase: @json(url('/supplier-orders')),
+        chatUnreadMap: @json(route('supplier-orders.chat.unread_map')),
+        chatMessages: (id) => @json(url('/supplier-orders')) + '/' + id + '/chat/messages',
+        chatRead: (id) => @json(url('/supplier-orders')) + '/' + id + '/chat/read',
     };
 
     const i18n = {
@@ -435,6 +507,10 @@
             products: @json(__('projects.supply_products')),
             hint: @json(__('projects.supply_terms')),
         },
+        chatOpen: @json(__('supplier-orders.chat_open')),
+        chatEmpty: @json(__('supplier-orders.chat_empty')),
+        chatLoading: @json(__('supplier-orders.chat_loading')),
+        chatYou: @json(__('supplier-orders.chat_you')),
     };
 
     const toast = typeof bridge.toast === 'function'
@@ -502,9 +578,44 @@
         supplyRoot: () => document.getElementById('supply-modal-root'),
         catalogRoot: () => document.getElementById('supply-catalog-root'),
         detailRoot: () => document.getElementById('supply-detail-root'),
+        chatRoot: () => document.getElementById('supply-chat-root'),
         unsavedRoot: () => document.getElementById('supply-unsaved-modal'),
         form: () => document.getElementById('supply-form'),
     };
+
+    function unreadBadgeHtml(count) {
+        const n = Math.max(0, parseInt(count || 0, 10));
+        if (n < 1) return '';
+        return `<span class="crm-supply-chat-badge">${n > 99 ? '99+' : n}</span>`;
+    }
+
+    function setOrderUnreadCount(orderId, count) {
+        const project = getCurrentProject();
+        const order = (project?.supplier_orders || []).find((o) => Number(o.id) === Number(orderId));
+        if (order) order.unread_chat_count = Math.max(0, parseInt(count || 0, 10));
+        const badge = document.getElementById('supply-detail-chat-badge');
+        if (badge && Number(state.detailOrderId) === Number(orderId)) {
+            const n = Math.max(0, parseInt(count || 0, 10));
+            badge.textContent = n > 99 ? '99+' : String(n);
+            badge.classList.toggle('is-hidden', n < 1);
+        }
+    }
+
+    async function refreshSupplyChatUnreadMap() {
+        const project = getCurrentProject();
+        if (!project?.supplier_orders?.length) return;
+        try {
+            const res = await fetch(routes.chatUnreadMap, { headers: { Accept: 'application/json' } });
+            const data = await res.json();
+            if (!res.ok || !data.success) return;
+            const map = data.unread || {};
+            project.supplier_orders.forEach((o) => {
+                o.unread_chat_count = parseInt(map[o.id] || 0, 10);
+            });
+            if (state.detailOrderId) setOrderUnreadCount(state.detailOrderId, map[state.detailOrderId] || 0);
+            renderSupplies(project);
+        } catch (_) {}
+    }
 
     function statusLabel(key) {
         return i18n.statusLabels[key] || key || i18n.notSpecified;
@@ -635,7 +746,12 @@
                 <div>${escapeHtml(i18n.amount)}: <strong>${escapeHtml(money(order.summa ?? order.amount))}</strong></div>
                 <div>${escapeHtml(i18n.bonusLabel)}: <strong>${escapeHtml(bonus)}</strong></div>
             </div>
-            ${hint ? `<div class="crm-supply-card-hint">${escapeHtml(hint)}</div>` : ''}`;
+            ${hint ? `<div class="crm-supply-card-hint">${escapeHtml(hint)}</div>` : ''}
+            <div class="crm-board-card-actions">
+                <button type="button" class="crm-btn crm-btn-ghost crm-btn-sm relative" data-open-chat="${order.id}" title="${escapeHtml(i18n.chatOpen)}">
+                    ${escapeHtml(i18n.chatOpen)}${unreadBadgeHtml(order.unread_chat_count)}
+                </button>
+            </div>`;
 
         if (order.is_in_funnel) {
             el.addEventListener('dragstart', (e) => {
@@ -646,6 +762,10 @@
             el.addEventListener('dragend', () => el.classList.remove('is-dragging'));
         }
 
+        el.querySelector('[data-open-chat]')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openSupplyChat(order.id);
+        });
         el.addEventListener('click', () => openDetail(order.id));
         return el;
     }
@@ -758,7 +878,12 @@
                 <td class="hidden md:table-cell" data-label="${escapeHtml(i18n.listHeaders.planned)}">${escapeHtml(formatDate(o.date_planned))}</td>
                 <td class="hidden md:table-cell" data-label="${escapeHtml(i18n.listHeaders.products)}">${productsCount(o)}</td>
                 <td class="hidden lg:table-cell text-[var(--crm-accent)] text-xs" data-label="${escapeHtml(i18n.listHeaders.hint)}">${escapeHtml(hint)}</td>
-                <td data-label=""><button type="button" class="crm-btn crm-btn-ghost crm-btn-sm" data-open-supply="${o.id}">${escapeHtml(i18n.openLabel)}</button></td>
+                <td data-label="">
+                    <div class="flex flex-wrap gap-1 justify-end">
+                        <button type="button" class="crm-btn crm-btn-ghost crm-btn-sm relative" data-open-chat="${o.id}">${escapeHtml(i18n.chatOpen)}${unreadBadgeHtml(o.unread_chat_count)}</button>
+                        <button type="button" class="crm-btn crm-btn-ghost crm-btn-sm" data-open-supply="${o.id}">${escapeHtml(i18n.openLabel)}</button>
+                    </div>
+                </td>
             </tr>`;
         }).join('')}</tbody></table>`;
 
@@ -772,6 +897,12 @@
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 openDetail(Number(btn.dataset.openSupply));
+            });
+        });
+        wrap.querySelectorAll('[data-open-chat]').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openSupplyChat(Number(btn.dataset.openChat));
             });
         });
     }
@@ -1567,10 +1698,85 @@
 
             document.getElementById('supply-detail-title').textContent = `#${order.id} · ${order.supplier_name || ''}`;
             document.getElementById('supply-detail-meta').textContent = `${statusLabel(effectiveStatus(order))} · ${money(order.summa ?? order.amount)}`;
+            setOrderUnreadCount(order.id, local?.unread_chat_count ?? order.unread_chat_count ?? 0);
             renderDetailBody(order);
         } catch (e) {
             document.getElementById('supply-detail-body').innerHTML = `<div class="crm-empty-inline">${escapeHtml(e.message || i18n.error)}</div>`;
         }
+    }
+
+    function closeSupplyChat() {
+        const root = els.chatRoot();
+        root?.classList.remove('open');
+        root?.setAttribute('aria-hidden', 'true');
+        document.getElementById('supply-chat-order-id').value = '';
+        if (
+            !els.supplyRoot()?.classList.contains('open')
+            && !els.catalogRoot()?.classList.contains('open')
+            && !els.detailRoot()?.classList.contains('open')
+        ) {
+            document.body.style.overflow = '';
+        }
+    }
+
+    function renderSupplyChatMessages(items) {
+        const wrap = document.getElementById('supply-chat-messages');
+        if (!wrap) return;
+        if (!Array.isArray(items) || items.length === 0) {
+            wrap.innerHTML = `<p class="text-sm text-[var(--crm-muted)]">${escapeHtml(i18n.chatEmpty)}</p>`;
+            return;
+        }
+        wrap.innerHTML = items.map((m) => {
+            const mine = !!m.is_mine;
+            const align = mine ? 'justify-end' : 'justify-start';
+            const bubble = mine ? 'crm-supply-chat-bubble-mine' : 'crm-supply-chat-bubble-other';
+            const sender = mine ? i18n.chatYou : (m.sender_name || '—');
+            const ts = m.created_at ? new Date(m.created_at).toLocaleString(locale) : '';
+            return `<div class="flex ${align}">
+                <div class="max-w-[80%] rounded-xl px-3 py-2 ${bubble}">
+                    <div class="text-xs opacity-80 mb-1">${escapeHtml(sender)}</div>
+                    <div class="text-sm whitespace-pre-wrap break-words">${escapeHtml(m.message || '')}</div>
+                    <div class="text-[10px] opacity-70 mt-1">${escapeHtml(ts)}</div>
+                </div>
+            </div>`;
+        }).join('');
+        wrap.scrollTop = wrap.scrollHeight;
+    }
+
+    async function refreshSupplyChatMessages() {
+        const orderId = parseInt(document.getElementById('supply-chat-order-id')?.value || '0', 10);
+        if (!orderId) return;
+        const wrap = document.getElementById('supply-chat-messages');
+        if (wrap) wrap.innerHTML = `<p class="text-sm text-[var(--crm-muted)]">${escapeHtml(i18n.chatLoading)}</p>`;
+        try {
+            const res = await fetch(routes.chatMessages(orderId), { headers: { Accept: 'application/json' } });
+            const data = await res.json();
+            if (!res.ok || !data.success) throw new Error('chat_load_failed');
+            renderSupplyChatMessages(data.messages || []);
+            await fetch(routes.chatRead(orderId), {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrf, Accept: 'application/json' },
+            });
+            setOrderUnreadCount(orderId, 0);
+            await refreshSupplyChatUnreadMap();
+        } catch (_) {
+            if (wrap) wrap.innerHTML = `<p class="text-sm text-red-500">${escapeHtml(i18n.error)}</p>`;
+        }
+    }
+
+    async function openSupplyChat(orderId) {
+        const project = getCurrentProject();
+        const order = (project?.supplier_orders || []).find((o) => Number(o.id) === Number(orderId));
+        document.getElementById('supply-chat-order-id').value = String(orderId);
+        document.getElementById('supply-chat-subtitle').textContent = order
+            ? `#${order.id} · ${order.supplier_name || '—'}`
+            : `#${orderId}`;
+        document.getElementById('supply-chat-input').value = '';
+        const root = els.chatRoot();
+        root?.classList.add('open');
+        root?.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        await refreshSupplyChatMessages();
     }
 
     function onProjectOpened(project) {
@@ -1582,8 +1788,10 @@
             else addBtn.classList.add('pointer-events-none', 'opacity-50');
         }
         setSupplyView(state.view, { persist: false, rerender: false });
-        if (project) renderSupplies(project);
-        else {
+        if (project) {
+            renderSupplies(project);
+            refreshSupplyChatUnreadMap();
+        } else {
             els.kanban() && (els.kanban().innerHTML = '');
             els.list() && (els.list().innerHTML = '');
             if (els.count()) els.count().textContent = '0';
@@ -1591,7 +1799,7 @@
     }
 
     function portalModals() {
-        ['supply-modal-root', 'supply-catalog-root', 'supply-detail-root', 'supply-unsaved-modal'].forEach((id) => {
+        ['supply-modal-root', 'supply-catalog-root', 'supply-detail-root', 'supply-chat-root', 'supply-unsaved-modal'].forEach((id) => {
             const el = document.getElementById(id);
             if (el && el.parentElement !== document.body) document.body.appendChild(el);
         });
@@ -1690,6 +1898,37 @@
         document.getElementById('supply-detail-edit')?.addEventListener('click', () => {
             if (state.detailOrderId) openSupplyEdit(state.detailOrderId);
         });
+        document.getElementById('supply-detail-chat')?.addEventListener('click', () => {
+            if (state.detailOrderId) openSupplyChat(state.detailOrderId);
+        });
+
+        document.getElementById('supply-chat-close')?.addEventListener('click', closeSupplyChat);
+        els.chatRoot()?.querySelector('[data-supply-chat-close]')?.addEventListener('click', closeSupplyChat);
+        document.getElementById('supply-chat-refresh')?.addEventListener('click', () => refreshSupplyChatMessages());
+        document.getElementById('supply-chat-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const orderId = parseInt(document.getElementById('supply-chat-order-id')?.value || '0', 10);
+            const input = document.getElementById('supply-chat-input');
+            const message = (input?.value || '').trim();
+            if (!orderId || !message) return;
+            try {
+                const res = await fetch(routes.chatMessages(orderId), {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrf,
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message }),
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success) throw new Error('chat_send_failed');
+                input.value = '';
+                await refreshSupplyChatMessages();
+            } catch (_) {
+                toast(i18n.error, 'error');
+            }
+        });
     }
 
     portalModals();
@@ -1702,6 +1941,7 @@
         renderSupplies,
         openCreate: openSupplyCreate,
         openDetail,
+        openChat: openSupplyChat,
         onProjectOpened,
         setView: setSupplyView,
     };

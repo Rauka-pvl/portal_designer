@@ -35,7 +35,7 @@ class CommunityController extends Controller
             ->where('status', CommunityPost::STATUS_PUBLISHED)
             ->count();
 
-        $savedCount = CommunityPostSave::query()->where('user_id', $user->id)->count();
+        $savedCount = $this->savedPostsCount((int) $user->id);
 
         $posts = $this->feedQuery($request, $tab)
             ->paginate((int) config('community.posts_per_page', 10))
@@ -162,7 +162,7 @@ class CommunityController extends Controller
             ->where('status', CommunityPost::STATUS_PUBLISHED)
             ->count();
 
-        $savedCount = CommunityPostSave::query()->where('user_id', $user->id)->count();
+        $savedCount = $this->savedPostsCount((int) $user->id);
 
         $posts = $this->feedQuery($request, $tab)
             ->paginate((int) config('community.posts_per_page', 10))
@@ -246,6 +246,40 @@ class CommunityController extends Controller
                 ->map(fn (CommunityPost $p) => $this->serializePost($p, (int) $user->id))
                 ->values(),
             'limits' => $this->communityLimits(),
+        ]);
+    }
+
+    public function apiComments(Request $request, int $postId): JsonResponse
+    {
+        $user = $request->user();
+        $post = CommunityPost::query()
+            ->published()
+            ->whereKey($postId)
+            ->first();
+
+        if (! $post) {
+            return response()->json([
+                'success' => false,
+                'message' => __('community.not_found_title'),
+            ], 404);
+        }
+
+        $comments = CommunityPostComment::query()
+            ->with([
+                'author:id,name,role,city',
+                'replies' => fn ($q) => $q->with('author:id,name,role,city')->orderBy('id'),
+            ])
+            ->where('community_post_id', $post->id)
+            ->whereNull('parent_id')
+            ->orderBy('id')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'comments' => $comments
+                ->map(fn (CommunityPostComment $comment) => $this->serializeComment($comment, (int) $user->id))
+                ->values(),
+            'comments_count' => (int) $post->comments_count,
         ]);
     }
 
@@ -398,16 +432,28 @@ class CommunityController extends Controller
     public function destroy(Request $request, int $postId): JsonResponse
     {
         $user = $request->user();
-        $post = CommunityPost::query()->whereKey($postId)->firstOrFail();
+        $post = CommunityPost::query()->with('media')->whereKey($postId)->firstOrFail();
 
         if ((int) $post->user_id !== (int) $user->id && ($user->role ?? '') !== 'moderator') {
             return $this->error(__('community.errors.forbidden'), 403);
         }
 
-        $post->delete();
+        DB::transaction(function () use ($post) {
+            foreach ($post->media as $media) {
+                if (is_string($media->file_path) && $media->file_path !== '') {
+                    Storage::disk('public')->delete($media->file_path);
+                }
+            }
+            // Soft-delete does not cascade FKs — clear viewer state so saved/liked lists stay correct.
+            CommunityPostSave::query()->where('community_post_id', $post->id)->delete();
+            CommunityPostLike::query()->where('community_post_id', $post->id)->delete();
+            CommunityPostHide::query()->where('community_post_id', $post->id)->delete();
+            $post->delete();
+        });
 
         return response()->json([
             'ok' => true,
+            'success' => true,
             'message' => __('community.toasts.deleted'),
         ]);
     }
@@ -419,37 +465,63 @@ class CommunityController extends Controller
             return $this->error(__('community.errors.rate_limited'), 429);
         }
 
-        $post = CommunityPost::query()->published()->whereKey($postId)->firstOrFail();
-
-        $liked = false;
-        DB::transaction(function () use ($post, $user, &$liked) {
-            $existing = CommunityPostLike::query()
-                ->where('community_post_id', $post->id)
-                ->where('user_id', $user->id)
-                ->first();
-
-            if ($existing) {
-                $existing->delete();
-                $post->decrement('likes_count');
-                $liked = false;
-            } else {
-                CommunityPostLike::query()->create([
-                    'community_post_id' => $post->id,
-                    'user_id' => $user->id,
-                ]);
-                $post->increment('likes_count');
-                $liked = true;
-            }
-        });
-
-        $post->refresh();
-        if ($liked) {
-            CommunityNotifier::liked($post, $user);
+        $wantLiked = $request->has('liked') ? $request->boolean('liked') : null;
+        if ($request->isMethod('DELETE')) {
+            $wantLiked = false;
         }
+
+        $existing = CommunityPostLike::query()
+            ->where('community_post_id', $postId)
+            ->where('user_id', $user->id)
+            ->first();
+        $currentlyLiked = $existing !== null;
+        $shouldLike = $wantLiked === null ? ! $currentlyLiked : $wantLiked;
+
+        if ($shouldLike === $currentlyLiked) {
+            $post = CommunityPost::query()->withTrashed()->whereKey($postId)->first();
+
+            return response()->json([
+                'ok' => true,
+                'success' => true,
+                'is_liked' => $currentlyLiked,
+                'likes_count' => (int) ($post?->likes_count ?? 0),
+            ]);
+        }
+
+        if (! $shouldLike) {
+            $existing?->delete();
+            $post = CommunityPost::query()->withTrashed()->whereKey($postId)->first();
+            if (
+                $post
+                && ! $post->trashed()
+                && (string) $post->status === CommunityPost::STATUS_PUBLISHED
+                && (int) $post->likes_count > 0
+            ) {
+                $post->decrement('likes_count');
+                $post->refresh();
+            }
+
+            return response()->json([
+                'ok' => true,
+                'success' => true,
+                'is_liked' => false,
+                'likes_count' => (int) ($post?->likes_count ?? 0),
+            ]);
+        }
+
+        $post = CommunityPost::query()->published()->whereKey($postId)->firstOrFail();
+        CommunityPostLike::query()->create([
+            'community_post_id' => $post->id,
+            'user_id' => $user->id,
+        ]);
+        $post->increment('likes_count');
+        $post->refresh();
+        CommunityNotifier::liked($post, $user);
 
         return response()->json([
             'ok' => true,
-            'is_liked' => $liked,
+            'success' => true,
+            'is_liked' => true,
             'likes_count' => (int) $post->likes_count,
         ]);
     }
@@ -457,36 +529,69 @@ class CommunityController extends Controller
     public function toggleSave(Request $request, int $postId): JsonResponse
     {
         $user = $request->user();
-        $post = CommunityPost::query()->published()->whereKey($postId)->firstOrFail();
+        $wantSaved = $request->has('saved') ? $request->boolean('saved') : null;
+        // DELETE /save always means unsave (mobile clients often use DELETE).
+        if ($request->isMethod('DELETE')) {
+            $wantSaved = false;
+        }
 
-        $saved = false;
-        DB::transaction(function () use ($post, $user, &$saved) {
-            $existing = CommunityPostSave::query()
-                ->where('community_post_id', $post->id)
-                ->where('user_id', $user->id)
-                ->first();
+        $existing = CommunityPostSave::query()
+            ->where('community_post_id', $postId)
+            ->where('user_id', $user->id)
+            ->first();
 
-            if ($existing) {
-                $existing->delete();
+        $currentlySaved = $existing !== null;
+        $shouldSave = $wantSaved === null ? ! $currentlySaved : $wantSaved;
+
+        if ($shouldSave === $currentlySaved) {
+            $post = CommunityPost::query()->withTrashed()->whereKey($postId)->first();
+
+            return response()->json([
+                'ok' => true,
+                'success' => true,
+                'is_saved' => $currentlySaved,
+                'saves_count' => (int) ($post?->saves_count ?? 0),
+                'message' => $currentlySaved ? __('community.toasts.saved') : __('community.toasts.unsaved'),
+            ]);
+        }
+
+        if (! $shouldSave) {
+            // Allow unsave even when post is soft-deleted / unpublished.
+            $existing?->delete();
+            $post = CommunityPost::query()->withTrashed()->whereKey($postId)->first();
+            if (
+                $post
+                && ! $post->trashed()
+                && (string) $post->status === CommunityPost::STATUS_PUBLISHED
+                && (int) $post->saves_count > 0
+            ) {
                 $post->decrement('saves_count');
-                $saved = false;
-            } else {
-                CommunityPostSave::query()->create([
-                    'community_post_id' => $post->id,
-                    'user_id' => $user->id,
-                ]);
-                $post->increment('saves_count');
-                $saved = true;
+                $post->refresh();
             }
-        });
 
+            return response()->json([
+                'ok' => true,
+                'success' => true,
+                'is_saved' => false,
+                'saves_count' => (int) ($post?->saves_count ?? 0),
+                'message' => __('community.toasts.unsaved'),
+            ]);
+        }
+
+        $post = CommunityPost::query()->published()->whereKey($postId)->firstOrFail();
+        CommunityPostSave::query()->create([
+            'community_post_id' => $post->id,
+            'user_id' => $user->id,
+        ]);
+        $post->increment('saves_count');
         $post->refresh();
 
         return response()->json([
             'ok' => true,
-            'is_saved' => $saved,
+            'success' => true,
+            'is_saved' => true,
             'saves_count' => (int) $post->saves_count,
-            'message' => $saved ? __('community.toasts.saved') : __('community.toasts.unsaved'),
+            'message' => __('community.toasts.saved'),
         ]);
     }
 
@@ -499,6 +604,13 @@ class CommunityController extends Controller
 
         $post = CommunityPost::query()->published()->whereKey($postId)->firstOrFail();
         $max = (int) config('community.max_comment_length', 1000);
+
+        if (! $request->filled('text') && $request->filled('body')) {
+            $request->merge(['text' => $request->input('body')]);
+        }
+        if (! $request->filled('text') && $request->filled('message')) {
+            $request->merge(['text' => $request->input('message')]);
+        }
 
         $data = $request->validate([
             'text' => ['required', 'string', 'max:'.$max],
@@ -669,9 +781,7 @@ class CommunityController extends Controller
                 ->where('status', CommunityPost::STATUS_PUBLISHED);
         } elseif ($tab === 'saved') {
             $query->published()
-                ->whereIn('id', CommunityPostSave::query()
-                    ->where('user_id', $user->id)
-                    ->select('community_post_id'));
+                ->whereHas('saves', fn ($q) => $q->where('user_id', $user->id));
         } else {
             $query->published();
             if (! empty($hidden)) {
@@ -998,5 +1108,13 @@ class CommunityController extends Controller
     private function isApiRequest(Request $request): bool
     {
         return $request->is('api/*');
+    }
+
+    private function savedPostsCount(int $userId): int
+    {
+        return (int) CommunityPostSave::query()
+            ->where('user_id', $userId)
+            ->whereHas('post', fn ($q) => $q->published())
+            ->count();
     }
 }

@@ -259,6 +259,16 @@
             const data = await res.json();
             if (!res.ok || !data.ok) throw new Error(data.message || i18n.save_error);
             card.dataset.saved = data.is_saved ? '1' : '0';
+            if (label) label.textContent = data.is_saved ? (i18n.saved_label || 'Saved') : (i18n.save_label || 'Save');
+            if (menuLabel) menuLabel.textContent = data.is_saved ? (i18n.menu_unsave || 'Unsave') : (i18n.menu_save || 'Save');
+            btn.classList.toggle('text-[#f59e0b]', !!data.is_saved);
+            btn.classList.toggle('!text-[#f59e0b]', !!data.is_saved);
+            btn.setAttribute('aria-pressed', data.is_saved ? 'true' : 'false');
+            if (svg) svg.setAttribute('fill', data.is_saved ? 'currentColor' : 'none');
+            // On Saved tab, remove card after unsave so UI matches API state.
+            if (!data.is_saved && (new URLSearchParams(location.search).get('tab') === 'saved')) {
+                card.remove();
+            }
             if (data.message) alertToast('success', data.message);
         } catch (e) {
             card.dataset.saved = was ? '1' : '0';
@@ -266,6 +276,7 @@
             btn.setAttribute('aria-pressed', was ? 'true' : 'false');
             if (svg) svg.setAttribute('fill', was ? 'currentColor' : 'none');
             if (label) label.textContent = was ? (i18n.saved_label || 'Saved') : (i18n.save_label || 'Save');
+            if (menuLabel) menuLabel.textContent = was ? (i18n.menu_unsave || 'Unsave') : (i18n.menu_save || 'Save');
             alertToast('error', e.message || i18n.save_error);
         }
     }

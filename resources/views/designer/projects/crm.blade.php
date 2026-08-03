@@ -208,7 +208,8 @@
         </div>
 
         <div class="crm-modal-footer" id="ov-project-footer">
-            <button type="button" id="ov-save" class="crm-btn crm-btn-primary">{{ __('projects.save') }}</button>
+            <button type="button" id="ov-delete" class="crm-btn crm-btn-secondary hidden" style="color:var(--crm-danger)">{{ __('projects.delete') }}</button>
+            <button type="button" id="ov-save" class="crm-btn crm-btn-primary ml-auto">{{ __('projects.save') }}</button>
             <button type="button" id="ov-cancel" class="crm-btn crm-btn-secondary">{{ __('projects.cancel') }}</button>
         </div>
     </div>
@@ -241,6 +242,7 @@
     const routes = {
         store: @json(route('projects.store')),
         update: (id) => @json(url('/projects')) + '/' + id,
+        destroy: (id) => @json(url('/projects')) + '/' + id,
         status: (id) => @json(url('/projects')) + '/' + id + '/status',
         show: (id) => @json(url('/projects')) + '/' + id,
         activity: (id) => @json(url('/projects')) + '/' + id + '/activity',
@@ -273,6 +275,10 @@
         checklistsDone: @json(__('projects.checklists_done_tooltip')),
         currency: @json(__('projects.currency_symbol')),
         open: @json(__('projects.open_project')),
+        delete: @json(__('projects.delete')),
+        deleteConfirm: @json(__('projects.delete_confirm')),
+        deleted: @json(__('projects.deleted')),
+        deleteError: @json(__('projects.delete_error_generic')),
     };
     const locale = document.getElementById('crm-workspace')?.dataset.locale || 'ru-RU';
     const VIEW_KEY = 'crm.projects.view';
@@ -527,7 +533,10 @@
                     </div>
                 </td>
                 <td data-label="">
-                    <button type="button" class="crm-btn crm-btn-ghost crm-btn-sm" data-open="${p.id}">${escapeHtml(i18n.open)}</button>
+                    <div class="flex flex-wrap gap-1 justify-end">
+                        <button type="button" class="crm-btn crm-btn-ghost crm-btn-sm" data-open="${p.id}">${escapeHtml(i18n.open)}</button>
+                        <button type="button" class="crm-btn crm-btn-ghost crm-btn-sm" data-delete="${p.id}" style="color:var(--crm-danger)">${escapeHtml(i18n.delete)}</button>
+                    </div>
                 </td>
             </tr>`;
         }).join('') || `<tr><td colspan="8" class="px-3 py-6 text-center text-[var(--crm-muted)]">${escapeHtml(i18n.noProjectsYet)}</td></tr>`;
@@ -541,6 +550,12 @@
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 openProject(Number(btn.dataset.open));
+            });
+        });
+        listBody.querySelectorAll('[data-delete]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteProject(Number(btn.dataset.delete));
             });
         });
         document.querySelectorAll('.crm-table th[data-sort]').forEach(th => {
@@ -695,6 +710,10 @@
         state.currentId = null;
     }
 
+    function setDeleteVisible(visible) {
+        document.getElementById('ov-delete')?.classList.toggle('hidden', !visible);
+    }
+
     function openCreate(opts = {}) {
         state.currentId = null;
         state.dirty = false;
@@ -710,6 +729,7 @@
         document.getElementById('ov-feed').innerHTML = `<div class="crm-empty-inline">${@json(__('projects.feed_empty'))}</div>`;
         window.CrmSupplies?.onProjectOpened?.(null);
         window.CrmChecklists?.onProjectOpened?.(null);
+        setDeleteVisible(false);
         switchTab('general');
         openModal();
     }
@@ -732,10 +752,34 @@
         window.CrmSupplies?.onProjectOpened?.(p);
         window.CrmChecklists?.onProjectOpened?.(p);
         loadFeed(id);
+        setDeleteVisible(true);
         switchTab(opts.tab || 'general');
         openModal();
         if (opts.createSupply) {
             setTimeout(() => window.CrmSupplies?.openCreate?.(), 50);
+        }
+    }
+
+    async function deleteProject(id) {
+        const projectId = Number(id || state.currentId);
+        if (!projectId) return;
+        if (!window.confirm(i18n.deleteConfirm)) return;
+        try {
+            const res = await fetch(routes.destroy(projectId), {
+                method: 'DELETE',
+                headers: { 'X-CSRF-TOKEN': csrf, Accept: 'application/json' },
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.success) {
+                throw new Error(data.message || i18n.deleteError);
+            }
+            state.projects = state.projects.filter((p) => Number(p.id) !== projectId);
+            state.dirty = false;
+            closeModal(true);
+            render();
+            toast(data.message || i18n.deleted, 'success');
+        } catch (e) {
+            toast(e.message || i18n.deleteError, 'error');
         }
     }
 
@@ -920,6 +964,7 @@
         closeModal(true);
     });
     document.getElementById('ov-save').addEventListener('click', saveProject);
+    document.getElementById('ov-delete')?.addEventListener('click', () => deleteProject(state.currentId));
     document.getElementById('unsaved-continue').addEventListener('click', () => { unsaved.classList.remove('open'); });
     document.getElementById('unsaved-leave').addEventListener('click', () => closeModal(true));
     document.querySelectorAll('.crm-modal-tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));

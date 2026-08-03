@@ -25,6 +25,12 @@ class CommunityApiController extends Controller
         return $this->forward($request, fn () => app(CommunityController::class)->apiShow($request, $id));
     }
 
+    /** GET /api/community/posts/{id}/comments */
+    public function comments(Request $request, int $id): Response
+    {
+        return $this->forward($request, fn () => app(CommunityController::class)->apiComments($request, $id));
+    }
+
     /** GET /api/community/users/{id} */
     public function profile(Request $request, int $id): Response
     {

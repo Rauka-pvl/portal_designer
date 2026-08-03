@@ -27,6 +27,8 @@ use App\Support\WorkspaceAccess;
 use App\Services\Team\AssignmentNotifier;
 use App\Services\Team\TeamService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
@@ -764,28 +766,34 @@ class ProjectController extends Controller
                 })()
                 : ['total' => 0, 'done' => 0, 'percent' => 0],
             'supplier_orders' => $project->relationLoaded('supplierOrders')
-                ? $project->supplierOrders->map(function (Supplier_orders $o) {
-                    $items = is_array($o->product_items) ? $o->product_items : [];
-                    $offer = $o->offerPayload('designer');
+                ? (function () use ($project) {
+                    $orderIds = $project->supplierOrders->pluck('id')->map(fn ($id) => (int) $id)->all();
+                    $unreadMap = $this->chatUnreadMapForDesigner((int) auth()->id(), $orderIds);
 
-                    return array_merge([
-                        'id' => $o->id,
-                        'status' => $o->status,
-                        'workflow_status' => (bool) $o->is_sent_to_supplier ? (string) $o->status : 'draft',
-                        'summa' => (int) ($o->summa ?? 0),
-                        'amount' => (int) ($o->summa ?? 0),
-                        'supplier_id' => $o->supplier_id,
-                        'supplier_name' => $o->supplier?->name,
-                        'bonus_percent' => $o->bonus_percent !== null ? (float) $o->bonus_percent : null,
-                        'products_count' => count($items),
-                        'date_planned' => $o->date_planned
-                            ? \Illuminate\Support\Carbon::parse($o->date_planned)->toDateString()
-                            : null,
-                        'created_date' => optional($o->created_at)->format('Y-m-d'),
-                        'is_sent_to_supplier' => (bool) $o->is_sent_to_supplier,
-                        'product_items' => $items,
-                    ], $offer);
-                })->values()
+                    return $project->supplierOrders->map(function (Supplier_orders $o) use ($unreadMap) {
+                        $items = is_array($o->product_items) ? $o->product_items : [];
+                        $offer = $o->offerPayload('designer');
+
+                        return array_merge([
+                            'id' => $o->id,
+                            'status' => $o->status,
+                            'workflow_status' => (bool) $o->is_sent_to_supplier ? (string) $o->status : 'draft',
+                            'summa' => (int) ($o->summa ?? 0),
+                            'amount' => (int) ($o->summa ?? 0),
+                            'supplier_id' => $o->supplier_id,
+                            'supplier_name' => $o->supplier?->name,
+                            'bonus_percent' => $o->bonus_percent !== null ? (float) $o->bonus_percent : null,
+                            'products_count' => count($items),
+                            'date_planned' => $o->date_planned
+                                ? \Illuminate\Support\Carbon::parse($o->date_planned)->toDateString()
+                                : null,
+                            'created_date' => optional($o->created_at)->format('Y-m-d'),
+                            'is_sent_to_supplier' => (bool) $o->is_sent_to_supplier,
+                            'product_items' => $items,
+                            'unread_chat_count' => max(0, (int) ($unreadMap[(int) $o->id] ?? 0)),
+                        ], $offer);
+                    })->values();
+                })()
                 : [],
             'stages' => $project->stages->map(function (ProjectStages $stage) {
                 $type = (string) $stage->stage_type;
@@ -871,5 +879,36 @@ class ProjectController extends Controller
                 'is_system' => $s->is_system,
             ])->values(),
         ];
+    }
+
+    /**
+     * @param  list<int>  $orderIds
+     * @return array<int, int>
+     */
+    private function chatUnreadMapForDesigner(int $designerUserId, array $orderIds): array
+    {
+        if (
+            $orderIds === []
+            || $designerUserId < 1
+            || ! Schema::hasTable('supplier_order_messages')
+            || ! Schema::hasColumn('supplier_order_messages', 'read_by_designer_at')
+        ) {
+            return [];
+        }
+
+        $rows = DB::table('supplier_order_messages as m')
+            ->whereIn('m.supplier_order_id', $orderIds)
+            ->where('m.sender_user_id', '!=', $designerUserId)
+            ->whereNull('m.read_by_designer_at')
+            ->select('m.supplier_order_id', DB::raw('COUNT(*) as unread_count'))
+            ->groupBy('m.supplier_order_id')
+            ->get();
+
+        $map = [];
+        foreach ($rows as $row) {
+            $map[(int) $row->supplier_order_id] = (int) $row->unread_count;
+        }
+
+        return $map;
     }
 }

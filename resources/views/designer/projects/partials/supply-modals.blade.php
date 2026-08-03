@@ -189,9 +189,39 @@
         </div>
         <div class="crm-modal-main" id="supply-detail-body" style="flex:1;overflow:auto;padding:0.85rem 1rem"></div>
         <div class="crm-modal-footer">
+            <button type="button" id="supply-detail-chat" class="crm-btn crm-btn-secondary relative">
+                {{ __('supplier-orders.chat_open') }}
+                <span id="supply-detail-chat-badge" class="crm-supply-chat-badge is-hidden">0</span>
+            </button>
             <button type="button" id="supply-detail-edit" class="crm-btn crm-btn-secondary">{{ __('supplier-orders.edit_action') }}</button>
             <button type="button" id="supply-detail-close-2" class="crm-btn crm-btn-ghost ml-auto">{{ __('projects.close') }}</button>
         </div>
+    </div>
+</div>
+
+{{-- Supply chat with supplier --}}
+<div id="supply-chat-root" class="crm-modal-root" aria-hidden="true" style="z-index:95">
+    <div class="crm-modal-backdrop" data-supply-chat-close></div>
+    <div class="crm-supply-chat-panel" role="dialog" aria-modal="true" aria-labelledby="supply-chat-title">
+        <div class="crm-modal-header">
+            <div class="crm-modal-header-row">
+                <div class="min-w-0">
+                    <h2 id="supply-chat-title" class="text-base font-semibold truncate">{{ __('supplier-orders.chat_title') }}</h2>
+                    <p id="supply-chat-subtitle" class="text-xs text-[var(--crm-muted)] truncate mt-0.5"></p>
+                </div>
+                <button type="button" id="supply-chat-close" class="crm-btn crm-btn-ghost" aria-label="{{ __('projects.close') }}">✕</button>
+            </div>
+            <div class="flex items-center justify-between gap-2 mt-2">
+                <p class="text-xs text-[var(--crm-muted)]">{{ __('supplier-orders.chat_hint_manual_refresh') }}</p>
+                <button type="button" id="supply-chat-refresh" class="crm-btn crm-btn-ghost crm-btn-sm">{{ __('supplier-orders.chat_refresh') }}</button>
+            </div>
+        </div>
+        <div id="supply-chat-messages" class="crm-supply-chat-messages"></div>
+        <form id="supply-chat-form" class="crm-supply-chat-form">
+            <input type="hidden" id="supply-chat-order-id" value="">
+            <textarea id="supply-chat-input" rows="2" maxlength="5000" class="crm-input flex-1" placeholder="{{ __('supplier-orders.chat_placeholder') }}"></textarea>
+            <button type="submit" class="crm-btn crm-btn-primary">{{ __('supplier-orders.chat_send') }}</button>
+        </form>
     </div>
 </div>
 

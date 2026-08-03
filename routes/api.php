@@ -76,20 +76,31 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Чат и сообщество
     Route::middleware(['subscription.active', 'deposit.paid'])->group(function () {
+        // Supplier order chat (designer + supplier)
         Route::get('/supplier-orders/chat/unread-map', [ChatApiController::class, 'unreadMap']);
         Route::get('/chat/unread-count', [ChatApiController::class, 'unreadCount']);
         Route::get('/supplier-orders/{id}/chat/messages', [ChatApiController::class, 'messages'])->whereNumber('id');
         Route::post('/supplier-orders/{id}/chat/messages', [ChatApiController::class, 'store'])->whereNumber('id');
         Route::post('/supplier-orders/{id}/chat/read', [ChatApiController::class, 'markRead'])->whereNumber('id');
+        // Supplies aliases (same chat endpoints)
+        Route::get('/supplies/{id}/chat/messages', [ChatApiController::class, 'messages'])->whereNumber('id');
+        Route::post('/supplies/{id}/chat/messages', [ChatApiController::class, 'store'])->whereNumber('id');
+        Route::post('/supplies/{id}/chat/read', [ChatApiController::class, 'markRead'])->whereNumber('id');
 
+        // Community (parity with website)
         Route::get('/community', [CommunityApiController::class, 'index']);
         Route::get('/community/posts/{id}', [CommunityApiController::class, 'show'])->whereNumber('id');
+        Route::get('/community/posts/{id}/comments', [CommunityApiController::class, 'comments'])->whereNumber('id');
         Route::get('/community/users/{id}', [CommunityApiController::class, 'profile'])->whereNumber('id');
         Route::post('/community/posts', [CommunityApiController::class, 'store']);
+        // POST update alias for multipart (images) — same as website
+        Route::post('/community/posts/{id}', [CommunityApiController::class, 'update'])->whereNumber('id');
         Route::match(['put', 'patch'], '/community/posts/{id}', [CommunityApiController::class, 'update'])->whereNumber('id');
         Route::delete('/community/posts/{id}', [CommunityApiController::class, 'destroy'])->whereNumber('id');
         Route::post('/community/posts/{id}/like', [CommunityApiController::class, 'toggleLike'])->whereNumber('id');
+        Route::delete('/community/posts/{id}/like', [CommunityApiController::class, 'toggleLike'])->whereNumber('id');
         Route::post('/community/posts/{id}/save', [CommunityApiController::class, 'toggleSave'])->whereNumber('id');
+        Route::delete('/community/posts/{id}/save', [CommunityApiController::class, 'toggleSave'])->whereNumber('id');
         Route::post('/community/posts/{id}/comments', [CommunityApiController::class, 'storeComment'])->whereNumber('id');
         Route::match(['put', 'patch'], '/community/comments/{id}', [CommunityApiController::class, 'updateComment'])->whereNumber('id');
         Route::delete('/community/comments/{id}', [CommunityApiController::class, 'destroyComment'])->whereNumber('id');

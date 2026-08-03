@@ -121,8 +121,8 @@
                             <span>{{ __('notifications.title') }}</span>
                         </span>
                         <span data-unread-notifications
-                            class="{{ $unreadNotifications > 0 ? '' : 'hidden' }} inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs bg-[#f59e0b] text-white">
-                            {{ $unreadNotifications }}
+                            class="{{ $unreadNotifications > 0 ? 'inline-flex' : 'hidden' }} items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs bg-[#f59e0b] text-white">
+                            {{ $unreadNotifications > 0 ? $unreadNotifications : '' }}
                         </span>
                     </a>
                 @endif

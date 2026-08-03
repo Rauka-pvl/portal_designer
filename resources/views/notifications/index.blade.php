@@ -79,8 +79,8 @@
                    class="px-3 py-2 text-sm border-b-2 -mb-px inline-flex items-center gap-1.5 {{ $filter === 'unread' ? 'border-[#f59e0b] text-[#f59e0b]' : 'border-transparent text-[#64748b] dark:text-[#A1A09A]' }}">
                     {{ __('notifications.filter_unread') }}
                     <span id="notifications-unread-tab-count"
-                          class="{{ $unreadTotal > 0 ? '' : 'hidden' }} inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-semibold bg-[#f59e0b]/15 text-[#f59e0b]">
-                        {{ $unreadTotal }}
+                          class="{{ $unreadTotal > 0 ? 'inline-flex' : 'hidden' }} items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-semibold bg-[#f59e0b]/15 text-[#f59e0b]">
+                        {{ $unreadTotal > 0 ? $unreadTotal : '' }}
                     </span>
                 </a>
             </div>
