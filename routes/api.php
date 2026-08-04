@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\ClientApiController;
 use App\Http\Controllers\Api\ClientStageApiController;
 use App\Http\Controllers\Api\CommunityApiController;
 use App\Http\Controllers\Api\DashboardApiController;
+use App\Http\Controllers\Api\DeviceApiController;
 use App\Http\Controllers\Api\DesignerCrudController;
 use App\Http\Controllers\Api\DesignerDataController;
 use App\Http\Controllers\Api\DesignerSupplierApiController;
@@ -49,6 +50,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::match(['put', 'patch'], '/me/profile', [ProfileController::class, 'update']);
     Route::post('/me/password', [ProfileController::class, 'updatePassword']);
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // Push devices (Expo) — без активной подписки
+    Route::post('/devices', [DeviceApiController::class, 'store'])->middleware('throttle:60,1');
+    Route::delete('/devices', [DeviceApiController::class, 'destroy'])->middleware('throttle:60,1');
+    Route::post('/push-tokens', [DeviceApiController::class, 'store'])->middleware('throttle:60,1');
+    Route::delete('/push-tokens', [DeviceApiController::class, 'destroy'])->middleware('throttle:60,1');
 
     // Уведомления — без активной подписки
     Route::get('/notifications', [NotificationController::class, 'index']);

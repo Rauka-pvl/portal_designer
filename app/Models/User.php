@@ -81,6 +81,11 @@ class User extends Authenticatable
         return $this->hasMany(UserNotification::class)->latest();
     }
 
+    public function devices(): HasMany
+    {
+        return $this->hasMany(Device::class);
+    }
+
     public function supplierProfile(): HasOne
     {
         return $this->hasOne(Supplier::class, 'user_id');
