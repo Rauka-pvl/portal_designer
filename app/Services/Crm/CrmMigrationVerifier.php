@@ -23,7 +23,7 @@ class CrmMigrationVerifier
     {
         $checks = [];
 
-        $designerCount = User::query()->where('role', 'designer')->count();
+        $designerCount = User::query()->where('account_type', 'designer')->count();
         $projectPipelines = Pipeline::query()->where('type', 'project')->count();
         $supplyPipelines = Pipeline::query()->where('type', 'supply')->count();
 

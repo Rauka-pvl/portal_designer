@@ -17,11 +17,10 @@ class ApiAccountEndpointsTest extends TestCase
     private function designer(): User
     {
         return User::factory()->create([
-            'role' => 'designer',
+            'account_type' => 'designer',
             'name' => 'Designer API',
             'email' => 'designer-api@example.com',
             'password' => Hash::make('OldPassword1!'),
-            'subscription_trial_ends_at' => now()->addDays(7),
         ]);
     }
 
@@ -119,8 +118,7 @@ class ApiAccountEndpointsTest extends TestCase
     {
         $owner = $this->designer();
         $other = User::factory()->create([
-            'role' => 'designer',
-            'subscription_trial_ends_at' => now()->addDays(7),
+            'account_type' => 'designer',
         ]);
         $n = UserNotification::query()->create([
             'user_id' => $owner->id,

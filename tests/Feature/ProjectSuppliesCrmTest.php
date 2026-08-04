@@ -20,7 +20,7 @@ class ProjectSuppliesCrmTest extends TestCase
     private function designer(): User
     {
         return User::factory()->create([
-            'role' => 'designer',
+            'account_type' => 'designer',
             'subscription_trial_ends_at' => now()->addDays(14),
         ]);
     }

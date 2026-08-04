@@ -19,7 +19,7 @@ class MobileApiRedesignTest extends TestCase
     private function designer(): User
     {
         return User::factory()->create([
-            'role' => 'designer',
+            'account_type' => 'designer',
             'subscription_trial_ends_at' => now()->addDays(7),
         ]);
     }
@@ -27,7 +27,7 @@ class MobileApiRedesignTest extends TestCase
     public function test_auth_login_format_unchanged(): void
     {
         $user = User::factory()->create([
-            'role' => 'designer',
+            'account_type' => 'designer',
             'email' => 'mobile-login@example.com',
             'password' => bcrypt('Password1!'),
             'subscription_trial_ends_at' => now()->addDays(7),

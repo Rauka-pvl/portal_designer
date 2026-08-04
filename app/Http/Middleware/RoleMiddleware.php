@@ -14,18 +14,33 @@ class RoleMiddleware
      */
     public function handle(Request $request, Closure $next, string ...$roleSegments): Response
     {
+        $wantsJson = $request->expectsJson() || $request->is('api/*');
+
         if (! $request->user()) {
+            if ($wantsJson) {
+                abort(401, 'Unauthenticated.');
+            }
+
             return redirect()->route('login');
         }
 
         $allowed = $this->normalizeAllowedRoles($roleSegments);
-        $userRole = $request->user()->role ?? 'designer';
+        $userRole = (string) ($request->user()->role ?? 'designer');
+        $aliases = array_values(array_unique(array_filter([
+            $userRole,
+            $userRole === 'system_admin' ? 'admin' : null,
+            $userRole === 'admin' ? 'system_admin' : null,
+        ])));
 
-        if (in_array($userRole, $allowed, true)) {
+        if (array_intersect($aliases, $allowed) !== []) {
             return $next($request);
         }
 
-        if ($userRole === 'moderator') {
+        if ($wantsJson) {
+            abort(403, 'Forbidden.');
+        }
+
+        if (in_array($userRole, ['moderator', 'admin', 'system_admin'], true)) {
             return redirect()->route('moderator.index');
         }
 
@@ -36,6 +51,7 @@ class RoleMiddleware
         if ($userRole === 'supplier') {
             return redirect()->route(\App\Support\SupplierDeposit::redirectRoute($request->user()));
         }
+
         abort(403, 'У вас нет доступа');
     }
 

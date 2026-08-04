@@ -30,6 +30,8 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'account_type' => 'designer',
+            'account_status' => 'active',
         ];
     }
 
@@ -40,6 +42,36 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
+        ]);
+    }
+
+    /**
+     * Set account type to designer.
+     */
+    public function designer(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'account_type' => 'designer',
+        ]);
+    }
+
+    /**
+     * Set account type to supplier.
+     */
+    public function supplier(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'account_type' => 'supplier',
+        ]);
+    }
+
+    /**
+     * Set account type to system admin.
+     */
+    public function systemAdmin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'account_type' => 'system_admin',
         ]);
     }
 }

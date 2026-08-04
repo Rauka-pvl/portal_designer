@@ -21,10 +21,20 @@ class ProjectChecklistsCrmTest extends TestCase
 
     private function designer(): User
     {
-        return User::factory()->create([
-            'role' => 'designer',
-            'subscription_trial_ends_at' => now()->addDays(14),
+        $user = User::factory()->create([
+            'account_type' => 'designer',
         ]);
+
+        \App\Models\Subscription::create([
+            'user_id' => $user->id,
+            'plan_id' => \App\Models\SubscriptionPlan::personal()?->id,
+            'status' => 'trial',
+            'starts_at' => now(),
+            'trial_ends_at' => now()->addDays(14),
+            'expires_at' => now()->addDays(14),
+        ]);
+
+        return $user->fresh();
     }
 
     private function seedProject(User $user): Project

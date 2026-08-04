@@ -71,12 +71,13 @@ class AuthController extends Controller
 
         $isSupplier = $data['portal'] === 'supplier';
 
-        $user = User::create([
+        $user = new User;
+        $user->forceFill([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'role' => $isSupplier ? 'supplier' : 'designer',
-        ]);
+        ])->save();
 
         if ($isSupplier) {
             Supplier::query()->firstOrCreate(

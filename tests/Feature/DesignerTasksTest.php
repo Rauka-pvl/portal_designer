@@ -26,7 +26,7 @@ class DesignerTasksTest extends TestCase
     private function designer(array $attrs = []): User
     {
         return User::factory()->create(array_merge([
-            'role' => 'designer',
+            'account_type' => 'designer',
             'subscription_trial_ends_at' => now()->addDays(14),
             'subscription_plan' => DesignerSubscription::PLAN_PRO,
         ], $attrs));

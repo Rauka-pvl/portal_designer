@@ -31,7 +31,7 @@ class SupplierDeposit
 
     public static function isDemo(): bool
     {
-        return (bool) config('supplier_deposit.demo', true);
+        return (bool) config('supplier_deposit.demo', false);
     }
 
     public static function formatMoney(int $amount): string

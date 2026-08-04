@@ -16,10 +16,20 @@ class CommunityApiTest extends TestCase
 
     private function designer(): User
     {
-        return User::factory()->create([
-            'role' => 'designer',
-            'subscription_trial_ends_at' => now()->addDays(7),
+        $user = User::factory()->create([
+            'account_type' => 'designer',
         ]);
+
+        \App\Models\Subscription::create([
+            'user_id' => $user->id,
+            'plan_id' => \App\Models\SubscriptionPlan::personal()?->id,
+            'status' => 'trial',
+            'starts_at' => now(),
+            'trial_ends_at' => now()->addDays(14),
+            'expires_at' => now()->addDays(14),
+        ]);
+
+        return $user;
     }
 
     private function publishedPost(User $author, array $extra = []): CommunityPost

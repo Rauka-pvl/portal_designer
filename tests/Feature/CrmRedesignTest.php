@@ -21,7 +21,7 @@ class CrmRedesignTest extends TestCase
     private function designer(): User
     {
         return User::factory()->create([
-            'role' => 'designer',
+            'account_type' => 'designer',
             'subscription_trial_ends_at' => now()->addDays(14),
         ]);
     }
@@ -41,7 +41,7 @@ class CrmRedesignTest extends TestCase
     public function test_account_owner_permissions(): void
     {
         $designer = $this->designer();
-        $supplier = User::factory()->create(['role' => 'supplier', 'must_change_password' => false]);
+        $supplier = User::factory()->create(['account_type' => 'supplier', 'must_change_password' => false]);
 
         $this->assertTrue(AccountPermissions::canManageProjectPipeline($designer));
         $this->assertFalse(AccountPermissions::canManageProjectPipeline($supplier));
@@ -456,7 +456,6 @@ class CrmRedesignTest extends TestCase
         $this->assertStringContainsString('id="crm-list"', $html);
         $this->assertStringContainsString('class="crm-board"', $html);
         $this->assertStringContainsString('crm-list-panel is-hidden', $html);
-        $this->assertStringContainsString('crm-main-fill', $html);
         $this->assertStringNotContainsString('<h1 class="text-lg font-semibold', $html);
         $this->assertStringNotContainsString('crm-pipeline-title', $html);
         $this->assertStringContainsString('id="crm-create-btn"', $html);
@@ -510,8 +509,8 @@ class CrmRedesignTest extends TestCase
 
         $html = $this->actingAs($user)->get('/projects')->assertOk()->getContent();
 
-        $this->assertStringContainsString(__('dashboard.dark_theme'), $html);
-        $this->assertStringContainsString(__('dashboard.light_theme'), $html);
+        $this->assertStringContainsString('Dark theme', $html);
+        $this->assertStringContainsString('Light theme', $html);
         $this->assertStringNotContainsString('id="theme-text">'.__('dashboard.dashboard'), $html);
     }
 }

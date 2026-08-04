@@ -9,6 +9,7 @@ use App\Models\Supplier_orders;
 use App\Models\UserNotification;
 use App\Support\OrderOfferNotifier;
 use App\Support\PublicFileStorage;
+use App\Support\WorkspaceAccess;
 use App\Services\Crm\SupplyService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,42 +30,6 @@ class SupplierOrderController extends Controller
         'delivery_completed',
     ];
 
-    public function index(Request $request)
-    {
-        $userId = (int) $request->user()->id;
-
-        $projects = Project::query()
-            ->where('user_id', $userId)
-            ->orderBy('name')
-            ->get(['id', 'name']);
-
-        $suppliers = $this->availableSuppliers($userId);
-
-        $orders = Supplier_orders::query()
-            ->where('user_id', $userId)
-            ->with(['project:id,name', 'supplier:id,name'])
-            ->orderByDesc('id')
-            ->get();
-
-        $unreadByOrder = $this->chatUnreadMapForDesigner($userId, $orders->pluck('id')->map(fn ($id) => (int) $id)->all());
-
-        $stepsByOrder = Supplier_orders::includedStepsPayloadForMany($orders);
-
-        return view('designer.supplier-orders.index', [
-            'projects' => $projects,
-            'suppliers' => $suppliers,
-            'orders' => $orders->map(fn (Supplier_orders $order) => $this->payload(
-                $order,
-                $stepsByOrder[(int) $order->id] ?? [],
-                $unreadByOrder[(int) $order->id] ?? 0
-            ))->values(),
-            'selectedProjectId' => $request->query('project_id'),
-            'selectedSupplierId' => $request->query('supplier_id'),
-            'categoryOptions' => $this->categoryOptions(),
-            'roomOptions' => $this->roomOptions(),
-        ]);
-    }
-
     public function store(Request $request)
     {
         $userId = (int) $request->user()->id;
@@ -73,10 +38,12 @@ class SupplierOrderController extends Controller
             return response()->json(['success' => false, 'message' => $msg], 422);
         }
 
-        $order = new Supplier_orders;
-        $order->user_id = $userId;
-
-        $this->fillAndSave($request, $order);
+        $order = DB::transaction(function () use ($request, $userId) {
+            $order = new Supplier_orders;
+            $order->user_id = $userId;
+            $this->fillAndSave($request, $order);
+            return $order;
+        });
 
         return response()->json([
             'success' => true,
@@ -181,7 +148,7 @@ class SupplierOrderController extends Controller
         }
 
         $filePath = $files[$fileIndex];
-        if (is_string($filePath) && $filePath !== '') {
+        if (is_string($filePath) && $filePath !== '' && str_starts_with($filePath, 'supplier-orders/')) {
             Storage::disk('public')->delete($filePath);
         }
 
@@ -285,7 +252,16 @@ class SupplierOrderController extends Controller
         }
 
         $data = $request->validate([
-            'project_id' => ['required', Rule::exists('projects', 'id')->where(fn ($q) => $q->where('user_id', $userId))],
+            'project_id' => [
+                'required',
+                'integer',
+                function (string $attribute, mixed $value, \Closure $fail) use ($request) {
+                    $project = Project::query()->whereKey((int) $value)->first();
+                    if (! $project || ! WorkspaceAccess::canAccessProject($request->user(), $project)) {
+                        $fail(__('supplier-orders.project_not_accessible'));
+                    }
+                },
+            ],
             'supplier_id' => ['required', 'integer', Rule::exists('suppliers', 'id')],
             'status' => ['nullable', Rule::in(self::STATUSES)],
             'send_to_supplier' => ['nullable', 'boolean'],
@@ -394,8 +370,17 @@ class SupplierOrderController extends Controller
         $order->date_actual = $data['date_actual'] ?? null;
         $order->prepayment_date = $data['prepayment_date'] ?? null;
         $order->payment_date = $data['payment_date'] ?? null;
-        $order->prepayment_amount = isset($data['prepayment_amount']) ? (int) $data['prepayment_amount'] : null;
-        $order->payment_amount = isset($data['payment_amount']) ? (int) $data['payment_amount'] : null;
+        if (array_key_exists('prepayment_amount', $data)) {
+            $order->prepayment_amount = $data['prepayment_amount'] !== null ? (int) $data['prepayment_amount'] : null;
+        } elseif (! $order->exists) {
+            $order->prepayment_amount = null;
+        }
+
+        if (array_key_exists('payment_amount', $data)) {
+            $order->payment_amount = $data['payment_amount'] !== null ? (int) $data['payment_amount'] : null;
+        } elseif (! $order->exists) {
+            $order->payment_amount = null;
+        }
         $order->files = $newFiles;
         $order->comment = $data['comment'] ?? null;
 

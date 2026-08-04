@@ -17,7 +17,7 @@ class ProductQrTest extends TestCase
     private function makeSupplierWithProduct(array $supplierAttrs = []): array
     {
         $user = User::factory()->create([
-            'role' => 'supplier',
+            'account_type' => 'supplier',
             'must_change_password' => false,
         ]);
 
@@ -87,7 +87,7 @@ class ProductQrTest extends TestCase
         ProductQr::ensureToken($product);
 
         $designer = User::factory()->create([
-            'role' => 'designer',
+            'account_type' => 'designer',
             'subscription_trial_ends_at' => now()->addDays(7),
         ]);
 
@@ -115,7 +115,7 @@ class ProductQrTest extends TestCase
         ProductQr::ensureToken($product);
 
         $other = User::factory()->create([
-            'role' => 'supplier',
+            'account_type' => 'supplier',
             'must_change_password' => false,
         ]);
         Supplier::query()->create([

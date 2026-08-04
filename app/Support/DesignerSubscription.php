@@ -179,18 +179,20 @@ class DesignerSubscription
 
     public static function canUseTrial(User $user): bool
     {
-        return $user->role === 'designer' && ! (bool) $user->subscription_trial_used;
+        return $user->isDesigner() && ! (bool) $user->subscription_trial_used;
     }
 
     /** Personal dates only (owner Corporate billing). */
     public static function hasPersonalAccess(User $user): bool
     {
-        if ($user->role !== 'designer') {
+        if (! $user->isDesigner()) {
             return true;
         }
 
+        $subscription = $user->subscription;
+
         // Corporate seat members inherit plan label from the team; only the owner is billable.
-        if ((string) $user->subscription_plan === self::PLAN_CORPORATE) {
+        if ($subscription?->isCorporate()) {
             $ownsActiveTeam = \App\Models\DesignerTeam::query()
                 ->where('owner_id', $user->id)
                 ->where('status', 'active')
@@ -200,11 +202,11 @@ class DesignerSubscription
             }
         }
 
-        if ($user->subscription_ends_at && $user->subscription_ends_at->isFuture()) {
+        if ($subscription?->expires_at && $subscription->expires_at->isFuture()) {
             return true;
         }
 
-        if ($user->subscription_trial_ends_at && $user->subscription_trial_ends_at->isFuture()) {
+        if ($subscription?->trial_ends_at && $subscription->trial_ends_at->isFuture()) {
             return true;
         }
 
@@ -213,7 +215,7 @@ class DesignerSubscription
 
     public static function hasAccess(User $user): bool
     {
-        if ($user->role !== 'designer') {
+        if (! $user->isDesigner()) {
             return true;
         }
 
@@ -495,6 +497,22 @@ class DesignerSubscription
                 'card_expiry' => $cardExpiry,
             ],
         ]);
+
+        $planModel = \App\Models\SubscriptionPlan::findByKey($planKey);
+        if ($planModel) {
+            \App\Models\Subscription::query()->updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'plan_id' => $planModel->id,
+                    'status' => $useTrial ? 'trial' : 'active',
+                    'starts_at' => $startsAt,
+                    'expires_at' => $useTrial ? null : $endsAt,
+                    'trial_ends_at' => $useTrial ? $endsAt : null,
+                    'cancelled_at' => null,
+                    'cancel_reason' => null,
+                ]
+            );
+        }
 
         $user->subscription_plan = $planKey;
         $user->subscription_payment_method = $paymentMethod === self::METHOD_PROMO

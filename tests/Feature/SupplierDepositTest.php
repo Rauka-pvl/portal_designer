@@ -24,7 +24,7 @@ class SupplierDepositTest extends TestCase
     private function makeSupplierUser(array $supplierAttrs = []): User
     {
         $user = User::factory()->create([
-            'role' => 'supplier',
+            'account_type' => 'supplier',
             'must_change_password' => false,
         ]);
 
@@ -186,7 +186,7 @@ class SupplierDepositTest extends TestCase
     public function test_designer_is_not_forced_into_deposit_flow(): void
     {
         $user = User::factory()->create([
-            'role' => 'designer',
+            'account_type' => 'designer',
             'subscription_trial_ends_at' => now()->addDays(7),
         ]);
 

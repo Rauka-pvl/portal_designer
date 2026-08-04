@@ -59,11 +59,20 @@ class TeamService
             return false;
         }
 
-        if ((string) $owner->subscription_plan !== DesignerSubscription::PLAN_CORPORATE) {
+        $ownerSubscription = $owner->subscription;
+        if (! $ownerSubscription || (string) $ownerSubscription->plan?->key !== DesignerSubscription::PLAN_CORPORATE) {
             return false;
         }
 
-        return DesignerSubscription::hasPersonalAccess($owner);
+        if ($ownerSubscription->expires_at && $ownerSubscription->expires_at->isFuture()) {
+            return true;
+        }
+
+        if ($ownerSubscription->trial_ends_at && $ownerSubscription->trial_ends_at->isFuture()) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -72,6 +81,28 @@ class TeamService
     public function activateCorporateForOwner(User $owner, ?string $teamName = null): DesignerTeam
     {
         return DB::transaction(function () use ($owner, $teamName) {
+            $plan = \App\Models\SubscriptionPlan::findByKey(DesignerSubscription::PLAN_CORPORATE);
+            if ($plan) {
+                $ownerSubscription = $owner->subscription;
+                $isExpired = $ownerSubscription?->expires_at && $ownerSubscription->expires_at->isPast();
+
+                if (! $isExpired) {
+                    \App\Models\Subscription::query()->updateOrCreate(
+                        ['user_id' => $owner->id],
+                        [
+                            'plan_id' => $plan->id,
+                            'status' => 'active',
+                            'starts_at' => now(),
+                            'expires_at' => now()->addMonth(),
+                            'trial_ends_at' => null,
+                            'cancelled_at' => null,
+                            'cancel_reason' => null,
+                        ]
+                    );
+                    $owner->refresh();
+                }
+            }
+
             $existing = DesignerTeam::query()
                 ->where('owner_id', $owner->id)
                 ->where('status', 'active')
@@ -366,7 +397,7 @@ class TeamService
         $email = mb_strtolower((string) $invitation->email);
         $invitee = User::query()
             ->whereRaw('LOWER(email) = ?', [$email])
-            ->where('role', 'designer')
+            ->where('account_type', 'designer')
             ->first();
 
         if (! $invitee) {
@@ -441,6 +472,22 @@ class TeamService
     public function applyCorporatePlanViaTeam(User $user, DesignerTeam $team): void
     {
         $owner = $team->owner;
+        $plan = \App\Models\SubscriptionPlan::findByKey(DesignerSubscription::PLAN_CORPORATE);
+        if ($plan) {
+            \App\Models\Subscription::query()->updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'plan_id' => $plan->id,
+                    'status' => 'active',
+                    'starts_at' => now(),
+                    'expires_at' => $owner?->subscription?->expires_at,
+                    'trial_ends_at' => null,
+                    'cancelled_at' => null,
+                    'cancel_reason' => null,
+                ]
+            );
+        }
+
         $user->forceFill([
             'subscription_plan' => DesignerSubscription::PLAN_CORPORATE,
             'subscription_cancelled_at' => null,
@@ -465,9 +512,14 @@ class TeamService
             return;
         }
 
-        if ((string) $user->subscription_plan !== DesignerSubscription::PLAN_CORPORATE) {
+        $subscription = $user->subscription;
+        if (! $subscription || (string) $subscription->plan?->key !== DesignerSubscription::PLAN_CORPORATE) {
             return;
         }
+
+        \App\Models\Subscription::query()
+            ->where('user_id', $user->id)
+            ->delete();
 
         $user->forceFill([
             'subscription_plan' => null,
@@ -475,12 +527,17 @@ class TeamService
             'subscription_cancelled_at' => null,
             'subscription_cancel_reason' => null,
         ])->save();
+        $user->refresh();
     }
 
     public function changeRole(DesignerTeam $team, User $actor, DesignerTeamMember $member, TeamRole $role): void
     {
         DB::transaction(function () use ($team, $actor, $member, $role) {
             $this->assertCanManageMembers($actor, $team);
+
+            if ((int) $member->team_id !== (int) $team->id) {
+                throw ValidationException::withMessages(['member' => [__('team.member_not_found')]]);
+            }
 
             $currentRole = $member->role instanceof TeamRole
                 ? $member->role

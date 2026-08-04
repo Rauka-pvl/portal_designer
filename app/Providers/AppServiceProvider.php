@@ -2,12 +2,19 @@
 
 namespace App\Providers;
 
+use App\Models\Client;
+use App\Models\Project;
+use App\Models\Supplier_orders;
+use App\Policies\ClientPolicy;
+use App\Policies\ProjectPolicy;
+use App\Policies\SupplierOrderPolicy;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -27,6 +34,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::policy(Project::class, ProjectPolicy::class);
+        Gate::policy(Supplier_orders::class, SupplierOrderPolicy::class);
+        Gate::policy(Client::class, ClientPolicy::class);
+
         RateLimiter::for('login', function (Request $request) {
             $email = strtolower((string) $request->input('email', ''));
 

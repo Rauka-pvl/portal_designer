@@ -6,7 +6,6 @@ use App\Enums\PipelineType;
 use App\Enums\ProjectStatus;
 use App\Enums\SupplyStatus;
 use App\Http\Controllers\Controller;
-use App\Models\PassportObject;
 use App\Models\Pipeline;
 use App\Models\PipelineStage;
 use App\Models\Project;
@@ -22,14 +21,12 @@ use App\Services\Crm\ChecklistService;
 use App\Services\Crm\PipelineService;
 use App\Services\Crm\ProjectService;
 use App\Support\AccountPermissions;
-use App\Support\PublicFileStorage;
 use App\Support\WorkspaceAccess;
 use App\Services\Team\AssignmentNotifier;
 use App\Services\Team\TeamService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class ProjectController extends Controller
@@ -62,7 +59,7 @@ class ProjectController extends Controller
                 'supplierOrders.supplier:id,name',
             ])
             ->orderByDesc('id')
-            ->get();
+            ->paginate(20);
 
         $clientOwnerIds = [(int) $userId];
         $team = app(TeamService::class)->activeTeamFor($user);
@@ -108,7 +105,13 @@ class ProjectController extends Controller
         $roomOptions = is_array(trans('type_room')) ? trans('type_room') : [];
 
         $payload = [
-            'projectsData' => $projects->map(fn (Project $project) => $this->projectPayload($project))->values(),
+            'projectsData' => $projects->getCollection()->map(fn (Project $project) => $this->projectPayload($project))->values(),
+            'projectsPagination' => [
+                'current_page' => $projects->currentPage(),
+                'last_page' => $projects->lastPage(),
+                'per_page' => $projects->perPage(),
+                'total' => $projects->total(),
+            ],
             'clientsData' => $clients->map(fn ($c) => ['id' => $c->id, 'name' => $c->full_name])->values(),
             'suppliersData' => $suppliers->map(fn (Supplier $s) => [
                 'id' => $s->id,
@@ -174,15 +177,19 @@ class ProjectController extends Controller
         $user = $request->user();
         $userId = (int) $user->id;
 
-        $project = new Project;
-        $project->user_id = $userId;
-        WorkspaceAccess::attachTeamOnCreate($user, $project);
+        $project = DB::transaction(function () use ($request, $user, $userId) {
+            $project = new Project;
+            $project->user_id = $userId;
+            WorkspaceAccess::attachTeamOnCreate($user, $project);
 
-        $this->projects->fillAndSave($request, $project);
+            $this->projects->fillAndSave($request, $project);
 
-        $project->moderation_status = 'approved';
-        $project->moderation_reason = null;
-        $project->save();
+            $project->moderation_status = 'approved';
+            $project->moderation_reason = null;
+            $project->save();
+
+            return $project;
+        });
 
         $this->activity->record(
             $userId,
@@ -209,7 +216,8 @@ class ProjectController extends Controller
         $project = WorkspaceAccess::scopeProjects(Project::query(), $user)
             ->findOrFail($projectId);
 
-        $this->projects->fillAndSave($request, $project);
+        DB::transaction(fn () => $this->projects->fillAndSave($request, $project));
+
         $this->activity->record(
             $userId,
             'project',
@@ -262,7 +270,7 @@ class ProjectController extends Controller
         }
 
         $filePath = $files[$fileIndex];
-        if (is_string($filePath) && $filePath !== '') {
+        if (is_string($filePath) && $filePath !== '' && str_starts_with($filePath, 'projects/')) {
             Storage::disk('public')->delete($filePath);
         }
 
@@ -384,272 +392,6 @@ class ProjectController extends Controller
         ]);
     }
 
-    /**
-     * @deprecated Object selection removed from UI; kept for legacy API payloads.
-     */
-    private function passportObjectModerationError(Request $request, int $userId): ?string
-    {
-        return null;
-    }
-
-    private function fillAndSave(\App\Http\Requests\Designer\ProjectSaveRequest $request, Project $project): void
-    {
-        $userId = (int) $request->user()->id;
-        $data = $request->validated();
-
-        $links = $this->normalizeLinks($data['links'] ?? []);
-        $existingFiles = array_values(array_filter(array_map(fn ($v) => trim((string) $v), (array) ($data['existing_files'] ?? []))));
-
-        $uploadedFiles = [];
-        foreach ($request->file('files', []) as $file) {
-            if ($file) {
-                $uploadedFiles[] = PublicFileStorage::store($file, 'projects');
-            }
-        }
-
-        $oldFiles = (array) ($project->files ?? []);
-        $newFiles = array_values(array_unique(array_merge($existingFiles, $uploadedFiles)));
-        foreach ($oldFiles as $oldFile) {
-            if (is_string($oldFile) && $oldFile !== '' && ! in_array($oldFile, $newFiles, true)) {
-                Storage::disk('public')->delete($oldFile);
-            }
-        }
-
-        $budgetPlan = array_key_exists('repair_budget_planned', $data) && $data['repair_budget_planned'] !== null
-            ? (float) $data['repair_budget_planned']
-            : (float) ($project->planned_cost ?? 0);
-        $budgetFact = array_key_exists('repair_budget_actual', $data) && $data['repair_budget_actual'] !== null
-            ? (float) $data['repair_budget_actual']
-            : (float) ($project->actual_cost ?? 0);
-
-        $project->client_id = ! empty($data['client_id']) ? (int) $data['client_id'] : null;
-        $project->name = trim($data['name']);
-        $project->status = trim($data['status']);
-        $project->start_date = $data['start_date'] ?? ($project->start_date ?: now()->toDateString());
-        $project->planned_end_date = $data['planned_end_date'] ?? ($project->planned_end_date ?: now()->addMonth()->toDateString());
-        $project->actual_end_date = $data['actual_end_date'] ?? null;
-        $project->planned_cost = $budgetPlan;
-        $project->actual_cost = $budgetFact;
-        $project->links = $links;
-        $project->files = $newFiles;
-        $project->comment = $data['comment'] ?? null;
-        $project->save();
-
-        $this->saveObjectDetails($project, $data);
-        $this->saveStages($project, $data, $userId);
-    }
-
-    private function normalizeLinks(array $raw): array
-    {
-        $out = [];
-        foreach ($raw as $item) {
-            if (is_string($item)) {
-                $url = trim($item);
-                if ($url !== '') {
-                    $out[] = ['title' => '', 'url' => $url];
-                }
-                continue;
-            }
-            if (! is_array($item)) {
-                continue;
-            }
-            $url = trim((string) ($item['url'] ?? ''));
-            if ($url === '') {
-                continue;
-            }
-            $out[] = [
-                'title' => trim((string) ($item['title'] ?? '')),
-                'url' => $url,
-            ];
-        }
-
-        return array_values($out);
-    }
-
-    private function saveObjectDetails(Project $project, array $data): void
-    {
-        $existing = ProjectObjectDetail::query()->where('project_id', $project->id)->first();
-
-        // Preserve legacy property fields when UI no longer sends them.
-        $city = array_key_exists('city', $data) ? ($data['city'] ?? null) : $existing?->city;
-        $address = array_key_exists('object_address', $data) ? ($data['object_address'] ?? null) : $existing?->address;
-        $apartment = array_key_exists('apartment', $data) ? ($data['apartment'] ?? null) : $existing?->apartment;
-        $floor = array_key_exists('apartment_floor', $data) ? ($data['apartment_floor'] ?? null) : $existing?->apartment_floor;
-        $entrance = array_key_exists('apartment_entrance', $data) ? ($data['apartment_entrance'] ?? null) : $existing?->apartment_entrance;
-        $type = array_key_exists('object_type', $data) ? ($data['object_type'] ?? null) : $existing?->type;
-        $area = array_key_exists('area', $data)
-            ? (isset($data['area']) && $data['area'] !== '' ? (float) $data['area'] : null)
-            : ($existing?->area !== null ? (float) $existing->area : null);
-
-        $budgetPlan = array_key_exists('repair_budget_planned', $data)
-            ? (isset($data['repair_budget_planned']) && $data['repair_budget_planned'] !== ''
-                ? (float) $data['repair_budget_planned']
-                : null)
-            : ($existing?->repair_budget_planned !== null ? (float) $existing->repair_budget_planned : null);
-        $budgetFact = array_key_exists('repair_budget_actual', $data)
-            ? (isset($data['repair_budget_actual']) && $data['repair_budget_actual'] !== ''
-                ? (float) $data['repair_budget_actual']
-                : null)
-            : ($existing?->repair_budget_actual !== null ? (float) $existing->repair_budget_actual : null);
-
-        ProjectObjectDetail::query()->updateOrCreate(
-            ['project_id' => $project->id],
-            [
-                'passport_object_id' => $project->object_id,
-                'client_id' => $project->client_id,
-                'city' => $city,
-                'address' => $address,
-                'apartment' => $apartment,
-                'apartment_floor' => $floor,
-                'apartment_entrance' => $entrance,
-                'type' => $type,
-                'area' => $area,
-                'repair_budget_planned' => $budgetPlan,
-                'repair_budget_actual' => $budgetFact,
-                'repair_budget_per_m2_planned' => ($area && $area > 0 && $budgetPlan !== null)
-                    ? round($budgetPlan / $area, 2) : null,
-                'repair_budget_per_m2_actual' => ($area && $area > 0 && $budgetFact !== null)
-                    ? round($budgetFact / $area, 2) : null,
-            ]
-        );
-    }
-
-    private function saveStages(Project $project, array $data, int $userId): void
-    {
-        // Preserve previous behaviour: replace stages when payload includes stages key.
-        // Sync by id when provided so checklist step IDs (and supply included_step_ids) stay stable.
-        if (! array_key_exists('stages', $data)) {
-            return;
-        }
-
-        $keepStageIds = [];
-
-        foreach ((array) ($data['stages'] ?? []) as $index => $stageRow) {
-            $type = $stageRow['stage_type'] ?? null;
-            if (! is_string($type) || $type === '') {
-                continue;
-            }
-
-            $templateId = isset($stageRow['template_id']) && $stageRow['template_id'] !== ''
-                ? (int) $stageRow['template_id']
-                : null;
-            if ($templateId !== null) {
-                $template = Template::query()
-                    ->where('id', $templateId)
-                    ->where(fn ($q) => $q->whereNull('user_id')->orWhere('user_id', $userId))
-                    ->first();
-                $templateId = $template?->id;
-            }
-
-            $stageId = isset($stageRow['id']) && $stageRow['id'] !== '' ? (int) $stageRow['id'] : null;
-            $stage = null;
-            if ($stageId) {
-                $stage = ProjectStages::query()
-                    ->where('project_id', $project->id)
-                    ->whereKey($stageId)
-                    ->first();
-            }
-
-            $customName = isset($stageRow['name']) ? trim((string) $stageRow['name']) : '';
-            $previousResponsibleId = $stage?->responsible_id ? (int) $stage->responsible_id : null;
-            $resolvedResponsibleId = null;
-            if (array_key_exists('responsible_id', $stageRow) && $stageRow['responsible_id'] !== null && $stageRow['responsible_id'] !== '') {
-                $resolvedResponsibleId = app(TeamService::class)->assertAssigneeAllowed(
-                    request()->user(),
-                    (int) $stageRow['responsible_id']
-                );
-            }
-
-            $attrs = [
-                'stage_type' => $type,
-                'name' => $customName !== '' ? $customName : null,
-                'template_id' => $templateId,
-                'deadline' => $stageRow['deadline'] ?? null,
-                'responsible_id' => $resolvedResponsibleId,
-                'assign_task' => ! empty($stageRow['assign_task']),
-                'order' => $index,
-            ];
-
-            if ($stage) {
-                $stage->fill($attrs)->save();
-            } else {
-                $stage = ProjectStages::create(array_merge($attrs, [
-                    'project_id' => $project->id,
-                    'created_by' => $userId,
-                ]));
-            }
-
-            $keepStageIds[] = (int) $stage->id;
-            $keepStepIds = [];
-
-            app(AssignmentNotifier::class)->notifyChecklistAssigned(
-                request()->user(),
-                $previousResponsibleId,
-                $resolvedResponsibleId,
-                $project,
-                $stage
-            );
-
-            foreach ((array) ($stageRow['steps'] ?? []) as $stepIdx => $stepRow) {
-                $title = is_array($stepRow)
-                    ? trim((string) ($stepRow['title'] ?? ''))
-                    : trim((string) $stepRow);
-                if ($title === '') {
-                    continue;
-                }
-
-                $deadline = is_array($stepRow) ? ($stepRow['deadline'] ?? null) : null;
-                $responsibleId = is_array($stepRow) ? ($stepRow['responsible_id'] ?? null) : null;
-                $link = is_array($stepRow) ? trim((string) ($stepRow['link'] ?? '')) : '';
-                $resultStatus = is_array($stepRow) ? (string) ($stepRow['result_status'] ?? 'pending') : 'pending';
-                $resultComment = is_array($stepRow) ? ($stepRow['result_comment'] ?? null) : null;
-                $stepId = is_array($stepRow) && isset($stepRow['id']) && $stepRow['id'] !== ''
-                    ? (int) $stepRow['id']
-                    : null;
-
-                $stepAttrs = [
-                    'title' => $title,
-                    'deadline' => $deadline ?: null,
-                    'responsible_id' => $responsibleId ?: null,
-                    'link' => $link !== '' ? $link : null,
-                    'result_status' => $resultStatus,
-                    'result_comment' => is_string($resultComment) && trim($resultComment) !== '' ? $resultComment : null,
-                    'order' => $stepIdx,
-                ];
-
-                $step = null;
-                if ($stepId) {
-                    $step = ProjectStageStep::query()
-                        ->where('project_stage_id', $stage->id)
-                        ->whereKey($stepId)
-                        ->first();
-                }
-
-                if ($step) {
-                    $step->fill($stepAttrs)->save();
-                } else {
-                    $step = ProjectStageStep::create(array_merge($stepAttrs, [
-                        'project_stage_id' => $stage->id,
-                    ]));
-                }
-
-                $keepStepIds[] = (int) $step->id;
-            }
-
-            $stepsQuery = ProjectStageStep::query()->where('project_stage_id', $stage->id);
-            if ($keepStepIds !== []) {
-                $stepsQuery->whereNotIn('id', $keepStepIds);
-            }
-            $stepsQuery->delete();
-        }
-
-        $stagesQuery = $project->stages();
-        if ($keepStageIds !== []) {
-            $stagesQuery->whereNotIn('id', $keepStageIds);
-        }
-        $stagesQuery->delete();
-    }
-
     private function projectPayload(Project $project): array
     {
         if (! $project->relationLoaded('stages')) {
@@ -717,8 +459,8 @@ class ProjectController extends Controller
             'start_date' => $project->start_date,
             'planned_end_date' => $project->planned_end_date,
             'actual_end_date' => $project->actual_end_date,
-            'planned_cost' => (float) ($property['repair_budget_planned'] ?? $project->planned_cost ?? 0),
-            'actual_cost' => (float) ($property['repair_budget_actual'] ?? $project->actual_cost ?? 0),
+            'planned_cost' => $property['repair_budget_planned'] ?? $project->planned_cost,
+            'actual_cost' => $property['repair_budget_actual'] ?? $project->actual_cost,
             'city' => $property['city'],
             'object_type' => $property['type'],
             'object_address_field' => $property['address'],

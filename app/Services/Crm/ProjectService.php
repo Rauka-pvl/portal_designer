@@ -100,8 +100,8 @@ class ProjectService
             'area' => $area === '' ? null : $area,
             'repair_budget_planned' => $plan === '' ? null : $plan,
             'repair_budget_actual' => $actual === '' ? null : $actual,
-            'repair_budget_per_m2_planned' => is_numeric($area) && (float) $area > 0 && is_numeric($plan) ? round($plan / $area, 2) : null,
-            'repair_budget_per_m2_actual' => is_numeric($area) && (float) $area > 0 && is_numeric($actual) ? round($actual / $area, 2) : null,
+            'repair_budget_per_m2_planned' => is_numeric($area) && (float) $area > 0 && is_numeric($plan) ? round((float) $plan / (float) $area, 2) : null,
+            'repair_budget_per_m2_actual' => is_numeric($area) && (float) $area > 0 && is_numeric($actual) ? round((float) $actual / (float) $area, 2) : null,
         ]);
     }
 

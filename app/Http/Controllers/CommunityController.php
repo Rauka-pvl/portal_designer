@@ -357,6 +357,7 @@ class CommunityController extends Controller
 
         $payload = [
             'ok' => true,
+            'success' => true,
             'message' => __('community.toasts.created'),
             'post' => $this->serializePost($post, $user->id),
         ];
@@ -439,9 +440,11 @@ class CommunityController extends Controller
         }
 
         DB::transaction(function () use ($post) {
-            foreach ($post->media as $media) {
-                if (is_string($media->file_path) && $media->file_path !== '') {
-                    Storage::disk('public')->delete($media->file_path);
+            if ($post->media) {
+                foreach ($post->media as $media) {
+                    if (is_string($media->file_path) && $media->file_path !== '') {
+                        Storage::disk('public')->delete($media->file_path);
+                    }
                 }
             }
             // Soft-delete does not cascade FKs — clear viewer state so saved/liked lists stay correct.
@@ -641,6 +644,7 @@ class CommunityController extends Controller
 
         $payload = [
             'ok' => true,
+            'success' => true,
             'message' => __('community.toasts.comment_added'),
             'comments_count' => (int) $post->fresh()->comments_count,
             'comment' => $this->serializeComment($comment, (int) $user->id),
@@ -863,11 +867,11 @@ class CommunityController extends Controller
                 'role' => $post->author?->role,
                 'city' => $post->author?->city,
             ],
-            'media' => $post->media->map(fn ($m) => [
+            'media' => $post->media ? $post->media->map(fn ($m) => [
                 'id' => $m->id,
                 'url' => $m->url,
                 'sort_order' => $m->sort_order,
-            ])->values(),
+            ])->values() : [],
         ];
     }
 
@@ -945,9 +949,9 @@ class CommunityController extends Controller
     private function recommendedUsers(int $exceptUserId)
     {
         return User::query()
-            ->select(['id', 'name', 'role', 'city'])
-            ->with(['supplierProfile:id,user_id,name,city'])
-            ->whereIn('role', ['designer', 'supplier'])
+            ->select(['id', 'name', 'account_type'])
+            ->with(['supplierProfile:id,user_id,name,city', 'designerProfile:id,user_id,city'])
+            ->whereIn('account_type', ['designer', 'supplier'])
             ->where('id', '<>', (int) $exceptUserId)
             ->whereNotNull('name')
             ->where('name', '!=', '')
@@ -1053,8 +1057,8 @@ class CommunityController extends Controller
         return [
             'id' => (int) $user->id,
             'name' => (string) $user->name,
-            'role' => (string) $user->role,
-            'city' => (string) ($user->city ?? $user->supplierProfile?->city ?? ''),
+            'role' => (string) $user->account_type,
+            'city' => (string) ($user->supplierProfile?->city ?? $user->designerProfile?->city ?? ''),
             'posts_count' => (int) ($user->posts_count ?? 0),
         ];
     }

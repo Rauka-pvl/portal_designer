@@ -31,13 +31,25 @@ class CorporateSubscriptionTest extends TestCase
 
     private function designer(array $attrs = []): User
     {
-        return User::factory()->create(array_merge([
-            'role' => 'designer',
-            'subscription_trial_used' => true,
-            'subscription_trial_ends_at' => null,
-            'subscription_ends_at' => now()->addDays(20),
-            'subscription_plan' => DesignerSubscription::PLAN_PRO,
+        $user = User::factory()->create(array_merge([
+            'account_type' => 'designer',
         ], $attrs));
+
+        $planKey = $attrs['subscription_plan'] ?? DesignerSubscription::PLAN_PRO;
+        if ($planKey) {
+            $plan = \App\Models\SubscriptionPlan::findByKey($planKey);
+            if ($plan) {
+                \App\Models\Subscription::create([
+                    'user_id' => $user->id,
+                    'plan_id' => $plan->id,
+                    'status' => 'active',
+                    'starts_at' => now(),
+                    'expires_at' => $attrs['subscription_ends_at'] ?? now()->addDays(20),
+                ]);
+            }
+        }
+
+        return $user;
     }
 
     private function inviteAndAccept(TeamService $teams, DesignerTeam $team, User $owner, User $member, TeamRole $role): DesignerTeamMember

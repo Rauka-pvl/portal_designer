@@ -109,7 +109,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Designer business API
-    Route::middleware(['subscription.active', 'throttle:api-business'])->group(function () {
+    Route::middleware(['role:designer', 'subscription.active', 'throttle:api-business'])->group(function () {
         Route::get('/dashboard', [DashboardApiController::class, 'index']);
 
         // Clients

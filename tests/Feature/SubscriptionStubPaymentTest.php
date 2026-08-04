@@ -18,7 +18,7 @@ class SubscriptionStubPaymentTest extends TestCase
         config(['subscription.promo_code' => '']);
 
         $user = User::factory()->create([
-            'role' => 'designer',
+            'account_type' => 'designer',
             'subscription_trial_used' => true,
             'subscription_trial_ends_at' => now()->subDay(),
             'subscription_ends_at' => null,
@@ -39,7 +39,7 @@ class SubscriptionStubPaymentTest extends TestCase
         config(['subscription.promo_code' => '']);
 
         $user = User::factory()->create([
-            'role' => 'designer',
+            'account_type' => 'designer',
             'subscription_trial_used' => false,
             'subscription_trial_ends_at' => null,
             'subscription_ends_at' => null,
@@ -63,7 +63,7 @@ class SubscriptionStubPaymentTest extends TestCase
         config(['subscription.promo_code' => 'Secret-Local-Promo']);
 
         $user = User::factory()->create([
-            'role' => 'designer',
+            'account_type' => 'designer',
             'subscription_trial_used' => true,
             'subscription_trial_ends_at' => now()->subDay(),
             'subscription_ends_at' => null,

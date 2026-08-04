@@ -18,12 +18,12 @@ class SupplierOrderDetailUpdateTest extends TestCase
     private function designerWithOrder(array $orderAttrs = []): array
     {
         $designer = User::factory()->create([
-            'role' => 'designer',
+            'account_type' => 'designer',
             'subscription_trial_ends_at' => now()->addDays(7),
         ]);
 
         $supplierUser = User::factory()->create([
-            'role' => 'supplier',
+            'account_type' => 'supplier',
             'must_change_password' => false,
         ]);
 
