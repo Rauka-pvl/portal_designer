@@ -2,10 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\SendUserNotificationPush;
 use App\Models\Device;
 use App\Models\User;
+use App\Models\UserNotification;
 use App\Services\Push\ExpoPushService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -156,6 +159,62 @@ class DevicePushApiTest extends TestCase
                 && ($first['title'] ?? null) === 'Новое сообщение'
                 && ($first['body'] ?? null) === 'Салам'
                 && ($first['data']['type'] ?? null) === 'chat';
+        });
+    }
+
+    public function test_creating_user_notification_dispatches_push_job(): void
+    {
+        Bus::fake([SendUserNotificationPush::class]);
+
+        $user = User::factory()->create();
+
+        $notification = UserNotification::query()->create([
+            'user_id' => $user->id,
+            'title' => 'Новое сообщение',
+            'comment' => 'Салам',
+            'is_read' => false,
+            'action_key' => 'order_offer',
+        ]);
+
+        Bus::assertDispatched(SendUserNotificationPush::class, function (SendUserNotificationPush $job) use ($notification) {
+            return $job->notificationId === (int) $notification->id;
+        });
+    }
+
+    public function test_push_job_sends_expo_payload_from_notification(): void
+    {
+        Http::fake([
+            'exp.host/*' => Http::response([
+                'data' => [['status' => 'ok', 'id' => 'ticket-1']],
+            ], 200),
+        ]);
+
+        $user = User::factory()->create();
+        Device::query()->create([
+            'user_id' => $user->id,
+            'token' => 'ExponentPushToken[live]',
+            'provider' => 'expo',
+            'app' => 'mobile',
+        ]);
+
+        $notification = UserNotification::query()->create([
+            'user_id' => $user->id,
+            'title' => 'Новое сообщение',
+            'comment' => 'Салам',
+            'is_read' => false,
+            'action_key' => 'chat',
+        ]);
+
+        // QUEUE_CONNECTION=sync in phpunit → observer job runs immediately.
+        Http::assertSent(function ($request) use ($notification) {
+            $body = $request->data();
+            $first = is_array($body) && array_is_list($body) ? ($body[0] ?? []) : $body;
+
+            return ($first['to'] ?? null) === 'ExponentPushToken[live]'
+                && ($first['title'] ?? null) === 'Новое сообщение'
+                && ($first['body'] ?? null) === 'Салам'
+                && ($first['data']['type'] ?? null) === 'chat'
+                && ($first['data']['id'] ?? null) === (string) $notification->id;
         });
     }
 }
