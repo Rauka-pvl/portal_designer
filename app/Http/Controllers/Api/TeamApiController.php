@@ -63,7 +63,7 @@ class TeamApiController extends Controller
         $this->teams->assertSeatAvailable($team);
         User::query()->create([
             'name' => $data['name'], 'email' => $data['email'], 'password' => Hash::make($data['password']),
-            'role' => 'designer', 'subscription_plan' => null, 'subscription_ends_at' => null,
+            'account_type' => 'designer', 'subscription_plan' => null, 'subscription_ends_at' => null,
             'subscription_trial_ends_at' => null, 'subscription_trial_used' => false,
         ]);
         $invitation = $this->teams->inviteByEmail($team, $request->user(), $data['email'], TeamRole::from($data['role']));

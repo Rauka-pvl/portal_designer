@@ -147,7 +147,7 @@ class SupplierController extends Controller
         $temporaryPassword = $this->generateTemporaryPassword();
         $supplier = DB::transaction(function () use ($data, $request, $temporaryPassword) {
             $supplierUser = User::query()->create([
-                'role' => 'supplier',
+                'account_type' => 'supplier',
                 'name' => trim((string) $data['name']),
                 'email' => trim((string) $data['email']),
                 'password' => Hash::make($temporaryPassword),

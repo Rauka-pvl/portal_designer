@@ -97,7 +97,7 @@ class ReferralSupplierController extends Controller
 
         $supplier = DB::transaction(function () use ($data, $designer, $request, $temporaryPassword) {
             $supplierUser = User::query()->create([
-                'role' => 'supplier',
+                'account_type' => 'supplier',
                 'name' => trim((string) $data['name']),
                 'email' => trim((string) $data['email']),
                 'password' => Hash::make($temporaryPassword),

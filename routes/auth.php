@@ -125,7 +125,7 @@ Route::match(['get', 'post'], '/register', function (Request $request) {
         'name' => $data['name'],
         'email' => $data['email'],
         'password' => Hash::make($data['password']),
-        'role' => $isSupplier ? 'supplier' : 'designer',
+        'account_type' => $isSupplier ? 'supplier' : 'designer',
     ]);
 
     if ($isSupplier) {

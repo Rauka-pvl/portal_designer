@@ -94,7 +94,7 @@ class TeamController extends Controller
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
-            'role' => 'designer',
+            'account_type' => 'designer',
             // Corporate access via team — no personal paid plan required.
             'subscription_plan' => null,
             'subscription_ends_at' => null,

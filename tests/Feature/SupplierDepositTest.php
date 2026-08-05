@@ -55,6 +55,8 @@ class SupplierDepositTest extends TestCase
 
         $user = User::query()->where('email', 'supplier-deposit@example.com')->first();
         $this->assertNotNull($user);
+        $this->assertSame('supplier', $user->account_type);
+        $this->assertSame('supplier', $user->role);
         $supplier = $user->supplierProfile;
         $this->assertNotNull($supplier);
         $this->assertSame(SupplierDeposit::ACCOUNT_DEPOSIT_REQUIRED, $supplier->account_status);

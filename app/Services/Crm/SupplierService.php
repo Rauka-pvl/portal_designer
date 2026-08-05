@@ -40,7 +40,7 @@ class SupplierService
         return DB::transaction(function () use ($designerId, $data, $logo) {
             $password = Str::password(length: 12, letters: true, numbers: true, symbols: false);
             $user = new User;
-            $user->forceFill(['role' => 'supplier', 'name' => $data['name'], 'email' => $data['email'], 'password' => Hash::make($password), 'must_change_password' => true])->save();
+            $user->forceFill(['account_type' => 'supplier', 'name' => $data['name'], 'email' => $data['email'], 'password' => Hash::make($password), 'must_change_password' => true])->save();
             $supplier = new Supplier(['user_id' => $user->id, 'created_by_user_id' => $designerId, 'profile_status' => 'draft', 'moderation_status' => 'pending']);
             $supplier->setTemporaryPassword($password);
             return $this->fill($supplier, $data, $logo);
