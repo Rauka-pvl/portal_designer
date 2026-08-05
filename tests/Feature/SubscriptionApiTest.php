@@ -220,4 +220,124 @@ class SubscriptionApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('subscription_required', false);
     }
+
+    public function test_plans_include_comparison_features(): void
+    {
+        $user = $this->designerWithoutSub();
+        Sanctum::actingAs($user);
+
+        $response = $this->getJson('/api/subscription/plans')->assertOk();
+        $this->assertNotEmpty($response->json('data.comparison_feature_keys'));
+        $this->assertIsBool($response->json('data.plans.0.comparison_features.feature_team'));
+        $this->assertSame(false, $response->json('data.trial_requires_card'));
+    }
+
+    public function test_show_returns_enriched_subscription_fields(): void
+    {
+        $user = $this->designerWithoutSub();
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/subscription/checkout', [
+            'plan' => DesignerSubscription::PLAN_STANDARD,
+            'payment_method' => DesignerSubscription::METHOD_KASPI,
+        ])->assertCreated();
+
+        $this->getJson('/api/subscription')
+            ->assertOk()
+            ->assertJsonPath('data.can_use_trial', false)
+            ->assertJsonPath('data.is_on_trial', true)
+            ->assertJsonPath('data.trial_requires_card', false)
+            ->assertJsonStructure([
+                'data' => [
+                    'trial_progress',
+                    'trial_total_days',
+                    'primary_action' => ['key', 'label'],
+                    'is_onboarding',
+                    'has_real_payments',
+                    'is_corporate',
+                    'auto_renew',
+                    'payment_method',
+                ],
+            ]);
+    }
+
+    public function test_update_payment_method_via_api(): void
+    {
+        $user = $this->designerWithoutSub();
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/subscription/checkout', [
+            'plan' => DesignerSubscription::PLAN_STANDARD,
+            'payment_method' => DesignerSubscription::METHOD_KASPI,
+        ])->assertCreated();
+
+        $this->postJson('/api/subscription/payment-method', [
+            'payment_method' => DesignerSubscription::METHOD_CARD,
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.payment_method', DesignerSubscription::METHOD_CARD);
+
+        $this->assertSame(DesignerSubscription::METHOD_CARD, $user->fresh()->subscription_payment_method);
+
+        $this->postJson('/api/subscription/payment', [
+            'payment_method' => DesignerSubscription::METHOD_KASPI,
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.payment_method', DesignerSubscription::METHOD_KASPI);
+    }
+
+    public function test_change_plan_via_api(): void
+    {
+        $user = $this->designerWithoutSub();
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/subscription/checkout', [
+            'plan' => DesignerSubscription::PLAN_STANDARD,
+            'payment_method' => DesignerSubscription::METHOD_KASPI,
+        ])->assertCreated();
+
+        $this->postJson('/api/subscription/change-plan', [
+            'plan' => DesignerSubscription::PLAN_PRO,
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.plan', DesignerSubscription::PLAN_PRO);
+    }
+
+    public function test_history_marks_trial_payments(): void
+    {
+        $user = $this->designerWithoutSub();
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/subscription/checkout', [
+            'plan' => DesignerSubscription::PLAN_STANDARD,
+            'payment_method' => DesignerSubscription::METHOD_KASPI,
+        ])->assertCreated();
+
+        $this->getJson('/api/subscription/history')
+            ->assertOk()
+            ->assertJsonPath('data.payments.0.is_trial', true)
+            ->assertJsonPath('data.payments.0.has_receipt', false)
+            ->assertJsonPath('data.has_real_payments', false);
+    }
+
+    public function test_team_add_existing_member_via_api(): void
+    {
+        config(['subscription.allow_stub_payments' => true]);
+
+        $owner = $this->designerWithoutSub(['email' => 'corp-owner@example.com']);
+        $member = $this->designerWithoutSub(['email' => 'corp-member@example.com']);
+        Sanctum::actingAs($owner);
+
+        $this->postJson('/api/subscription/checkout', [
+            'plan' => DesignerSubscription::PLAN_CORPORATE,
+            'payment_method' => DesignerSubscription::METHOD_KASPI,
+        ])->assertCreated();
+
+        $this->postJson('/api/team/members/add', [
+            'email' => $member->email,
+            'role' => 'designer',
+        ])
+            ->assertCreated()
+            ->assertJsonPath('data.email', $member->email);
+    }
 }

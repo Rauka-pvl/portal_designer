@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Enums\TeamRole;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\AddExistingTeamMemberRequest;
 use App\Http\Requests\Api\ChangeTeamMemberRoleRequest;
 use App\Http\Requests\Api\CreateTeamMemberRequest;
 use App\Http\Requests\Api\InviteTeamMemberRequest;
@@ -68,7 +69,30 @@ class TeamApiController extends Controller
         ]);
         $invitation = $this->teams->inviteByEmail($team, $request->user(), $data['email'], TeamRole::from($data['role']));
 
-        return response()->json(['data' => new TeamInvitationResource($invitation)], 201);
+        return response()->json(['data' => (new TeamInvitationResource($invitation))->resolve()], 201);
+    }
+
+    public function addMember(AddExistingTeamMemberRequest $request): JsonResponse
+    {
+        $team = $this->requireManageableTeam($request->user());
+        $data = $request->validated();
+        $email = mb_strtolower(trim($data['email']));
+        $target = User::query()->whereRaw('LOWER(email) = ?', [$email])->first();
+
+        if (! $target) {
+            throw ValidationException::withMessages([
+                'email' => [__('team.user_not_found')],
+            ]);
+        }
+
+        $invitation = $this->teams->addExistingUser(
+            $team,
+            $request->user(),
+            $target,
+            TeamRole::from($data['role'])
+        );
+
+        return response()->json(['data' => (new TeamInvitationResource($invitation))->resolve()], 201);
     }
 
     public function acceptInvitation(Request $request, DesignerTeamInvitation $invitation): JsonResponse

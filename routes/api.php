@@ -77,6 +77,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/subscription/history', [SubscriptionApiController::class, 'history']);
     Route::post('/subscription/checkout', [SubscriptionApiController::class, 'checkout'])->middleware('throttle:10,1');
     Route::post('/subscription/change-plan', [SubscriptionApiController::class, 'changePlan']);
+    Route::post('/subscription/payment-method', [SubscriptionApiController::class, 'updatePaymentMethod']);
+    Route::post('/subscription/payment', [SubscriptionApiController::class, 'updatePaymentMethod']); // alias
     Route::post('/subscription/renew', [SubscriptionApiController::class, 'renew']);
     Route::post('/subscription/resume', [SubscriptionApiController::class, 'resume']);
     Route::post('/subscription/cancel', [SubscriptionApiController::class, 'cancel']);
@@ -227,6 +229,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/team/invitations', [TeamApiController::class, 'invite'])->middleware('throttle:20,1');
         Route::get('/team/invitations', [TeamApiController::class, 'invitations']);
         Route::post('/team/members/create-account', [TeamApiController::class, 'createAccount'])->middleware('throttle:10,1');
+        Route::post('/team/members/add', [TeamApiController::class, 'addMember'])->middleware('throttle:20,1');
         Route::patch('/team/members/{member}/role', [TeamApiController::class, 'changeRole'])->whereNumber('member');
         Route::delete('/team/members/{member}', [TeamApiController::class, 'removeMember'])->whereNumber('member');
         Route::post('/team/invitations/{invitation}/resend', [TeamApiController::class, 'resendInvitation'])->whereNumber('invitation')->middleware('throttle:20,1');

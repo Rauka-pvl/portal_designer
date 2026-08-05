@@ -12,23 +12,48 @@ class SubscriptionResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $team = app(TeamService::class)->activeTeamFor($this->resource);
-        $amount = DesignerSubscription::nextChargeAmount($this->resource);
+        $user = $this->resource;
+        $teamService = app(TeamService::class);
+        $team = $teamService->activeTeamFor($user)
+            ?? \App\Models\DesignerTeam::query()->where('owner_id', $user->id)->where('status', 'active')->first();
+        $teamRole = $team?->roleFor($user);
+        $amount = DesignerSubscription::nextChargeAmount($user);
+        $primary = DesignerSubscription::primaryAction($user);
+        $isCorporate = (string) $user->subscription_plan === DesignerSubscription::PLAN_CORPORATE
+            || ($team && $teamService->isCorporateUser($user));
 
         return [
-            'plan' => $this->subscription_plan,
-            'status' => DesignerSubscription::status($this->resource),
-            'has_access' => DesignerSubscription::hasAccess($this->resource),
-            'is_on_trial' => DesignerSubscription::isOnTrial($this->resource),
-            'trial_days_left' => DesignerSubscription::trialDaysLeft($this->resource),
-            'access_ends_at' => DesignerSubscription::accessEndsAt($this->resource)?->toISOString(),
-            'next_charge_at' => DesignerSubscription::nextChargeAt($this->resource)?->toISOString(),
+            'plan' => $user->subscription_plan,
+            'status' => DesignerSubscription::status($user),
+            'has_access' => DesignerSubscription::hasAccess($user),
+            'is_on_trial' => DesignerSubscription::isOnTrial($user),
+            'can_use_trial' => DesignerSubscription::canUseTrial($user),
+            'trial_days_left' => DesignerSubscription::trialDaysLeft($user),
+            'trial_progress' => DesignerSubscription::trialProgressPercent($user),
+            'trial_total_days' => DesignerSubscription::trialDays(),
+            'trial_requires_card' => DesignerSubscription::trialRequiresCard(),
+            'access_ends_at' => DesignerSubscription::accessEndsAt($user)?->toISOString(),
+            'next_charge_at' => DesignerSubscription::nextChargeAt($user)?->toISOString(),
             'next_charge_amount' => $amount === null ? null : DesignerSubscription::formatMoney($amount),
-            'auto_renew' => DesignerSubscription::isAutoRenewEnabled($this->resource),
-            'payment_method' => $this->subscription_payment_method,
-            'can_manage_billing' => AccountPermissions::canManageBilling($this->resource),
+            'auto_renew' => DesignerSubscription::isAutoRenewEnabled($user),
+            'payment_method' => $user->subscription_payment_method,
+            'card_last4' => DesignerSubscription::cardLast4($user),
+            'card_expiry' => DesignerSubscription::cardExpiry($user),
+            'cancelled_at' => $user->subscription_cancelled_at?->toISOString(),
+            'cancel_reason' => $user->subscription_cancel_reason,
+            'can_manage_billing' => AccountPermissions::canManageBilling($user),
+            'is_onboarding' => DesignerSubscription::needsOnboardingLayout($user),
+            'has_real_payments' => DesignerSubscription::hasRealPayments($user),
+            'is_corporate' => $isCorporate,
+            'team_role' => $teamRole?->value,
             'team_seats_used' => $team?->usedSeats(),
             'team_seats_max' => $team?->max_members,
+            'billing_name' => $user->name,
+            'billing_email' => $user->email,
+            'primary_action' => [
+                'key' => $primary['key'],
+                'label' => $primary['label'],
+            ],
         ];
     }
 }

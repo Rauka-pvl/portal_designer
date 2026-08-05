@@ -283,6 +283,16 @@ class User extends Authenticatable
 
         $subscription = $this->subscriptions()->latest('id')->first();
 
+        if (array_key_exists('subscription_payment_method', $data) && $data['subscription_payment_method'] !== null) {
+            $payment = $this->subscriptionPayments()->latest('id')->first();
+            if ($payment) {
+                $meta = is_array($payment->meta) ? $payment->meta : [];
+                $meta['payment_method'] = $data['subscription_payment_method'];
+                $payment->meta = $meta;
+                $payment->save();
+            }
+        }
+
         // Explicit null plan clears inherited/personal subscription marker.
         if (array_key_exists('subscription_plan', $data) && $data['subscription_plan'] === null) {
             if ($subscription) {
@@ -314,7 +324,8 @@ class User extends Authenticatable
             if (! array_key_exists('subscription_ends_at', $data)
                 && ! array_key_exists('subscription_trial_ends_at', $data)
                 && ! array_key_exists('subscription_cancelled_at', $data)
-                && ! array_key_exists('subscription_trial_used', $data)) {
+                && ! array_key_exists('subscription_trial_used', $data)
+                && ! array_key_exists('subscription_cancel_reason', $data)) {
                 return;
             }
             $planKey = $subscription?->plan?->key ?? 'personal';

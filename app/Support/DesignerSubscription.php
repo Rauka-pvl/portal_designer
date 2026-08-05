@@ -578,6 +578,19 @@ class DesignerSubscription
             ]);
         }
 
+        $payment = DesignerSubscriptionPayment::query()
+            ->where('user_id', $user->id)
+            ->latest('id')
+            ->first();
+
+        if ($payment) {
+            $meta = is_array($payment->meta) ? $payment->meta : [];
+            $meta['payment_method'] = $method;
+            $payment->meta = $meta;
+            $payment->save();
+        }
+
+        // Keep in-request accessor cache aligned with persisted meta.
         $user->subscription_payment_method = $method;
         $user->save();
     }
