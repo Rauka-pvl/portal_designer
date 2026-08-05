@@ -94,6 +94,8 @@ class SubscriptionController extends Controller
 
         $hasAccess = DesignerSubscription::hasAccess($user);
 
+        $paymentsEnabled = DesignerSubscription::paymentsEnabled();
+
         return view('designer.subscription.checkout', [
             'planKey' => $plan,
             'plan' => DesignerSubscription::plans()[$plan],
@@ -104,17 +106,22 @@ class SubscriptionController extends Controller
             'isOnboarding' => DesignerSubscription::needsOnboardingLayout($user),
             'locked' => ! $hasAccess,
             'checkoutStep' => 2,
+            'paymentsEnabled' => $paymentsEnabled,
+            'promoWindowActive' => DesignerSubscription::promoWindowActive(),
+            'promoPeriodDays' => DesignerSubscription::promoPeriodDays(),
+            'promoEndsAtLabel' => DesignerSubscription::formatDate(DesignerSubscription::promoEndsAt()),
         ]);
     }
 
     public function purchase(Request $request): RedirectResponse
     {
         $planKeys = array_keys(DesignerSubscription::plans());
+        $paymentsEnabled = DesignerSubscription::paymentsEnabled();
 
         $data = $request->validate([
             'plan' => ['required', 'in:'.implode(',', $planKeys)],
-            'payment_method' => ['required', 'in:kaspi,card,promo'],
-            'promo_code' => ['nullable', 'string', 'max:100'],
+            'payment_method' => ['required', 'in:'.($paymentsEnabled ? 'kaspi,card,promo' : 'promo')],
+            'promo_code' => [$paymentsEnabled ? 'nullable' : 'required', 'string', 'max:100'],
             'card_number' => ['nullable', 'string', 'max:32'],
             'card_expiry' => ['nullable', 'string', 'max:10'],
             'card_cvc' => ['nullable', 'string', 'max:4'],
@@ -135,17 +142,16 @@ class SubscriptionController extends Controller
             return back()->withErrors(['plan' => __('team.forbidden_manage_billing')]);
         }
 
-        $method = $data['payment_method'];
+        $method = $paymentsEnabled ? $data['payment_method'] : DesignerSubscription::METHOD_PROMO;
         $promo = $data['promo_code'] ?? null;
+        $usedPromo = DesignerSubscription::isValidPromo($promo);
 
-        if (DesignerSubscription::isValidPromo($promo)) {
-            $method = 'promo';
+        if ($usedPromo) {
+            $method = DesignerSubscription::METHOD_PROMO;
         }
 
         $cardDigits = preg_replace('/\D+/', '', (string) ($data['card_number'] ?? ''));
         $cardLast4 = $cardDigits && strlen($cardDigits) >= 4 ? substr($cardDigits, -4) : null;
-
-        $wasTrialEligible = DesignerSubscription::canUseTrial($user);
 
         DesignerSubscription::checkout(
             $user,
@@ -156,11 +162,14 @@ class SubscriptionController extends Controller
             $data['card_expiry'] ?? null
         );
 
-        $message = $wasTrialEligible
-            ? __('subscription.trial_started', ['days' => DesignerSubscription::trialDays()])
-            : __('subscription.purchase_success');
+        $fresh = $user->fresh();
+        $message = $usedPromo
+            ? __('subscription.promo_activated', ['months' => (int) ceil(DesignerSubscription::promoPeriodDays() / 30)])
+            : (DesignerSubscription::isOnTrial($fresh)
+                ? __('subscription.trial_started', ['days' => DesignerSubscription::trialDays()])
+                : __('subscription.purchase_success'));
 
-        if ($wasTrialEligible || DesignerSubscription::hasAccess($user->fresh())) {
+        if (DesignerSubscription::hasAccess($fresh)) {
             return redirect()
                 ->route('dashboard')
                 ->with('success', $message);

@@ -43,6 +43,68 @@ class DesignerSubscription
         return trim((string) config('subscription.promo_code', ''));
     }
 
+    public static function trialEnabled(): bool
+    {
+        return (bool) config('subscription.trial_enabled', false);
+    }
+
+    /** Real Kaspi/card acquiring is connected. */
+    public static function paymentsEnabled(): bool
+    {
+        return (bool) config('subscription.payments_enabled', false);
+    }
+
+    public static function promoValidDays(): int
+    {
+        return max(1, (int) config('subscription.promo_valid_days', 7));
+    }
+
+    /** Free period granted by a successful promo redemption (default 6 months). */
+    public static function promoPeriodDays(): int
+    {
+        return max(1, (int) config('subscription.promo_period_days', 180));
+    }
+
+    public static function promoStartsAt(): ?Carbon
+    {
+        $raw = config('subscription.promo_starts_at');
+        if (! is_string($raw) || trim($raw) === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($raw)->startOfDay();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    public static function promoEndsAt(): ?Carbon
+    {
+        $starts = self::promoStartsAt();
+        if (! $starts) {
+            return null;
+        }
+
+        return $starts->copy()->addDays(self::promoValidDays())->endOfDay();
+    }
+
+    /** Promo code redemption window is currently open. */
+    public static function promoWindowActive(): bool
+    {
+        if (self::configuredPromoCode() === '') {
+            return false;
+        }
+
+        $starts = self::promoStartsAt();
+        $ends = self::promoEndsAt();
+        if (! $starts || ! $ends) {
+            return false;
+        }
+
+        return now()->greaterThanOrEqualTo($starts) && now()->lessThanOrEqualTo($ends);
+    }
+
     public static function allowsStubPayments(): bool
     {
         return (bool) config('subscription.allow_stub_payments', false);
@@ -169,8 +231,12 @@ class DesignerSubscription
 
     public static function isValidPromo(?string $code): bool
     {
+        if (! self::promoWindowActive() || ! is_string($code)) {
+            return false;
+        }
+
         $expected = self::configuredPromoCode();
-        if ($expected === '' || ! is_string($code)) {
+        if ($expected === '') {
             return false;
         }
 
@@ -179,6 +245,10 @@ class DesignerSubscription
 
     public static function canUseTrial(User $user): bool
     {
+        if (! self::trialEnabled()) {
+            return false;
+        }
+
         return $user->isDesigner() && ! (bool) $user->subscription_trial_used;
     }
 
@@ -444,8 +514,12 @@ class DesignerSubscription
 
         $usePromo = self::isValidPromo($promoCode);
         if ($promoCode !== null && trim((string) $promoCode) !== '' && ! $usePromo) {
+            $message = self::configuredPromoCode() !== '' && ! self::promoWindowActive()
+                ? __('subscription.promo_expired')
+                : __('subscription.promo_invalid');
+
             throw ValidationException::withMessages([
-                'promo_code' => [__('subscription.promo_invalid')],
+                'promo_code' => [$message],
             ]);
         }
 
@@ -455,13 +529,27 @@ class DesignerSubscription
             ]);
         }
 
+        // Acquiring offline: only a valid promo may activate a plan.
+        if (! self::paymentsEnabled() && ! $usePromo) {
+            throw ValidationException::withMessages([
+                'promo_code' => [__('subscription.promo_required')],
+            ]);
+        }
+
         if ($usePromo) {
             $paymentMethod = self::METHOD_PROMO;
         }
 
+        // Card / Kaspi cannot complete while acquiring is off (even with stub flag).
+        if (! $usePromo && ! self::paymentsEnabled()) {
+            throw ValidationException::withMessages([
+                'payment_method' => [__('subscription.payment_provider_unavailable')],
+            ]);
+        }
+
         $price = (int) $plan['price'];
-        $amount = ($usePromo || self::canUseTrial($user)) ? 0 : $price;
-        $useTrial = self::canUseTrial($user);
+        $useTrial = ! $usePromo && self::canUseTrial($user);
+        $amount = ($usePromo || $useTrial) ? 0 : $price;
 
         // Paid (non-trial, non-promo) checkout requires a real PSP — stub completion is gated.
         if (! $useTrial && ! $usePromo && $amount > 0 && ! self::allowsStubPayments()) {
@@ -471,9 +559,11 @@ class DesignerSubscription
         }
 
         $startsAt = now();
-        $periodDays = $useTrial ? self::trialDays() : (int) $plan['period_days'];
+        $periodDays = $usePromo
+            ? self::promoPeriodDays()
+            : ($useTrial ? self::trialDays() : (int) $plan['period_days']);
 
-        if (! $useTrial && $user->subscription_ends_at && $user->subscription_ends_at->isFuture()) {
+        if (! $useTrial && ! $usePromo && $user->subscription_ends_at && $user->subscription_ends_at->isFuture()) {
             $startsAt = $user->subscription_ends_at->copy();
         }
 
@@ -492,12 +582,12 @@ class DesignerSubscription
                 'promo_code' => $usePromo ? self::configuredPromoCode() : null,
                 'discount_percent' => $usePromo ? 100 : 0,
                 'is_trial' => $useTrial,
+                'is_promo' => $usePromo,
                 'list_price' => $price,
                 'card_last4' => $cardLast4,
                 'card_expiry' => $cardExpiry,
             ],
         ]);
-
         $planModel = \App\Models\SubscriptionPlan::findByKey($planKey);
         if ($planModel) {
             \App\Models\Subscription::query()->updateOrCreate(

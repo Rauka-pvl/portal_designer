@@ -154,22 +154,20 @@
 
     <div class="text-center max-w-2xl mx-auto">
         <h1 class="text-2xl sm:text-[28px] font-semibold tracking-tight sub-title">
-            {{ $canUseTrial ? __('subscription.onboarding_title') : __('subscription.onboarding_resume_title') }}
+            {{ __('subscription.onboarding_title') }}
         </h1>
         <p class="mt-2 text-sm sm:text-base sub-muted">
-            {{ $canUseTrial ? __('subscription.onboarding_subtitle') : __('subscription.onboarding_resume_subtitle') }}
+            {{ __('subscription.onboarding_subtitle_promo') }}
         </p>
     </div>
 
-    @if (! $canUseTrial)
-        <nav class="sub-steps justify-center" aria-label="{{ __('subscription.steps_aria') }}">
-            <span class="is-active">{{ __('subscription.step_plan') }}</span>
-            <span aria-hidden="true">→</span>
-            <span>{{ __('subscription.step_payment') }}</span>
-            <span aria-hidden="true">→</span>
-            <span>{{ __('subscription.step_done') }}</span>
-        </nav>
-    @endif
+    <nav class="sub-steps justify-center" aria-label="{{ __('subscription.steps_aria') }}">
+        <span class="is-active">{{ __('subscription.step_plan') }}</span>
+        <span aria-hidden="true">→</span>
+        <span>{{ __('subscription.step_payment') }}</span>
+        <span aria-hidden="true">→</span>
+        <span>{{ __('subscription.step_done') }}</span>
+    </nav>
 
     @if (empty($plans))
         <div class="sub-card text-center py-10">
@@ -949,23 +947,9 @@
     function activate() {
         if (busy || !selected) return;
         const card = planCard(selected);
-        if (!card) return;
-
-        if (!canTrial) {
-            window.location.href = card.dataset.checkoutUrl;
-            return;
-        }
-
-        const form = document.getElementById('onboard-activate-form');
-        if (!form) return;
-        busy = true;
-        [document.getElementById('onboard-primary-cta'), document.getElementById('onboard-sticky-cta')]
-            .forEach((btn) => {
-                if (!btn) return;
-                btn.disabled = true;
-                btn.textContent = i18n.loading;
-            });
-        form.requestSubmit ? form.requestSubmit() : form.submit();
+        if (!card?.dataset.checkoutUrl) return;
+        // Always go to payment/checkout — no silent trial activation.
+        window.location.href = card.dataset.checkoutUrl;
     }
 
     onboard.querySelectorAll('[data-select-plan]').forEach((btn) => {

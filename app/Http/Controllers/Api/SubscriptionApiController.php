@@ -26,8 +26,14 @@ class SubscriptionApiController extends Controller
                 'plans' => PlanResource::collection(collect(DesignerSubscription::plans())->values())->resolve(),
                 'comparison_feature_keys' => DesignerSubscription::comparisonFeatureKeys(),
                 'trial_days' => DesignerSubscription::trialDays(),
+                'trial_enabled' => DesignerSubscription::trialEnabled(),
                 'period_days' => DesignerSubscription::periodDays(),
                 'trial_requires_card' => DesignerSubscription::trialRequiresCard(),
+                'payments_enabled' => DesignerSubscription::paymentsEnabled(),
+                'promo_window_active' => DesignerSubscription::promoWindowActive(),
+                'promo_period_days' => DesignerSubscription::promoPeriodDays(),
+                'promo_valid_days' => DesignerSubscription::promoValidDays(),
+                'promo_ends_at' => DesignerSubscription::promoEndsAt()?->toISOString(),
             ],
         ]);
     }
@@ -62,11 +68,14 @@ class SubscriptionApiController extends Controller
     {
         $this->requireBillingPermission($request);
         $data = $request->validated();
+        $method = DesignerSubscription::paymentsEnabled()
+            ? $data['payment_method']
+            : DesignerSubscription::METHOD_PROMO;
         $digits = preg_replace('/\D+/', '', (string) ($data['card_number'] ?? ''));
         $payment = DesignerSubscription::checkout(
             $request->user(),
             $data['plan'],
-            $data['payment_method'],
+            $method,
             $data['promo_code'] ?? null,
             $digits && strlen($digits) >= 4 ? substr($digits, -4) : null,
             $data['card_expiry'] ?? null,

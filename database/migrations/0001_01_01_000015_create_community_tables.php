@@ -39,6 +39,8 @@ return new class extends Migration
             $table->foreignId('community_post_id')->constrained('community_posts')->cascadeOnDelete();
             $table->string('file_path');
             $table->string('file_type', 50);
+            $table->unsignedInteger('width')->nullable();
+            $table->unsignedInteger('height')->nullable();
             $table->integer('sort_order')->default(0);
             $table->timestamps();
 

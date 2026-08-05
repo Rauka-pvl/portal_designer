@@ -34,11 +34,6 @@ class EnsureDesignerSubscription
             return $next($request);
         }
 
-        // Allow onboarding period (first 24h without subscription)
-        if ($user->created_at && $user->created_at->diffInHours(now()) < 24 && ! $user->subscription) {
-            return $next($request);
-        }
-
         if (DesignerSubscription::hasAccess($user)) {
             return $next($request);
         }

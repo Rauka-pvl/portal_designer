@@ -59,8 +59,14 @@ class SubscriptionStubPaymentTest extends TestCase
 
     public function test_promo_code_comes_from_config_not_source_constant(): void
     {
-        config(['subscription.allow_stub_payments' => false]);
-        config(['subscription.promo_code' => 'Secret-Local-Promo']);
+        config([
+            'subscription.allow_stub_payments' => false,
+            'subscription.payments_enabled' => false,
+            'subscription.promo_code' => 'Secret-Local-Promo',
+            'subscription.promo_starts_at' => now()->toDateString(),
+            'subscription.promo_valid_days' => 7,
+            'subscription.promo_period_days' => 180,
+        ]);
 
         $user = User::factory()->create([
             'account_type' => 'designer',
