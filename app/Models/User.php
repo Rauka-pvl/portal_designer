@@ -298,6 +298,14 @@ class User extends Authenticatable
             return;
         }
 
+        // Persist "trial already used" even when only the legacy flag is set.
+        if (array_key_exists('subscription_trial_used', $data)
+            && $data['subscription_trial_used']
+            && ! array_key_exists('subscription_trial_ends_at', $data)
+            && ! $subscription?->trial_ends_at) {
+            $data['subscription_trial_ends_at'] = now()->subSecond();
+        }
+
         $planKey = $data['subscription_plan']
             ?? $subscription?->plan?->key
             ?? (array_key_exists('subscription_trial_ends_at', $data) ? 'pro' : null);
@@ -305,7 +313,8 @@ class User extends Authenticatable
         if ($planKey === null || $planKey === '') {
             if (! array_key_exists('subscription_ends_at', $data)
                 && ! array_key_exists('subscription_trial_ends_at', $data)
-                && ! array_key_exists('subscription_cancelled_at', $data)) {
+                && ! array_key_exists('subscription_cancelled_at', $data)
+                && ! array_key_exists('subscription_trial_used', $data)) {
                 return;
             }
             $planKey = $subscription?->plan?->key ?? 'personal';

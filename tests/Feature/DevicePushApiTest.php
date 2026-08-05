@@ -217,4 +217,59 @@ class DevicePushApiTest extends TestCase
                 && ($first['data']['id'] ?? null) === (string) $notification->id;
         });
     }
+
+    public function test_api_register_saves_push_token(): void
+    {
+        $pushToken = 'ExponentPushToken[register-device-token]';
+
+        $this->postJson('/api/register', [
+            'name' => 'Designer Push',
+            'email' => 'designer-push@example.com',
+            'password' => 'Password1!',
+            'password_confirmation' => 'Password1!',
+            'portal' => 'designer',
+            'push_token' => $pushToken,
+            'platform' => 'android',
+            'provider' => 'expo',
+            'app' => 'mobile',
+        ])
+            ->assertCreated()
+            ->assertJsonPath('device_registered', true)
+            ->assertJsonStructure(['token', 'token_type', 'user']);
+
+        $user = User::query()->where('email', 'designer-push@example.com')->first();
+        $this->assertNotNull($user);
+        $this->assertDatabaseHas('devices', [
+            'user_id' => $user->id,
+            'token' => $pushToken,
+            'platform' => 'android',
+        ]);
+    }
+
+    public function test_api_login_saves_push_token(): void
+    {
+        $user = User::factory()->create([
+            'account_type' => 'designer',
+            'email' => 'login-push@example.com',
+            'password' => bcrypt('Password1!'),
+        ]);
+
+        $pushToken = 'ExponentPushToken[login-device-token]';
+
+        $this->postJson('/api/login', [
+            'email' => $user->email,
+            'password' => 'Password1!',
+            'portal' => 'designer',
+            'push_token' => $pushToken,
+            'platform' => 'ios',
+        ])
+            ->assertOk()
+            ->assertJsonPath('device_registered', true);
+
+        $this->assertDatabaseHas('devices', [
+            'user_id' => $user->id,
+            'token' => $pushToken,
+            'platform' => 'ios',
+        ]);
+    }
 }

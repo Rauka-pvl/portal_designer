@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Device;
+use App\Support\DeviceRegistrar;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -25,29 +26,13 @@ class DeviceApiController extends Controller
             'app' => ['nullable', 'string', 'max:64'],
         ]);
 
-        $user = $request->user();
-        $provider = $data['provider'] ?? 'expo';
-        $app = $data['app'] ?? 'mobile';
+        $device = DeviceRegistrar::upsertFromRequestData($request->user(), $data);
 
-        $device = Device::query()->where('token', $data['token'])->first();
-
-        if ($device) {
-            $device->forceFill([
-                'user_id' => $user->id,
-                'platform' => $data['platform'] ?? $device->platform,
-                'provider' => $provider,
-                'app' => $app,
-                'last_used_at' => now(),
-            ])->save();
-        } else {
-            $device = Device::query()->create([
-                'user_id' => $user->id,
-                'token' => $data['token'],
-                'platform' => $data['platform'] ?? null,
-                'provider' => $provider,
-                'app' => $app,
-                'last_used_at' => now(),
-            ]);
+        if (! $device) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid push token',
+            ], 422);
         }
 
         return response()->json([

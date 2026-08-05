@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Support\DeviceRegistrar;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 
@@ -16,6 +18,8 @@ class AuthController extends Controller
     /**
      * POST /api/login
      * Body: email, password, portal (designer|supplier)
+     * Optional push: push_token|device_token|token, platform, provider, app
+     *        or device: { token, platform, provider, app }
      */
     public function login(Request $request): JsonResponse
     {
@@ -23,6 +27,7 @@ class AuthController extends Controller
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
             'portal' => ['required', 'in:designer,supplier'],
+            ...$this->deviceValidationRules(),
         ]);
 
         $user = User::query()->where('email', $data['email'])->first();
@@ -43,8 +48,8 @@ class AuthController extends Controller
             ]);
         }
 
-        // Один токен на устройство: старые mobile-токены можно удалить при желании
         $token = $user->createToken('mobile')->plainTextToken;
+        $device = DeviceRegistrar::upsertFromRequestData($user, $data);
 
         return response()->json([
             'success' => true,
@@ -53,12 +58,14 @@ class AuthController extends Controller
             'user' => $this->userPayload($user),
             'subscription_required' => $user->role === 'designer'
                 && ! \App\Support\DesignerSubscription::hasAccess($user),
+            'device_registered' => $device !== null,
         ]);
     }
 
     /**
      * POST /api/register
      * Body: name, email, password, password_confirmation, portal (designer|supplier)
+     * Optional push: push_token|device_token|token, platform, provider, app
      */
     public function register(Request $request): JsonResponse
     {
@@ -67,6 +74,7 @@ class AuthController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::defaults()],
             'portal' => ['required', 'in:designer,supplier'],
+            ...$this->deviceValidationRules(),
         ]);
 
         $isSupplier = $data['portal'] === 'supplier';
@@ -94,6 +102,7 @@ class AuthController extends Controller
         }
 
         $token = $user->createToken('mobile')->plainTextToken;
+        $device = DeviceRegistrar::upsertFromRequestData($user, $data);
 
         return response()->json([
             'success' => true,
@@ -104,6 +113,7 @@ class AuthController extends Controller
                 && ! \App\Support\DesignerSubscription::hasAccess($user),
             'deposit_required' => $user->role === 'supplier'
                 && ! \App\Support\SupplierDeposit::isDepositPaid($user),
+            'device_registered' => $device !== null,
         ], 201);
     }
 
@@ -122,9 +132,21 @@ class AuthController extends Controller
     /**
      * POST /api/logout
      * Header: Authorization: Bearer {token}
+     * Optional body: push_token|token — remove device push registration
      */
     public function logout(Request $request): JsonResponse
     {
+        $data = $request->validate([
+            'push_token' => ['nullable', 'string', 'max:512'],
+            'device_token' => ['nullable', 'string', 'max:512'],
+            'token' => ['nullable', 'string', 'max:512'],
+        ]);
+
+        $pushToken = trim((string) ($data['push_token'] ?? $data['device_token'] ?? $data['token'] ?? ''));
+        if ($pushToken !== '' && str_contains($pushToken, 'ExponentPushToken')) {
+            $request->user()->devices()->where('token', $pushToken)->delete();
+        }
+
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
@@ -139,6 +161,27 @@ class AuthController extends Controller
     public static function userPayloadPublic(User $user): array
     {
         return (new self)->userPayload($user);
+    }
+
+    /**
+     * @return array<string, list<mixed>>
+     */
+    private function deviceValidationRules(): array
+    {
+        return [
+            'push_token' => ['nullable', 'string', 'min:8', 'max:512'],
+            'device_token' => ['nullable', 'string', 'min:8', 'max:512'],
+            'token' => ['nullable', 'string', 'min:8', 'max:512'],
+            'platform' => ['nullable', 'string', Rule::in(['ios', 'android', 'web'])],
+            'provider' => ['nullable', 'string', Rule::in(['expo', 'fcm', 'apns'])],
+            'app' => ['nullable', 'string', 'max:64'],
+            'device' => ['nullable', 'array'],
+            'device.token' => ['nullable', 'string', 'min:8', 'max:512'],
+            'device.push_token' => ['nullable', 'string', 'min:8', 'max:512'],
+            'device.platform' => ['nullable', 'string', Rule::in(['ios', 'android', 'web'])],
+            'device.provider' => ['nullable', 'string', Rule::in(['expo', 'fcm', 'apns'])],
+            'device.app' => ['nullable', 'string', 'max:64'],
+        ];
     }
 
     private function portalMatchesRole(string $portal, string $role): bool
