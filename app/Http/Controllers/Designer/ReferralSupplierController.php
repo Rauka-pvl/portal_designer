@@ -26,7 +26,7 @@ class ReferralSupplierController extends Controller
         $designerId = (int) $request->query('designer');
         $designer = User::query()
             ->where('id', $designerId)
-            ->where('role', 'designer')
+            ->where('account_type', 'designer')
             ->firstOrFail(['id', 'name']);
 
         return view('designer.suppliers.create', [
@@ -55,7 +55,7 @@ class ReferralSupplierController extends Controller
         $designerId = (int) $request->query('designer');
         $designer = User::query()
             ->where('id', $designerId)
-            ->where('role', 'designer')
+            ->where('account_type', 'designer')
             ->firstOrFail(['id', 'name']);
 
         $data = $request->validate([

@@ -22,7 +22,7 @@ class SupplierOrderChatController extends Controller
 
         $messages = SupplierOrderMessage::query()
             ->where('supplier_order_id', $order->id)
-            ->with('sender:id,name,role')
+            ->with('sender:id,name,account_type')
             ->orderBy('id')
             ->get()
             ->map(function (SupplierOrderMessage $message) use ($request) {
@@ -58,7 +58,7 @@ class SupplierOrderChatController extends Controller
             'supplier_order_id' => (int) $order->id,
             'sender_user_id' => (int) $request->user()->id,
             'message' => trim((string) $data['message']),
-        ])->load('sender:id,name,role');
+        ])->load('sender:id,name,account_type');
 
         return response()->json([
             'success' => true,

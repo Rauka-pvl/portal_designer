@@ -63,7 +63,7 @@ class CommunityController extends Controller
         $user = $request->user();
         $post = CommunityPost::query()
             ->with([
-                'author:id,name,role,city',
+                'author:id,name,account_type',
                 'author.supplierProfile:id,user_id,name,city,logo',
                 'media',
             ])
@@ -83,8 +83,8 @@ class CommunityController extends Controller
 
         $comments = CommunityPostComment::query()
             ->with([
-                'author:id,name,role,city',
-                'replies' => fn ($q) => $q->with('author:id,name,role,city')->orderBy('id'),
+                'author:id,name,account_type',
+                'replies' => fn ($q) => $q->with('author:id,name,account_type')->orderBy('id'),
             ])
             ->where('community_post_id', $post->id)
             ->whereNull('parent_id')
@@ -92,7 +92,7 @@ class CommunityController extends Controller
             ->get();
 
         $authorPosts = CommunityPost::query()
-            ->with(['author:id,name,role,city', 'media'])
+            ->with(['author:id,name,account_type', 'media'])
             ->published()
             ->where('user_id', $post->user_id)
             ->where('id', '!=', $post->id)
@@ -122,7 +122,7 @@ class CommunityController extends Controller
         $author = User::query()
             ->with(['designerProfile', 'supplierProfile'])
             ->whereKey($userId)
-            ->whereIn('role', ['designer', 'supplier'])
+            ->whereIn('account_type', ['designer', 'supplier'])
             ->firstOrFail();
 
         $isOwner = (int) $viewer->id === (int) $author->id;
@@ -197,7 +197,7 @@ class CommunityController extends Controller
         $user = $request->user();
         $post = CommunityPost::query()
             ->with([
-                'author:id,name,role,city',
+                'author:id,name,account_type',
                 'author.supplierProfile:id,user_id,name,city,logo',
                 'media',
             ])
@@ -217,8 +217,8 @@ class CommunityController extends Controller
 
         $comments = CommunityPostComment::query()
             ->with([
-                'author:id,name,role,city',
-                'replies' => fn ($q) => $q->with('author:id,name,role,city')->orderBy('id'),
+                'author:id,name,account_type',
+                'replies' => fn ($q) => $q->with('author:id,name,account_type')->orderBy('id'),
             ])
             ->where('community_post_id', $post->id)
             ->whereNull('parent_id')
@@ -226,7 +226,7 @@ class CommunityController extends Controller
             ->get();
 
         $authorPosts = CommunityPost::query()
-            ->with(['author:id,name,role,city', 'media'])
+            ->with(['author:id,name,account_type', 'media'])
             ->published()
             ->where('user_id', $post->user_id)
             ->where('id', '!=', $post->id)
@@ -266,8 +266,8 @@ class CommunityController extends Controller
 
         $comments = CommunityPostComment::query()
             ->with([
-                'author:id,name,role,city',
-                'replies' => fn ($q) => $q->with('author:id,name,role,city')->orderBy('id'),
+                'author:id,name,account_type',
+                'replies' => fn ($q) => $q->with('author:id,name,account_type')->orderBy('id'),
             ])
             ->where('community_post_id', $post->id)
             ->whereNull('parent_id')
@@ -289,12 +289,12 @@ class CommunityController extends Controller
         $author = User::query()
             ->with(['designerProfile', 'supplierProfile'])
             ->whereKey($userId)
-            ->whereIn('role', ['designer', 'supplier'])
+            ->whereIn('account_type', ['designer', 'supplier'])
             ->firstOrFail();
 
         $posts = CommunityPost::query()
             ->with([
-                'author:id,name,role,city',
+                'author:id,name,account_type',
                 'author.supplierProfile:id,user_id,name,city,logo',
                 'media',
             ])
@@ -352,7 +352,7 @@ class CommunityController extends Controller
             return $post;
         });
 
-        $post->load(['author:id,name,role,city', 'author.supplierProfile:id,user_id,name,city,logo', 'media']);
+        $post->load(['author:id,name,account_type', 'author.supplierProfile:id,user_id,name,city,logo', 'media']);
         $this->hydrateViewerState(collect([$post]), $user->id);
 
         $payload = [
@@ -410,7 +410,7 @@ class CommunityController extends Controller
             $this->syncMedia($request, $post, count($keepMediaIds));
         });
 
-        $post->refresh()->load(['author:id,name,role,city', 'author.supplierProfile:id,user_id,name,city,logo', 'media']);
+        $post->refresh()->load(['author:id,name,account_type', 'author.supplierProfile:id,user_id,name,city,logo', 'media']);
         $this->hydrateViewerState(collect([$post]), $user->id);
 
         $payload = [
@@ -639,7 +639,7 @@ class CommunityController extends Controller
         ]);
 
         $post->increment('comments_count');
-        $comment->load(['author:id,name,role,city', 'replies.author:id,name,role,city']);
+        $comment->load(['author:id,name,account_type', 'replies.author:id,name,account_type']);
         CommunityNotifier::commented($post, $user, $comment);
 
         $payload = [
@@ -681,7 +681,7 @@ class CommunityController extends Controller
             'ok' => true,
             'message' => __('community.toasts.comment_updated'),
             'text' => $comment->text,
-            'comment' => $this->serializeComment($comment->fresh()->load('author:id,name,role,city'), (int) $user->id),
+            'comment' => $this->serializeComment($comment->fresh()->load('author:id,name,account_type'), (int) $user->id),
         ]);
     }
 
@@ -774,7 +774,7 @@ class CommunityController extends Controller
 
         $query = CommunityPost::query()
             ->with([
-                'author:id,name,role,city',
+                'author:id,name,account_type',
                 'author.supplierProfile:id,user_id,name,city,logo',
                 'media',
             ])

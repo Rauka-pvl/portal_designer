@@ -20,7 +20,7 @@ class DesignerDirectoryController extends Controller
         $workedWithLookup = array_fill_keys($workedWithIds, true);
 
         $users = User::query()
-            ->where('role', 'designer')
+            ->where('account_type', 'designer')
             ->with('designerProfile:id,user_id,city,short_description,specialization')
             ->orderBy('name')
             ->get();
@@ -50,7 +50,7 @@ class DesignerDirectoryController extends Controller
         $this->supplierForUser($request);
 
         $designer = User::query()
-            ->where('role', 'designer')
+            ->where('account_type', 'designer')
             ->with('designerProfile')
             ->findOrFail($designerId);
 
@@ -66,7 +66,7 @@ class DesignerDirectoryController extends Controller
         $this->supplierForUser($request);
 
         $designer = User::query()
-            ->where('role', 'designer')
+            ->where('account_type', 'designer')
             ->findOrFail($designerId);
 
         $reviews = Review::query()

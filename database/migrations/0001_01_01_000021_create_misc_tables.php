@@ -25,28 +25,34 @@ return new class extends Migration
         Schema::create('designer_cashback_transactions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->restrictOnDelete();
+            $table->string('type', 20);
+            $table->unsignedInteger('amount');
             $table->unsignedBigInteger('supplier_order_id')->nullable();
-            $table->decimal('amount', 12, 2);
-            $table->string('type', 50);
-            $table->text('description')->nullable();
+            $table->string('status', 20)->default('completed');
+            $table->string('description')->nullable();
+            $table->json('meta')->nullable();
             $table->timestamps();
 
-            $table->index('user_id');
+            $table->unique(['supplier_order_id', 'type'], 'cashback_order_accrual_unique');
+            $table->index(['user_id', 'created_at']);
+            $table->index(['user_id', 'type', 'status']);
             $table->index('supplier_order_id');
-            $table->index('type');
         });
 
         Schema::create('reviews', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('supplier_id')->constrained()->cascadeOnDelete();
-            $table->unsignedBigInteger('order_id')->nullable();
+            $table->unsignedBigInteger('supplier_order_id')->nullable();
+            $table->string('direction', 32);
+            $table->foreignId('reviewer_user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('designer_user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('supplier_id')->constrained('suppliers')->cascadeOnDelete();
             $table->unsignedTinyInteger('rating');
             $table->text('comment')->nullable();
             $table->timestamps();
 
-            $table->index('user_id');
-            $table->index('supplier_id');
+            $table->unique(['supplier_order_id', 'direction']);
+            $table->index(['direction', 'designer_user_id']);
+            $table->index(['direction', 'supplier_id']);
             $table->index('rating');
         });
     }

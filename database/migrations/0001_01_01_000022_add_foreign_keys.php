@@ -37,7 +37,7 @@ return new class extends Migration
         });
 
         Schema::table('reviews', function (Blueprint $table) {
-            $table->foreign('order_id')->references('id')->on('supplier_orders')->nullOnDelete();
+            $table->foreign('supplier_order_id')->references('id')->on('supplier_orders')->nullOnDelete();
         });
     }
 
@@ -47,7 +47,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('reviews', function (Blueprint $table) {
-            $table->dropForeign(['order_id']);
+            $table->dropForeign(['supplier_order_id']);
         });
 
         Schema::table('designer_cashback_transactions', function (Blueprint $table) {
