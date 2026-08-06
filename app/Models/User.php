@@ -143,13 +143,22 @@ class User extends Authenticatable
 
     public function getRoleAttribute(): string
     {
-        return (string) ($this->attributes['account_type'] ?? 'designer');
+        $type = (string) ($this->attributes['account_type'] ?? 'designer');
+
+        // Legacy routes/auth expect "moderator"; DB stores system_admin after migration.
+        return match ($type) {
+            'system_admin', 'admin', 'moderator' => 'moderator',
+            'supplier' => 'supplier',
+            default => 'designer',
+        };
     }
 
     public function setRoleAttribute(mixed $value): void
     {
-        if (in_array($value, ['designer', 'supplier', 'system_admin', 'admin'], true)) {
-            $this->attributes['account_type'] = $value === 'admin' ? 'system_admin' : $value;
+        if (in_array($value, ['designer', 'supplier', 'system_admin', 'admin', 'moderator'], true)) {
+            $this->attributes['account_type'] = in_array($value, ['admin', 'moderator'], true)
+                ? 'system_admin'
+                : $value;
         }
     }
 
@@ -331,24 +340,23 @@ class User extends Authenticatable
             $planKey = $subscription?->plan?->key ?? 'personal';
         }
 
-        $defaults = [
-            'personal' => ['name' => 'Personal', 'price' => 0, 'included_seats' => 1],
-            'standard' => ['name' => 'Standard', 'price' => 5000, 'included_seats' => 1],
-            'pro' => ['name' => 'Pro', 'price' => 9990, 'included_seats' => 1],
-            'corporate' => ['name' => 'Corporate', 'price' => 29990, 'included_seats' => 5],
-        ];
-        $planMeta = $defaults[$planKey] ?? ['name' => ucfirst((string) $planKey), 'price' => 0, 'included_seats' => 1];
-        $plan = SubscriptionPlan::query()->updateOrCreate(
-            ['key' => $planKey],
-            [
-                'name' => $planMeta['name'],
-                'price' => $planMeta['price'],
+        // Plan rows are owned by SubscriptionPlanSeeder — only create a safe
+        // placeholder for unknown keys, never overwrite seeded plan data.
+        // Placeholder stays archived so it never appears in the sellable catalog.
+        $plan = SubscriptionPlan::query()->firstWhere('key', $planKey);
+        if (! $plan) {
+            $plan = SubscriptionPlan::query()->create([
+                'key' => $planKey,
+                'name' => ucfirst((string) $planKey),
+                'type' => 'individual',
+                'price' => 0,
                 'currency' => 'KZT',
                 'billing_period' => 'month',
-                'included_seats' => $planMeta['included_seats'],
-                'status' => 'active',
-            ]
-        );
+                'included_seats' => 1,
+                'status' => 'archived',
+                'is_active' => false,
+            ]);
+        }
 
         $subscription ??= new Subscription(['user_id' => $this->id]);
         $subscription->plan_id = $plan->id;

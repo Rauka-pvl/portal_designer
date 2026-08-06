@@ -26,10 +26,14 @@ class RoleMiddleware
 
         $allowed = $this->normalizeAllowedRoles($roleSegments);
         $userRole = (string) ($request->user()->role ?? 'designer');
+        // Legacy 'moderator' accounts were migrated to system_admin, so admin
+        // roles must also satisfy moderator-only routes.
         $aliases = array_values(array_unique(array_filter([
             $userRole,
             $userRole === 'system_admin' ? 'admin' : null,
+            $userRole === 'system_admin' ? 'moderator' : null,
             $userRole === 'admin' ? 'system_admin' : null,
+            $userRole === 'admin' ? 'moderator' : null,
         ])));
 
         if (array_intersect($aliases, $allowed) !== []) {

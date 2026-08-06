@@ -29,6 +29,16 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [SetLocale::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->render(function (\App\Exceptions\PlanLimitExceeded $exception, Request $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json($exception->payload() + ['code' => $exception->errorCode], 422);
+            }
+
+            return back()
+                ->withErrors(['limit' => $exception->getMessage()])
+                ->with('limit_exceeded', $exception->payload());
+        });
+
         $exceptions->render(function (HttpException $exception, Request $request) {
             if ($request->is('api/*') && $exception->getStatusCode() === 403) {
                 return response()->json([

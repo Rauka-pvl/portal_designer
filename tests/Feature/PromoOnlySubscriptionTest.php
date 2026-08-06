@@ -76,9 +76,30 @@ class PromoOnlySubscriptionTest extends TestCase
 
         $user->refresh();
         $this->assertTrue(DesignerSubscription::hasAccess($user));
-        $this->assertSame(DesignerSubscription::PLAN_PRO, $user->subscription_plan);
+        $this->assertSame(DesignerSubscription::PLAN_SUCCESS, $user->subscription_plan);
         $this->assertNotNull($user->subscription_ends_at);
         $this->assertTrue($user->subscription_ends_at->greaterThan(now()->addDays(170)));
+    }
+
+    public function test_promo_overrides_selected_plan_with_promo_plan(): void
+    {
+        $user = $this->designer();
+
+        // User picks Base, but the promo always grants Success.
+        $payment = DesignerSubscription::checkout(
+            $user,
+            DesignerSubscription::PLAN_BASE,
+            DesignerSubscription::METHOD_PROMO,
+            'Launch-6M'
+        );
+
+        $this->assertSame(DesignerSubscription::PLAN_SUCCESS, (string) $payment->plan);
+        $user->refresh();
+        $this->assertSame(DesignerSubscription::PLAN_SUCCESS, $user->subscription_plan);
+        // Success is corporate — the owner gets a team with unlimited seats.
+        $team = app(\App\Services\Team\TeamService::class)->activeTeamFor($user);
+        $this->assertNotNull($team);
+        $this->assertNull($team->max_members);
     }
 
     public function test_promo_rejected_outside_seven_day_window(): void
@@ -132,7 +153,7 @@ class PromoOnlySubscriptionTest extends TestCase
         Sanctum::actingAs($user);
 
         $this->postJson('/api/subscription/checkout', [
-            'plan' => DesignerSubscription::PLAN_CORPORATE,
+            'plan' => DesignerSubscription::PLAN_PROGRESS,
             'payment_method' => 'promo',
             'promo_code' => 'Launch-6M',
         ])

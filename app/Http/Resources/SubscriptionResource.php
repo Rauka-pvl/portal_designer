@@ -19,7 +19,7 @@ class SubscriptionResource extends JsonResource
         $teamRole = $team?->roleFor($user);
         $amount = DesignerSubscription::nextChargeAmount($user);
         $primary = DesignerSubscription::primaryAction($user);
-        $isCorporate = (string) $user->subscription_plan === DesignerSubscription::PLAN_CORPORATE
+        $isCorporate = DesignerSubscription::isCorporatePlanUser($user)
             || ($team && $teamService->isCorporateUser($user));
 
         return [

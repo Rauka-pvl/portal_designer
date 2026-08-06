@@ -36,6 +36,7 @@ return [
     'add_supplier' => 'Add supplier',
     'view_supplier' => 'View supplier',
     'view_supplier_short' => 'View',
+    'open_ticket' => 'Open ticket',
     'referral_supplier_confirmed' => 'Supplier added',
     'action_unavailable' => 'This action is no longer available.',
     'supplier_missing' => 'Supplier not found.',

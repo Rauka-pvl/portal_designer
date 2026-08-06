@@ -137,10 +137,10 @@ class MobileApiRedesignTest extends TestCase
         Sanctum::actingAs($this->designer());
         $response = $this->getJson('/api/subscription/plans')->assertOk();
         $plans = collect($response->json('data.plans'));
-        $corporate = $plans->firstWhere('key', DesignerSubscription::PLAN_CORPORATE);
+        $corporate = $plans->firstWhere('key', DesignerSubscription::PLAN_PROGRESS);
         $this->assertNotNull($corporate);
-        $this->assertSame('29990.00', $corporate['price']);
-        $this->assertSame(5, (int) $corporate['included_seats']);
+        $this->assertSame('35000.00', $corporate['price']);
+        $this->assertSame(7, (int) $corporate['included_seats']);
         $this->assertSame('KZT', $corporate['currency']);
     }
 

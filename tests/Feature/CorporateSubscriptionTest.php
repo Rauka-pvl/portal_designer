@@ -59,13 +59,24 @@ class CorporateSubscriptionTest extends TestCase
         return $teams->acceptInvitation($member, $invitation);
     }
 
-    public function test_corporate_is_third_plan_with_price_and_seat_limit(): void
+    public function test_catalog_has_six_plans_grouped_by_type(): void
     {
-        $plans = array_values(DesignerSubscription::plans());
-        $this->assertCount(3, $plans);
-        $this->assertSame('corporate', $plans[2]['key']);
-        $this->assertSame(29990, (int) $plans[2]['price']);
-        $this->assertSame(5, (int) $plans[2]['max_members']);
+        $plans = DesignerSubscription::plans();
+        $this->assertCount(6, $plans);
+        $this->assertSame(
+            ['base', 'standard', 'pro', 'economy', 'progress', 'success'],
+            array_keys($plans)
+        );
+
+        $economy = $plans['economy'];
+        $this->assertSame('corporate', $economy['type']);
+        $this->assertSame(25000, (int) $economy['price']);
+        $this->assertSame(3, (int) $economy['max_users']);
+        $this->assertSame(6, (int) $economy['max_projects']);
+
+        $this->assertTrue($plans['success']['unlimited_users']);
+        $this->assertTrue($plans['success']['unlimited_projects']);
+        $this->assertTrue($plans['pro']['priority_support']);
     }
 
     public function test_activating_corporate_creates_team_and_owner_seat(): void
@@ -81,12 +92,12 @@ class CorporateSubscriptionTest extends TestCase
 
         DesignerSubscription::checkout(
             $owner,
-            DesignerSubscription::PLAN_CORPORATE,
+            DesignerSubscription::PLAN_PROGRESS,
             DesignerSubscription::METHOD_KASPI
         );
 
         $owner->refresh();
-        $this->assertSame(DesignerSubscription::PLAN_CORPORATE, $owner->subscription_plan);
+        $this->assertSame(DesignerSubscription::PLAN_PROGRESS, $owner->subscription_plan);
 
         $team = DesignerTeam::query()->where('owner_id', $owner->id)->where('status', 'active')->first();
         $this->assertNotNull($team);
@@ -97,16 +108,17 @@ class CorporateSubscriptionTest extends TestCase
         );
     }
 
-    public function test_cannot_exceed_five_seats_including_pending_invites(): void
+    public function test_cannot_exceed_seat_limit_including_pending_invites(): void
     {
         $owner = $this->designer();
         $teams = app(TeamService::class);
-        $team = $teams->activateCorporateForOwner($owner);
-        $owner->subscription_plan = DesignerSubscription::PLAN_CORPORATE;
+        $economy = \App\Models\SubscriptionPlan::findByKey(DesignerSubscription::PLAN_ECONOMY); // 3 seats
+        $team = $teams->activateCorporateForOwner($owner, null, $economy);
+        $owner->subscription_plan = DesignerSubscription::PLAN_ECONOMY;
         $owner->subscription_ends_at = now()->addMonth();
         $owner->save();
 
-        for ($i = 0; $i < 4; $i++) {
+        for ($i = 0; $i < 2; $i++) {
             $member = $this->designer([
                 'email' => "m{$i}@example.com",
                 'subscription_ends_at' => null,
@@ -115,7 +127,7 @@ class CorporateSubscriptionTest extends TestCase
             $teams->addExistingUser($team, $owner, $member, TeamRole::Designer);
         }
 
-        $this->assertSame(5, $team->fresh()->usedSeats());
+        $this->assertSame(3, $team->fresh()->usedSeats());
 
         $this->expectException(ValidationException::class);
         $teams->inviteByEmail($team->fresh(), $owner, 'overflow@example.com', TeamRole::Designer);
@@ -135,11 +147,11 @@ class CorporateSubscriptionTest extends TestCase
         $teamA = $teams->activateCorporateForOwner($ownerA);
         $teamB = $teams->activateCorporateForOwner($ownerB);
         $ownerA->forceFill([
-            'subscription_plan' => DesignerSubscription::PLAN_CORPORATE,
+            'subscription_plan' => DesignerSubscription::PLAN_PROGRESS,
             'subscription_ends_at' => now()->addMonth(),
         ])->save();
         $ownerB->forceFill([
-            'subscription_plan' => DesignerSubscription::PLAN_CORPORATE,
+            'subscription_plan' => DesignerSubscription::PLAN_PROGRESS,
             'subscription_ends_at' => now()->addMonth(),
         ])->save();
 
@@ -171,7 +183,7 @@ class CorporateSubscriptionTest extends TestCase
         $teams = app(TeamService::class);
         $team = $teams->activateCorporateForOwner($owner);
         $owner->forceFill([
-            'subscription_plan' => DesignerSubscription::PLAN_CORPORATE,
+            'subscription_plan' => DesignerSubscription::PLAN_PROGRESS,
             'subscription_ends_at' => now()->addMonth(),
         ])->save();
         $invitation = $teams->addExistingUser($team, $owner, $member, TeamRole::Designer);
@@ -201,7 +213,7 @@ class CorporateSubscriptionTest extends TestCase
         $teams = app(TeamService::class);
         $team = $teams->activateCorporateForOwner($owner);
         $owner->forceFill([
-            'subscription_plan' => DesignerSubscription::PLAN_CORPORATE,
+            'subscription_plan' => DesignerSubscription::PLAN_PROGRESS,
             'subscription_ends_at' => now()->addMonth(),
         ])->save();
         $this->inviteAndAccept($teams, $team, $owner, $designer, TeamRole::Designer);
@@ -223,7 +235,7 @@ class CorporateSubscriptionTest extends TestCase
     public function test_expired_corporate_blocks_cabinet_but_keeps_team(): void
     {
         $owner = $this->designer([
-            'subscription_plan' => DesignerSubscription::PLAN_CORPORATE,
+            'subscription_plan' => DesignerSubscription::PLAN_PROGRESS,
             'subscription_ends_at' => now()->subDay(),
             'subscription_trial_ends_at' => null,
         ]);
@@ -244,9 +256,15 @@ class CorporateSubscriptionTest extends TestCase
 
     public function test_settings_hides_notifications_and_subscriptions_tabs(): void
     {
-        $user = $this->designer();
+        $owner = $this->designer();
+        $teams = app(TeamService::class);
+        $teams->activateCorporateForOwner($owner);
+        $owner->forceFill([
+            'subscription_plan' => DesignerSubscription::PLAN_PROGRESS,
+            'subscription_ends_at' => now()->addMonth(),
+        ])->save();
 
-        $html = $this->actingAs($user)
+        $html = $this->actingAs($owner)
             ->get(route('settings.index'))
             ->assertOk()
             ->getContent();
@@ -255,6 +273,16 @@ class CorporateSubscriptionTest extends TestCase
         $this->assertStringContainsString('tab=team', $html);
         $this->assertStringContainsString('tab=roles', $html);
         $this->assertStringNotContainsString('settings-tab" disabled', $html);
+
+        // Individual plans: team/roles tabs are hidden
+        $solo = $this->designer(['email' => 'solo@example.com']);
+        $soloHtml = $this->actingAs($solo)
+            ->get(route('settings.index'))
+            ->assertOk()
+            ->getContent();
+
+        $this->assertStringNotContainsString('tab=team', $soloHtml);
+        $this->assertStringNotContainsString('tab=roles', $soloHtml);
     }
 
     public function test_create_member_uses_standard_password_not_temporary(): void
@@ -263,7 +291,7 @@ class CorporateSubscriptionTest extends TestCase
         $teams = app(TeamService::class);
         $team = $teams->activateCorporateForOwner($owner);
         $owner->forceFill([
-            'subscription_plan' => DesignerSubscription::PLAN_CORPORATE,
+            'subscription_plan' => DesignerSubscription::PLAN_PROGRESS,
             'subscription_ends_at' => now()->addMonth(),
         ])->save();
 
@@ -313,7 +341,7 @@ class CorporateSubscriptionTest extends TestCase
         $teams = app(TeamService::class);
         $team = $teams->activateCorporateForOwner($owner);
         $owner->forceFill([
-            'subscription_plan' => DesignerSubscription::PLAN_CORPORATE,
+            'subscription_plan' => DesignerSubscription::PLAN_PROGRESS,
             'subscription_ends_at' => now()->addMonth(),
         ])->save();
         $this->inviteAndAccept($teams, $team, $owner, $admin, TeamRole::Admin);
@@ -334,7 +362,7 @@ class CorporateSubscriptionTest extends TestCase
         $teams = app(TeamService::class);
         $team = $teams->activateCorporateForOwner($owner);
         $owner->forceFill([
-            'subscription_plan' => DesignerSubscription::PLAN_CORPORATE,
+            'subscription_plan' => DesignerSubscription::PLAN_PROGRESS,
             'subscription_ends_at' => now()->addMonth(),
         ])->save();
 
@@ -356,7 +384,7 @@ class CorporateSubscriptionTest extends TestCase
         $invitee->refresh();
         $this->assertSame((int) $team->id, (int) $teams->activeTeamFor($invitee)?->id);
         $this->assertSame('accepted', $invitation->fresh()->status);
-        $this->assertSame(DesignerSubscription::PLAN_CORPORATE, $invitee->subscription_plan);
+        $this->assertSame(DesignerSubscription::PLAN_PROGRESS, $invitee->subscription_plan);
         $this->assertTrue(DesignerSubscription::hasAccess($invitee));
         $this->assertContains(
             (int) $invitee->id,
@@ -375,12 +403,12 @@ class CorporateSubscriptionTest extends TestCase
         $teams = app(TeamService::class);
         $team = $teams->activateCorporateForOwner($owner);
         $owner->forceFill([
-            'subscription_plan' => DesignerSubscription::PLAN_CORPORATE,
+            'subscription_plan' => DesignerSubscription::PLAN_PROGRESS,
             'subscription_ends_at' => now()->addMonth(),
         ])->save();
 
         $this->inviteAndAccept($teams, $team, $owner, $member, TeamRole::Designer);
-        $this->assertSame(DesignerSubscription::PLAN_CORPORATE, $member->fresh()->subscription_plan);
+        $this->assertSame(DesignerSubscription::PLAN_PROGRESS, $member->fresh()->subscription_plan);
 
         $seat = $team->memberFor($member);
         $this->assertNotNull($seat);
@@ -403,7 +431,7 @@ class CorporateSubscriptionTest extends TestCase
         $teams = app(TeamService::class);
         $team = $teams->activateCorporateForOwner($owner);
         $owner->forceFill([
-            'subscription_plan' => DesignerSubscription::PLAN_CORPORATE,
+            'subscription_plan' => DesignerSubscription::PLAN_PROGRESS,
             'subscription_ends_at' => now()->addMonth(),
         ])->save();
 

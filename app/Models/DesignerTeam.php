@@ -71,14 +71,21 @@ class DesignerTeam extends Model
         return $this->activeMembersCount() + $this->pendingInvitationsCount();
     }
 
-    public function seatsRemaining(): int
+    /** null = unlimited seats. */
+    public function seatsRemaining(): ?int
     {
+        if ($this->max_members === null) {
+            return null;
+        }
+
         return max(0, (int) $this->max_members - $this->usedSeats());
     }
 
     public function hasSeatAvailable(): bool
     {
-        return $this->seatsRemaining() > 0;
+        $remaining = $this->seatsRemaining();
+
+        return $remaining === null || $remaining > 0;
     }
 
     public function memberFor(User|int $user): ?DesignerTeamMember

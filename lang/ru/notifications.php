@@ -36,6 +36,7 @@ return [
     'add_supplier' => 'Добавить поставщика',
     'view_supplier' => 'Посмотреть поставщика',
     'view_supplier_short' => 'Посмотреть',
+    'open_ticket' => 'Открыть тикет',
     'referral_supplier_confirmed' => 'Поставщик добавлен',
     'action_unavailable' => 'Это действие больше недоступно.',
     'supplier_missing' => 'Поставщик не найден.',

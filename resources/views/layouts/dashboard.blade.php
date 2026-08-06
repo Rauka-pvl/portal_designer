@@ -234,6 +234,16 @@
                             <span>{{ __('moderation.history_title') }}</span>
                         </a>
                     @endif
+                    @if (Route::has('admin.support.index'))
+                        <a href="{{ route('admin.support.index') }}"
+                            class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1 {{ request()->routeIs('admin.support.*') ? 'bg-[#FDFDFC] dark:bg-[#0a0a0a]' : '' }}">
+                            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                            <span>{{ __('support.admin_nav') }}</span>
+                        </a>
+                    @endif
                 @else
                     @if ($hasSubscriptionAccess)
                     <a href="{{ route('dashboard') }}"
@@ -322,6 +332,17 @@
                                     d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2v-1m0 0V6a2 2 0 012-2h8a2 2 0 012 2v6a2 2 0 01-2 2H9l-4 4v-4z" />
                             </svg>
                             <span>{{ __('community.nav') }}</span>
+                        </a>
+                    @endif
+
+                    @if (Route::has('support.index'))
+                        <a href="{{ route('support.index') }}"
+                            class="flex items-center gap-3 px-4 py-2 rounded-lg text-[#1b1b18] dark:text-[#EDEDEC] hover:bg-[#FDFDFC] dark:hover:bg-[#0a0a0a] transition-colors mb-1 {{ request()->routeIs('support.*') ? 'bg-[#FDFDFC] dark:bg-[#0a0a0a]' : '' }}">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                            <span>{{ __('support.nav') }}</span>
                         </a>
                     @endif
                     @endif {{-- hasSubscriptionAccess --}}

@@ -95,8 +95,9 @@ class SubscriptionApiController extends Controller
         $data = $request->validated();
         $user = $request->user();
 
-        if ($user->subscription_plan === DesignerSubscription::PLAN_CORPORATE
-            && in_array($data['plan'], [DesignerSubscription::PLAN_STANDARD, DesignerSubscription::PLAN_PRO], true)
+        $catalog = app(\App\Services\Billing\PlanCatalog::class);
+        if (DesignerSubscription::isCorporatePlanUser($user)
+            && ($catalog->find($data['plan'])?->isIndividual() ?? false)
             && ! ($data['confirm_team_downgrade'] ?? false)) {
             throw ValidationException::withMessages([
                 'plan' => [__('subscription.confirm_downgrade_from_corporate')],

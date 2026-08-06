@@ -7,7 +7,6 @@ use App\Models\DesignerTeam;
 use App\Models\DesignerTeamMember;
 use App\Models\Project;
 use App\Models\User;
-use App\Support\DesignerSubscription;
 use Illuminate\Console\Command;
 
 class VerifyCorporateMigrationCommand extends Command
@@ -18,9 +17,13 @@ class VerifyCorporateMigrationCommand extends Command
 
     public function handle(): int
     {
+        $corporateKeys = \App\Models\SubscriptionPlan::query()
+            ->where('type', \App\Models\SubscriptionPlan::TYPE_CORPORATE)
+            ->pluck('key');
+
         $corporateOwners = User::query()
-            ->where('subscription_plan', DesignerSubscription::PLAN_CORPORATE)
-            ->get(['id', 'name', 'email', 'subscription_ends_at', 'subscription_trial_ends_at']);
+            ->whereHas('subscription.plan', fn ($q) => $q->whereIn('key', $corporateKeys))
+            ->get(['id', 'name', 'email']);
 
         $this->info('Corporate subscriptions: '.$corporateOwners->count());
         foreach ($corporateOwners as $owner) {
@@ -38,19 +41,20 @@ class VerifyCorporateMigrationCommand extends Command
 
         foreach ($teams as $team) {
             $used = $team->usedSeats();
+            $maxLabel = $team->max_members === null ? '∞' : (string) $team->max_members;
             $this->line(sprintf(
-                '  Team #%d "%s" status=%s seats=%d/%d members=%d projects=%d invites=%d',
+                '  Team #%d "%s" status=%s seats=%d/%s members=%d projects=%d invites=%d',
                 $team->id,
                 $team->name,
                 $team->status,
                 $used,
-                $team->max_members,
+                $maxLabel,
                 $team->members_count,
                 $team->projects_count,
                 $team->invitations_count,
             ));
 
-            if ($used > (int) $team->max_members) {
+            if ($team->max_members !== null && $used > (int) $team->max_members) {
                 $this->error("    ERROR: seat limit exceeded ({$used}/{$team->max_members})");
                 $errors++;
             }

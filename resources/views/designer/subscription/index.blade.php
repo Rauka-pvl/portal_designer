@@ -142,6 +142,22 @@
         border: 1px solid rgba(245,158,11,.35); background: rgba(245,158,11,.12);
         color: #fbbf24; font-size: 11px; font-weight: 600; padding: .2rem .55rem;
     }
+    .sub-billing-toggle {
+        display: inline-flex; padding: 3px; gap: 2px;
+        border-radius: 999px; border: 1px solid rgba(124,135,153,.45);
+        background: rgba(255,255,255,.03);
+    }
+    html:not(.dark) .sub-billing-toggle { background: rgba(15,23,42,.04); }
+    .sub-billing-toggle button {
+        border: 0; border-radius: 999px; padding: .4rem 1rem;
+        font-size: .8rem; font-weight: 600; color: #A1A09A;
+        background: transparent; cursor: pointer; transition: background .15s ease, color .15s ease;
+    }
+    .sub-billing-toggle button.is-active { background: #f59e0b; color: #0f172a; }
+    .sub-billing-toggle button:not(.is-active):hover { color: #f59e0b; }
+    @media (max-width: 480px) {
+        .sub-billing-toggle button { padding: .4rem .7rem; }
+    }
 </style>
 @endpush
 
@@ -175,60 +191,38 @@
             <a href="{{ route('subscription.index') }}" class="sub-btn sub-btn-secondary mt-4 inline-flex">{{ __('subscription.retry') }}</a>
         </div>
     @else
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch" role="listbox" aria-label="{{ __('subscription.choose_plan') }}">
-            @foreach ($plans as $key => $plan)
-                @php
-                    $isRecommended = ! empty($plan['recommended']);
-                    $featureKeys = $plan['feature_keys'] ?? [];
-                    $priceFormatted = \App\Support\DesignerSubscription::formatMoney((int) $plan['price']);
-                @endphp
-                <article
-                    class="sub-plan-card"
-                    role="option"
-                    tabindex="0"
-                    aria-selected="false"
-                    data-plan-card
-                    data-plan="{{ $key }}"
-                    data-plan-label="{{ __('subscription.plan_'.$key) }}"
-                    data-plan-price="{{ $priceFormatted }}"
-                    data-checkout-url="{{ route('subscription.checkout', ['plan' => $key]) }}"
-                >
-                    <div class="flex items-start justify-between gap-3 mb-3">
-                        <div>
-                            <h2 class="text-xl font-semibold sub-title">{{ __('subscription.plan_'.$key) }}</h2>
-                            <p class="mt-1 text-sm sub-muted">{{ __('subscription.'.$plan['desc_key']) }}</p>
-                        </div>
-                        <div class="flex flex-col items-end gap-1.5 shrink-0">
-                            @if ($isRecommended)
-                                <span class="sub-badge-soft">{{ __('subscription.recommended') }}</span>
-                            @endif
-                            <span class="hidden text-[11px] font-medium text-[#f59e0b]" data-selected-badge>{{ __('subscription.selected_badge') }}</span>
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <span class="text-2xl font-semibold sub-title">{{ $priceFormatted }}</span>
-                        <span class="text-sm sub-muted"> {{ __('subscription.per_month') }}</span>
-                    </div>
-
-                    <ul class="space-y-2 mb-3 flex-1">
-                        @foreach (array_slice($featureKeys, 0, 6) as $feat)
-                            <li class="flex gap-2 text-sm sub-text">
-                                <span class="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#f59e0b] shrink-0" aria-hidden="true"></span>
-                                {{ __('subscription.'.$feat) }}
-                            </li>
-                        @endforeach
-                    </ul>
-                    <p class="text-xs sub-muted mb-4">{{ __('subscription.'.$plan['limit_key']) }}</p>
-
-                    <button type="button"
-                        class="sub-btn sub-btn-secondary w-full"
-                        data-select-plan="{{ $key }}">
-                        {{ __('subscription.select_plan', ['plan' => __('subscription.plan_'.$key)]) }}
-                    </button>
-                </article>
-            @endforeach
+    <div data-billing-scope class="space-y-7">
+        <div class="flex justify-center" data-billing-switch>
+            <div class="sub-billing-toggle" role="group" aria-label="{{ __('subscription.billing_period_aria') }}">
+                <button type="button" class="is-active" data-billing="month">{{ __('subscription.billing_monthly') }}</button>
+                <button type="button" data-billing="year">{{ __('subscription.billing_annual') }}</button>
+            </div>
         </div>
+
+        <section aria-labelledby="onb-individual-heading">
+            <div class="text-center mb-4">
+                <h2 id="onb-individual-heading" class="text-lg font-semibold sub-title">{{ __('subscription.group_individual') }}</h2>
+                <p class="mt-1 text-sm sub-muted">{{ __('subscription.group_individual_sub') }}</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch" role="listbox" aria-label="{{ __('subscription.group_individual') }}">
+                @foreach ($individualPlans as $plan)
+                    @include('designer.subscription.partials.plan-card', ['plan' => $plan, 'mode' => 'onboard'])
+                @endforeach
+            </div>
+        </section>
+
+        <section aria-labelledby="onb-corporate-heading">
+            <div class="text-center mb-4">
+                <h2 id="onb-corporate-heading" class="text-lg font-semibold sub-title">{{ __('subscription.group_corporate') }}</h2>
+                <p class="mt-1 text-sm sub-muted">{{ __('subscription.group_corporate_sub') }}</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch" role="listbox" aria-label="{{ __('subscription.group_corporate') }}">
+                @foreach ($corporatePlans as $plan)
+                    @include('designer.subscription.partials.plan-card', ['plan' => $plan, 'mode' => 'onboard'])
+                @endforeach
+            </div>
+        </section>
+    </div>
 
         @if ($canUseTrial)
             <p class="text-center text-sm sub-muted max-w-xl mx-auto" id="trial-terms-line"
@@ -386,11 +380,14 @@
 
     <section class="sub-card" aria-labelledby="sub-current-heading">
         @if (request('reason') === 'corporate_expired' || (($locked ?? false) && ($isCorporatePlan ?? false)))
+            @php
+                $renewPlanKey = isset($plans[$currentPlan]) ? $currentPlan : ($corporatePlans->first()['key'] ?? null);
+            @endphp
             <div class="mb-5 rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3">
                 <div class="text-sm font-semibold text-red-300">{{ __('subscription.corporate_expired_title') }}</div>
                 <p class="mt-1 text-sm sub-muted">{{ __('subscription.corporate_expired_body') }}</p>
                 @if ($canManageBilling ?? true)
-                    <a href="{{ route('subscription.checkout', ['plan' => 'corporate']) }}" class="sub-btn sub-btn-primary mt-3 inline-flex">
+                    <a href="{{ $renewPlanKey ? route('subscription.checkout', ['plan' => $renewPlanKey]) : '#plans' }}" class="sub-btn sub-btn-primary mt-3 inline-flex">
                         {{ __('subscription.corporate_renew') }}
                     </a>
                 @else
@@ -484,13 +481,17 @@
             <p class="mb-4 text-xs sub-muted">{{ __('subscription.auto_renew_off') }} · {{ __('subscription.access_until', ['date' => $accessEndsAtLabel ?? '—']) }}</p>
         @endif
 
-        @if (isset($teamSeatsUsed, $teamSeatsMax) && $currentPlan === 'corporate')
+        @if (isset($teamSeatsUsed) && ($isCorporatePlan ?? false))
             <div class="mb-5">
-                <p class="text-[11px] uppercase tracking-wide sub-muted mb-1.5">{{ __('subscription.seats_used', ['used' => $teamSeatsUsed, 'max' => $teamSeatsMax]) }}</p>
-                @php $seatsPct = $teamSeatsMax > 0 ? min(100, round(($teamSeatsUsed / $teamSeatsMax) * 100)) : 0; @endphp
-                <div class="sub-progress" role="progressbar" aria-valuenow="{{ $teamSeatsUsed }}" aria-valuemin="0" aria-valuemax="{{ $teamSeatsMax }}">
-                    <span style="width: {{ $seatsPct }}%"></span>
-                </div>
+                @if ($teamSeatsMax !== null)
+                    <p class="text-[11px] uppercase tracking-wide sub-muted mb-1.5">{{ __('subscription.seats_used', ['used' => $teamSeatsUsed, 'max' => $teamSeatsMax]) }}</p>
+                    @php $seatsPct = $teamSeatsMax > 0 ? min(100, round(($teamSeatsUsed / $teamSeatsMax) * 100)) : 0; @endphp
+                    <div class="sub-progress" role="progressbar" aria-valuenow="{{ $teamSeatsUsed }}" aria-valuemin="0" aria-valuemax="{{ $teamSeatsMax }}">
+                        <span style="width: {{ $seatsPct }}%"></span>
+                    </div>
+                @else
+                    <p class="text-[11px] uppercase tracking-wide sub-muted mb-1.5">{{ __('subscription.seats_used_unlimited', ['used' => $teamSeatsUsed]) }}</p>
+                @endif
             </div>
         @endif
 
@@ -516,62 +517,42 @@
         </div>
     </section>
 
-    <section id="plans" aria-labelledby="plans-heading">
-        <div class="mb-4">
+    <section id="plans" aria-labelledby="plans-heading" data-billing-scope>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
             <h2 id="plans-heading" class="text-lg font-semibold sub-title">{{ __('subscription.choose_plan') }}</h2>
+            <div data-billing-switch>
+                <div class="sub-billing-toggle" role="group" aria-label="{{ __('subscription.billing_period_aria') }}">
+                    <button type="button" class="is-active" data-billing="month">{{ __('subscription.billing_monthly') }}</button>
+                    <button type="button" data-billing="year">{{ __('subscription.billing_annual') }}</button>
+                </div>
+            </div>
         </div>
 
+        <div class="mb-3 mt-6">
+            <h3 class="text-base font-semibold sub-title">{{ __('subscription.group_individual') }}</h3>
+            <p class="mt-0.5 text-sm sub-muted">{{ __('subscription.group_individual_sub') }}</p>
+        </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            @foreach ($plans as $key => $plan)
-                @php
-                    $isCurrent = $currentPlan === $key && $hasAccess;
-                    $featureKeys = $plan['feature_keys'] ?? [];
-                @endphp
-                <article class="sub-plan-card {{ $isCurrent ? 'is-current' : '' }}">
-                    <div class="flex items-start justify-between gap-3 mb-3">
-                        <div>
-                            <h3 class="text-xl font-semibold sub-title">{{ __('subscription.plan_'.$key) }}</h3>
-                            <p class="mt-1 text-sm sub-muted">{{ __('subscription.'.$plan['desc_key']) }}</p>
-                        </div>
-                        <div class="flex flex-col items-end gap-1.5">
-                            @if (! empty($plan['recommended']))
-                                <span class="sub-badge-soft">{{ __('subscription.recommended') }}</span>
-                            @endif
-                            @if ($isCurrent)
-                                <span class="shrink-0 inline-flex items-center rounded-full border border-[#f59e0b]/40 px-2.5 py-0.5 text-[11px] font-medium text-[#f59e0b]">
-                                    {{ __('subscription.current_plan_badge') }}
-                                </span>
-                            @endif
-                        </div>
-                    </div>
+            @foreach ($individualPlans as $plan)
+                @include('designer.subscription.partials.plan-card', [
+                    'plan' => $plan,
+                    'mode' => 'manage',
+                    'isCurrent' => $currentPlan === $plan['key'] && $hasAccess,
+                ])
+            @endforeach
+        </div>
 
-                    <div class="mb-4">
-                        <span class="text-2xl font-semibold sub-title">{{ \App\Support\DesignerSubscription::formatMoney((int) $plan['price']) }}</span>
-                        <span class="text-sm sub-muted"> {{ __('subscription.per_month') }}</span>
-                    </div>
-
-                    <ul class="space-y-2 mb-3 flex-1">
-                        @foreach ($featureKeys as $feat)
-                            <li class="flex gap-2 text-sm sub-text">
-                                <span class="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#f59e0b] shrink-0" aria-hidden="true"></span>
-                                {{ __('subscription.'.$feat) }}
-                            </li>
-                        @endforeach
-                    </ul>
-                    <p class="text-xs sub-muted mb-4">{{ __('subscription.'.$plan['limit_key']) }}</p>
-
-                    @if ($isCurrent)
-                        <button type="button" class="sub-btn sub-btn-secondary w-full" disabled>{{ __('subscription.current_plan_badge') }}</button>
-                    @else
-                        <button type="button"
-                            class="sub-btn sub-btn-secondary w-full"
-                            data-open-change-plan="{{ $key }}"
-                            data-plan-label="{{ __('subscription.plan_'.$key) }}"
-                            data-plan-price="{{ \App\Support\DesignerSubscription::formatMoney((int) $plan['price']) }}">
-                            {{ __('subscription.select_plan', ['plan' => __('subscription.plan_'.$key)]) }}
-                        </button>
-                    @endif
-                </article>
+        <div class="mb-3 mt-8">
+            <h3 class="text-base font-semibold sub-title">{{ __('subscription.group_corporate') }}</h3>
+            <p class="mt-0.5 text-sm sub-muted">{{ __('subscription.group_corporate_sub') }}</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            @foreach ($corporatePlans as $plan)
+                @include('designer.subscription.partials.plan-card', [
+                    'plan' => $plan,
+                    'mode' => 'manage',
+                    'isCurrent' => $currentPlan === $plan['key'] && $hasAccess,
+                ])
             @endforeach
         </div>
         <p class="mt-3 text-xs sub-muted">{{ __('subscription.plan_apply_now') }}</p>
@@ -698,7 +679,8 @@
 
 {{-- Change plan modal --}}
 <div id="change-plan-modal" class="sub-modal fixed inset-0 z-[90] items-center justify-center p-4 bg-black/60" role="dialog" aria-modal="true" aria-labelledby="change-plan-title"
-     data-current-plan="{{ $currentPlan ?? '' }}">
+     data-current-plan="{{ $currentPlan ?? '' }}"
+     data-current-plan-type="{{ $plans[$currentPlan]['type'] ?? '' }}">
     <div class="w-full max-w-md rounded-2xl border border-white/10 bg-[#161615] p-6 shadow-xl" role="document">
         <h3 id="change-plan-title" class="text-lg font-semibold text-[#EDEDEC]">{{ __('subscription.confirm_plan_title') }}</h3>
         <dl class="mt-4 space-y-2 text-sm">
@@ -856,21 +838,34 @@
         btn.addEventListener('click', () => {
             const modal = document.getElementById('change-plan-modal');
             const nextPlan = btn.getAttribute('data-open-change-plan') || '';
-            const currentPlan = modal?.dataset.currentPlan || '';
-            const isCorporateDowngrade = currentPlan === 'corporate'
-                && (nextPlan === 'standard' || nextPlan === 'pro');
+            const nextType = btn.getAttribute('data-plan-type') || 'individual';
+            const currentType = modal?.dataset.currentPlanType || '';
 
             document.getElementById('change-plan-input').value = nextPlan;
             document.getElementById('change-plan-new').textContent = btn.getAttribute('data-plan-label') || '—';
             document.getElementById('change-plan-price').textContent = btn.getAttribute('data-plan-price') || '—';
 
+            // Leaving a corporate plan for an individual one removes team access.
+            const isCorporateDowngrade = currentType === 'corporate' && nextType === 'individual';
             const warning = document.getElementById('change-plan-corporate-warning');
             const confirmInput = document.getElementById('change-plan-confirm-downgrade');
             if (warning) warning.classList.toggle('hidden', !isCorporateDowngrade);
-            // Confirming this modal = accepting team access loss when leaving Corporate.
+            // Confirming this modal = accepting team access loss when leaving a corporate plan.
             if (confirmInput) confirmInput.value = isCorporateDowngrade ? '1' : '0';
 
             openModal('change-plan-modal');
+        });
+    });
+
+    document.querySelectorAll('[data-billing-switch]').forEach((sw) => {
+        const scope = sw.closest('[data-billing-scope]') || document;
+        sw.querySelectorAll('button[data-billing]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const mode = btn.dataset.billing;
+                scope.querySelectorAll('button[data-billing]').forEach((b) => b.classList.toggle('is-active', b === btn));
+                scope.querySelectorAll('[data-price-monthly]').forEach((el) => el.classList.toggle('hidden', mode === 'year'));
+                scope.querySelectorAll('[data-price-yearly]').forEach((el) => el.classList.toggle('hidden', mode === 'month'));
+            });
         });
     });
 

@@ -24,6 +24,12 @@ class ProjectService
 
     public function fillAndSave(ProjectSaveRequest $request, Project $project): Project
     {
+        // Plan limit is enforced here so every creation path (web form, modal,
+        // API, internal services) is covered — never only in the UI.
+        if (! $project->exists) {
+            app(\App\Services\Billing\PlanLimitService::class)->assertCanCreateProject($request->user());
+        }
+
         $data = $request->validated();
         $files = array_values(array_filter(array_map('strval', (array) ($data['existing_files'] ?? []))));
         foreach ($request->file('files', []) as $file) {

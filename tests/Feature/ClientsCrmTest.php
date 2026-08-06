@@ -23,7 +23,7 @@ class ClientsCrmTest extends TestCase
         // Create trial subscription for the user
         \App\Models\Subscription::create([
             'user_id' => $user->id,
-            'plan_id' => \App\Models\SubscriptionPlan::personal()?->id,
+            'plan_id' => \App\Models\SubscriptionPlan::findByKey('pro')?->id,
             'status' => 'trial',
             'starts_at' => now(),
             'trial_ends_at' => now()->addDays(14),

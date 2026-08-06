@@ -10,7 +10,6 @@ use App\Models\DesignerTeamMember;
 use App\Models\Project;
 use App\Models\User;
 use App\Models\UserNotification;
-use App\Support\DesignerSubscription;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -60,7 +59,7 @@ class TeamService
         }
 
         $ownerSubscription = $owner->subscription;
-        if (! $ownerSubscription || (string) $ownerSubscription->plan?->key !== DesignerSubscription::PLAN_CORPORATE) {
+        if (! $ownerSubscription || ! $ownerSubscription->plan?->isCorporate()) {
             return false;
         }
 
@@ -76,12 +75,15 @@ class TeamService
     }
 
     /**
-     * Activate Corporate workspace after successful checkout for the paying owner.
+     * Activate a corporate workspace after successful checkout for the paying owner.
      */
-    public function activateCorporateForOwner(User $owner, ?string $teamName = null): DesignerTeam
+    public function activateCorporateForOwner(User $owner, ?string $teamName = null, ?\App\Models\SubscriptionPlan $plan = null): DesignerTeam
     {
-        return DB::transaction(function () use ($owner, $teamName) {
-            $plan = \App\Models\SubscriptionPlan::findByKey(DesignerSubscription::PLAN_CORPORATE);
+        return DB::transaction(function () use ($owner, $teamName, $plan) {
+            $plan ??= $owner->subscription?->plan;
+            if (! $plan || ! $plan->isCorporate()) {
+                $plan = \App\Models\SubscriptionPlan::corporate();
+            }
             if ($plan) {
                 $ownerSubscription = $owner->subscription;
                 $isExpired = $ownerSubscription?->expires_at && $ownerSubscription->expires_at->isPast();
@@ -93,8 +95,8 @@ class TeamService
                             'plan_id' => $plan->id,
                             'status' => 'active',
                             'starts_at' => now(),
-                            'expires_at' => now()->addMonth(),
-                            'trial_ends_at' => null,
+                            'expires_at' => $ownerSubscription?->expires_at ?? now()->addMonth(),
+                            'trial_ends_at' => $ownerSubscription?->trial_ends_at,
                             'cancelled_at' => null,
                             'cancel_reason' => null,
                         ]
@@ -111,21 +113,23 @@ class TeamService
             if ($existing) {
                 $this->ensureOwnerMembership($existing, $owner);
                 $this->attachOwnerProjects($existing, $owner);
+                // Keep seat limit in sync with the current plan.
+                $existing->update(['max_members' => $plan?->max_users]);
 
                 return $existing->fresh(['members', 'owner']);
             }
 
-            // Soft-archive any previous inactive teams owned by this user (keep history).
+            // Archive any previous teams owned by this user (keep history).
             DesignerTeam::query()
                 ->where('owner_id', $owner->id)
                 ->where('status', '!=', 'archived')
-                ->update(['status' => 'inactive']);
+                ->update(['status' => 'archived']);
 
             $team = DesignerTeam::query()->create([
                 'owner_id' => $owner->id,
                 'name' => $teamName ?: (__('team.default_name', ['name' => $owner->name])),
                 'status' => 'active',
-                'max_members' => 5,
+                'max_members' => $plan?->max_users, // null = unlimited
             ]);
 
             $this->ensureOwnerMembership($team, $owner);
@@ -318,6 +322,16 @@ class TeamService
                 ? $invitation->role
                 : TeamRole::from((string) $invitation->role);
 
+            // Re-check the seat limit at accept time: pending invites must not
+            // allow more members than the plan allows. Pending invitations do
+            // not consume seats here — only active members count.
+            $seatLimit = $team->max_members; // null = unlimited
+            if ($seatLimit !== null && $team->fresh()->activeMembersCount() >= (int) $seatLimit) {
+                throw ValidationException::withMessages([
+                    'invitation' => [__('team.seat_limit_reached')],
+                ]);
+            }
+
             $member = DesignerTeamMember::query()->updateOrCreate(
                 ['team_id' => $team->id, 'user_id' => $user->id],
                 [
@@ -467,12 +481,15 @@ class TeamService
     }
 
     /**
-     * Seat members get Corporate plan label; billing stays on the owner.
+     * Seat members get the owner's corporate plan label; billing stays on the owner.
      */
     public function applyCorporatePlanViaTeam(User $user, DesignerTeam $team): void
     {
         $owner = $team->owner;
-        $plan = \App\Models\SubscriptionPlan::findByKey(DesignerSubscription::PLAN_CORPORATE);
+        $plan = $owner?->subscription?->plan;
+        if (! $plan || ! $plan->isCorporate()) {
+            $plan = \App\Models\SubscriptionPlan::corporate();
+        }
         if ($plan) {
             \App\Models\Subscription::query()->updateOrCreate(
                 ['user_id' => $user->id],
@@ -489,7 +506,7 @@ class TeamService
         }
 
         $user->forceFill([
-            'subscription_plan' => DesignerSubscription::PLAN_CORPORATE,
+            'subscription_plan' => $plan?->key,
             'subscription_cancelled_at' => null,
             'subscription_cancel_reason' => null,
             'subscription_trial_ends_at' => null,
@@ -513,7 +530,7 @@ class TeamService
         }
 
         $subscription = $user->subscription;
-        if (! $subscription || (string) $subscription->plan?->key !== DesignerSubscription::PLAN_CORPORATE) {
+        if (! $subscription || ! $subscription->plan?->isCorporate()) {
             return;
         }
 

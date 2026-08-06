@@ -28,7 +28,7 @@
             <button type="submit" class="crm-btn crm-btn-primary crm-btn-sm">OK</button>
         </div>
     </form>
-</div>
+    </div>
 
 <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-5">
     @foreach ([

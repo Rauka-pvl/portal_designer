@@ -37,13 +37,17 @@ class SubscriptionController extends Controller
         $teamService = app(TeamService::class);
         $team = $teamService->activeTeamFor($user)
             ?? \App\Models\DesignerTeam::query()->where('owner_id', $user->id)->where('status', 'active')->first();
-        $isCorporatePlan = (string) $user->subscription_plan === DesignerSubscription::PLAN_CORPORATE
-            || ($team && $teamService->isCorporateUser($user));
         $teamRole = $team?->roleFor($user);
         $canManageBilling = $teamRole?->canManageBilling() ?? true;
+        $isCorporatePlan = DesignerSubscription::isCorporatePlanUser($user)
+            || ($team && $teamService->isCorporateUser($user));
 
         return view('designer.subscription.index', [
             'plans' => DesignerSubscription::plans(),
+            'individualPlans' => app(\App\Services\Billing\PlanCatalog::class)->individual()
+                ->map(fn (\App\Models\SubscriptionPlan $p) => app(\App\Services\Billing\PlanCatalog::class)->toArray($p))->values(),
+            'corporatePlans' => app(\App\Services\Billing\PlanCatalog::class)->corporate()
+                ->map(fn (\App\Models\SubscriptionPlan $p) => app(\App\Services\Billing\PlanCatalog::class)->toArray($p))->values(),
             'comparisonFeatures' => DesignerSubscription::comparisonFeatureKeys(),
             'status' => $status,
             'isOnTrial' => DesignerSubscription::isOnTrial($user),
@@ -138,7 +142,7 @@ class SubscriptionController extends Controller
                 ->first()?->team;
 
         if ($team && (int) $team->owner_id !== (int) $user->id
-            && $data['plan'] === DesignerSubscription::PLAN_CORPORATE) {
+            && (app(\App\Services\Billing\PlanCatalog::class)->find($data['plan'])?->isCorporate() ?? false)) {
             return back()->withErrors(['plan' => __('team.forbidden_manage_billing')]);
         }
 
@@ -193,9 +197,10 @@ class SubscriptionController extends Controller
             return back()->withErrors(['plan' => __('team.forbidden_manage_billing')]);
         }
 
-        $previous = (string) $user->subscription_plan;
-        $downgradingFromCorporate = $previous === DesignerSubscription::PLAN_CORPORATE
-            && in_array($data['plan'], [DesignerSubscription::PLAN_STANDARD, DesignerSubscription::PLAN_PRO], true);
+        $catalog = app(\App\Services\Billing\PlanCatalog::class);
+        $previousCorporate = DesignerSubscription::isCorporatePlanUser($user);
+        $downgradingFromCorporate = $previousCorporate
+            && ($catalog->find($data['plan'])?->isIndividual() ?? false);
 
         if ($downgradingFromCorporate && ! $request->boolean('confirm_team_downgrade')) {
             return back()->withErrors([

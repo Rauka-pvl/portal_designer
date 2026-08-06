@@ -57,7 +57,9 @@ class SubscriptionApiTest extends TestCase
         $keys = collect($plans->json('data.plans'))->pluck('key');
         $this->assertTrue($keys->contains('standard'));
         $this->assertTrue($keys->contains('pro'));
-        $this->assertTrue($keys->contains('corporate'));
+        $this->assertTrue($keys->contains('economy'));
+        $this->assertTrue($keys->contains('progress'));
+        $this->assertTrue($keys->contains('success'));
 
         $this->getJson('/api/subscription')
             ->assertOk()
@@ -329,7 +331,7 @@ class SubscriptionApiTest extends TestCase
         Sanctum::actingAs($owner);
 
         $this->postJson('/api/subscription/checkout', [
-            'plan' => DesignerSubscription::PLAN_CORPORATE,
+            'plan' => DesignerSubscription::PLAN_PROGRESS,
             'payment_method' => DesignerSubscription::METHOD_KASPI,
         ])->assertCreated();
 

@@ -74,6 +74,6 @@ class Subscription extends Model
 
     public function isCorporate(): bool
     {
-        return $this->plan?->key === 'corporate';
+        return $this->plan?->isCorporate() ?? false;
     }
 }

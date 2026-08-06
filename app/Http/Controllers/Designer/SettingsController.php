@@ -174,10 +174,13 @@ class SettingsController extends Controller
             'invitations' => $invitations,
             'canManageMembers' => $isCorporate && ($role?->canManageMembers() ?? false),
             'seatUsed' => $team?->usedSeats() ?? 0,
-            'seatMax' => (int) ($team?->max_members ?? 5),
+            'seatMax' => $team?->max_members, // null = unlimited
+            'seatUnlimited' => $team?->max_members === null,
             'assigneeOptions' => $this->teamService->assigneeOptions($user),
             'teamRole' => $role?->value,
             'canManageBilling' => $role?->canManageBilling() ?? (! $team),
+            // Individual plans never see team management — only an upsell panel.
+            'teamFeatureAvailable' => \App\Support\DesignerSubscription::isCorporatePlanUser($user),
         ];
     }
 }

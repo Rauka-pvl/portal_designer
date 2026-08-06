@@ -196,6 +196,35 @@ class NotificationActions
             case 'object_status_changed':
                 // No related_object_id in schema yet — informational only.
                 break;
+
+            case 'support_ticket_created':
+                $ticketId = (int) ($notification->data['ticket_id'] ?? 0);
+                if ($ticketId > 0 && Route::has('admin.support.show')
+                    && in_array((string) ($user->role ?? ''), ['moderator', 'admin', 'system_admin'], true)) {
+                    $url = route('admin.support.show', $ticketId);
+                    $primary = [
+                        'key' => 'open_ticket',
+                        'label' => __('notifications.open_ticket'),
+                        'mode' => 'link',
+                        'url' => $url,
+                    ];
+                    $rowHref = $url;
+                }
+                break;
+
+            case 'support_ticket_reply':
+                $ticketId = (int) ($notification->data['ticket_id'] ?? 0);
+                if ($ticketId > 0 && $isDesigner && Route::has('support.show')) {
+                    $url = route('support.show', $ticketId);
+                    $primary = [
+                        'key' => 'open_ticket',
+                        'label' => __('notifications.open_ticket'),
+                        'mode' => 'link',
+                        'url' => $url,
+                    ];
+                    $rowHref = $url;
+                }
+                break;
         }
 
         $from = self::notificationsIndexUrl($isSupplier);
@@ -306,6 +335,7 @@ class NotificationActions
             'community_like' => 'heart',
             'community_comment', 'community_reply' => 'chat',
             'supplier_moderation', 'supplier_approved', 'supplier_rejected', 'supplier_status_changed' => 'building',
+            'support_ticket_created', 'support_ticket_reply' => 'chat',
             'object_moderation', 'object_approved', 'object_rejected', 'object_status_changed' => 'home',
             default => 'bell',
         };

@@ -70,7 +70,7 @@ class ProjectController extends Controller
         $clients = \App\Models\Client::query()
             ->whereIn('user_id', array_values(array_unique($clientOwnerIds)))
             ->orderBy('full_name')
-            ->get(['id', 'full_name']);
+            ->get(['id', 'full_name', 'phone']);
 
         $cities = trans('cities.passport');
         $cities = is_array($cities) ? array_values($cities) : [];
@@ -112,7 +112,7 @@ class ProjectController extends Controller
                 'per_page' => $projects->perPage(),
                 'total' => $projects->total(),
             ],
-            'clientsData' => $clients->map(fn ($c) => ['id' => $c->id, 'name' => $c->full_name])->values(),
+            'clientsData' => $clients->map(fn ($c) => ['id' => $c->id, 'name' => $c->full_name, 'phone' => $c->phone])->values(),
             'suppliersData' => $suppliers->map(fn (Supplier $s) => [
                 'id' => $s->id,
                 'name' => $s->name,
@@ -143,6 +143,15 @@ class ProjectController extends Controller
             'supplyPipeline' => $this->pipelinePayload($supplyPipeline),
             'canManagePipeline' => AccountPermissions::canManageProjectPipeline($user),
             'isCorporate' => WorkspaceAccess::isCorporate($user),
+            'projectLimit' => (function () use ($user) {
+                $limits = app(\App\Services\Billing\PlanLimitService::class);
+
+                return [
+                    'limit' => $limits->projectLimitFor($user),
+                    'current' => $limits->projectCountFor($user),
+                    'can_create' => $limits->canCreateProject($user),
+                ];
+            })(),
         ];
 
         // Legacy view compatibility

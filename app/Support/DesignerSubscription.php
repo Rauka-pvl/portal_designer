@@ -9,11 +9,17 @@ use Illuminate\Validation\ValidationException;
 
 class DesignerSubscription
 {
+    public const PLAN_BASE = 'base';
+
     public const PLAN_STANDARD = 'standard';
 
     public const PLAN_PRO = 'pro';
 
-    public const PLAN_CORPORATE = 'corporate';
+    public const PLAN_ECONOMY = 'economy';
+
+    public const PLAN_PROGRESS = 'progress';
+
+    public const PLAN_SUCCESS = 'success';
 
     public const PERIOD_DAYS = 30;
 
@@ -65,6 +71,12 @@ class DesignerSubscription
         return max(1, (int) config('subscription.promo_period_days', 180));
     }
 
+    /** Plan key granted by a successful promo redemption (default Success). */
+    public static function promoPlanKey(): string
+    {
+        return trim((string) config('subscription.promo_plan', self::PLAN_SUCCESS));
+    }
+
     public static function promoStartsAt(): ?Carbon
     {
         $raw = config('subscription.promo_starts_at');
@@ -111,76 +123,13 @@ class DesignerSubscription
     }
 
     /**
-     * Single source of truth for designer tariffs.
+     * Single source of truth for designer tariffs — DB-driven via PlanCatalog.
      *
-     * @return array<string, array{
-     *     key: string,
-     *     price: int,
-     *     period_days: int,
-     *     recommended: bool,
-     *     feature_keys: list<string>,
-     *     limit_key: string,
-     *     desc_key: string
-     * }>
+     * @return array<string, array<string, mixed>>
      */
     public static function plans(): array
     {
-        return [
-            self::PLAN_STANDARD => [
-                'key' => self::PLAN_STANDARD,
-                'price' => 5000,
-                'period_days' => self::periodDays(),
-                'recommended' => false,
-                'feature_keys' => [
-                    'feature_clients',
-                    'feature_projects',
-                    'feature_orders',
-                    'feature_reports',
-                    'feature_support',
-                ],
-                'limit_key' => 'plan_standard_limit',
-                'desc_key' => 'plan_standard_desc',
-                'max_members' => 1,
-            ],
-            self::PLAN_PRO => [
-                'key' => self::PLAN_PRO,
-                'price' => 9990,
-                'period_days' => self::periodDays(),
-                'recommended' => true,
-                'feature_keys' => [
-                    'feature_unlimited',
-                    'feature_analytics',
-                    'feature_priority',
-                    'feature_pro_tools',
-                    'feature_cashback',
-                    'feature_suppliers',
-                ],
-                'limit_key' => 'plan_pro_limit',
-                'desc_key' => 'plan_pro_desc',
-                'max_members' => 1,
-            ],
-            self::PLAN_CORPORATE => [
-                'key' => self::PLAN_CORPORATE,
-                'price' => 29990,
-                'period_days' => self::periodDays(),
-                'recommended' => false,
-                'feature_keys' => [
-                    'feature_unlimited',
-                    'feature_analytics',
-                    'feature_priority',
-                    'feature_pro_tools',
-                    'feature_cashback',
-                    'feature_suppliers',
-                    'feature_team',
-                    'feature_roles',
-                    'feature_assignees',
-                    'feature_team_projects',
-                ],
-                'limit_key' => 'plan_corporate_limit',
-                'desc_key' => 'plan_corporate_desc',
-                'max_members' => 5,
-            ],
-        ];
+        return app(\App\Services\Billing\PlanCatalog::class)->keyed();
     }
 
     /** Designer without cabinet access — onboarding chrome (no full sidebar). */
@@ -405,14 +354,31 @@ class DesignerSubscription
         return $user->subscription_ends_at ?? $user->subscription_trial_ends_at;
     }
 
+    /** Current plan model of the billing owner; null when unknown/archived. */
+    private static function currentPlanModel(User $user): ?\App\Models\SubscriptionPlan
+    {
+        $key = (string) ($user->subscription_plan ?? '');
+        if ($key === '') {
+            return null;
+        }
+
+        return $user->subscription?->plan
+            ?? \App\Models\SubscriptionPlan::findByKeyIncludingArchived($key);
+    }
+
+    public static function isCorporatePlanUser(User $user): bool
+    {
+        return self::currentPlanModel($user)?->isCorporate() ?? false;
+    }
+
     public static function nextChargeAt(User $user): ?Carbon
     {
         if ($user->subscription_cancelled_at) {
             return null;
         }
 
-        // Non-owner Corporate members do not get charged personally.
-        if ((string) $user->subscription_plan === self::PLAN_CORPORATE) {
+        // Non-owner corporate members do not get charged personally.
+        if (self::isCorporatePlanUser($user)) {
             $ownsActiveTeam = \App\Models\DesignerTeam::query()
                 ->where('owner_id', $user->id)
                 ->where('status', 'active')
@@ -431,8 +397,8 @@ class DesignerSubscription
             return null;
         }
 
-        // Non-owner Corporate members do not get charged personally.
-        if ((string) $user->subscription_plan === self::PLAN_CORPORATE) {
+        // Non-owner corporate members do not get charged personally.
+        if (self::isCorporatePlanUser($user)) {
             $ownsActiveTeam = \App\Models\DesignerTeam::query()
                 ->where('owner_id', $user->id)
                 ->where('status', 'active')
@@ -461,7 +427,8 @@ class DesignerSubscription
     public static function primaryAction(User $user): array
     {
         $status = self::status($user);
-        $plan = $user->subscription_plan ?: self::PLAN_STANDARD;
+        $plan = $user->subscription_plan
+            ?: app(\App\Services\Billing\PlanCatalog::class)->defaultKey() ?? self::PLAN_STANDARD;
 
         return match ($status) {
             'trial' => [
@@ -521,6 +488,21 @@ class DesignerSubscription
             throw ValidationException::withMessages([
                 'promo_code' => [$message],
             ]);
+        }
+
+        // A valid promo always activates the configured promo plan (Success),
+        // regardless of the plan picked at checkout.
+        if ($usePromo) {
+            $promoPlan = self::plan(self::promoPlanKey());
+            if ($promoPlan) {
+                $planKey = self::promoPlanKey();
+                $plan = $promoPlan;
+            }
+        }
+
+        // Downgrade guard when an existing subscriber switches to a different plan via purchase.
+        if ((string) ($user->subscription_plan ?? '') !== '' && (string) $user->subscription_plan !== $planKey) {
+            app(\App\Services\Billing\PlanLimitService::class)->assertCanSwitchTo($user, $planKey);
         }
 
         if (! in_array($paymentMethod, [self::METHOD_KASPI, self::METHOD_CARD, self::METHOD_PROMO], true)) {
@@ -621,8 +603,8 @@ class DesignerSubscription
 
         $user->save();
 
-        if ($planKey === self::PLAN_CORPORATE) {
-            app(\App\Services\Team\TeamService::class)->activateCorporateForOwner($user);
+        if ($planModel?->isCorporate()) {
+            app(\App\Services\Team\TeamService::class)->activateCorporateForOwner($user, null, $planModel);
         }
 
         return $payment;
@@ -642,21 +624,25 @@ class DesignerSubscription
             ]);
         }
 
-        $previous = (string) $user->subscription_plan;
+        // Backend downgrade guard: never exceed the new plan's project/user limits.
+        app(\App\Services\Billing\PlanLimitService::class)->assertCanSwitchTo($user, $planKey);
+
+        $previous = self::currentPlanModel($user);
+        $newPlan = \App\Models\SubscriptionPlan::findByKey($planKey);
+
         $user->subscription_plan = $planKey;
         $user->subscription_cancelled_at = null;
         $user->subscription_cancel_reason = null;
         $user->save();
 
-        if ($planKey === self::PLAN_CORPORATE) {
-            app(\App\Services\Team\TeamService::class)->activateCorporateForOwner($user);
-        } elseif (in_array($planKey, [self::PLAN_STANDARD, self::PLAN_PRO], true)
-            && $previous === self::PLAN_CORPORATE) {
+        if ($newPlan?->isCorporate()) {
+            app(\App\Services\Team\TeamService::class)->activateCorporateForOwner($user, null, $newPlan);
+        } elseif ($newPlan?->isIndividual() && $previous?->isCorporate()) {
             // Downgrade: archive active teams owned by this user (data kept).
             \App\Models\DesignerTeam::query()
                 ->where('owner_id', $user->id)
                 ->where('status', 'active')
-                ->update(['status' => 'inactive']);
+                ->update(['status' => 'archived']);
         }
     }
 

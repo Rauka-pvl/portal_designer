@@ -36,6 +36,7 @@ return [
     'add_supplier' => 'Жеткізушіні қосу',
     'view_supplier' => 'Жеткізушіні қарау',
     'view_supplier_short' => 'Қарау',
+    'open_ticket' => 'Тикетті ашу',
     'referral_supplier_confirmed' => 'Жеткізуші қосылды',
     'action_unavailable' => 'Бұл әрекет енді қолжетімсіз.',
     'supplier_missing' => 'Жеткізуші табылмады.',

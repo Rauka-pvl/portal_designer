@@ -11,6 +11,7 @@
     $promoWindowActive = $promoWindowActive ?? false;
     $promoPeriodDays = $promoPeriodDays ?? 180;
     $promoMonths = (int) ceil($promoPeriodDays / 30);
+    $promoPlanLabel = __('subscription.plan_'.\App\Support\DesignerSubscription::promoPlanKey());
 @endphp
 
 @push('styles')
@@ -69,7 +70,7 @@
                         {{ \App\Support\DesignerSubscription::formatMoney($listPrice) }}
                     </div>
                     <p class="mt-2 text-sm text-[#fbbf24] hidden" id="promo-ok-msg">
-                        {{ __('subscription.free_with_promo_months', ['months' => $promoMonths]) }}
+                        {{ __('subscription.free_with_promo_months', ['months' => $promoMonths, 'plan' => $promoPlanLabel]) }}
                     </p>
                     @if (! $paymentsEnabled)
                         <p class="mt-3 text-xs text-white/55">{{ __('subscription.acquiring_offline_hint') }}</p>
@@ -90,7 +91,7 @@
                 </div>
             @elseif ($promoWindowActive && $promoEndsAtLabel)
                 <div class="mb-5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-200">
-                    {{ __('subscription.promo_window_hint', ['date' => $promoEndsAtLabel, 'months' => $promoMonths]) }}
+                    {{ __('subscription.promo_window_hint', ['date' => $promoEndsAtLabel, 'months' => $promoMonths, 'plan' => $promoPlanLabel]) }}
                 </div>
             @endif
 
@@ -218,7 +219,7 @@
                     @error('payment_method')
                         <p class="mt-1 text-xs text-red-600 dark:text-red-400">{{ $message }}</p>
                     @enderror
-                    <p class="mt-1 text-xs text-emerald-600 dark:text-emerald-400 hidden" id="promo-feedback">{{ __('subscription.promo_ok_months', ['months' => $promoMonths]) }}</p>
+                    <p class="mt-1 text-xs text-emerald-600 dark:text-emerald-400 hidden" id="promo-feedback">{{ __('subscription.promo_ok_months', ['months' => $promoMonths, 'plan' => $promoPlanLabel]) }}</p>
                 </div>
 
                 <button type="submit" id="pay-submit"
@@ -246,7 +247,7 @@
     const paySubmit = document.getElementById('pay-submit');
     const cardPanel = document.getElementById('card-panel');
     const kaspiPanel = document.getElementById('kaspi-panel');
-    const freeLabel = @json(__('subscription.free_with_promo_months', ['months' => $promoMonths]));
+    const freeLabel = @json(__('subscription.free_with_promo_months', ['months' => $promoMonths, 'plan' => $promoPlanLabel]));
     const activateLabel = @json(__('subscription.activate_with_promo'));
     const payNowLabel = @json(__('subscription.pay_now'));
     const moneyLabel = new Intl.NumberFormat('ru-RU').format(listPrice) + ' ₸';

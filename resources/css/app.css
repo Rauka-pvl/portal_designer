@@ -960,6 +960,13 @@ input[type="radio"]:focus {
 }
 .crm-modal-work.is-split { display: grid; grid-template-columns: 65% 35%; }
 .crm-modal-main { min-height: 0; overflow: auto; padding: 0.85rem 1rem; }
+/* When feed is hidden (non-general tabs), main must fill the full work area width.
+   Without this, content-sized children (e.g. Wazzup empty state) leave a blank gap on the right. */
+.crm-modal-work:not(.is-split) > .crm-modal-main {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+}
 .crm-modal-feed {
     min-height: 0; overflow: auto; padding: 0.85rem 1rem;
     border-left: 1px solid color-mix(in srgb, var(--crm-border) 30%, transparent);

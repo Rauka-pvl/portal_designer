@@ -55,11 +55,11 @@ class SecurityAuditFixesTest extends TestCase
         $teamB = $teams->activateCorporateForOwner($ownerB);
 
         $ownerA->forceFill([
-            'subscription_plan' => DesignerSubscription::PLAN_CORPORATE,
+            'subscription_plan' => DesignerSubscription::PLAN_PROGRESS,
             'subscription_ends_at' => now()->addMonth(),
         ])->save();
         $ownerB->forceFill([
-            'subscription_plan' => DesignerSubscription::PLAN_CORPORATE,
+            'subscription_plan' => DesignerSubscription::PLAN_PROGRESS,
             'subscription_ends_at' => now()->addMonth(),
         ])->save();
 

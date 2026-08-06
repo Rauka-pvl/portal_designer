@@ -392,6 +392,22 @@ Route::middleware(['auth', 'role:designer', 'subscription.active'])->group(funct
 });
 
 Route::middleware(['auth', 'role:moderator'])->group(function () {
+    Route::get('/moderator/support', [\App\Http\Controllers\Admin\SupportAdminController::class, 'index'])
+        ->name('admin.support.index');
+    Route::get('/moderator/support/{ticket}', [\App\Http\Controllers\Admin\SupportAdminController::class, 'show'])
+        ->whereNumber('ticket')
+        ->name('admin.support.show');
+    Route::post('/moderator/support/{ticket}/reply', [\App\Http\Controllers\Admin\SupportAdminController::class, 'reply'])
+        ->whereNumber('ticket')
+        ->middleware('throttle:20,1')
+        ->name('admin.support.reply');
+    Route::patch('/moderator/support/{ticket}/status', [\App\Http\Controllers\Admin\SupportAdminController::class, 'updateStatus'])
+        ->whereNumber('ticket')
+        ->name('admin.support.status');
+    Route::get('/moderator/support/attachments/{attachment}/download', [\App\Http\Controllers\Designer\SupportController::class, 'download'])
+        ->whereNumber('attachment')
+        ->name('admin.support.attachments.download');
+
     Route::get('/moderator', [ModeratorController::class, 'index'])->name('moderator.index');
     Route::get('/moderator/history', [ModeratorController::class, 'history'])->name('moderator.history');
     Route::post('/moderator/history/suppliers/{supplierId}', [ModeratorController::class, 'historySupplierUpdate'])
@@ -436,10 +452,28 @@ Route::middleware(['auth', 'role:designer|moderator', 'subscription.active'])->g
         ->name('settings.team.cancel-invitation');
 });
 
+Route::middleware(['auth', 'role:designer', 'subscription.active'])->group(function () {
+    Route::get('/support', [\App\Http\Controllers\Designer\SupportController::class, 'index'])->name('support.index');
+    Route::get('/support/create', [\App\Http\Controllers\Designer\SupportController::class, 'create'])->name('support.create');
+    Route::post('/support', [\App\Http\Controllers\Designer\SupportController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('support.store');
+    Route::get('/support/attachments/{attachment}/download', [\App\Http\Controllers\Designer\SupportController::class, 'download'])
+        ->whereNumber('attachment')
+        ->name('support.attachments.download');
+    Route::get('/support/{ticket}', [\App\Http\Controllers\Designer\SupportController::class, 'show'])
+        ->whereNumber('ticket')
+        ->name('support.show');
+    Route::post('/support/{ticket}/reply', [\App\Http\Controllers\Designer\SupportController::class, 'reply'])
+        ->whereNumber('ticket')
+        ->middleware('throttle:20,1')
+        ->name('support.reply');
+});
+
 Route::middleware(['auth', 'role:designer'])->group(function () {
     Route::get('/subscription', [SubscriptionController::class, 'index'])->name('subscription.index');
     Route::get('/subscription/checkout/{plan}', [SubscriptionController::class, 'checkout'])
-        ->whereIn('plan', ['standard', 'pro', 'corporate'])
+        ->where('plan', '[a-z0-9_-]+')
         ->name('subscription.checkout');
     Route::post('/subscription/purchase', [SubscriptionController::class, 'purchase'])->name('subscription.purchase');
     Route::post('/subscription/change-plan', [SubscriptionController::class, 'changePlan'])->name('subscription.change-plan');

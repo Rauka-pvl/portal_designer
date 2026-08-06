@@ -34,6 +34,8 @@ return [
     'promo_starts_at' => env('SUBSCRIPTION_PROMO_STARTS_AT'), // Y-m-d or ISO datetime
     'promo_valid_days' => (int) env('SUBSCRIPTION_PROMO_VALID_DAYS', 7),
     'promo_period_days' => (int) env('SUBSCRIPTION_PROMO_PERIOD_DAYS', 180), // 6 months
+    // Plan granted by the promo code, regardless of the plan picked at checkout.
+    'promo_plan' => (string) env('SUBSCRIPTION_PROMO_PLAN', 'success'),
 
     /*
     |--------------------------------------------------------------------------

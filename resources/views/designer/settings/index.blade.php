@@ -146,8 +146,10 @@
             <div class="settings-tabs">
                 <a href="{{ route('settings.index', ['tab' => 'profile']) }}" class="settings-tab {{ $activeTab === 'profile' ? 'active' : '' }}">{{ __('settings.profile_settings') }}</a>
                 <a href="{{ route('settings.index', ['tab' => 'security']) }}" class="settings-tab {{ $activeTab === 'security' ? 'active' : '' }}">{{ __('settings.security') }}</a>
-                <a href="{{ route('settings.index', ['tab' => 'roles']) }}" class="settings-tab {{ $activeTab === 'roles' ? 'active' : '' }}">{{ __('settings.roles_and_access') }}</a>
-                <a href="{{ route('settings.index', ['tab' => 'team']) }}" class="settings-tab {{ $activeTab === 'team' ? 'active' : '' }}">{{ __('settings.team') }}</a>
+                @if ($teamFeatureAvailable ?? false)
+                    <a href="{{ route('settings.index', ['tab' => 'roles']) }}" class="settings-tab {{ $activeTab === 'roles' ? 'active' : '' }}">{{ __('settings.roles_and_access') }}</a>
+                    <a href="{{ route('settings.index', ['tab' => 'team']) }}" class="settings-tab {{ $activeTab === 'team' ? 'active' : '' }}">{{ __('settings.team') }}</a>
+                @endif
             </div>
             @if ($showFormActions)
             <div class="settings-actions flex items-center gap-2">
@@ -159,7 +161,22 @@
 
         <div class="settings-shell">
             @if ($activeTab === 'team')
-                @include('designer.settings.partials.team')
+                @if ($teamFeatureAvailable ?? false)
+                    @include('designer.settings.partials.team')
+                @else
+                    <div class="text-center py-10 px-4">
+                        <div class="mx-auto mb-4 w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center">
+                            <svg class="w-7 h-7 text-[#f59e0b]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                        </div>
+                        <h2 class="text-lg font-semibold text-[#0f172a] mb-2">{{ __('subscription.team_feature_upsell_title') }}</h2>
+                        <p class="text-sm text-[#64748b] max-w-md mx-auto mb-5">{{ __('subscription.team_feature_upsell_body') }}</p>
+                        <a href="{{ route('subscription.index') }}" class="inline-flex items-center px-5 py-2.5 rounded-lg bg-[#f59e0b] text-white text-sm font-medium hover:bg-[#d97706] transition-colors">
+                            {{ __('subscription.team_feature_upsell_cta') }}
+                        </a>
+                    </div>
+                @endif
             @elseif ($activeTab === 'roles')
                 @include('designer.settings.partials.roles')
             @elseif ($activeTab === 'security')

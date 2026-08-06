@@ -23,6 +23,7 @@ class UserNotification extends Model
         'related_order_id',
         'related_post_id',
         'related_invitation_id',
+        'data',
     ];
 
     protected $casts = [
@@ -32,6 +33,7 @@ class UserNotification extends Model
         'related_order_id' => 'integer',
         'related_post_id' => 'integer',
         'related_invitation_id' => 'integer',
+        'data' => 'array',
     ];
 
     public function user(): BelongsTo

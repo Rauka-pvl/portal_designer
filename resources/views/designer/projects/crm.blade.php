@@ -7,10 +7,14 @@
 @section('content')
 @php $canManage = (bool) ($canManagePipeline ?? false); @endphp
 
-<div class="crm-workspace" id="crm-workspace" data-locale="{{ str_replace('_', '-', app()->getLocale()) }}">
+<div class="crm-workspace" id="crm-workspace" data-locale="{{ str_replace('_', '-', app()->getLocale()) }}"
+    data-project-limit="{{ $projectLimit['limit'] ?? '' }}"
+    data-project-current="{{ $projectLimit['current'] ?? 0 }}"
+    data-project-can-create="{{ ($projectLimit['can_create'] ?? true) ? '1' : '0' }}"
+    data-upgrade-url="{{ route('subscription.index') }}">
     <div class="crm-toolbar" role="toolbar" aria-label="{{ __('projects.projects') }}">
         <div class="crm-toolbar-left">
-            <button type="button" id="crm-create-btn" class="crm-btn crm-btn-primary crm-btn-sm">+ {{ __('projects.create_project') }}</button>
+            <button type="button" id="crm-create-btn" class="crm-btn crm-btn-primary crm-btn-sm {{ ($projectLimit['can_create'] ?? true) ? '' : 'opacity-60 cursor-not-allowed' }}">+ {{ __('projects.create_project') }}</button>
             <div class="crm-view-switch" role="group" aria-label="{{ __('projects.view_kanban') }}">
                 <button type="button" class="crm-btn crm-btn-sm crm-view-btn" data-view="kanban"
                     aria-pressed="true" title="{{ __('projects.view_kanban') }}">{{ __('projects.kanban') }}</button>
@@ -78,6 +82,7 @@
             <button type="button" class="crm-modal-tab active" data-tab="general">{{ __('projects.tab_general') }}</button>
             <button type="button" class="crm-modal-tab" data-tab="supplies">{{ __('projects.tab_supplies') }}</button>
             <button type="button" class="crm-modal-tab" data-tab="checklists">{{ __('projects.tab_checklists') }}</button>
+            <button type="button" class="crm-modal-tab" data-tab="wazzup">{{ __('projects.tab_wazzup') }}</button>
         </div>
 
         <div id="ov-work" class="crm-modal-work is-split">
@@ -186,6 +191,10 @@
                     </div>
                     <div id="ov-checklists-list" class="crm-checklist-list"></div>
                 </div>
+
+                <div data-panel="wazzup" class="ov-panel ov-panel--wazzup hidden">
+                    @include('designer.projects.partials.wazzup-chat')
+                </div>
             </div>
 
             <aside class="crm-modal-feed" id="ov-feed-panel">
@@ -226,6 +235,21 @@
     </div>
 </div>
 
+<div id="project-limit-modal" class="crm-confirm-root" aria-hidden="true">
+    <div class="crm-card p-6 w-[min(440px,92vw)] relative z-10 text-center">
+        <div class="mx-auto mb-3 w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+        </div>
+        <h3 class="font-semibold text-lg mb-1">{{ __('subscription.project_limit_modal_title') }}</h3>
+        <p class="text-sm text-[var(--crm-muted)] mb-1" id="project-limit-text"></p>
+        <p class="text-sm text-[var(--crm-muted)] mb-5">{{ __('subscription.project_limit_modal_body', ['limit' => $projectLimit['limit'] ?? 0, 'current' => $projectLimit['current'] ?? 0]) }}</p>
+        <div class="flex gap-2 justify-center">
+            <button type="button" id="project-limit-close" class="crm-btn crm-btn-secondary">{{ __('projects.close') }}</button>
+            <a href="{{ route('subscription.index') }}" class="crm-btn crm-btn-primary">{{ __('subscription.project_limit_modal_cta') }}</a>
+        </div>
+    </div>
+</div>
+
 @include('designer.projects.partials.pipeline-settings-modals')
 
 @include('designer.projects.partials.supply-modals')
@@ -258,8 +282,31 @@
     // Portal to body so sidebar/overflow cannot affect positioning
     const modalRoot = document.getElementById('project-modal-root');
     const unsaved = document.getElementById('unsaved-modal');
+    const limitModal = document.getElementById('project-limit-modal');
     document.body.appendChild(modalRoot);
     document.body.appendChild(unsaved);
+    document.body.appendChild(limitModal);
+
+    const workspaceEl = document.getElementById('crm-workspace');
+    const projectLimit = {
+        limit: workspaceEl.dataset.projectLimit === '' ? null : Number(workspaceEl.dataset.projectLimit),
+        current: Number(workspaceEl.dataset.projectCurrent || 0),
+        canCreate: workspaceEl.dataset.projectCanCreate === '1',
+    };
+
+    function openLimitModal(message) {
+        const textEl = document.getElementById('project-limit-text');
+        textEl.textContent = message || '';
+        textEl.classList.toggle('hidden', !message);
+        limitModal.classList.add('open');
+        limitModal.setAttribute('aria-hidden', 'false');
+    }
+    function closeLimitModal() {
+        limitModal.classList.remove('open');
+        limitModal.setAttribute('aria-hidden', 'true');
+    }
+    document.getElementById('project-limit-close').addEventListener('click', closeLimitModal);
+    limitModal.addEventListener('click', (e) => { if (e.target === limitModal) closeLimitModal(); });
 
     const i18n = {
         noProjectsYet: @json(__('projects.no_projects_yet')),
@@ -870,6 +917,12 @@
             const res = await fetch(url, { method: 'POST', headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrf }, body: fd });
             const data = await res.json();
             if (!res.ok || !data.success) {
+                if (data.code === 'PROJECT_LIMIT_REACHED' || data.error === 'PROJECT_LIMIT_REACHED') {
+                    closeModal(true);
+                    projectLimit.canCreate = false;
+                    openLimitModal(data.message);
+                    return;
+                }
                 if (data.errors) showFieldErrors(data.errors);
                 throw new Error(data.message || Object.values(data.errors||{}).flat()[0] || 'Error');
             }
@@ -890,6 +943,7 @@
         document.querySelectorAll('.crm-modal-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
         document.querySelectorAll('.ov-panel').forEach(p => p.classList.toggle('hidden', p.dataset.panel !== name));
         workEl.classList.toggle('is-split', name === 'general');
+        workEl.classList.toggle('is-wazzup', name === 'wazzup');
         document.getElementById('ov-feed-panel').classList.toggle('hidden', name !== 'general');
         const footer = document.getElementById('ov-project-footer');
         footer?.classList.toggle('is-tab-hidden', name !== 'general');
@@ -899,6 +953,9 @@
         }
         if (name === 'supplies' && window.CrmSupplies?.onProjectOpened) {
             window.CrmSupplies.onProjectOpened(state.projects.find(x => x.id === state.currentId) || null);
+        }
+        if (name === 'wazzup' && window.CrmWazzup?.onProjectOpened) {
+            window.CrmWazzup.onProjectOpened(state.projects.find(x => x.id === state.currentId) || null);
         }
     }
 
@@ -945,7 +1002,13 @@
     }, { passive: false });
     kanbanEl.addEventListener('scroll', () => { state.kanbanScroll = kanbanEl.scrollLeft; });
 
-    document.getElementById('crm-create-btn').addEventListener('click', openCreate);
+    document.getElementById('crm-create-btn').addEventListener('click', () => {
+        if (!projectLimit.canCreate) {
+            openLimitModal();
+            return;
+        }
+        openCreate();
+    });
     document.getElementById('ov-close').addEventListener('click', () => closeModal(false));
     modalRoot.querySelector('[data-close-backdrop]').addEventListener('click', () => closeModal(false));
     document.getElementById('ov-cancel').addEventListener('click', () => {
@@ -1055,6 +1118,7 @@
         money,
         formatDate,
         switchTab,
+        getClients: () => clients,
     };
 
     setView(state.view, { persist: true });
@@ -1084,4 +1148,5 @@
 @include('designer.projects.partials.supply-scripts')
 @include('designer.projects.partials.checklist-scripts')
 @include('designer.projects.partials.pipeline-settings-scripts')
+@include('designer.projects.partials.wazzup-scripts')
 @endpush

@@ -35,7 +35,7 @@ class DesignerTasksTest extends TestCase
     private function corporateOwner(): array
     {
         $owner = $this->designer([
-            'subscription_plan' => DesignerSubscription::PLAN_CORPORATE,
+            'subscription_plan' => DesignerSubscription::PLAN_PROGRESS,
             'subscription_ends_at' => now()->addMonth(),
             'subscription_trial_ends_at' => null,
             'subscription_trial_used' => true,
