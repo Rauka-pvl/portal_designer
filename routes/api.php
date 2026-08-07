@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\SubscriptionApiController;
 use App\Http\Controllers\Api\SupplierApiController;
 use App\Http\Controllers\Api\SupplyApiController;
 use App\Http\Controllers\Api\SupplyItemApiController;
+use App\Http\Controllers\Api\SupportApiController;
 use App\Http\Controllers\Api\TaskApiController;
 use App\Http\Controllers\Api\TeamApiController;
 use Illuminate\Support\Facades\Route;
@@ -235,6 +236,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/team/invitations/{invitation}/resend', [TeamApiController::class, 'resendInvitation'])->whereNumber('invitation')->middleware('throttle:20,1');
         Route::delete('/team/invitations/{invitation}', [TeamApiController::class, 'cancelInvitation'])->whereNumber('invitation');
         Route::get('/team/assignees', [TeamApiController::class, 'assignees']);
+
+        // Support tickets
+        Route::get('/support/meta', [SupportApiController::class, 'meta']);
+        Route::get('/support', [SupportApiController::class, 'index']);
+        Route::post('/support', [SupportApiController::class, 'store'])->middleware('throttle:6,1');
+        Route::get('/support/attachments/{attachment}/download', [SupportApiController::class, 'download'])->whereNumber('attachment');
+        Route::get('/support/{ticket}', [SupportApiController::class, 'show'])->whereNumber('ticket');
+        Route::post('/support/{ticket}/reply', [SupportApiController::class, 'reply'])->whereNumber('ticket')->middleware('throttle:20,1');
 
         // Deprecated passport objects + old templates (compat)
         Route::get('/objects', [DesignerDataController::class, 'objects']);
