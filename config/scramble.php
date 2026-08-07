@@ -50,11 +50,11 @@ return [
         /*
          * Description rendered on the home page of the API documentation (`/docs/api`).
          */
-        'description' => 'Portal Designer mobile API. Auth: Sanctum Bearer token (unchanged). Business modules: dashboard, clients, projects, tasks, checklists, supplies, suppliers, subscription, team.',
+        'description' => 'Design Portal mobile API. Auth: Sanctum Bearer token (unchanged). Business modules: dashboard, clients, projects, tasks, checklists, supplies, suppliers, subscription, team.',
     ],
 
     'ui' => [
-        'title' => 'Portal Designer Mobile API',
+        'title' => 'Design Portal Mobile API',
     ],
 
     'renderer' => 'elements',

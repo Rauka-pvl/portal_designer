@@ -96,7 +96,7 @@
         <button type="button" onclick="window.close()">{{ __('products.cancel') }}</button>
     </div>
     <div class="sheet">
-        <div class="brand">{{ config('app.name', 'Portal') }}</div>
+        <div class="brand">{{ config('app.name', 'Design Portal') }}</div>
         <div class="name">{{ $product->name }}</div>
         @if ($product->sku)
             <div class="sku">{{ __('products.f_sku') }}: {{ $product->sku }}</div>

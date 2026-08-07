@@ -1,4 +1,4 @@
-# Mobile API — Portal Designer
+# Mobile API — Design Portal
 
 ## Overview
 

@@ -37,7 +37,7 @@ class SendUserNotificationPush implements ShouldQueue
         }
 
         if ($title === '') {
-            $title = 'Portal Designer';
+            $title = 'Design Portal';
         }
 
         if ($body === '') {

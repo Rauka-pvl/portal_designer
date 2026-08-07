@@ -1,4 +1,4 @@
-# Checklists — existing flow (Portal Designer)
+# Checklists — existing flow (Design Portal)
 
 ## Domain model
 

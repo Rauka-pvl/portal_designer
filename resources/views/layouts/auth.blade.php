@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title') - {{ config('app.name', 'Laravel') }}</title>
+    <title>@yield('title') - {{ config('app.name', 'Design Portal') }}</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -92,12 +92,12 @@
                     </g>
                     
                     <!-- Текст с геометрическим стилем -->
-                    <text x="120" y="45" font-family="'Arial Black', sans-serif" font-size="32" font-weight="900" fill="url(#darkGradient)" letter-spacing="1" id="logo-text-main">
-                        ПОРТАЛ
+                    <text x="120" y="45" font-family="'Arial Black', sans-serif" font-size="28" font-weight="900" fill="url(#darkGradient)" letter-spacing="1" id="logo-text-main">
+                        Design
                     </text>
                     
-                    <text x="120" y="75" font-family="Arial, sans-serif" font-size="18" font-weight="400" fill="#64748b" letter-spacing="4" id="logo-text-sub">
-                        ДИЗАЙНЕРА
+                    <text x="120" y="75" font-family="Arial, sans-serif" font-size="24" font-weight="600" fill="#64748b" letter-spacing="1.5" id="logo-text-sub">
+                        Portal
                     </text>
                     
                     <!-- Декоративные элементы -->

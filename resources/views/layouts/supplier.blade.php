@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', __('supplier-portal.title')) - {{ config('app.name', 'Laravel') }}</title>
+    <title>@yield('title', __('supplier-portal.title')) - {{ config('app.name', 'Design Portal') }}</title>
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -59,10 +59,10 @@
                                     dur="10s" repeatCount="indefinite" />
                             </polygon>
                         </g>
-                        <text x="120" y="45" font-family="'Arial Black', sans-serif" font-size="32" font-weight="900"
-                            fill="currentColor" letter-spacing="1">ПОРТАЛ</text>
-                        <text x="120" y="75" font-family="Arial, sans-serif" font-size="18" font-weight="400"
-                            fill="currentColor" letter-spacing="4">{{ __('supplier-portal.sidebar_brand') }}</text>
+                        <text x="120" y="45" font-family="'Arial Black', sans-serif" font-size="28" font-weight="900"
+                            fill="currentColor" letter-spacing="1">Design</text>
+                        <text x="120" y="75" font-family="Arial, sans-serif" font-size="24" font-weight="600"
+                            fill="currentColor" letter-spacing="1.5">Portal</text>
                     </svg>
                 </a>
             </div>

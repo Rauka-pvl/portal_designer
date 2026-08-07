@@ -1,9 +1,9 @@
 {
     "openapi": "3.1.0",
     "info": {
-        "title": "Portal Designer Mobile API",
+        "title": "Design Portal Mobile API",
         "version": "1.0.0",
-        "description": "Portal Designer mobile API. Auth: Sanctum Bearer token (unchanged). Business modules: dashboard, clients, projects, tasks, checklists, supplies, suppliers, subscription, team."
+        "description": "Design Portal mobile API. Auth: Sanctum Bearer token (unchanged). Business modules: dashboard, clients, projects, tasks, checklists, supplies, suppliers, subscription, team."
     },
     "servers": [
         {
