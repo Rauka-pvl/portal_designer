@@ -98,8 +98,11 @@
                         <rect x="15" y="15" width="50" height="50" rx="6" fill="none" stroke="url(#onboardGoldGradient)" stroke-width="3" opacity="0.6" />
                         <polygon points="40,30 50,40 40,50 30,40" fill="url(#onboardGoldGradient)" opacity="0.8" />
                     </g>
-                    <text x="120" y="45" font-family="'Arial Black', sans-serif" font-size="28" font-weight="900" fill="currentColor" letter-spacing="1">Design</text>
-                    <text x="120" y="75" font-family="Arial, sans-serif" font-size="24" font-weight="600" fill="currentColor" letter-spacing="1.5">Portal</text>
+                    <text x="120" y="42" font-family="'Arial Black', sans-serif" font-size="28" font-weight="900" fill="currentColor" letter-spacing="2">DESIGN</text>
+                    <text x="120" y="72" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="currentColor" letter-spacing="3">PORTAL</text>
+                    <rect x="120" y="88" width="70" height="3" fill="url(#onboardGoldGradient)" rx="1.5"/>
+                    <rect x="195" y="88" width="28" height="3" fill="url(#onboardGoldGradient)" rx="1.5" opacity="0.55"/>
+                    <rect x="228" y="88" width="16" height="3" fill="url(#onboardGoldGradient)" rx="1.5" opacity="0.3"/>
                 </svg>
             </a>
 
@@ -203,10 +206,13 @@
                                     dur="10s" repeatCount="indefinite" />
                             </polygon>
                         </g>
-                        <text x="120" y="45" font-family="'Arial Black', sans-serif" font-size="28" font-weight="900"
-                            fill="currentColor" letter-spacing="1">Design</text>
-                        <text x="120" y="75" font-family="Arial, sans-serif" font-size="24" font-weight="600"
-                            fill="currentColor" letter-spacing="1.5">Portal</text>
+                        <text x="120" y="42" font-family="'Arial Black', sans-serif" font-size="28" font-weight="900"
+                            fill="currentColor" letter-spacing="2">DESIGN</text>
+                        <text x="120" y="72" font-family="Arial, sans-serif" font-size="24" font-weight="700"
+                            fill="currentColor" letter-spacing="3">PORTAL</text>
+                        <rect x="120" y="88" width="70" height="3" fill="url(#sidebarGoldGradient)" rx="1.5"/>
+                        <rect x="195" y="88" width="28" height="3" fill="url(#sidebarGoldGradient)" rx="1.5" opacity="0.55"/>
+                        <rect x="228" y="88" width="16" height="3" fill="url(#sidebarGoldGradient)" rx="1.5" opacity="0.3"/>
                     </svg>
                 </div>
             </div>

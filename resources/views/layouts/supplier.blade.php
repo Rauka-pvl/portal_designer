@@ -59,10 +59,13 @@
                                     dur="10s" repeatCount="indefinite" />
                             </polygon>
                         </g>
-                        <text x="120" y="45" font-family="'Arial Black', sans-serif" font-size="28" font-weight="900"
-                            fill="currentColor" letter-spacing="1">Design</text>
-                        <text x="120" y="75" font-family="Arial, sans-serif" font-size="24" font-weight="600"
-                            fill="currentColor" letter-spacing="1.5">Portal</text>
+                        <text x="120" y="42" font-family="'Arial Black', sans-serif" font-size="28" font-weight="900"
+                            fill="currentColor" letter-spacing="2">DESIGN</text>
+                        <text x="120" y="72" font-family="Arial, sans-serif" font-size="24" font-weight="700"
+                            fill="currentColor" letter-spacing="3">PORTAL</text>
+                        <rect x="120" y="88" width="70" height="3" fill="url(#supplierSidebarGoldGradient)" rx="1.5"/>
+                        <rect x="195" y="88" width="28" height="3" fill="url(#supplierSidebarGoldGradient)" rx="1.5" opacity="0.55"/>
+                        <rect x="228" y="88" width="16" height="3" fill="url(#supplierSidebarGoldGradient)" rx="1.5" opacity="0.3"/>
                     </svg>
                 </a>
             </div>

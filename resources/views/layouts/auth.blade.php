@@ -92,18 +92,18 @@
                     </g>
                     
                     <!-- Текст с геометрическим стилем -->
-                    <text x="120" y="45" font-family="'Arial Black', sans-serif" font-size="28" font-weight="900" fill="url(#darkGradient)" letter-spacing="1" id="logo-text-main">
-                        Design
+                    <text x="120" y="42" font-family="'Arial Black', sans-serif" font-size="28" font-weight="900" fill="url(#darkGradient)" letter-spacing="2" id="logo-text-main">
+                        DESIGN
                     </text>
                     
-                    <text x="120" y="75" font-family="Arial, sans-serif" font-size="24" font-weight="600" fill="#64748b" letter-spacing="1.5" id="logo-text-sub">
-                        Portal
+                    <text x="120" y="72" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#64748b" letter-spacing="3" id="logo-text-sub">
+                        PORTAL
                     </text>
                     
-                    <!-- Декоративные элементы -->
-                    <rect x="120" y="82" width="60" height="3" fill="url(#goldGradient)" rx="1.5"/>
-                    <rect x="185" y="82" width="25" height="3" fill="url(#goldGradient)" rx="1.5" opacity="0.5"/>
-                    <rect x="215" y="82" width="15" height="3" fill="url(#goldGradient)" rx="1.5" opacity="0.3"/>
+                    <!-- Декоративные полоски под названием -->
+                    <rect x="120" y="88" width="70" height="3" fill="url(#goldGradient)" rx="1.5"/>
+                    <rect x="195" y="88" width="28" height="3" fill="url(#goldGradient)" rx="1.5" opacity="0.55"/>
+                    <rect x="228" y="88" width="16" height="3" fill="url(#goldGradient)" rx="1.5" opacity="0.3"/>
                 </svg>
             </div>
         </div>
