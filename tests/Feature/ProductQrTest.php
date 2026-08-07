@@ -81,7 +81,7 @@ class ProductQrTest extends TestCase
         );
     }
 
-    public function test_designer_with_access_opens_existing_product_card(): void
+    public function test_designer_with_access_is_asked_to_select_project(): void
     {
         [$supplierUser, $supplier, $product] = $this->makeSupplierWithProduct();
         ProductQr::ensureToken($product);
@@ -93,10 +93,88 @@ class ProductQrTest extends TestCase
 
         $this->actingAs($designer)
             ->get(route('product.qr.resolve', ['token' => $product->qr_token]))
-            ->assertRedirect(route('suppliers.products.show', [
+            ->assertRedirect(route('product.qr.select-project', [
                 'supplierId' => $supplier->id,
                 'productId' => $product->id,
             ]));
+    }
+
+    public function test_designer_select_project_page_lists_projects_and_create_cta(): void
+    {
+        [$supplierUser, $supplier, $product] = $this->makeSupplierWithProduct();
+        $designer = User::factory()->create([
+            'account_type' => 'designer',
+            'subscription_trial_ends_at' => now()->addDays(7),
+        ]);
+
+        $plan = \App\Models\SubscriptionPlan::findByKey('pro');
+        \App\Models\Subscription::create([
+            'user_id' => $designer->id,
+            'plan_id' => $plan->id,
+            'status' => 'active',
+            'starts_at' => now(),
+            'expires_at' => now()->addDays(20),
+        ]);
+
+        $project = \App\Models\Project::query()->create([
+            'user_id' => $designer->id,
+            'name' => 'Квартира на Абая',
+            'status' => 'in_work',
+        ]);
+
+        $this->actingAs($designer)
+            ->get(route('product.qr.select-project', [
+                'supplierId' => $supplier->id,
+                'productId' => $product->id,
+            ]))
+            ->assertOk()
+            ->assertSee('Квартира на Абая')
+            ->assertSee(__('products.qr_create_project'));
+
+        $this->actingAs($designer)
+            ->post(route('product.qr.assign-project', [
+                'supplierId' => $supplier->id,
+                'productId' => $product->id,
+            ]), [
+                'action' => 'select',
+                'project_id' => $project->id,
+            ])
+            ->assertRedirect(route('projects.index', [
+                'open' => $project->id,
+                'tab' => 'supplies',
+                'create' => 1,
+            ]));
+
+        $this->assertSame((int) $product->id, (int) session('qr_scan_product.id'));
+        $this->assertSame((int) $supplier->id, (int) session('qr_scan_product.supplier_id'));
+    }
+
+    public function test_designer_create_project_action_from_qr_stores_product_and_opens_create(): void
+    {
+        [$supplierUser, $supplier, $product] = $this->makeSupplierWithProduct();
+        $designer = User::factory()->create([
+            'account_type' => 'designer',
+            'subscription_trial_ends_at' => now()->addDays(7),
+        ]);
+        $plan = \App\Models\SubscriptionPlan::findByKey('pro');
+        \App\Models\Subscription::create([
+            'user_id' => $designer->id,
+            'plan_id' => $plan->id,
+            'status' => 'active',
+            'starts_at' => now(),
+            'expires_at' => now()->addDays(20),
+        ]);
+
+        $this->actingAs($designer)
+            ->post(route('product.qr.assign-project', [
+                'supplierId' => $supplier->id,
+                'productId' => $product->id,
+            ]), [
+                'action' => 'create',
+            ])
+            ->assertRedirect(route('projects.index', ['create' => 1]));
+
+        $this->assertSame((int) $product->id, (int) session('qr_scan_product.id'));
     }
 
     public function test_owner_supplier_opens_own_product_card(): void

@@ -81,4 +81,13 @@ return [
     'qr_aria' => 'Product QR code',
     'qr_go_home' => 'Go home',
     'qr_more_actions' => 'More actions',
+    'sku' => 'SKU',
+    'qr_select_project_title' => 'Choose a project',
+    'qr_select_project_heading' => 'Where should we add this product?',
+    'qr_select_project_hint' => 'Pick a project to open supply creation with this product. If you have no projects yet, create a new one.',
+    'qr_scanned_product' => 'Scanned product',
+    'qr_view_product' => 'Product card',
+    'qr_no_projects_title' => 'No projects yet',
+    'qr_no_projects_body' => 'Create a project to add the scanned product to a supply.',
+    'qr_create_project' => 'Create a new project',
 ];

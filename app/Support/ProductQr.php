@@ -68,10 +68,28 @@ class ProductQr
 
     public static function designerCardUrl(SupplierProduct $product): string
     {
-        return route('suppliers.products.show', [
+        return route('product.qr.select-project', [
             'supplierId' => $product->supplier_id,
             'productId' => $product->id,
         ]);
+    }
+
+    /**
+     * Payload stored in session after QR scan so CRM can prefill a supply.
+     *
+     * @return array{id:int,supplier_id:int,name:string,price:float,unit:string,sku:?string,image_url:?string}
+     */
+    public static function scanSessionPayload(SupplierProduct $product): array
+    {
+        return [
+            'id' => (int) $product->id,
+            'supplier_id' => (int) $product->supplier_id,
+            'name' => (string) $product->name,
+            'price' => $product->price !== null ? (float) $product->price : 0.0,
+            'unit' => (string) ($product->unit ?? ''),
+            'sku' => $product->sku !== null ? (string) $product->sku : null,
+            'image_url' => $product->image_url !== null ? (string) $product->image_url : null,
+        ];
     }
 
     public static function supplierCardUrl(SupplierProduct $product): string

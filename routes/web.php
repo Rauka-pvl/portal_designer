@@ -270,6 +270,15 @@ Route::middleware(['auth', 'role:designer', 'subscription.active'])->group(funct
         ->whereNumber('productId')
         ->name('suppliers.products.show');
 
+    Route::get('/suppliers/{supplierId}/products/{productId}/qr/select-project', [ProductQrController::class, 'selectProject'])
+        ->whereNumber('supplierId')
+        ->whereNumber('productId')
+        ->name('product.qr.select-project');
+    Route::post('/suppliers/{supplierId}/products/{productId}/qr/assign-project', [ProductQrController::class, 'assignToProject'])
+        ->whereNumber('supplierId')
+        ->whereNumber('productId')
+        ->name('product.qr.assign-project');
+
     Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
     Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');
     Route::get('/projects/templates', [ProjectController::class, 'templates'])->name('projects.templates.index');

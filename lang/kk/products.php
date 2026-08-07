@@ -81,4 +81,13 @@ return [
     'qr_aria' => 'Тауар QR-коды',
     'qr_go_home' => 'Басты бетке',
     'qr_more_actions' => 'Басқа әрекеттер',
+    'sku' => 'Артикул',
+    'qr_select_project_title' => 'Жобаны таңдаңыз',
+    'qr_select_project_heading' => 'Тауарды қайда қосамыз?',
+    'qr_select_project_hint' => 'Жобаны таңдаңыз — осы тауармен жеткізілім жасау ашылады. Жоба жоқ болса, жаңасын жасаңыз.',
+    'qr_scanned_product' => 'Сканерленген тауар',
+    'qr_view_product' => 'Тауар карточкасы',
+    'qr_no_projects_title' => 'Әзірге жоба жоқ',
+    'qr_no_projects_body' => 'Сканерленген тауарды жеткізілімге қосу үшін жоба жасаңыз.',
+    'qr_create_project' => 'Жаңа жоба жасау',
 ];

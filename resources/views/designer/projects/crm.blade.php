@@ -263,6 +263,18 @@
     const pipeline = @json($pipeline ?? ['stages' => []]);
     const supplyPipeline = @json($supplyPipeline ?? ['stages' => []]);
     const canManage = @json($canManage);
+    // One-shot payload from QR scan → project picker (session pulled so it is not reused).
+    const qrScanProduct = @json(session()->pull('qr_scan_product'));
+    const qrSupplyPrefill = qrScanProduct ? {
+        supplier_id: qrScanProduct.supplier_id,
+        product_items: [{
+            product_id: qrScanProduct.id,
+            name: qrScanProduct.name,
+            qty: 1,
+            price: qrScanProduct.price,
+            unit: qrScanProduct.unit || '',
+        }],
+    } : null;
     const routes = {
         store: @json(route('projects.store')),
         update: (id) => @json(url('/projects')) + '/' + id,
@@ -348,6 +360,7 @@
         sortKey: 'name', sortDir: 'asc',
         dirty: false, snapshot: null, currentId: null, feedFilter: 'all',
         existingFiles: [], tab: 'general', kanbanScroll: 0,
+        pendingQrProduct: null,
     };
     const toast = (msg, type='success') => {
         // Silent on routine success — only surface errors/warnings.
@@ -803,7 +816,7 @@
         switchTab(opts.tab || 'general');
         openModal();
         if (opts.createSupply) {
-            setTimeout(() => window.CrmSupplies?.openCreate?.(), 50);
+            setTimeout(() => window.CrmSupplies?.openCreate?.(opts.supplyPrefill || null), 50);
         }
     }
 
@@ -930,6 +943,25 @@
             const idx = state.projects.findIndex(x => x.id === p.id);
             if (idx >= 0) state.projects[idx] = p; else state.projects.unshift(p);
             state.dirty = false;
+            // After creating a project from QR scan — open supply with the scanned product.
+            if (state.pendingQrProduct && p?.id) {
+                const prefill = {
+                    supplier_id: state.pendingQrProduct.supplier_id,
+                    product_items: [{
+                        product_id: state.pendingQrProduct.id,
+                        name: state.pendingQrProduct.name,
+                        qty: 1,
+                        price: state.pendingQrProduct.price,
+                        unit: state.pendingQrProduct.unit || '',
+                    }],
+                };
+                state.pendingQrProduct = null;
+                closeModal(true);
+                render();
+                kanbanEl.scrollLeft = state.kanbanScroll;
+                await openProject(p.id, { tab: 'supplies', createSupply: true, supplyPrefill: prefill });
+                return;
+            }
             closeModal(true);
             render();
             kanbanEl.scrollLeft = state.kanbanScroll;
@@ -1124,7 +1156,11 @@
     setView(state.view, { persist: true });
 
     if (openId) {
-        openProject(Number(openId), { tab: wantTab || 'general', createSupply: wantSupplyCreate }).then(() => {
+        openProject(Number(openId), {
+            tab: wantTab || 'general',
+            createSupply: wantSupplyCreate,
+            supplyPrefill: wantSupplyCreate ? qrSupplyPrefill : null,
+        }).then(() => {
             const supplyId = params.get('supply');
             if (supplyId && window.CrmSupplies?.openDetail) {
                 setTimeout(() => window.CrmSupplies.openDetail(Number(supplyId)), 80);
@@ -1140,6 +1176,7 @@
             }
         });
     } else if (params.get('create') === '1' && !wantSupplyCreate) {
+        if (qrScanProduct) state.pendingQrProduct = qrScanProduct;
         const prefClient = params.get('client_id');
         openCreate(prefClient ? { clientId: Number(prefClient) } : {});
     }

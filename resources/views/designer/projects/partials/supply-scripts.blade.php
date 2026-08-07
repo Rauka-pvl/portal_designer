@@ -134,6 +134,14 @@
     border-bottom: 1px solid color-mix(in srgb, var(--crm-border) 20%, transparent);
     font-size: 0.8125rem;
 }
+.crm-catalog-cart-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--crm-border) 20%, transparent);
+}
+.crm-catalog-cart-row:last-child { border-bottom: 0; }
 .crm-supply-qty-stepper {
     display: inline-flex;
     align-items: center;
@@ -435,6 +443,7 @@
         supplyTotal: @json(__('projects.supply_total')),
         supplyQty: @json(__('projects.supply_qty')),
         noProducts: @json(__('projects.supply_no_products')),
+        remove: @json(__('projects.delete')),
         noSupplierProducts: @json(__('projects.supply_no_supplier_products')),
         selectSupplierFirst: @json(__('projects.supply_select_supplier_first')),
         changeSupplierWarn: @json(__('projects.supply_change_supplier_warn')),
@@ -1449,12 +1458,59 @@
             cartEl.innerHTML = `<div class="text-xs text-[var(--crm-muted)]">${escapeHtml(i18n.noProducts)}</div>`;
         } else {
             cartEl.innerHTML = items.map((p) => {
-                total += (Number(p.qty) || 1) * (Number(p.price) || 0);
-                return `<div class="flex justify-between gap-2 text-xs">
-                    <span class="truncate">${escapeHtml(p.name)} × ${p.qty}</span>
-                    <strong>${Math.round((Number(p.qty) || 1) * (Number(p.price) || 0)).toLocaleString(locale)} ${escapeHtml(i18n.currency)}</strong>
+                const qty = Math.max(1, Number(p.qty) || 1);
+                const line = qty * (Number(p.price) || 0);
+                total += line;
+                return `<div class="crm-catalog-cart-row" data-cart-id="${p.id}">
+                    <div class="min-w-0">
+                        <div class="truncate text-xs font-medium">${escapeHtml(p.name)}</div>
+                        <div class="text-[11px] text-[var(--crm-muted)] mt-0.5">${Math.round(Number(p.price) || 0).toLocaleString(locale)} ${escapeHtml(i18n.currency)}${p.unit ? ' / ' + escapeHtml(p.unit) : ''}</div>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0 mt-1.5">
+                        <div class="crm-supply-qty-stepper">
+                            <button type="button" data-cart-dec aria-label="−">−</button>
+                            <input type="number" min="1" value="${qty}" data-cart-qty aria-label="${escapeHtml(i18n.supplyQty)}">
+                            <button type="button" data-cart-inc aria-label="+">+</button>
+                        </div>
+                        <strong class="text-xs whitespace-nowrap min-w-[4.5rem] text-right">${Math.round(line).toLocaleString(locale)} ${escapeHtml(i18n.currency)}</strong>
+                        <button type="button" class="crm-btn crm-btn-ghost crm-btn-sm" data-cart-rm title="${escapeHtml(i18n.remove)}" aria-label="${escapeHtml(i18n.remove)}">×</button>
+                    </div>
                 </div>`;
             }).join('');
+
+            cartEl.querySelectorAll('[data-cart-id]').forEach((row) => {
+                const id = Number(row.dataset.cartId);
+                const setQty = (q) => {
+                    if (!state.catalogCart[id]) return;
+                    const next = Math.max(1, Number(q) || 1);
+                    state.catalogCart[id].qty = next;
+                    renderCatalogCart();
+                    // Refresh grid selection badges without full reload of page 1 only if needed
+                    const gridBtn = document.querySelector(`[data-add-product="${id}"]`);
+                    if (gridBtn) gridBtn.textContent = String(next);
+                };
+                row.querySelector('[data-cart-dec]')?.addEventListener('click', () => {
+                    const current = Number(state.catalogCart[id]?.qty) || 1;
+                    if (current <= 1) {
+                        delete state.catalogCart[id];
+                        renderCatalogCart();
+                        loadCatalogProducts(state.catalogPage);
+                        return;
+                    }
+                    setQty(current - 1);
+                });
+                row.querySelector('[data-cart-inc]')?.addEventListener('click', () => {
+                    setQty((Number(state.catalogCart[id]?.qty) || 1) + 1);
+                });
+                row.querySelector('[data-cart-qty]')?.addEventListener('change', (e) => {
+                    setQty(Number(e.target.value) || 1);
+                });
+                row.querySelector('[data-cart-rm]')?.addEventListener('click', () => {
+                    delete state.catalogCart[id];
+                    renderCatalogCart();
+                    loadCatalogProducts(state.catalogPage);
+                });
+            });
         }
         if (totalEl) totalEl.textContent = Math.round(total).toLocaleString(locale) + ' ' + i18n.currency;
     }
@@ -1488,13 +1544,14 @@
             } else {
                 grid.innerHTML = products.map((p) => {
                     const inCart = !!state.catalogCart[p.id];
+                    const qty = inCart ? Math.max(1, Number(state.catalogCart[p.id].qty) || 1) : 0;
                     return `<div class="crm-catalog-product ${inCart ? 'is-selected' : ''}" data-pid="${p.id}">
                         <div class="flex-1 min-w-0">
                             <div class="font-medium text-sm truncate">${escapeHtml(p.name)}</div>
                             <div class="text-xs text-[var(--crm-muted)]">${escapeHtml(p.sku || '')}${p.category ? ' · ' + escapeHtml(p.category) : ''}</div>
                             <div class="text-sm mt-1">${Number(p.price || 0).toLocaleString(locale)} ${escapeHtml(i18n.currency)}${p.unit ? ' / ' + escapeHtml(p.unit) : ''}</div>
                         </div>
-                        <button type="button" class="crm-btn crm-btn-secondary crm-btn-sm" data-add-product="${p.id}">${inCart ? '+' : '+'}</button>
+                        <button type="button" class="crm-btn ${inCart ? 'crm-btn-primary' : 'crm-btn-secondary'} crm-btn-sm" data-add-product="${p.id}" title="${inCart ? escapeHtml(i18n.supplyQty) + ': ' + qty : '+'}">${inCart ? qty : '+'}</button>
                     </div>`;
                 }).join('');
 

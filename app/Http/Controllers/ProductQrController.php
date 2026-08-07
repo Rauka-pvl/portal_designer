@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Project;
 use App\Models\SupplierProduct;
 use App\Support\DesignerSubscription;
 use App\Support\ProductQr;
+use App\Support\WorkspaceAccess;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Throwable;
@@ -54,10 +56,85 @@ class ProductQrController extends Controller
             return redirect()->route('subscription.index');
         }
 
-        // Designer / moderator → existing designer product card
+        // Designer: pick (or create) a project before adding the scanned product to a supply.
+        if (($user->role ?? '') === 'designer') {
+            return redirect()->route('product.qr.select-project', [
+                'supplierId' => $product->supplier_id,
+                'productId' => $product->id,
+            ]);
+        }
+
+        // Moderator → existing designer product card
         return redirect()->route('suppliers.products.show', [
             'supplierId' => $product->supplier_id,
             'productId' => $product->id,
+        ]);
+    }
+
+    /**
+     * After QR scan: ask designer to choose a project (or create one).
+     */
+    public function selectProject(Request $request, int $supplierId, int $productId): View
+    {
+        $user = $request->user();
+        abort_unless($user && ($user->role ?? '') === 'designer', 403);
+
+        $product = SupplierProduct::query()
+            ->where('id', $productId)
+            ->where('supplier_id', $supplierId)
+            ->with('supplier')
+            ->firstOrFail();
+
+        abort_unless(ProductQr::canViewProduct($user, $product), 403);
+
+        $projects = WorkspaceAccess::scopeProjects(Project::query(), $user)
+            ->orderByDesc('updated_at')
+            ->orderBy('name')
+            ->get(['id', 'name', 'status', 'client_id', 'updated_at']);
+
+        return view('designer.products.qr-select-project', [
+            'product' => $product,
+            'supplier' => $product->supplier,
+            'projects' => $projects,
+        ]);
+    }
+
+    /**
+     * Persist scanned product in session and send designer into CRM
+     * (existing project → open supplies create, or create project first).
+     */
+    public function assignToProject(Request $request, int $supplierId, int $productId)
+    {
+        $user = $request->user();
+        abort_unless($user && ($user->role ?? '') === 'designer', 403);
+
+        $product = SupplierProduct::query()
+            ->where('id', $productId)
+            ->where('supplier_id', $supplierId)
+            ->with('supplier')
+            ->firstOrFail();
+
+        abort_unless(ProductQr::canViewProduct($user, $product), 403);
+
+        $data = $request->validate([
+            'action' => ['required', 'in:select,create'],
+            'project_id' => ['nullable', 'integer', 'required_if:action,select'],
+        ]);
+
+        $request->session()->put('qr_scan_product', ProductQr::scanSessionPayload($product));
+
+        if ($data['action'] === 'create') {
+            return redirect()->route('projects.index', ['create' => 1]);
+        }
+
+        $project = WorkspaceAccess::scopeProjects(Project::query(), $user)
+            ->whereKey((int) $data['project_id'])
+            ->firstOrFail();
+
+        return redirect()->route('projects.index', [
+            'open' => $project->id,
+            'tab' => 'supplies',
+            'create' => 1,
         ]);
     }
 
