@@ -65,6 +65,7 @@
 @endsection
 
 @push('scripts')
+@include('designer.projects.partials.project-address-scripts')
 {{-- Modal portal: rendered at end of body via JS move --}}
 <div id="project-modal-root" class="crm-modal-root" aria-hidden="true">
     <div class="crm-modal-backdrop" data-close-backdrop></div>
@@ -127,6 +128,64 @@
                                 <label class="crm-label" for="ov-budget-fact">{{ __('projects.budget_fact') }}</label>
                                 <input type="number" step="0.01" min="0" id="ov-budget-fact" class="crm-input">
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="crm-section">
+                        <div class="crm-section-title">{{ __('projects.section_location') }}</div>
+                        <div class="crm-grid-2 mb-3">
+                            <div>
+                                <label class="crm-label" for="ov-city">{{ __('projects.city') }}</label>
+                                <select id="ov-city" class="crm-input crm-select">
+                                    <option value="">{{ __('projects.select_city') }}</option>
+                                    @foreach (($cities ?? []) as $city)
+                                        <option value="{{ $city }}">{{ $city }}</option>
+                                    @endforeach
+                                    <option value="other">{{ __('objects.other') }}</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="crm-label" for="ov-object-type">{{ __('projects.object_type') }}</label>
+                                <select id="ov-object-type" class="crm-input crm-select">
+                                    <option value="">{{ __('projects.select_object_type') }}</option>
+                                    @foreach (($objectTypes ?? []) as $type)
+                                        <option value="{{ $type['id'] }}">{{ $type['label'] }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3 address-suggest relative">
+                            <label class="crm-label" for="ov-address">{{ __('projects.object_address') }}</label>
+                            <input id="ov-address" class="crm-input" type="text" autocomplete="off" autocorrect="off" spellcheck="false"
+                                placeholder="{{ __('objects.address_placeholder') }}">
+                            <div id="ov-address-suggest" class="address-suggest-list hidden"></div>
+                            <div class="crm-field-error hidden" data-error="object_address"></div>
+                            <div class="crm-field-error hidden" data-error="latitude"></div>
+                        </div>
+                        <div class="crm-grid-3 mb-3" id="ov-apartment-fields">
+                            <div>
+                                <label class="crm-label" for="ov-apartment-floor">{{ __('objects.apartment_floor') }}</label>
+                                <input id="ov-apartment-floor" class="crm-input" type="text" autocomplete="off">
+                            </div>
+                            <div>
+                                <label class="crm-label" for="ov-apartment-entrance">{{ __('objects.apartment_entrance') }}</label>
+                                <input id="ov-apartment-entrance" class="crm-input" type="text" autocomplete="off">
+                            </div>
+                            <div>
+                                <label class="crm-label" for="ov-apartment">{{ __('objects.apartment_number') }}</label>
+                                <input id="ov-apartment" class="crm-input" type="text" autocomplete="off">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="crm-label" for="ov-area">{{ __('objects.area') }} ({{ __('objects.area_m2') }})</label>
+                            <input id="ov-area" class="crm-input" type="number" step="0.01" min="0">
+                        </div>
+                        <div class="mb-1">
+                            <div class="crm-label">{{ __('objects.map_point') }}</div>
+                            <p class="text-xs text-[var(--crm-muted)] mb-2">{{ __('objects.map_hint') }}</p>
+                            <div id="ov-map" class="project-address-map"></div>
+                            <input type="hidden" id="ov-latitude">
+                            <input type="hidden" id="ov-longitude">
                         </div>
                     </div>
 
@@ -262,6 +321,7 @@
     const clients = @json($clientsData ?? []);
     const pipeline = @json($pipeline ?? ['stages' => []]);
     const supplyPipeline = @json($supplyPipeline ?? ['stages' => []]);
+    const citiesList = @json($cities ?? []);
     const canManage = @json($canManage);
     // One-shot payload from QR scan → project picker (session pulled so it is not reused).
     const qrScanProduct = @json(session()->pull('qr_scan_product'));
@@ -731,6 +791,7 @@
             comment: document.getElementById('ov-comment').value || null,
             links: readLinks(),
             existing_files: [...state.existingFiles],
+            ...(window.CrmProjectAddress?.read?.() || {}),
         };
     }
 
@@ -748,6 +809,7 @@
         document.getElementById('ov-comment').value = p?.comment || '';
         renderLinks(p?.links || []);
         renderFiles(p?.file_items || p?.files || []);
+        window.CrmProjectAddress?.apply?.(p || {});
         clearFieldErrors();
     }
 
@@ -755,6 +817,7 @@
         modalRoot.classList.add('open');
         modalRoot.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
+        window.CrmProjectAddress?.onModalOpened?.();
     }
     function closeModal(force=false) {
         if (state.dirty && !force) {
@@ -989,6 +1052,9 @@
         if (name === 'wazzup' && window.CrmWazzup?.onProjectOpened) {
             window.CrmWazzup.onProjectOpened(state.projects.find(x => x.id === state.currentId) || null);
         }
+        if (name === 'general') {
+            window.CrmProjectAddress?.onModalOpened?.();
+        }
     }
 
     // Events
@@ -1154,6 +1220,11 @@
     };
 
     setView(state.view, { persist: true });
+
+    window.CrmProjectAddress?.init?.({
+        cities: citiesList,
+        onChange: markDirty,
+    });
 
     if (openId) {
         openProject(Number(openId), {

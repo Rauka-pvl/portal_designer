@@ -72,6 +72,8 @@ class CrmRedesignTest extends TestCase
             'apartment_entrance' => '2',
             'apartment' => '45',
             'area' => 80,
+            'latitude' => 43.238949,
+            'longitude' => 76.945465,
             'repair_budget_planned' => 8000000,
             'repair_budget_actual' => 7500000,
             'start_date' => now()->toDateString(),
@@ -90,6 +92,10 @@ class CrmRedesignTest extends TestCase
             'name' => 'CRM Проект без объекта',
             'client_id' => $client->id,
             'object_id' => null,
+            'city' => 'Алматы',
+            'address' => 'ул. Абая 10',
+            'apartment' => '45',
+            'object_type' => 'apartment',
         ]);
         $this->assertDatabaseHas('project_object_details', [
             'project_id' => $projectId,
@@ -102,6 +108,8 @@ class CrmRedesignTest extends TestCase
         $payload = $response->json('project');
         $this->assertEquals(100000.0, (float) $payload['repair_budget_per_m2_planned']);
         $this->assertEqualsWithDelta(93750.0, (float) $payload['repair_budget_per_m2_actual'], 0.01);
+        $this->assertEqualsWithDelta(43.238949, (float) $payload['latitude'], 0.0001);
+        $this->assertEqualsWithDelta(76.945465, (float) $payload['longitude'], 0.0001);
     }
 
     public function test_budget_per_m2_is_dash_when_area_empty(): void

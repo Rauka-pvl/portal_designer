@@ -10,6 +10,23 @@ class StoreProjectRequest extends ProjectSaveRequest
 {
     protected function prepareForValidation(): void
     {
+        // Accept mobile aliases for property / address fields.
+        $aliases = array_filter([
+            'object_address' => $this->input('object_address', $this->input('address')),
+            'object_type' => $this->input('object_type', $this->input('type')),
+            'latitude' => $this->input('latitude', data_get($this->input('property'), 'latitude')),
+            'longitude' => $this->input('longitude', data_get($this->input('property'), 'longitude')),
+            'city' => $this->input('city', data_get($this->input('property'), 'city')),
+            'apartment' => $this->input('apartment', data_get($this->input('property'), 'apartment')),
+            'apartment_floor' => $this->input('apartment_floor', data_get($this->input('property'), 'apartment_floor')),
+            'apartment_entrance' => $this->input('apartment_entrance', data_get($this->input('property'), 'apartment_entrance')),
+            'area' => $this->input('area', data_get($this->input('property'), 'area')),
+        ], fn ($v) => $v !== null);
+
+        if ($aliases !== []) {
+            $this->merge($aliases);
+        }
+
         $stage = $this->filled('stage_id')
             ? PipelineStage::query()->whereKey($this->input('stage_id'))
                 ->whereHas('pipeline', fn ($q) => $q->where('user_id', $this->user()?->id)->where('type', PipelineType::Project))

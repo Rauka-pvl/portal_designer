@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Designer\ClientController;
-use App\Http\Controllers\Designer\PassportObject;
 use App\Http\Controllers\Designer\ProjectController;
 use App\Http\Controllers\Designer\SupplierController;
 use App\Http\Controllers\Designer\SupplierOrderController;
@@ -39,26 +38,33 @@ class DesignerCrudController extends Controller
         return $this->forward($request, fn () => app(ClientController::class)->destroy($request, $id));
     }
 
-    // ─── Objects ───────────────────────────────────────────
+    // ─── Objects (deprecated — address lives on /projects) ─
 
     /** POST /api/objects */
     public function storeObject(Request $request): Response
     {
-        return $this->forward($request, fn () => app(PassportObject::class)->save($request));
+        return $this->goneObjects();
     }
 
     /** PUT|PATCH /api/objects/{id} */
     public function updateObject(Request $request, int $id): Response
     {
-        $request->merge(['object_id' => $id]);
-
-        return $this->forward($request, fn () => app(PassportObject::class)->save($request));
+        return $this->goneObjects();
     }
 
     /** DELETE /api/objects/{id} */
     public function destroyObject(Request $request, int $id): Response
     {
-        return $this->forward($request, fn () => app(PassportObject::class)->destroy($request, $id));
+        return $this->goneObjects();
+    }
+
+    private function goneObjects(): Response
+    {
+        return response()->json([
+            'message' => 'Passport objects API is retired. Create/update address on /api/projects (city, object_address, latitude, longitude).',
+            'code' => 'objects_retired',
+            'use' => '/api/projects',
+        ], 410);
     }
 
     // ─── Projects ──────────────────────────────────────────

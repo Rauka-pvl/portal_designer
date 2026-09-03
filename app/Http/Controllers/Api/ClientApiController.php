@@ -121,16 +121,24 @@ class ClientApiController extends Controller
     {
         $this->ensureDesigner($request);
         $client = $this->clientForUserOrFail($request, $client);
-        $projects = $this->relatedProjects($request, $client)->map(fn (Project $project) => [
-            'id' => $project->id,
-            'name' => $project->name,
-            'status' => $project->status,
-            'planned_end_date' => $project->planned_end_date
-                ? \Illuminate\Support\Carbon::parse($project->planned_end_date)->toIso8601String()
-                : null,
-            'planned_cost' => \App\Support\Api\Money::formatMoney($project->planned_cost) ?? '0.00',
-            'actual_cost' => \App\Support\Api\Money::formatMoney($project->actual_cost) ?? '0.00',
-        ])->values();
+        $projects = $this->relatedProjects($request, $client)->map(function (Project $project) {
+            $property = $project->propertySnapshot();
+
+            return [
+                'id' => $project->id,
+                'name' => $project->name,
+                'status' => $project->status,
+                'city' => $property['city'],
+                'object_address' => $property['address'],
+                'latitude' => $property['latitude'],
+                'longitude' => $property['longitude'],
+                'planned_end_date' => $project->planned_end_date
+                    ? \Illuminate\Support\Carbon::parse($project->planned_end_date)->toIso8601String()
+                    : null,
+                'planned_cost' => \App\Support\Api\Money::formatMoney($project->planned_cost) ?? '0.00',
+                'actual_cost' => \App\Support\Api\Money::formatMoney($project->actual_cost) ?? '0.00',
+            ];
+        })->values();
 
         return response()->json(['data' => $projects]);
     }
@@ -173,6 +181,7 @@ class ClientApiController extends Controller
                 $query->where('client_id', $client->id)
                     ->orWhereHas('object', fn ($objectQuery) => $objectQuery->where('client_id', $client->id));
             })
+            ->with(['objectDetails', 'object'])
             ->orderByDesc('id')
             ->limit(50)
             ->get();

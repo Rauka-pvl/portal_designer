@@ -26,6 +26,15 @@ class Project extends Model
         'links',
         'files',
         'comment',
+        'city',
+        'address',
+        'apartment',
+        'apartment_floor',
+        'apartment_entrance',
+        'object_type',
+        'area',
+        'latitude',
+        'longitude',
 
         // Moderation
         'moderation_status',
@@ -38,6 +47,9 @@ class Project extends Model
     protected $casts = [
         'links' => 'array',
         'files' => 'array',
+        'area' => 'float',
+        'latitude' => 'float',
+        'longitude' => 'float',
         'moderation_reviewed_at' => 'datetime',
     ];
 
@@ -97,22 +109,22 @@ class Project extends Model
     }
 
     /**
-     * Resolve property/client display data preferring project_object_details, falling back to legacy passport.
+     * Resolve property/client display data: project columns first, then object_details, then legacy passport.
      */
     public function propertySnapshot(): array
     {
         $details = $this->objectDetails;
         $legacy = $this->object;
 
-        $area = $details?->area ?? $legacy?->area;
+        $area = $this->area ?? $details?->area ?? $legacy?->area;
         $budgetPlan = $details?->repair_budget_planned ?? null;
         $budgetFact = $details?->repair_budget_actual ?? null;
 
         // Fall back to project planned/actual cost for older records without details budgets
-        if ($budgetPlan === null && $details === null) {
+        if ($budgetPlan === null) {
             $budgetPlan = $this->planned_cost;
         }
-        if ($budgetFact === null && $details === null) {
+        if ($budgetFact === null) {
             $budgetFact = $this->actual_cost;
         }
 
@@ -120,18 +132,23 @@ class Project extends Model
         $planFloat = is_numeric($budgetPlan) ? (float) $budgetPlan : null;
         $factFloat = is_numeric($budgetFact) ? (float) $budgetFact : null;
 
+        $lat = $this->latitude ?? $details?->latitude ?? $legacy?->latitude;
+        $lng = $this->longitude ?? $details?->longitude ?? $legacy?->longitude;
+
         return [
             'client_id' => $this->client_id ?? $details?->client_id ?? $legacy?->client_id,
             'client_name' => $this->client?->full_name
                 ?? $details?->client?->full_name
                 ?? $legacy?->client?->full_name,
-            'city' => $details?->city ?? $legacy?->city,
-            'address' => $details?->address ?? $legacy?->address,
-            'apartment' => $details?->apartment ?? $legacy?->apartment,
-            'apartment_floor' => $details?->apartment_floor ?? $legacy?->apartment_floor,
-            'apartment_entrance' => $details?->apartment_entrance ?? $legacy?->apartment_entrance,
-            'type' => $details?->type ?? $legacy?->type,
+            'city' => $this->city ?: ($details?->city ?? $legacy?->city),
+            'address' => $this->address ?: ($details?->address ?? $legacy?->address),
+            'apartment' => $this->apartment ?: ($details?->apartment ?? $legacy?->apartment),
+            'apartment_floor' => $this->apartment_floor ?: ($details?->apartment_floor ?? $legacy?->apartment_floor),
+            'apartment_entrance' => $this->apartment_entrance ?: ($details?->apartment_entrance ?? $legacy?->apartment_entrance),
+            'type' => $this->object_type ?: ($details?->type ?? $legacy?->type),
             'area' => $areaFloat > 0 ? $areaFloat : ($area !== null ? (float) $area : null),
+            'latitude' => is_numeric($lat) ? (float) $lat : null,
+            'longitude' => is_numeric($lng) ? (float) $lng : null,
             'repair_budget_planned' => $planFloat,
             'repair_budget_actual' => $factFloat,
             'repair_budget_per_m2_planned' => ($areaFloat > 0 && $planFloat !== null)

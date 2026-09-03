@@ -57,6 +57,29 @@ class ProjectService
             'links' => $this->normalizeLinks($data['links'] ?? []),
             'files' => $files,
             'comment' => $data['comment'] ?? null,
+            'city' => array_key_exists('city', $data) ? ($data['city'] ?: null) : ($project->city ?: $property['city']),
+            'address' => array_key_exists('object_address', $data)
+                ? ($data['object_address'] ?: null)
+                : ($project->address ?: $property['address']),
+            'apartment' => array_key_exists('apartment', $data) ? ($data['apartment'] ?: null) : ($project->apartment ?: $property['apartment']),
+            'apartment_floor' => array_key_exists('apartment_floor', $data)
+                ? ($data['apartment_floor'] ?: null)
+                : ($project->apartment_floor ?: $property['apartment_floor']),
+            'apartment_entrance' => array_key_exists('apartment_entrance', $data)
+                ? ($data['apartment_entrance'] ?: null)
+                : ($project->apartment_entrance ?: $property['apartment_entrance']),
+            'object_type' => array_key_exists('object_type', $data)
+                ? ($data['object_type'] ?: null)
+                : ($project->object_type ?: $property['type']),
+            'area' => array_key_exists('area', $data)
+                ? ($data['area'] === '' || $data['area'] === null ? null : $data['area'])
+                : ($project->area ?? $property['area']),
+            'latitude' => array_key_exists('latitude', $data)
+                ? ($data['latitude'] === '' || $data['latitude'] === null ? null : $data['latitude'])
+                : ($project->latitude ?? $property['latitude']),
+            'longitude' => array_key_exists('longitude', $data)
+                ? ($data['longitude'] === '' || $data['longitude'] === null ? null : $data['longitude'])
+                : ($project->longitude ?? $property['longitude']),
         ])->save();
 
         $this->saveObjectDetails($project, $data);
@@ -90,20 +113,22 @@ class ProjectService
         $old = $project->objectDetails;
         $value = fn (string $key, ?string $oldKey = null) => array_key_exists($key, $data)
             ? $data[$key] : $old?->{ $oldKey ?? $key };
-        $area = $value('area');
+        $area = $project->area;
         $plan = $value('repair_budget_planned');
         $actual = $value('repair_budget_actual');
 
         ProjectObjectDetail::query()->updateOrCreate(['project_id' => $project->id], [
             'passport_object_id' => $project->object_id,
             'client_id' => $project->client_id,
-            'city' => $value('city'),
-            'address' => $value('object_address', 'address'),
-            'apartment' => $value('apartment'),
-            'apartment_floor' => $value('apartment_floor'),
-            'apartment_entrance' => $value('apartment_entrance'),
-            'type' => $value('object_type', 'type'),
-            'area' => $area === '' ? null : $area,
+            'city' => $project->city,
+            'address' => $project->address,
+            'apartment' => $project->apartment,
+            'apartment_floor' => $project->apartment_floor,
+            'apartment_entrance' => $project->apartment_entrance,
+            'type' => $project->object_type,
+            'area' => $area,
+            'latitude' => $project->latitude,
+            'longitude' => $project->longitude,
             'repair_budget_planned' => $plan === '' ? null : $plan,
             'repair_budget_actual' => $actual === '' ? null : $actual,
             'repair_budget_per_m2_planned' => is_numeric($area) && (float) $area > 0 && is_numeric($plan) ? round((float) $plan / (float) $area, 2) : null,

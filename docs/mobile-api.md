@@ -51,10 +51,12 @@ OpenAPI JSON: [`/docs/api.json`](/docs/api.json), [`/api/documentation.json`](/a
 | `stage` | `ProjectStage` либо `null`. |
 | `start_date`, `planned_completion_date`, `actual_completion_date`, `planned_end_date`, `actual_end_date` | ISO 8601 или `null`. |
 | `planned_cost`, `actual_cost`, `renovation_budget_plan`, `renovation_budget_fact` | Денежные строки или `null`. |
-| `property` | Снимок объекта: `client_name`, `city`, `object_type`, `object_address`, `apartment_floor`, `apartment_entrance`, `apartment`, `area`, `repair_budget_planned`, `repair_budget_actual`; числовые значения сериализуются строками. |
+| `city`, `object_type`, `object_address`, `apartment`, `apartment_floor`, `apartment_entrance`, `area` | Адрес/данные объекта на самом проекте (passport objects больше не нужны). |
+| `latitude`, `longitude` | Координаты карты (строки) или `null`. Обязательны, если передан `object_address`. |
+| `property` | Снимок тех же полей: `client_name`, `city`, `object_type`, `object_address`, `type`/`address` (legacy aliases), `apartment*`, `area`, `latitude`, `longitude`, `repair_budget_*`, `repair_budget_per_m2_*`. |
 | `checklist_progress` | `{total, done, percent}`. |
 | `counts` | `{checklist_stages, tasks}`. |
-| `comment`, `links`, `created_at`, `updated_at` | Комментарий, ссылки, ISO 8601 timestamps. |
+| `comment`, `links`, `files`, `file_items`, `created_at`, `updated_at` | Комментарий, ссылки, публичные URL файлов / `{path,name,url}`, ISO 8601 timestamps. |
 
 ### Other reusable resources
 
@@ -167,7 +169,8 @@ OpenAPI JSON: [`/docs/api.json`](/docs/api.json), [`/api/documentation.json`](/a
 | `client_id` | Нет | Доступный клиент workspace. |
 | `start_date`, `planned_end_date`, `actual_end_date` | Нет | Даты; aliases: `planned_completion_date`, `actual_completion_date`. |
 | `comment` | Нет | Текст. |
-| `city`, `object_type`, `object_address`, `apartment_floor`, `apartment_entrance`, `apartment`, `area` | Нет | Данные объекта; `object_type`: `apartment`, `house`, `commercial`, `office`, `other`. |
+| `city`, `object_type`, `object_address`, `apartment_floor`, `apartment_entrance`, `apartment`, `area` | Нет | Данные адреса на проекте; `object_type`: `apartment`, `house`, `commercial`, `office`, `other`. Aliases: `address` → `object_address`, `type` → `object_type`. |
+| `latitude`, `longitude` | Условно | Обязательны, если заполнен `object_address` (точка на карте). |
 | `repair_budget_planned`, `repair_budget_actual` | Нет | Числа; aliases: `renovation_budget_plan`, `renovation_budget_fact`. |
 | `links[]` | Нет | `{title?, url}`. |
 | `files[]`, `existing_files[]` | Нет | Новые файлы / сохранённые пути. |
@@ -393,7 +396,7 @@ Checkout response: `{data:{subscription: Subscription, payment: Payment}}`; plan
 
 | Alias | Статус | Замена / примечание |
 |---|---|---|
-| `GET|POST /objects`, `GET|PUT|PATCH|DELETE /objects/{id}` | Deprecated | Старый passport objects API. Используйте `/projects` и `/clients`. |
+| `GET|POST /objects`, `GET|PUT|PATCH|DELETE /objects/{id}` | Deprecated | GET оставлен для чтения старых passport rows. **POST/PUT/PATCH/DELETE возвращают `410`** — адрес создавайте на `/projects` (`city`, `object_address`, `latitude`, `longitude`). |
 | `GET /supplier-orders`, `GET /supplier-orders/{id}` | Compat | Старое представление поставок. Новое создание/работа — `/projects/{project}/supplies` и `/supplies/{supply}`. |
 | `POST /supplier-orders/{supply}/offer/send` | Compat | `/supplies/{supply}/percentage-proposals`. |
 | `POST /supplier-orders/{supply}/offer/accept` | Compat | `/supplies/{supply}/percentage-proposals/accept`. |
@@ -440,7 +443,12 @@ POST /api/projects
   "city": "Алматы",
   "object_type": "apartment",
   "object_address": "пр. Абая, 10",
+  "apartment_floor": "5",
+  "apartment_entrance": "2",
+  "apartment": "45",
   "area": 84.5,
+  "latitude": 43.238949,
+  "longitude": 76.945465,
   "repair_budget_planned": 2999000,
   "links": [
     { "title": "Moodboard", "url": "https://example.com/moodboard" }

@@ -477,6 +477,8 @@ class ProjectController extends Controller
             'apartment_entrance' => $property['apartment_entrance'],
             'apartment' => $property['apartment'],
             'area' => $property['area'],
+            'latitude' => $property['latitude'],
+            'longitude' => $property['longitude'],
             'repair_budget_planned' => $property['repair_budget_planned'],
             'repair_budget_actual' => $property['repair_budget_actual'],
             'repair_budget_per_m2_planned' => $property['repair_budget_per_m2_planned'],

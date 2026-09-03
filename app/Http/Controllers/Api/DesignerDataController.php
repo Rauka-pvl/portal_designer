@@ -305,13 +305,17 @@ class DesignerDataController extends Controller
 
     private function projectListPayload(Project $p): array
     {
+        $property = $p->propertySnapshot();
+
         return [
             'id' => $p->id,
             'name' => $p->name,
             'object_id' => $p->object_id,
-            'object_address' => $p->object?->address,
-            'object_city' => $p->object?->city,
-            'client_name' => $p->object?->client?->full_name,
+            'object_address' => $property['address'],
+            'object_city' => $property['city'],
+            'client_name' => $property['client_name'],
+            'latitude' => $property['latitude'],
+            'longitude' => $property['longitude'],
             'status' => $p->status,
             'workflow_status' => $this->workflowStatus($p->moderation_status, $p->status),
             'start_date' => optional($p->start_date)->format('Y-m-d'),

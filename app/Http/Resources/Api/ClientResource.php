@@ -60,10 +60,16 @@ class ClientResource extends JsonResource
      */
     private function projectBrief(Project $project): array
     {
+        $property = $project->propertySnapshot();
+
         return [
             'id' => $project->id,
             'name' => $project->name,
             'status' => $project->status,
+            'city' => $property['city'],
+            'object_address' => $property['address'],
+            'latitude' => $property['latitude'] === null ? null : (string) $property['latitude'],
+            'longitude' => $property['longitude'] === null ? null : (string) $property['longitude'],
             'planned_end_date' => $project->planned_end_date
                 ? Carbon::parse($project->planned_end_date)->toIso8601String()
                 : null,

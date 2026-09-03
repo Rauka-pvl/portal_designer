@@ -78,6 +78,8 @@ class ProjectSaveRequest extends FormRequest
             'apartment_entrance' => ['nullable', 'string', 'max:50'],
             'apartment' => ['nullable', 'string', 'max:50'],
             'area' => ['nullable', 'numeric', 'min:0'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'repair_budget_planned' => ['nullable', 'numeric', 'min:0'],
             'repair_budget_actual' => ['nullable', 'numeric', 'min:0'],
 
@@ -120,6 +122,16 @@ class ProjectSaveRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator) {
+            $address = trim((string) $this->input('object_address', ''));
+            if ($address !== '') {
+                $lat = $this->input('latitude');
+                $lng = $this->input('longitude');
+                if ($lat === null || $lat === '' || $lng === null || $lng === ''
+                    || ! is_numeric($lat) || ! is_numeric($lng)) {
+                    $validator->errors()->add('latitude', __('objects.map_point_required'));
+                }
+            }
+
             $teamService = app(TeamService::class);
             $user = $this->user();
 
